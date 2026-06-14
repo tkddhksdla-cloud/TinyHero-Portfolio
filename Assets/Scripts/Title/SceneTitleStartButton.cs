@@ -1,0 +1,197 @@
+using TinyHero.Maps;
+using TinyHero.UI;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+namespace TinyHero.Title
+{
+    ///<summary>
+    /// 타이틀 시작 버튼 컴포넌트
+    ///</summary>
+    [DisallowMultipleComponent]
+    public sealed class SceneTitleStartButton : MonoBehaviour
+    {
+        private const string GameplaySceneName = "SceneMap";
+        private const string StarterMapId = "MAP_STARTER_001";
+        private const string FadeImageObjectName = "TitleFadeImage";
+        private const float DefaultFadeDuration = 0.35f;
+
+        [SerializeField] private CButtonEx startButton;
+        [SerializeField] private Image fadeImage;
+        [SerializeField] private float fadeDuration = DefaultFadeDuration;
+
+        private bool isStarting;
+
+        ///<summary>
+        /// 컴포넌트 초기화
+        ///</summary>
+        private void Awake()
+        {
+            if ( startButton == null )
+            {
+                CButtonEx resolvedButton = GetComponent<CButtonEx>();
+                startButton = resolvedButton;
+            }
+
+            EnsureFadeImage();
+        }
+
+        ///<summary>
+        /// 활성화 처리
+        ///</summary>
+        private void OnEnable()
+        {
+            if ( startButton == null )
+            {
+                return;
+            }
+
+            startButton.onClick.AddListener( HandleStartButtonClicked );
+        }
+
+        ///<summary>
+        /// 비활성화 처리
+        ///</summary>
+        private void OnDisable()
+        {
+            if ( startButton == null )
+            {
+                return;
+            }
+
+            startButton.onClick.RemoveListener( HandleStartButtonClicked );
+        }
+
+        ///<summary>
+        /// 시작 버튼 클릭 처리
+        ///</summary>
+        private void HandleStartButtonClicked()
+        {
+            if ( isStarting )
+            {
+                return;
+            }
+
+            StartCoroutine( IE_StartGame() );
+        }
+
+        ///<summary>
+        /// 시작 시퀀스 코루틴 처리
+        ///</summary>
+        private IEnumerator IE_StartGame()
+        {
+            isStarting = true;
+
+            if ( startButton != null )
+            {
+                startButton.interactable = false;
+            }
+
+            EnsureFadeImage();
+            yield return IE_FadeAlpha( 0.0f, 1.0f );
+            CMapManager.SetPendingMapLoad( StarterMapId );
+            CMapManager mapManager = CMapManager.Instance;
+
+            if ( mapManager == null )
+            {
+                yield break;
+            }
+
+            SceneManager.LoadScene( GameplaySceneName );
+        }
+
+        ///<summary>
+        /// 타이틀 페이드 알파 코루틴 처리
+        ///</summary>
+        private IEnumerator IE_FadeAlpha(float _startAlpha, float _endAlpha)
+        {
+            if ( fadeImage == null )
+            {
+                yield break;
+            }
+
+            float elapsedTime = 0.0f;
+            Color fadeColor = fadeImage.color;
+            fadeColor.a = _startAlpha;
+            fadeImage.color = fadeColor;
+
+            if ( fadeDuration <= 0.0f )
+            {
+                fadeColor.a = _endAlpha;
+                fadeImage.color = fadeColor;
+                yield break;
+            }
+
+            while ( elapsedTime < fadeDuration )
+            {
+                elapsedTime += Time.deltaTime;
+                float normalizedTime = Mathf.Clamp01( elapsedTime / fadeDuration );
+                float alpha = Mathf.Lerp( _startAlpha, _endAlpha, normalizedTime );
+                fadeColor.a = alpha;
+                fadeImage.color = fadeColor;
+                yield return null;
+            }
+
+            fadeColor.a = _endAlpha;
+            fadeImage.color = fadeColor;
+        }
+
+        ///<summary>
+        /// 타이틀 페이드 이미지 보장
+        ///</summary>
+        private void EnsureFadeImage()
+        {
+            if ( fadeImage != null )
+            {
+                return;
+            }
+
+            Canvas parentCanvas = GetComponentInParent<Canvas>();
+
+            if ( parentCanvas == null )
+            {
+                return;
+            }
+
+            Transform foundFadeTransform = parentCanvas.transform.Find( FadeImageObjectName );
+
+            if ( foundFadeTransform != null )
+            {
+                Image foundFadeImage = foundFadeTransform.GetComponent<Image>();
+                fadeImage = foundFadeImage;
+                SetFadeImageAlpha( 0.0f );
+                return;
+            }
+
+            GameObject fadeImageObject = new GameObject( FadeImageObjectName, typeof( RectTransform ), typeof( CanvasRenderer ), typeof( Image ) );
+            RectTransform fadeRectTransform = fadeImageObject.GetComponent<RectTransform>();
+            fadeRectTransform.SetParent( parentCanvas.transform, false );
+            fadeRectTransform.anchorMin = Vector2.zero;
+            fadeRectTransform.anchorMax = Vector2.one;
+            fadeRectTransform.offsetMin = Vector2.zero;
+            fadeRectTransform.offsetMax = Vector2.zero;
+            fadeRectTransform.SetAsLastSibling();
+            Image createdFadeImage = fadeImageObject.GetComponent<Image>();
+            createdFadeImage.raycastTarget = false;
+            createdFadeImage.color = new Color( 0.0f, 0.0f, 0.0f, 0.0f );
+            fadeImage = createdFadeImage;
+        }
+
+        ///<summary>
+        /// 타이틀 페이드 이미지 알파 설정
+        ///</summary>
+        private void SetFadeImageAlpha(float _alpha)
+        {
+            if ( fadeImage == null )
+            {
+                return;
+            }
+
+            Color fadeColor = fadeImage.color;
+            fadeColor.a = _alpha;
+            fadeImage.color = fadeColor;
+        }
+    }
+}

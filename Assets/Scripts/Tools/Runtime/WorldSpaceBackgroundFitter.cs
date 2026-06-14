@@ -1,10 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TinyHero.Tools
 {
-    /// <summary>
-    /// 월드 스페이스 배경 스프라이트를 카메라 화면 크기에 맞춰 조정한다.
-    /// </summary>
+    ///<summary>
+    /// 월드 공간 배경 맞춤 컴포넌트
+    ///</summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
     public sealed class WorldSpaceBackgroundFitter : MonoBehaviour
@@ -27,9 +27,9 @@ namespace TinyHero.Tools
         private Sprite previousSprite;
         private bool isInspectorRealtimeSyncActive;
 
-        /// <summary>
-        /// 기본 참조를 자동으로 연결한다.
-        /// </summary>
+        ///<summary>
+        /// 기본 참조 재설정
+        ///</summary>
         private void Reset()
         {
             targetSpriteRenderer = GetComponent<SpriteRenderer>();
@@ -37,9 +37,9 @@ namespace TinyHero.Tools
             CacheCurrentSprite();
         }
 
-        /// <summary>
-        /// 활성화 시 배경 크기를 즉시 갱신한다.
-        /// </summary>
+        ///<summary>
+        /// 활성화 처리
+        ///</summary>
         private void OnEnable()
         {
             if ( applyOnEnable == false )
@@ -51,17 +51,17 @@ namespace TinyHero.Tools
             ApplyFit();
         }
 
-        /// <summary>
-        /// 비활성화 시 인스펙터 실시간 동기화를 해제한다.
-        /// </summary>
+        ///<summary>
+        /// 비활성화 처리
+        ///</summary>
         private void OnDisable()
         {
             isInspectorRealtimeSyncActive = false;
         }
 
-        /// <summary>
-        /// 인스펙터 값 변경 시 참조와 스케일 값을 정리한다.
-        /// </summary>
+        ///<summary>
+        /// 인스펙터 값 검증
+        ///</summary>
         private void OnValidate()
         {
             if ( targetSpriteRenderer == null )
@@ -82,9 +82,9 @@ namespace TinyHero.Tools
             ApplyFit();
         }
 
-        /// <summary>
-        /// 지속 갱신 옵션이 켜져 있으면 매 프레임 배경 크기를 맞춘다.
-        /// </summary>
+        ///<summary>
+        /// 후처리 갱신
+        ///</summary>
         private void LateUpdate()
         {
             if ( updateContinuously )
@@ -100,18 +100,18 @@ namespace TinyHero.Tools
             ApplyFitIfSpriteChanged();
         }
 
-        /// <summary>
-        /// 현재 로컬 스케일을 기준 스케일로 저장한다.
-        /// </summary>
+        ///<summary>
+        /// 기준 스케일 저장
+        ///</summary>
         [ContextMenu( "Capture Base Scale" )]
         public void CaptureBaseScale()
         {
             baseLocalScale = transform.localScale;
         }
 
-        /// <summary>
-        /// 배경 스프라이트를 카메라 화면에 맞게 스케일링한다.
-        /// </summary>
+        ///<summary>
+        /// 배경 맞춤 적용
+        ///</summary>
         [ContextMenu( "Apply Background Fit" )]
         public void ApplyFit()
         {
@@ -149,14 +149,14 @@ namespace TinyHero.Tools
             previousSprite = sprite;
         }
 
-        /// <summary>
-        /// 인스펙터 실시간 동기화 상태를 설정한다.
-        /// </summary>
-        public void SetInspectorRealtimeSyncActive( bool isActive )
+        ///<summary>
+        /// 인스펙터 실시간 동기화 활성 상태 설정
+        ///</summary>
+        public void SetInspectorRealtimeSyncActive(bool _isActive)
         {
-            isInspectorRealtimeSyncActive = isActive;
+            isInspectorRealtimeSyncActive = _isActive;
 
-            if ( isActive == false )
+            if ( _isActive == false )
             {
                 return;
             }
@@ -164,9 +164,9 @@ namespace TinyHero.Tools
             CacheCurrentSprite();
         }
 
-        /// <summary>
-        /// 스프라이트 변경 시에만 배경 크기를 다시 맞춘다.
-        /// </summary>
+        ///<summary>
+        /// 맞춤 조건부 스프라이트 변경 적용
+        ///</summary>
         public void ApplyFitIfSpriteChanged()
         {
             SpriteRenderer resolvedSpriteRenderer = ResolveSpriteRenderer();
@@ -187,9 +187,9 @@ namespace TinyHero.Tools
             ApplyFit();
         }
 
-        /// <summary>
-        /// 사용할 카메라를 결정한다.
-        /// </summary>
+        ///<summary>
+        /// 카메라 결정
+        ///</summary>
         private Camera ResolveCamera()
         {
             if ( targetCamera != null )
@@ -202,9 +202,9 @@ namespace TinyHero.Tools
             return mainCamera;
         }
 
-        /// <summary>
-        /// 사용할 스프라이트 렌더러를 결정한다.
-        /// </summary>
+        ///<summary>
+        /// 스프라이트 렌더러 결정
+        ///</summary>
         private SpriteRenderer ResolveSpriteRenderer()
         {
             if ( targetSpriteRenderer != null )
@@ -217,23 +217,23 @@ namespace TinyHero.Tools
             return localSpriteRenderer;
         }
 
-        /// <summary>
-        /// 카메라 시야의 월드 기준 너비와 높이를 계산한다.
-        /// </summary>
-        private Vector2 CalculateTargetWorldSize( Camera cameraToUse )
+        ///<summary>
+        /// 대상 월드 크기 계산
+        ///</summary>
+        private Vector2 CalculateTargetWorldSize(Camera _cameraToUse)
         {
-            float targetHeight = cameraToUse.orthographicSize * 2.0f;
-            float targetWidth = targetHeight * cameraToUse.aspect;
+            float targetHeight = _cameraToUse.orthographicSize * 2.0f;
+            float targetWidth = targetHeight * _cameraToUse.aspect;
             Vector2 result = new Vector2( targetWidth, targetHeight );
             return result;
         }
 
-        /// <summary>
-        /// 기준 스케일에서의 배경 월드 크기를 계산한다.
-        /// </summary>
-        private Vector2 CalculateBaseWorldSize( Sprite sprite )
+        ///<summary>
+        /// 기준 월드 크기 계산
+        ///</summary>
+        private Vector2 CalculateBaseWorldSize(Sprite _sprite)
         {
-            Vector2 spriteSize = sprite.bounds.size;
+            Vector2 spriteSize = _sprite.bounds.size;
             Vector3 parentLossyScale = GetParentLossyScale();
             float width = spriteSize.x * Mathf.Abs( baseLocalScale.x ) * parentLossyScale.x;
             float height = spriteSize.y * Mathf.Abs( baseLocalScale.y ) * parentLossyScale.y;
@@ -241,9 +241,9 @@ namespace TinyHero.Tools
             return result;
         }
 
-        /// <summary>
-        /// 부모 트랜스폼의 손실 스케일을 안전하게 가져온다.
-        /// </summary>
+        ///<summary>
+        /// 부모 손실 스케일 반환
+        ///</summary>
         private Vector3 GetParentLossyScale()
         {
             Transform parentTransform = transform.parent;
@@ -261,23 +261,23 @@ namespace TinyHero.Tools
             return lossyScale;
         }
 
-        /// <summary>
-        /// 화면 맞춤에 필요한 배율을 계산한다.
-        /// </summary>
-        private float CalculateScaleMultiplier( Vector2 targetWorldSize, Vector2 baseWorldSize )
+        ///<summary>
+        /// 스케일 배율 계산
+        ///</summary>
+        private float CalculateScaleMultiplier(Vector2 _targetWorldSize, Vector2 _baseWorldSize)
         {
-            float widthRatio = targetWorldSize.x / baseWorldSize.x;
-            float heightRatio = targetWorldSize.y / baseWorldSize.y;
+            float widthRatio = _targetWorldSize.x / _baseWorldSize.x;
+            float heightRatio = _targetWorldSize.y / _baseWorldSize.y;
             float result = fitMode == eBackgroundFitMode.COVER ? Mathf.Max( widthRatio, heightRatio ) : Mathf.Min( widthRatio, heightRatio );
             return result;
         }
 
-        /// <summary>
-        /// 부호 보존을 위한 기본 스케일 값을 정리한다.
-        /// </summary>
-        private float GetSignedScaleValue( float scaleValue )
+        ///<summary>
+        /// 부호 스케일 값 반환
+        ///</summary>
+        private float GetSignedScaleValue(float _scaleValue)
         {
-            bool isZero = Mathf.Approximately( scaleValue, 0.0f );
+            bool isZero = Mathf.Approximately( _scaleValue, 0.0f );
 
             if ( isZero )
             {
@@ -285,13 +285,13 @@ namespace TinyHero.Tools
                 return fallbackScale;
             }
 
-            float result = scaleValue;
+            float result = _scaleValue;
             return result;
         }
 
-        /// <summary>
-        /// 현재 스프라이트 상태를 감시 기준값으로 저장한다.
-        /// </summary>
+        ///<summary>
+        /// 현재 스프라이트 캐시
+        ///</summary>
         private void CacheCurrentSprite()
         {
             SpriteRenderer resolvedSpriteRenderer = ResolveSpriteRenderer();
@@ -306,3 +306,5 @@ namespace TinyHero.Tools
         }
     }
 }
+
+

@@ -1,10 +1,10 @@
-using TinyHero.Core;
+﻿using TinyHero.Core;
 using UnityEngine;
 
 namespace TinyHero.Core
 {
     ///<summary>
-    /// 플레이어 입력을 중앙에서 조회하는 매니저이다.
+    /// 입력 관리 컴포넌트
     ///</summary>
     public sealed class CInputManager : CSingleTon<CInputManager>
     {
@@ -14,9 +14,10 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode alternateRightKey = KeyCode.D;
         [SerializeField] private KeyCode jumpKey = KeyCode.Space;
         [SerializeField] private KeyCode attackKey = KeyCode.Z;
+        [SerializeField] private KeyCode interactionKey = KeyCode.UpArrow;
 
         ///<summary>
-        /// 좌우 이동 입력값을 반환한다.
+        /// 수평 입력 반환
         ///</summary>
         public float GetHorizontalInput()
         {
@@ -34,7 +35,7 @@ namespace TinyHero.Core
         }
 
         ///<summary>
-        /// 점프 시작 입력 여부를 반환한다.
+        /// 점프 다운 입력 반환
         ///</summary>
         public bool GetJumpDown()
         {
@@ -43,7 +44,7 @@ namespace TinyHero.Core
         }
 
         ///<summary>
-        /// 점프 유지 입력 여부를 반환한다.
+        /// 점프 유지 입력 반환
         ///</summary>
         public bool GetJumpHeld()
         {
@@ -52,12 +53,32 @@ namespace TinyHero.Core
         }
 
         ///<summary>
-        /// 공격 시작 입력 여부를 반환한다.
+        /// 공격 다운 입력 반환
         ///</summary>
         public bool GetAttackDown()
         {
             bool isAttackDown = Input.GetKeyDown( attackKey );
             return isAttackDown;
         }
+
+        ///<summary>
+        /// 상호작용 다운 입력 반환
+        ///</summary>
+        public bool GetInteractionDown()
+        {
+            bool isInteractionDown = Input.GetKeyDown( interactionKey );
+            return isInteractionDown;
+        }
+
+        ///<summary>
+        /// 상호작용 유지 입력 반환
+        ///</summary>
+        public bool GetInteractionHeld()
+        {
+            bool isInteractionHeld = Input.GetKey( interactionKey );
+            return isInteractionHeld;
+        }
     }
 }
+
+

@@ -1,21 +1,21 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace TinyHero.Core.Data
 {
-    /// <summary>
-    /// 등록된 데이터 테이블 자산을 타입 기준으로 관리하는 매니저이다.
-    /// </summary>
+    ///<summary>
+    /// 데이터 관리 컴포넌트
+    ///</summary>
     public sealed class CDataManager : CSingleTon<CDataManager>
     {
         [SerializeField] private List<CExcelTableDataBase> tableDataList = new List<CExcelTableDataBase>();
 
         private readonly Dictionary<Type, CExcelTableDataBase> tableDataDictionary = new Dictionary<Type, CExcelTableDataBase>();
 
-        /// <summary>
-        /// 데이터 테이블 캐시를 초기화한다.
-        /// </summary>
+        ///<summary>
+        /// 컴포넌트 초기화
+        ///</summary>
         protected override void Awake()
         {
             base.Awake();
@@ -28,9 +28,9 @@ namespace TinyHero.Core.Data
             RebuildTableCache();
         }
 
-        /// <summary>
-        /// 인스펙터에 등록된 테이블 목록으로 캐시를 다시 구성한다.
-        /// </summary>
+        ///<summary>
+        /// 테이블 캐시 재구성
+        ///</summary>
         public void RebuildTableCache()
         {
             tableDataDictionary.Clear();
@@ -49,9 +49,9 @@ namespace TinyHero.Core.Data
             }
         }
 
-        /// <summary>
-        /// 요청한 타입의 데이터 테이블을 반환한다.
-        /// </summary>
+        ///<summary>
+        /// 테이블 데이터 반환
+        ///</summary>
         public TTable GetTable<TTable>() where TTable : CExcelTableDataBase
         {
             bool isFound = TryGetTable( out TTable tableData );
@@ -66,23 +66,25 @@ namespace TinyHero.Core.Data
             return result;
         }
 
-        /// <summary>
-        /// 요청한 타입의 데이터 테이블을 안전하게 조회한다.
-        /// </summary>
-        public bool TryGetTable<TTable>( out TTable tableData ) where TTable : CExcelTableDataBase
+        ///<summary>
+        /// 테이블 데이터 조회 시도
+        ///</summary>
+        public bool TryGetTable<TTable>(out TTable _tableData) where TTable : CExcelTableDataBase
         {
             Type tableType = typeof( TTable );
             bool isFound = tableDataDictionary.TryGetValue( tableType, out CExcelTableDataBase baseTableData );
 
             if ( isFound == false )
             {
-                tableData = null;
+                _tableData = null;
                 return false;
             }
 
-            tableData = baseTableData as TTable;
-            bool hasResult = tableData != null;
+            _tableData = baseTableData as TTable;
+            bool hasResult = _tableData != null;
             return hasResult;
         }
     }
 }
+
+

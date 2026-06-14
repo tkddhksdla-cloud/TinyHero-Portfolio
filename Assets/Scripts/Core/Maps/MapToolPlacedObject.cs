@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TinyHero.Maps
 {
     ///<summary>
-    /// 맵 툴이 배치한 런타임 오브젝트의 저장 메타데이터를 보관한다.
+    /// 맵 툴 배치 오브젝트 오브젝트
     ///</summary>
     public sealed class MapToolPlacedObject : MonoBehaviour
     {
@@ -16,10 +16,12 @@ namespace TinyHero.Maps
         [SerializeField] private eMapToolPlacedObjectType placedObjectType;
         [SerializeField] private string prefabName;
         [SerializeField] private string resourcePath;
+        [SerializeField] private string portalId;
         [SerializeField] private string targetMapId;
+        [SerializeField] private string targetPortalId;
 
         ///<summary>
-        /// 배치 오브젝트 종류를 반환한다.
+        /// 배치 오브젝트 타입 반환
         ///</summary>
         public eMapToolPlacedObjectType GetPlacedObjectType()
         {
@@ -28,7 +30,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 저장 대상 프리팹 이름을 반환한다.
+        /// 프리팹 이름 반환
         ///</summary>
         public string GetPrefabName()
         {
@@ -37,7 +39,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 저장 대상 리소스 경로를 반환한다.
+        /// 리소스 경로 반환
         ///</summary>
         public string GetResourcePath()
         {
@@ -46,7 +48,16 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 포탈 목표 맵 ID를 반환한다.
+        /// 포탈 ID 반환
+        ///</summary>
+        public string GetPortalId()
+        {
+            string result = portalId;
+            return result;
+        }
+
+        ///<summary>
+        /// 대상 맵 ID 반환
         ///</summary>
         public string GetTargetMapId()
         {
@@ -55,25 +66,40 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 몬스터 배치 메타데이터를 설정한다.
+        /// 대상 포탈 ID 반환
         ///</summary>
-        public void SetupMonster( string assignedPrefabName, string assignedResourcePath )
+        public string GetTargetPortalId()
         {
-            placedObjectType = eMapToolPlacedObjectType.MONSTER;
-            prefabName = assignedPrefabName;
-            resourcePath = assignedResourcePath;
-            targetMapId = string.Empty;
+            string result = targetPortalId;
+            return result;
         }
 
         ///<summary>
-        /// 포탈 배치 메타데이터를 설정한다.
+        /// 몬스터 배치 정보 설정
         ///</summary>
-        public void SetupPortal( string assignedPrefabName, string assignedResourcePath, string assignedTargetMapId )
+        public void SetupMonster(string _assignedPrefabName, string _assignedResourcePath)
+        {
+            placedObjectType = eMapToolPlacedObjectType.MONSTER;
+            prefabName = _assignedPrefabName;
+            resourcePath = _assignedResourcePath;
+            portalId = string.Empty;
+            targetMapId = string.Empty;
+            targetPortalId = string.Empty;
+        }
+
+        ///<summary>
+        /// 포탈 배치 정보 설정
+        ///</summary>
+        public void SetupPortal(string _assignedPrefabName, string _assignedResourcePath, string _assignedPortalId, string _assignedTargetMapId, string _assignedTargetPortalId)
         {
             placedObjectType = eMapToolPlacedObjectType.PORTAL;
-            prefabName = assignedPrefabName;
-            resourcePath = assignedResourcePath;
-            targetMapId = assignedTargetMapId;
+            prefabName = _assignedPrefabName;
+            resourcePath = _assignedResourcePath;
+            portalId = _assignedPortalId;
+            targetMapId = _assignedTargetMapId;
+            targetPortalId = _assignedTargetPortalId;
         }
     }
 }
+
+

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace TinyHero.Maps
 {
     ///<summary>
-    /// 맵 배경의 자식 콜라이더 범위를 모두 보이도록 유지한다.
+    /// 맵 툴 배경 콜라이더 시각화 클래스
     ///</summary>
     [DisallowMultipleComponent]
     [RequireComponent( typeof( SpriteRenderer ) )]
@@ -34,7 +34,7 @@ namespace TinyHero.Maps
         private Vector3 previousLocalScale;
 
         ///<summary>
-        /// 필수 참조와 콜라이더 목록을 초기화한다.
+        /// 컴포넌트 초기화
         ///</summary>
         private void Awake()
         {
@@ -43,7 +43,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 활성화 시 모든 콜라이더 외곽선을 즉시 갱신한다.
+        /// 활성화 처리
         ///</summary>
         private void OnEnable()
         {
@@ -51,7 +51,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 배경이나 자식 콜라이더 변경에 맞춰 외곽선을 갱신한다.
+        /// 후처리 갱신
         ///</summary>
         private void LateUpdate()
         {
@@ -64,7 +64,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 인스펙터 변경 직후 외곽선을 다시 맞춘다.
+        /// 인스펙터 값 검증
         ///</summary>
         private void OnValidate()
         {
@@ -79,7 +79,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 스프라이트와 자식 콜라이더 참조를 다시 수집한다.
+        /// 참조 결정
         ///</summary>
         private void ResolveReferences()
         {
@@ -93,7 +93,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 현재 자식 콜라이더 목록에 맞춰 시각화 엔트리를 동기화한다.
+        /// 콜라이더 시각화 항목 목록 동기화
         ///</summary>
         private void SyncColliderVisualEntries()
         {
@@ -139,7 +139,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 모든 자식 콜라이더의 외곽선을 현재 값에 맞춰 갱신한다.
+        /// 콜라이더 시각화 갱신
         ///</summary>
         public void RefreshColliderVisual()
         {
@@ -159,7 +159,7 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 외곽선 갱신이 필요한지 검사한다.
+        /// 갱신 시각화 필요 여부
         ///</summary>
         private bool ShouldRefreshVisual()
         {
@@ -198,31 +198,31 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 개별 콜라이더 엔트리의 변경 여부를 검사한다.
+        /// 시각화 항목 변경 여부
         ///</summary>
-        private bool HasVisualEntryChanged( ColliderVisualEntry visualEntry )
+        private bool HasVisualEntryChanged(ColliderVisualEntry _visualEntry)
         {
-            if ( visualEntry == null || visualEntry.collider == null || visualEntry.colliderRoot == null )
+            if ( _visualEntry == null || _visualEntry.collider == null || _visualEntry.colliderRoot == null )
             {
                 return true;
             }
 
-            if ( visualEntry.previousOffset != visualEntry.collider.offset )
+            if ( _visualEntry.previousOffset != _visualEntry.collider.offset )
             {
                 return true;
             }
 
-            if ( visualEntry.previousSize != visualEntry.collider.size )
+            if ( _visualEntry.previousSize != _visualEntry.collider.size )
             {
                 return true;
             }
 
-            if ( visualEntry.previousLocalPosition != visualEntry.colliderRoot.localPosition )
+            if ( _visualEntry.previousLocalPosition != _visualEntry.colliderRoot.localPosition )
             {
                 return true;
             }
 
-            if ( visualEntry.previousLocalScale != visualEntry.colliderRoot.localScale )
+            if ( _visualEntry.previousLocalScale != _visualEntry.colliderRoot.localScale )
             {
                 return true;
             }
@@ -231,11 +231,11 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 라인 렌더러 공통 설정을 적용한다.
+        /// 라인 렌더러 설정
         ///</summary>
-        private void ConfigureLineRenderer( LineRenderer targetLineRenderer )
+        private void ConfigureLineRenderer(LineRenderer _targetLineRenderer)
         {
-            if ( targetLineRenderer == null )
+            if ( _targetLineRenderer == null )
             {
                 return;
             }
@@ -245,32 +245,32 @@ namespace TinyHero.Maps
             if ( spriteShader != null )
             {
                 Material lineMaterial = new Material( spriteShader );
-                targetLineRenderer.material = lineMaterial;
+                _targetLineRenderer.material = lineMaterial;
             }
 
-            targetLineRenderer.useWorldSpace = false;
-            targetLineRenderer.loop = false;
-            targetLineRenderer.positionCount = OutlinePointCount;
-            targetLineRenderer.startWidth = DefaultLineWidth;
-            targetLineRenderer.endWidth = DefaultLineWidth;
-            targetLineRenderer.startColor = outlineColor;
-            targetLineRenderer.endColor = outlineColor;
-            targetLineRenderer.sortingLayerID = targetSpriteRenderer != null ? targetSpriteRenderer.sortingLayerID : 0;
-            targetLineRenderer.sortingOrder = targetSpriteRenderer != null ? targetSpriteRenderer.sortingOrder + SortingOrderOffset : SortingOrderOffset;
+            _targetLineRenderer.useWorldSpace = false;
+            _targetLineRenderer.loop = false;
+            _targetLineRenderer.positionCount = OutlinePointCount;
+            _targetLineRenderer.startWidth = DefaultLineWidth;
+            _targetLineRenderer.endWidth = DefaultLineWidth;
+            _targetLineRenderer.startColor = outlineColor;
+            _targetLineRenderer.endColor = outlineColor;
+            _targetLineRenderer.sortingLayerID = targetSpriteRenderer != null ? targetSpriteRenderer.sortingLayerID : 0;
+            _targetLineRenderer.sortingOrder = targetSpriteRenderer != null ? targetSpriteRenderer.sortingOrder + SortingOrderOffset : SortingOrderOffset;
         }
 
         ///<summary>
-        /// 개별 콜라이더 범위에 맞는 외곽선 점들을 설정한다.
+        /// 외곽선 위치 갱신
         ///</summary>
-        private void UpdateOutlinePositions( ColliderVisualEntry visualEntry )
+        private void UpdateOutlinePositions(ColliderVisualEntry _visualEntry)
         {
-            if ( visualEntry == null || visualEntry.collider == null || visualEntry.lineRenderer == null )
+            if ( _visualEntry == null || _visualEntry.collider == null || _visualEntry.lineRenderer == null )
             {
                 return;
             }
 
-            Vector2 colliderOffset = visualEntry.collider.offset;
-            Vector2 colliderSize = visualEntry.collider.size;
+            Vector2 colliderOffset = _visualEntry.collider.offset;
+            Vector2 colliderSize = _visualEntry.collider.size;
             float halfWidth = colliderSize.x * 0.5f;
             float halfHeight = colliderSize.y * 0.5f;
 
@@ -279,22 +279,24 @@ namespace TinyHero.Maps
             Vector3 topRight = new Vector3( colliderOffset.x + halfWidth, colliderOffset.y + halfHeight, 0.0f );
             Vector3 bottomRight = new Vector3( colliderOffset.x + halfWidth, colliderOffset.y - halfHeight, 0.0f );
 
-            visualEntry.lineRenderer.SetPosition( 0, bottomLeft );
-            visualEntry.lineRenderer.SetPosition( 1, topLeft );
-            visualEntry.lineRenderer.SetPosition( 2, topRight );
-            visualEntry.lineRenderer.SetPosition( 3, bottomRight );
-            visualEntry.lineRenderer.SetPosition( 4, bottomLeft );
+            _visualEntry.lineRenderer.SetPosition( 0, bottomLeft );
+            _visualEntry.lineRenderer.SetPosition( 1, topLeft );
+            _visualEntry.lineRenderer.SetPosition( 2, topRight );
+            _visualEntry.lineRenderer.SetPosition( 3, bottomRight );
+            _visualEntry.lineRenderer.SetPosition( 4, bottomLeft );
         }
 
         ///<summary>
-        /// 개별 콜라이더 엔트리의 현재 상태를 캐시한다.
+        /// 시각화 항목 상태 캐시
         ///</summary>
-        private void CacheVisualEntryState( ColliderVisualEntry visualEntry )
+        private void CacheVisualEntryState(ColliderVisualEntry _visualEntry)
         {
-            visualEntry.previousOffset = visualEntry.collider.offset;
-            visualEntry.previousSize = visualEntry.collider.size;
-            visualEntry.previousLocalPosition = visualEntry.colliderRoot.localPosition;
-            visualEntry.previousLocalScale = visualEntry.colliderRoot.localScale;
+            _visualEntry.previousOffset = _visualEntry.collider.offset;
+            _visualEntry.previousSize = _visualEntry.collider.size;
+            _visualEntry.previousLocalPosition = _visualEntry.colliderRoot.localPosition;
+            _visualEntry.previousLocalScale = _visualEntry.colliderRoot.localScale;
         }
     }
 }
+
+

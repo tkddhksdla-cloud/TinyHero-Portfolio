@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using TinyHero.Core.Data;
 using UnityEditor;
@@ -6,9 +6,9 @@ using UnityEngine;
 
 namespace TinyHero.DataEditor
 {
-    /// <summary>
-    /// 엑셀 파일과 테이블 자산 매칭을 한 화면에서 관리하는 가져오기 창이다.
-    /// </summary>
+    ///<summary>
+    /// 엑셀 테이블 가져오기 창 에디터 창
+    ///</summary>
     public sealed class CExcelTableImportWindow : EditorWindow
     {
         [Serializable]
@@ -19,72 +19,72 @@ namespace TinyHero.DataEditor
             [SerializeField] private CExcelTableDataBase targetTableData;
             [SerializeField] private bool isFoldout = true;
 
-            /// <summary>
-            /// 원본 엑셀 파일을 반환한다.
-            /// </summary>
+            ///<summary>
+            /// 원본 엑셀 파일 반환
+            ///</summary>
             public DefaultAsset GetSourceExcelFile()
             {
                 DefaultAsset result = sourceExcelFile;
                 return result;
             }
 
-            /// <summary>
-            /// 원본 엑셀 파일을 저장한다.
-            /// </summary>
-            public void SetSourceExcelFile( DefaultAsset newSourceExcelFile )
+            ///<summary>
+            /// 원본 엑셀 파일 설정
+            ///</summary>
+            public void SetSourceExcelFile(DefaultAsset _newSourceExcelFile)
             {
-                sourceExcelFile = newSourceExcelFile;
+                sourceExcelFile = _newSourceExcelFile;
             }
 
-            /// <summary>
-            /// 워크시트 이름을 반환한다.
-            /// </summary>
+            ///<summary>
+            /// 워크시트 이름 반환
+            ///</summary>
             public string GetWorksheetName()
             {
                 string result = worksheetName;
                 return result;
             }
 
-            /// <summary>
-            /// 워크시트 이름을 저장한다.
-            /// </summary>
-            public void SetWorksheetName( string newWorksheetName )
+            ///<summary>
+            /// 워크시트 이름 설정
+            ///</summary>
+            public void SetWorksheetName(string _newWorksheetName)
             {
-                worksheetName = newWorksheetName;
+                worksheetName = _newWorksheetName;
             }
 
-            /// <summary>
-            /// 대상 테이블 자산을 반환한다.
-            /// </summary>
+            ///<summary>
+            /// 대상 테이블 데이터 반환
+            ///</summary>
             public CExcelTableDataBase GetTargetTableData()
             {
                 CExcelTableDataBase result = targetTableData;
                 return result;
             }
 
-            /// <summary>
-            /// 대상 테이블 자산을 저장한다.
-            /// </summary>
-            public void SetTargetTableData( CExcelTableDataBase newTargetTableData )
+            ///<summary>
+            /// 대상 테이블 데이터 설정
+            ///</summary>
+            public void SetTargetTableData(CExcelTableDataBase _newTargetTableData)
             {
-                targetTableData = newTargetTableData;
+                targetTableData = _newTargetTableData;
             }
 
-            /// <summary>
-            /// 접힘 상태를 반환한다.
-            /// </summary>
+            ///<summary>
+            /// 폴드아웃 상태 반환
+            ///</summary>
             public bool GetIsFoldout()
             {
                 bool result = isFoldout;
                 return result;
             }
 
-            /// <summary>
-            /// 접힘 상태를 저장한다.
-            /// </summary>
-            public void SetIsFoldout( bool newIsFoldout )
+            ///<summary>
+            /// 폴드아웃 상태 설정
+            ///</summary>
+            public void SetIsFoldout(bool _newIsFoldout)
             {
-                isFoldout = newIsFoldout;
+                isFoldout = _newIsFoldout;
             }
         }
 
@@ -94,9 +94,9 @@ namespace TinyHero.DataEditor
         private SerializedObject serializedWindowObject;
         private SerializedProperty importEntryListProperty;
 
-        /// <summary>
-        /// 엑셀 테이블 가져오기 창을 연다.
-        /// </summary>
+        ///<summary>
+        /// 에디터 창 표시
+        ///</summary>
         [MenuItem( "Tools/TinyHero/Data/Excel Table Import Window" )]
         private static void OpenWindow()
         {
@@ -108,9 +108,9 @@ namespace TinyHero.DataEditor
             window.Show();
         }
 
-        /// <summary>
-        /// 직렬화 프로퍼티 캐시를 초기화한다.
-        /// </summary>
+        ///<summary>
+        /// 활성화 처리
+        ///</summary>
         private void OnEnable()
         {
             serializedWindowObject = new SerializedObject( this );
@@ -122,9 +122,9 @@ namespace TinyHero.DataEditor
             }
         }
 
-        /// <summary>
-        /// 가져오기 창의 전체 UI를 그린다.
-        /// </summary>
+        ///<summary>
+        /// 에디터 GUI 렌더링
+        ///</summary>
         private void OnGUI()
         {
             EnsureSerializedState();
@@ -138,9 +138,9 @@ namespace TinyHero.DataEditor
             serializedWindowObject.ApplyModifiedProperties();
         }
 
-        /// <summary>
-        /// 직렬화 상태가 없으면 다시 연결한다.
-        /// </summary>
+        ///<summary>
+        /// 직렬화 상태 보장
+        ///</summary>
         private void EnsureSerializedState()
         {
             if ( serializedWindowObject != null && importEntryListProperty != null )
@@ -152,9 +152,9 @@ namespace TinyHero.DataEditor
             importEntryListProperty = serializedWindowObject.FindProperty( "importEntryList" );
         }
 
-        /// <summary>
-        /// 상단 도구 버튼 영역을 그린다.
-        /// </summary>
+        ///<summary>
+        /// 툴바 렌더링
+        ///</summary>
         private void DrawToolbar()
         {
             EditorGUILayout.BeginHorizontal();
@@ -172,9 +172,9 @@ namespace TinyHero.DataEditor
             EditorGUILayout.EndHorizontal();
         }
 
-        /// <summary>
-        /// 등록된 매칭 항목 목록을 스크롤 영역에 그린다.
-        /// </summary>
+        ///<summary>
+        /// 항목 목록 렌더링
+        ///</summary>
         private void DrawEntryList()
         {
             scrollPosition = EditorGUILayout.BeginScrollView( scrollPosition );
@@ -189,16 +189,16 @@ namespace TinyHero.DataEditor
             EditorGUILayout.EndScrollView();
         }
 
-        /// <summary>
-        /// 개별 매칭 항목의 입력 UI를 그린다.
-        /// </summary>
-        private void DrawEntry( SerializedProperty entryProperty, int entryIndex )
+        ///<summary>
+        /// 항목 렌더링
+        ///</summary>
+        private void DrawEntry(SerializedProperty _entryProperty, int _entryIndex)
         {
-            SerializedProperty sourceExcelFileProperty = entryProperty.FindPropertyRelative( "sourceExcelFile" );
-            SerializedProperty worksheetNameProperty = entryProperty.FindPropertyRelative( "worksheetName" );
-            SerializedProperty targetTableDataProperty = entryProperty.FindPropertyRelative( "targetTableData" );
-            SerializedProperty isFoldoutProperty = entryProperty.FindPropertyRelative( "isFoldout" );
-            string title = BuildEntryTitle( sourceExcelFileProperty, targetTableDataProperty, entryIndex );
+            SerializedProperty sourceExcelFileProperty = _entryProperty.FindPropertyRelative( "sourceExcelFile" );
+            SerializedProperty worksheetNameProperty = _entryProperty.FindPropertyRelative( "worksheetName" );
+            SerializedProperty targetTableDataProperty = _entryProperty.FindPropertyRelative( "targetTableData" );
+            SerializedProperty isFoldoutProperty = _entryProperty.FindPropertyRelative( "isFoldout" );
+            string title = BuildEntryTitle( sourceExcelFileProperty, targetTableDataProperty, _entryIndex );
 
             EditorGUILayout.BeginVertical( GUI.skin.box );
             isFoldoutProperty.boolValue = EditorGUILayout.Foldout( isFoldoutProperty.boolValue, title, true );
@@ -210,32 +210,32 @@ namespace TinyHero.DataEditor
                 DrawWorksheetField( sourceExcelFileProperty, worksheetNameProperty );
                 DrawTargetField( targetTableDataProperty );
                 EditorGUILayout.Space();
-                DrawEntryButtons( sourceExcelFileProperty, worksheetNameProperty, targetTableDataProperty, entryIndex );
+                DrawEntryButtons( sourceExcelFileProperty, worksheetNameProperty, targetTableDataProperty, _entryIndex );
             }
 
             EditorGUILayout.EndVertical();
         }
 
-        /// <summary>
-        /// 엑셀 파일 선택 필드를 그린다.
-        /// </summary>
-        private void DrawSourceField( SerializedProperty sourceExcelFileProperty )
+        ///<summary>
+        /// 원본 필드 렌더링
+        ///</summary>
+        private void DrawSourceField(SerializedProperty _sourceExcelFileProperty)
         {
             GUIContent label = new GUIContent( "Source Excel File" );
-            EditorGUILayout.PropertyField( sourceExcelFileProperty, label );
+            EditorGUILayout.PropertyField( _sourceExcelFileProperty, label );
         }
 
-        /// <summary>
-        /// 워크시트 선택 필드를 그린다.
-        /// </summary>
-        private void DrawWorksheetField( SerializedProperty sourceExcelFileProperty, SerializedProperty worksheetNameProperty )
+        ///<summary>
+        /// 워크시트 필드 렌더링
+        ///</summary>
+        private void DrawWorksheetField(SerializedProperty _sourceExcelFileProperty, SerializedProperty _worksheetNameProperty)
         {
-            DefaultAsset sourceExcelFile = sourceExcelFileProperty.objectReferenceValue as DefaultAsset;
+            DefaultAsset sourceExcelFile = _sourceExcelFileProperty.objectReferenceValue as DefaultAsset;
 
             if ( sourceExcelFile == null )
             {
                 GUIContent label = new GUIContent( "Worksheet Name" );
-                EditorGUILayout.PropertyField( worksheetNameProperty, label );
+                EditorGUILayout.PropertyField( _worksheetNameProperty, label );
                 return;
             }
 
@@ -244,11 +244,11 @@ namespace TinyHero.DataEditor
             if ( worksheetNameArray.Length == 0 )
             {
                 GUIContent label = new GUIContent( "Worksheet Name" );
-                EditorGUILayout.PropertyField( worksheetNameProperty, label );
+                EditorGUILayout.PropertyField( _worksheetNameProperty, label );
                 return;
             }
 
-            int selectedIndex = GetWorksheetIndex( worksheetNameArray, worksheetNameProperty.stringValue );
+            int selectedIndex = GetWorksheetIndex( worksheetNameArray, _worksheetNameProperty.stringValue );
             int newSelectedIndex = EditorGUILayout.Popup( "Worksheet Name", selectedIndex, worksheetNameArray );
 
             if ( newSelectedIndex < 0 || newSelectedIndex >= worksheetNameArray.Length )
@@ -257,26 +257,26 @@ namespace TinyHero.DataEditor
             }
 
             string selectedWorksheetName = worksheetNameArray[ newSelectedIndex ];
-            worksheetNameProperty.stringValue = selectedWorksheetName;
+            _worksheetNameProperty.stringValue = selectedWorksheetName;
         }
 
-        /// <summary>
-        /// 대상 테이블 자산 선택 필드를 그린다.
-        /// </summary>
-        private void DrawTargetField( SerializedProperty targetTableDataProperty )
+        ///<summary>
+        /// 대상 필드 렌더링
+        ///</summary>
+        private void DrawTargetField(SerializedProperty _targetTableDataProperty)
         {
             GUIContent label = new GUIContent( "Target Table Data" );
-            EditorGUILayout.PropertyField( targetTableDataProperty, label );
+            EditorGUILayout.PropertyField( _targetTableDataProperty, label );
         }
 
-        /// <summary>
-        /// 항목별 실행 버튼을 그린다.
-        /// </summary>
-        private void DrawEntryButtons( SerializedProperty sourceExcelFileProperty, SerializedProperty worksheetNameProperty, SerializedProperty targetTableDataProperty, int entryIndex )
+        ///<summary>
+        /// 항목 버튼 렌더링
+        ///</summary>
+        private void DrawEntryButtons(SerializedProperty _sourceExcelFileProperty, SerializedProperty _worksheetNameProperty, SerializedProperty _targetTableDataProperty, int _entryIndex)
         {
-            DefaultAsset sourceExcelFile = sourceExcelFileProperty.objectReferenceValue as DefaultAsset;
-            string worksheetName = worksheetNameProperty.stringValue;
-            CExcelTableDataBase targetTableData = targetTableDataProperty.objectReferenceValue as CExcelTableDataBase;
+            DefaultAsset sourceExcelFile = _sourceExcelFileProperty.objectReferenceValue as DefaultAsset;
+            string worksheetName = _worksheetNameProperty.stringValue;
+            CExcelTableDataBase targetTableData = _targetTableDataProperty.objectReferenceValue as CExcelTableDataBase;
 
             EditorGUILayout.BeginHorizontal();
 
@@ -297,35 +297,35 @@ namespace TinyHero.DataEditor
 
             if ( GUILayout.Button( "Remove", GUILayout.Height( 26.0f ) ) )
             {
-                RemoveEntry( entryIndex );
+                RemoveEntry( _entryIndex );
                 GUIUtility.ExitGUI();
             }
 
             EditorGUILayout.EndHorizontal();
         }
 
-        /// <summary>
-        /// 매칭 항목 제목 문자열을 구성한다.
-        /// </summary>
-        private string BuildEntryTitle( SerializedProperty sourceExcelFileProperty, SerializedProperty targetTableDataProperty, int entryIndex )
+        ///<summary>
+        /// 항목 제목 구성
+        ///</summary>
+        private string BuildEntryTitle(SerializedProperty _sourceExcelFileProperty, SerializedProperty _targetTableDataProperty, int _entryIndex)
         {
-            DefaultAsset sourceExcelFile = sourceExcelFileProperty.objectReferenceValue as DefaultAsset;
-            CExcelTableDataBase targetTableData = targetTableDataProperty.objectReferenceValue as CExcelTableDataBase;
+            DefaultAsset sourceExcelFile = _sourceExcelFileProperty.objectReferenceValue as DefaultAsset;
+            CExcelTableDataBase targetTableData = _targetTableDataProperty.objectReferenceValue as CExcelTableDataBase;
             string excelName = sourceExcelFile != null ? sourceExcelFile.name : "None";
             string tableName = targetTableData != null ? targetTableData.name : "None";
-            string title = $"Entry {entryIndex + 1} : {excelName} -> {tableName}";
+            string title = $"Entry {_entryIndex + 1} : {excelName} -> {tableName}";
             return title;
         }
 
-        /// <summary>
-        /// 워크시트 이름 배열에서 현재 선택 인덱스를 찾는다.
-        /// </summary>
-        private int GetWorksheetIndex( string[] worksheetNameArray, string worksheetName )
+        ///<summary>
+        /// 워크시트 인덱스 반환
+        ///</summary>
+        private int GetWorksheetIndex(string[] _worksheetNameArray, string _worksheetName)
         {
-            for ( int sheetIndex = 0; sheetIndex < worksheetNameArray.Length; sheetIndex++ )
+            for ( int sheetIndex = 0; sheetIndex < _worksheetNameArray.Length; sheetIndex++ )
             {
-                string currentWorksheetName = worksheetNameArray[ sheetIndex ];
-                bool isMatched = string.Equals( currentWorksheetName, worksheetName, StringComparison.Ordinal );
+                string currentWorksheetName = _worksheetNameArray[ sheetIndex ];
+                bool isMatched = string.Equals( currentWorksheetName, _worksheetName, StringComparison.Ordinal );
 
                 if ( isMatched )
                 {
@@ -336,9 +336,9 @@ namespace TinyHero.DataEditor
             return 0;
         }
 
-        /// <summary>
-        /// 새 매칭 항목을 목록 끝에 추가한다.
-        /// </summary>
+        ///<summary>
+        /// 항목 추가
+        ///</summary>
         private void AddEntry()
         {
             CImportEntry entry = new CImportEntry();
@@ -346,19 +346,19 @@ namespace TinyHero.DataEditor
             SaveWindowState();
         }
 
-        /// <summary>
-        /// 지정된 인덱스의 매칭 항목을 제거한다.
-        /// </summary>
-        private void RemoveEntry( int entryIndex )
+        ///<summary>
+        /// 항목 제거
+        ///</summary>
+        private void RemoveEntry(int _entryIndex)
         {
-            bool isInRange = entryIndex >= 0 && entryIndex < importEntryList.Count;
+            bool isInRange = _entryIndex >= 0 && _entryIndex < importEntryList.Count;
 
             if ( isInRange == false )
             {
                 return;
             }
 
-            importEntryList.RemoveAt( entryIndex );
+            importEntryList.RemoveAt( _entryIndex );
 
             if ( importEntryList.Count == 0 )
             {
@@ -369,9 +369,9 @@ namespace TinyHero.DataEditor
             SaveWindowState();
         }
 
-        /// <summary>
-        /// 현재 창의 모든 매칭 항목을 순차적으로 가져온다.
-        /// </summary>
+        ///<summary>
+        /// 전체 항목 가져오기
+        ///</summary>
         private void ImportAllEntries()
         {
             int successCount = 0;
@@ -399,21 +399,23 @@ namespace TinyHero.DataEditor
             Debug.Log( $"Excel window import completed. Success: {successCount}, Total: {importEntryList.Count}." );
         }
 
-        /// <summary>
-        /// 단일 매칭 항목을 가져온다.
-        /// </summary>
-        private bool ImportEntry( DefaultAsset sourceExcelFile, string worksheetName, CExcelTableDataBase targetTableData )
+        ///<summary>
+        /// 항목 가져오기
+        ///</summary>
+        private bool ImportEntry(DefaultAsset _sourceExcelFile, string _worksheetName, CExcelTableDataBase _targetTableData)
         {
-            bool result = CExcelTableImporter.ImportTable( sourceExcelFile, worksheetName, targetTableData );
+            bool result = CExcelTableImporter.ImportTable( _sourceExcelFile, _worksheetName, _targetTableData );
             return result;
         }
 
-        /// <summary>
-        /// 창 상태를 저장 대상으로 표시한다.
-        /// </summary>
+        ///<summary>
+        /// 창 상태 저장
+        ///</summary>
         private void SaveWindowState()
         {
             EditorUtility.SetDirty( this );
         }
     }
 }
+
+

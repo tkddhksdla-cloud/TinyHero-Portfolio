@@ -1,19 +1,19 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TinyHero.Core
 {
-    /// <summary>
-    /// 씬 전역에서 하나만 유지되는 컴포넌트 싱글톤 기반 클래스이다.
-    /// </summary>
+    ///<summary>
+    /// 싱글톤 클래스
+    ///</summary>
     public abstract class CSingleTon<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T instance;
         private static readonly object SyncRoot = new object();
         private static bool isApplicationQuitting;
 
-        /// <summary>
-        /// 현재 활성화된 싱글톤 인스턴스를 반환한다.
-        /// </summary>
+        ///<summary>
+        /// 싱글톤 인스턴스 정보
+        ///</summary>
         public static T Instance
         {
             get
@@ -42,9 +42,9 @@ namespace TinyHero.Core
             }
         }
 
-        /// <summary>
-        /// 싱글톤 인스턴스를 초기화하고 중복 생성을 방지한다.
-        /// </summary>
+        ///<summary>
+        /// 컴포넌트 초기화
+        ///</summary>
         protected virtual void Awake()
         {
             if ( isApplicationQuitting )
@@ -76,17 +76,17 @@ namespace TinyHero.Core
             Destroy( gameObject );
         }
 
-        /// <summary>
-        /// 애플리케이션 종료 시 싱글톤 재생성을 차단한다.
-        /// </summary>
+        ///<summary>
+        /// 종료 상태 기록
+        ///</summary>
         protected virtual void OnApplicationQuit()
         {
             isApplicationQuitting = true;
         }
 
-        /// <summary>
-        /// 오브젝트 파괴 시 내부 인스턴스 참조를 정리한다.
-        /// </summary>
+        ///<summary>
+        /// 인스턴스 참조 정리
+        ///</summary>
         protected virtual void OnDestroy()
         {
             T currentInstance = this as T;
@@ -97,9 +97,9 @@ namespace TinyHero.Core
             }
         }
 
-        /// <summary>
-        /// 씬에서 기존 인스턴스를 찾거나 없으면 새 오브젝트를 생성한다.
-        /// </summary>
+        ///<summary>
+        /// 기존 또는 신규 인스턴스 탐색
+        ///</summary>
         private static T FindOrCreateInstance()
         {
             T foundInstance = Object.FindAnyObjectByType<T>( FindObjectsInactive.Include );
@@ -116,3 +116,5 @@ namespace TinyHero.Core
         }
     }
 }
+
+

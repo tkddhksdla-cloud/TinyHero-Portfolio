@@ -1,44 +1,50 @@
-using TinyHero.Core;
+﻿using TinyHero.Core;
+using System.Collections;
 using UnityEngine;
 
 namespace TinyHero.Player
 {
     ///<summary>
-    /// 플레이어의 상태와 이동을 통합 관리한다.
+    /// 플레이어 제어 컴포넌트
     ///</summary>
     [RequireComponent( typeof( Rigidbody2D ) )]
     public sealed class PlayerController : MonoBehaviour
     {
         ///<summary>
-        /// 플레이어의 행동 상태를 정의한다.
+        /// 플레이어 상태 정의
         ///</summary>
         public enum ePlayerState
         {
-            IDLE,
-            MOVE,
-            ATTACK,
-            JUMP,
-            HIT,
-            DIE
+            Idle,
+            Move,
+            Attack,
+            Jump,
+            Hit,
+            Die
         }
 
         private const float DefaultGravityScale = 1.0f;
         private const float GroundDetachVelocityThreshold = 0.01f;
-        private const string IdleAnimationParameterName = "IDLE";
-        private const string MoveAnimationParameterName = "MOVE";
-        private const string AttackAnimationParameterName = "ATTACK";
-        private const string JumpAnimationParameterName = "JUMP";
-        private const string HitAnimationParameterName = "HIT";
-        private const string DieAnimationParameterName = "DIE";
+        private const string IdleAnimationStateName = "Idle";
+        private const string MoveAnimationStateName = "Move";
+        private const string AttackAnimationStateName = "Attack";
+        private const string HitAnimationStateName = "Hit";
+        private const string DieAnimationStateName = "Die";
 
         [Header( "References" )]
         [SerializeField] private Animator targetAnimator;
         [SerializeField] private Rigidbody2D targetRigidbody;
         [SerializeField] private Transform groundCheckPoint;
+        [SerializeField] private Collider2D[] targetColliders;
 
         [Header( "Movement" )]
         [SerializeField] private float moveSpeed = 4.5f;
         [SerializeField] private float jumpPower = 8.5f;
+        [SerializeField] private float doubleJumpForwardPower = 8.5f;
+        [SerializeField] private float doubleJumpUpwardPower = 8.5f;
+        [SerializeField] private float verticalDoubleJumpUpwardPower = 10.5f;
+        [SerializeField] private float airHorizontalForce = 0.8f;
+        [SerializeField] private float airHorizontalMaxSpeed = 3.0f;
         [SerializeField] private float risingGravityScale = 2.2f;
         [SerializeField] private float fallingGravityScale = 3.8f;
         [SerializeField] private int maxJumpCount = 2;
@@ -49,20 +55,35 @@ namespace TinyHero.Player
 
         [Header( "Combat" )]
         [SerializeField] private float attackDuration = 0.2f;
+        [SerializeField] private float hitStateDuration = 0.25f;
+        [SerializeField] private float hitKnockbackDistance = 0.45f;
+        [SerializeField] private float invincibilityDuration = 1.25f;
+        [SerializeField] private float invincibilityBlinkInterval = 0.1f;
+        [SerializeField] private Color invincibilityTintColor = new Color( 0.35f, 0.35f, 0.35f, 1.0f );
+        [SerializeField] private SpriteRenderer[] targetSpriteRenderers;
 
-        private ePlayerState currentState = ePlayerState.IDLE;
+        private ePlayerState currentState = ePlayerState.Idle;
         private float horizontalInput;
         private float attackElapsedTime;
         private float defaultScaleX;
+        private float hitElapsedTime;
+        private float hitReactionDirection = -1.0f;
         private int currentJumpCount;
+        private Color[] defaultSpriteColors;
+        private Coroutine hitReactionRoutine;
+        private Coroutine invincibilityRoutine;
+        private readonly Collider2D[] overlapResultBuffer = new Collider2D[ 16 ];
         private bool isGrounded;
+        private bool isHitReactionActive;
+        private bool isInvincible;
         private bool isJumpHeld;
+        private bool isInteractionHeld;
         private bool isPendingJump;
         private bool isPendingAttack;
         private bool wasGrounded;
 
         ///<summary>
-        /// 현재 플레이어 상태를 반환한다.
+        /// 현재 상태 정보
         ///</summary>
         public ePlayerState CurrentState
         {
@@ -74,7 +95,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 컴포넌트 참조를 초기화한다.
+        /// 컴포넌트 초기화
         ///</summary>
         private void Awake()
         {
@@ -96,19 +117,28 @@ namespace TinyHero.Player
                 Rigidbody2D resolvedRigidbody = GetComponent<Rigidbody2D>();
                 targetRigidbody = resolvedRigidbody;
             }
+
+            if ( targetRigidbody != null )
+            {
+                targetRigidbody.constraints |= RigidbodyConstraints2D.FreezeRotation;
+            }
+
+            CacheTargetColliders();
+            CacheSpriteRenderers();
+            CacheDefaultSpriteColors();
         }
 
         ///<summary>
-        /// 시작 상태를 설정한다.
+        /// 초기 상태 설정
         ///</summary>
         private void Start()
         {
-            currentState = ePlayerState.DIE;
-            ChangeState( ePlayerState.IDLE );
+            currentState = ePlayerState.Die;
+            ChangeState( ePlayerState.Idle );
         }
 
         ///<summary>
-        /// 입력과 상태 전환을 갱신한다.
+        /// 프레임 상태 처리
         ///</summary>
         private void Update()
         {
@@ -121,11 +151,12 @@ namespace TinyHero.Player
             UpdateGroundState();
             ProcessStateTransitions();
             UpdateCurrentState();
+            EvaluateMonsterContactOverlap();
             ClearOneShotInputs();
         }
 
         ///<summary>
-        /// 물리 이동과 점프 가속을 적용한다.
+        /// 물리 상태 처리
         ///</summary>
         private void FixedUpdate()
         {
@@ -140,32 +171,68 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 플레이어를 사망 상태로 전환한다.
+        /// 종료 시각 효과 복원
+        ///</summary>
+        private void OnDestroy()
+        {
+            StopHitReaction();
+            RestoreSpriteColors();
+        }
+
+        ///<summary>
+        /// 사망 상태 전환
         ///</summary>
         public void Die()
         {
-            ChangeState( ePlayerState.DIE );
+            ChangeState( ePlayerState.Die );
         }
 
         ///<summary>
-        /// 플레이어를 피격 상태로 전환한다.
+        /// 피격 상태 전환
         ///</summary>
         public void Hit()
         {
-            ChangeState( ePlayerState.HIT );
+            ChangeState( ePlayerState.Hit );
         }
 
         ///<summary>
-        /// 입력 매니저로부터 현재 프레임 입력을 가져온다.
+        /// 접촉 피격 처리
+        ///</summary>
+        public bool TryReceiveContactHit()
+        {
+            if ( currentState == ePlayerState.Die || isInvincible )
+            {
+                return false;
+            }
+
+            hitReactionDirection = -ResolveFacingDirection();
+            Hit();
+            BeginInvincibility();
+            return true;
+        }
+
+        ///<summary>
+        /// 입력 수집
         ///</summary>
         private void CaptureInput()
         {
+            if ( isHitReactionActive )
+            {
+                horizontalInput = 0.0f;
+                isJumpHeld = false;
+                isInteractionHeld = false;
+                isPendingJump = false;
+                isPendingAttack = false;
+                return;
+            }
+
             CInputManager inputManager = CInputManager.Instance;
 
             if ( inputManager == null )
             {
                 horizontalInput = 0.0f;
                 isJumpHeld = false;
+                isInteractionHeld = false;
                 isPendingJump = false;
                 isPendingAttack = false;
                 return;
@@ -173,17 +240,19 @@ namespace TinyHero.Player
 
             float capturedHorizontalInput = inputManager.GetHorizontalInput();
             bool capturedJumpHeld = inputManager.GetJumpHeld();
+            bool capturedInteractionHeld = inputManager.GetInteractionHeld();
             bool capturedJumpDown = inputManager.GetJumpDown();
             bool capturedAttackDown = inputManager.GetAttackDown();
 
             horizontalInput = capturedHorizontalInput;
             isJumpHeld = capturedJumpHeld;
+            isInteractionHeld = capturedInteractionHeld;
             isPendingJump = capturedJumpDown;
             isPendingAttack = capturedAttackDown;
         }
 
         ///<summary>
-        /// 바닥 접촉 상태와 점프 횟수를 갱신한다.
+        /// 지상 상태 갱신
         ///</summary>
         private void UpdateGroundState()
         {
@@ -212,122 +281,122 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 상태 전환 조건을 평가한다.
+        /// 상태 전환 조건 처리
         ///</summary>
         private void ProcessStateTransitions()
         {
-            if ( currentState == ePlayerState.DIE )
+            if ( currentState == ePlayerState.Die )
             {
                 return;
             }
 
-            if ( currentState == ePlayerState.HIT && isGrounded == false )
+            if ( currentState == ePlayerState.Hit )
             {
-                ChangeState( ePlayerState.JUMP );
                 return;
             }
 
             if ( isPendingAttack && isGrounded )
             {
-                ChangeState( ePlayerState.ATTACK );
+                ChangeState( ePlayerState.Attack );
                 return;
             }
 
             if ( isPendingJump && CanJump() )
             {
-                ExecuteJump();
-                ChangeState( ePlayerState.JUMP );
+                bool didJump = TryExecuteJump();
+
+                if ( didJump )
+                {
+                    ChangeState( ePlayerState.Jump );
+                }
+
                 return;
             }
 
-            if ( currentState == ePlayerState.JUMP && isGrounded )
+            if ( currentState == ePlayerState.Jump && isGrounded )
             {
                 ePlayerState nextGroundedState = ResolveGroundedLocomotionState();
                 ChangeState( nextGroundedState );
                 return;
             }
 
-            if ( currentState == ePlayerState.ATTACK && isGrounded == false )
+            if ( currentState == ePlayerState.Attack && isGrounded == false )
             {
-                ChangeState( ePlayerState.JUMP );
+                ChangeState( ePlayerState.Jump );
                 return;
             }
 
-            if ( currentState == ePlayerState.HIT && isGrounded )
-            {
-                ePlayerState nextGroundedState = ResolveGroundedLocomotionState();
-                ChangeState( nextGroundedState );
-            }
         }
 
         ///<summary>
-        /// 현재 상태에 맞는 프레임 로직을 실행한다.
+        /// 현재 상태 갱신
         ///</summary>
         private void UpdateCurrentState()
         {
             switch ( currentState )
             {
-                case ePlayerState.IDLE:
+                case ePlayerState.Idle:
                     UpdateIdleState();
                     break;
 
-                case ePlayerState.MOVE:
+                case ePlayerState.Move:
                     UpdateMoveState();
                     break;
 
-                case ePlayerState.ATTACK:
+                case ePlayerState.Attack:
                     UpdateAttackState();
                     break;
 
-                case ePlayerState.JUMP:
+                case ePlayerState.Jump:
                     UpdateJumpState();
                     break;
 
-                case ePlayerState.HIT:
+                case ePlayerState.Hit:
                     UpdateHitState();
                     break;
 
-                case ePlayerState.DIE:
+                case ePlayerState.Die:
                     UpdateDieState();
                     break;
             }
         }
 
         ///<summary>
-        /// 상태 전환 후 초기화를 수행한다.
+        /// 상태 변경
         ///</summary>
-        private void ChangeState( ePlayerState nextState )
+        private void ChangeState( ePlayerState _nextState )
         {
-            if ( currentState == nextState )
+            if ( currentState == _nextState )
             {
+                ApplyAnimationState();
                 return;
             }
 
-            currentState = nextState;
+            currentState = _nextState;
 
             switch ( currentState )
             {
-                case ePlayerState.IDLE:
+                case ePlayerState.Idle:
                     EnterIdleState();
                     break;
 
-                case ePlayerState.MOVE:
+                case ePlayerState.Move:
                     EnterMoveState();
                     break;
 
-                case ePlayerState.ATTACK:
+                case ePlayerState.Attack:
                     EnterAttackState();
                     break;
 
-                case ePlayerState.JUMP:
+                case ePlayerState.Jump:
                     EnterJumpState();
                     break;
 
-                case ePlayerState.HIT:
+                case ePlayerState.Hit:
                     EnterHitState();
                     break;
 
-                case ePlayerState.DIE:
+                case ePlayerState.Die:
                     EnterDieState();
                     break;
             }
@@ -336,7 +405,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 기본 대기 상태 진입 처리를 수행한다.
+        /// 대기 상태 진입 처리
         ///</summary>
         private void EnterIdleState()
         {
@@ -344,7 +413,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 이동 상태 진입 처리를 수행한다.
+        /// 이동 상태 진입 처리
         ///</summary>
         private void EnterMoveState()
         {
@@ -352,7 +421,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 공격 상태 진입 처리를 수행한다.
+        /// 공격 상태 진입 처리
         ///</summary>
         private void EnterAttackState()
         {
@@ -360,22 +429,30 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 점프 상태 진입 처리를 수행한다.
+        /// 점프 상태 진입 처리
         ///</summary>
         private void EnterJumpState()
         {
         }
 
         ///<summary>
-        /// 피격 상태 진입 처리를 수행한다.
+        /// 피격 상태 진입 처리
         ///</summary>
         private void EnterHitState()
         {
             attackElapsedTime = 0.0f;
+            hitElapsedTime = 0.0f;
+
+            if ( targetRigidbody != null )
+            {
+                targetRigidbody.linearVelocity = Vector2.zero;
+            }
+
+            StartHitReaction();
         }
 
         ///<summary>
-        /// 사망 상태 진입 처리를 수행한다.
+        /// 사망 상태 진입 처리
         ///</summary>
         private void EnterDieState()
         {
@@ -386,41 +463,41 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 기본 대기 상태를 갱신한다.
+        /// 대기 상태 갱신
         ///</summary>
         private void UpdateIdleState()
         {
             if ( isGrounded == false )
             {
-                ChangeState( ePlayerState.JUMP );
+                ChangeState( ePlayerState.Jump );
                 return;
             }
 
             if ( HasHorizontalInput() )
             {
-                ChangeState( ePlayerState.MOVE );
+                ChangeState( ePlayerState.Move );
             }
         }
 
         ///<summary>
-        /// 이동 상태를 갱신한다.
+        /// 이동 상태 갱신
         ///</summary>
         private void UpdateMoveState()
         {
             if ( isGrounded == false )
             {
-                ChangeState( ePlayerState.JUMP );
+                ChangeState( ePlayerState.Jump );
                 return;
             }
 
             if ( HasHorizontalInput() == false )
             {
-                ChangeState( ePlayerState.IDLE );
+                ChangeState( ePlayerState.Idle );
             }
         }
 
         ///<summary>
-        /// 공격 상태를 갱신한다.
+        /// 공격 상태 갱신
         ///</summary>
         private void UpdateAttackState()
         {
@@ -431,15 +508,17 @@ namespace TinyHero.Player
                 return;
             }
 
-            ePlayerState nextState = isGrounded ? ResolveGroundedLocomotionState() : ePlayerState.JUMP;
+            ePlayerState nextState = isGrounded ? ResolveGroundedLocomotionState() : ePlayerState.Jump;
             ChangeState( nextState );
         }
 
         ///<summary>
-        /// 점프 상태를 갱신한다.
+        /// 점프 상태 갱신
         ///</summary>
         private void UpdateJumpState()
         {
+            ApplyAnimationState();
+
             if ( isGrounded == false )
             {
                 return;
@@ -457,47 +536,60 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 피격 상태를 갱신한다.
+        /// 피격 상태 갱신
         ///</summary>
         private void UpdateHitState()
         {
-            if ( isGrounded == false )
+            hitElapsedTime += Time.deltaTime;
+
+            if ( hitElapsedTime < hitStateDuration || isHitReactionActive )
             {
-                ChangeState( ePlayerState.JUMP );
                 return;
             }
 
-            ePlayerState nextGroundedState = ResolveGroundedLocomotionState();
+            ePlayerState nextGroundedState = isGrounded ? ResolveGroundedLocomotionState() : ePlayerState.Jump;
             ChangeState( nextGroundedState );
         }
 
         ///<summary>
-        /// 사망 상태를 유지한다.
+        /// 사망 상태 갱신
         ///</summary>
         private void UpdateDieState()
         {
         }
 
         ///<summary>
-        /// 좌우 이동 속도를 적용한다.
+        /// 수평 이동 적용
         ///</summary>
         private void ApplyHorizontalMovement()
         {
-            if ( currentState == ePlayerState.DIE )
+            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit )
             {
                 return;
             }
 
+            if ( isGrounded == false )
+            {
+                ApplyAirHorizontalForce();
+                return;
+            }
+
             Vector2 currentVelocity = targetRigidbody.linearVelocity;
-            currentVelocity.x = horizontalInput * moveSpeed;
+            float horizontalVelocity = horizontalInput * moveSpeed;
+            currentVelocity.x = horizontalVelocity;
             targetRigidbody.linearVelocity = currentVelocity;
         }
 
         ///<summary>
-        /// 현재 입력 방향에 맞춰 플레이어의 좌우 방향을 전환한다.
+        /// 바라보기 방향 적용
         ///</summary>
         private void ApplyFacingDirection()
         {
+            if ( currentState == ePlayerState.Hit )
+            {
+                return;
+            }
+
             if ( Mathf.Approximately( horizontalInput, 0.0f ) )
             {
                 return;
@@ -510,11 +602,11 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 점프 중력 가속을 상태에 맞게 조절한다.
+        /// 점프 중력 적용
         ///</summary>
         private void ApplyJumpGravity()
         {
-            if ( currentState == ePlayerState.DIE )
+            if ( currentState == ePlayerState.Die )
             {
                 return;
             }
@@ -537,7 +629,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 점프 가능 여부를 판정한다.
+        /// 점프 가능 여부
         ///</summary>
         private bool CanJump()
         {
@@ -546,25 +638,34 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 점프 속도와 횟수를 갱신한다.
+        /// 점프 실행 시도
         ///</summary>
-        private void ExecuteJump()
+        private bool TryExecuteJump()
         {
-            bool shouldRestartJumpAnimation = currentState == ePlayerState.JUMP;
             Vector2 currentVelocity = targetRigidbody.linearVelocity;
-            currentVelocity.y = jumpPower;
-            targetRigidbody.linearVelocity = currentVelocity;
+            bool isDoubleJump = currentJumpCount > 0;
+
+            if ( isDoubleJump )
+            {
+                currentVelocity.y = 0.0f;
+                targetRigidbody.linearVelocity = currentVelocity;
+
+                Vector2 doubleJumpForce = ResolveDoubleJumpForce();
+                targetRigidbody.AddForce( doubleJumpForce, ForceMode2D.Impulse );
+            }
+            else
+            {
+                currentVelocity.y = jumpPower;
+                targetRigidbody.linearVelocity = currentVelocity;
+            }
+
             currentJumpCount++;
             isGrounded = false;
-
-            if ( shouldRestartJumpAnimation )
-            {
-                RestartJumpAnimation();
-            }
+            return true;
         }
 
         ///<summary>
-        /// 바닥 체크 기준 좌표를 반환한다.
+        /// 지상 체크 위치 반환
         ///</summary>
         private Vector2 GetGroundCheckPosition()
         {
@@ -579,7 +680,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 수평 이동 입력 여부를 판정한다.
+        /// 수평 입력 여부
         ///</summary>
         private bool HasHorizontalInput()
         {
@@ -588,16 +689,113 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 지상 상태에서 사용할 기본 이동 상태를 결정한다.
+        /// 공중 수평 힘 적용
         ///</summary>
-        private ePlayerState ResolveGroundedLocomotionState()
+        private void ApplyAirHorizontalForce()
         {
-            ePlayerState result = HasHorizontalInput() ? ePlayerState.MOVE : ePlayerState.IDLE;
+            if ( HasHorizontalInput() == false )
+            {
+                return;
+            }
+
+            Vector2 currentVelocity = targetRigidbody.linearVelocity;
+            float inputDirection = Mathf.Sign( horizontalInput );
+            float directionalVelocity = currentVelocity.x * inputDirection;
+
+            if ( directionalVelocity >= airHorizontalMaxSpeed )
+            {
+                return;
+            }
+
+            Vector2 airForce = new Vector2( inputDirection * airHorizontalForce, 0.0f );
+            targetRigidbody.AddForce( airForce, ForceMode2D.Force );
+        }
+
+        ///<summary>
+        /// 더블 점프 힘 결정
+        ///</summary>
+        private Vector2 ResolveDoubleJumpForce()
+        {
+            if ( HasHorizontalInput() )
+            {
+                Vector2 inputForwardDoubleJumpForce = GetInputForwardDoubleJumpForce();
+                return inputForwardDoubleJumpForce;
+            }
+
+            if ( isInteractionHeld )
+            {
+                Vector2 upwardDoubleJumpForce = GetUpwardDoubleJumpForce();
+                return upwardDoubleJumpForce;
+            }
+
+            Vector2 facingForwardDoubleJumpForce = GetFacingForwardDoubleJumpForce();
+            return facingForwardDoubleJumpForce;
+        }
+
+        ///<summary>
+        /// 입력 전방 더블 점프 힘 반환
+        ///</summary>
+        private Vector2 GetInputForwardDoubleJumpForce()
+        {
+            float inputDirection = Mathf.Sign( horizontalInput );
+            float horizontalForce = inputDirection * doubleJumpForwardPower;
+            Vector2 result = new Vector2( horizontalForce, doubleJumpUpwardPower );
             return result;
         }
 
         ///<summary>
-        /// 일회성 입력 플래그를 정리한다.
+        /// 바라보기 전방 더블 점프 힘 반환
+        ///</summary>
+        private Vector2 GetFacingForwardDoubleJumpForce()
+        {
+            float facingDirection = ResolveFacingDirection();
+            float horizontalForce = facingDirection * doubleJumpForwardPower;
+            Vector2 result = new Vector2( horizontalForce, doubleJumpUpwardPower );
+            return result;
+        }
+
+        ///<summary>
+        /// 상향 더블 점프 힘 반환
+        ///</summary>
+        private Vector2 GetUpwardDoubleJumpForce()
+        {
+            Vector2 result = new Vector2( 0.0f, verticalDoubleJumpUpwardPower );
+            return result;
+        }
+
+        ///<summary>
+        /// 바라보기 방향 결정
+        ///</summary>
+        private float ResolveFacingDirection()
+        {
+            if ( Mathf.Approximately( horizontalInput, 0.0f ) == false )
+            {
+                float inputDirection = Mathf.Sign( horizontalInput );
+                return inputDirection;
+            }
+
+            float facingDirection = Mathf.Sign( transform.localScale.x );
+
+            if ( Mathf.Approximately( facingDirection, 0.0f ) )
+            {
+                facingDirection = 1.0f;
+            }
+
+            float result = facingDirection;
+            return result;
+        }
+
+        ///<summary>
+        /// 지상 이동 상태 결정
+        ///</summary>
+        private ePlayerState ResolveGroundedLocomotionState()
+        {
+            ePlayerState result = HasHorizontalInput() ? ePlayerState.Move : ePlayerState.Idle;
+            return result;
+        }
+
+        ///<summary>
+        /// 원샷 입력 정리
         ///</summary>
         private void ClearOneShotInputs()
         {
@@ -606,7 +804,7 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 현재 상태를 애니메이터 bool 파라미터에 반영한다.
+        /// 애니메이션 상태 적용
         ///</summary>
         private void ApplyAnimationState()
         {
@@ -615,31 +813,333 @@ namespace TinyHero.Player
                 return;
             }
 
-            targetAnimator.SetBool( IdleAnimationParameterName, currentState == ePlayerState.IDLE );
-            targetAnimator.SetBool( MoveAnimationParameterName, currentState == ePlayerState.MOVE );
-            targetAnimator.SetBool( AttackAnimationParameterName, currentState == ePlayerState.ATTACK );
-            targetAnimator.SetBool( JumpAnimationParameterName, currentState == ePlayerState.JUMP );
-            targetAnimator.SetBool( HitAnimationParameterName, currentState == ePlayerState.HIT );
-            targetAnimator.SetBool( DieAnimationParameterName, currentState == ePlayerState.DIE );
+            string animationStateName = ResolveAnimationStateName();
+            targetAnimator.Play( animationStateName );
         }
 
         ///<summary>
-        /// 점프 애니메이션을 처음부터 다시 재생한다.
+        /// 애니메이션 상태 이름 결정
         ///</summary>
-        private void RestartJumpAnimation()
+        private string ResolveAnimationStateName()
         {
-            if ( targetAnimator == null )
+            string animationStateName = IdleAnimationStateName;
+
+            switch ( currentState )
+            {
+                case ePlayerState.Idle:
+                    animationStateName = IdleAnimationStateName;
+                    break;
+
+                case ePlayerState.Move:
+                    animationStateName = MoveAnimationStateName;
+                    break;
+
+                case ePlayerState.Attack:
+                    animationStateName = AttackAnimationStateName;
+                    break;
+
+                case ePlayerState.Jump:
+                    animationStateName = HasHorizontalInput() ? MoveAnimationStateName : IdleAnimationStateName;
+                    break;
+
+                case ePlayerState.Hit:
+                    animationStateName = HitAnimationStateName;
+                    break;
+
+                case ePlayerState.Die:
+                    animationStateName = DieAnimationStateName;
+                    break;
+            }
+
+            return animationStateName;
+        }
+
+        ///<summary>
+        /// 무적 상태 시작
+        ///</summary>
+        private void BeginInvincibility()
+        {
+            if ( invincibilityRoutine != null )
+            {
+                StopCoroutine( invincibilityRoutine );
+                invincibilityRoutine = null;
+            }
+
+            isInvincible = true;
+
+            if ( invincibilityDuration <= 0.0f )
+            {
+                isInvincible = false;
+                RestoreSpriteColors();
+                return;
+            }
+
+            invincibilityRoutine = StartCoroutine( IE_HandleInvincibilityVisual() );
+        }
+
+        ///<summary>
+        /// 피격 리액션 시작
+        ///</summary>
+        private void StartHitReaction()
+        {
+            StopHitReaction();
+            isHitReactionActive = true;
+            hitReactionRoutine = StartCoroutine( IE_PlayHitReaction() );
+        }
+
+        ///<summary>
+        /// 피격 리액션 중단
+        ///</summary>
+        private void StopHitReaction()
+        {
+            if ( hitReactionRoutine != null )
+            {
+                StopCoroutine( hitReactionRoutine );
+                hitReactionRoutine = null;
+            }
+
+            isHitReactionActive = false;
+        }
+
+        ///<summary>
+        /// 피격 튕김 연출
+        ///</summary>
+        private IEnumerator IE_PlayHitReaction()
+        {
+            Vector3 startPosition = transform.position;
+            Vector3 endPosition = startPosition + new Vector3( hitReactionDirection * hitKnockbackDistance, 0.0f, 0.0f );
+            float elapsedTime = 0.0f;
+
+            if ( hitStateDuration <= 0.0f )
+            {
+                transform.position = endPosition;
+                isHitReactionActive = false;
+                hitReactionRoutine = null;
+                yield break;
+            }
+
+            while ( elapsedTime < hitStateDuration )
+            {
+                elapsedTime += Time.deltaTime;
+
+                float normalizedTime = Mathf.Clamp01( elapsedTime / hitStateDuration );
+                float easedTime = 1.0f - Mathf.Pow( 1.0f - normalizedTime, 2.0f );
+                transform.position = Vector3.Lerp( startPosition, endPosition, easedTime );
+                yield return null;
+            }
+
+            transform.position = endPosition;
+            isHitReactionActive = false;
+            hitReactionRoutine = null;
+        }
+
+        ///<summary>
+        /// 무적 시각 효과 처리
+        ///</summary>
+        private IEnumerator IE_HandleInvincibilityVisual()
+        {
+            float elapsedTime = 0.0f;
+            float blinkInterval = Mathf.Max( 0.01f, invincibilityBlinkInterval );
+
+            while ( elapsedTime < invincibilityDuration )
+            {
+                bool useTint = Mathf.Repeat( elapsedTime, blinkInterval * 2.0f ) < blinkInterval;
+                ApplyInvincibilityTint( useTint );
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            isInvincible = false;
+            invincibilityRoutine = null;
+            RestoreSpriteColors();
+            EvaluateMonsterContactOverlap();
+        }
+
+        ///<summary>
+        /// 플레이어 충돌체 캐시
+        ///</summary>
+        private void CacheTargetColliders()
+        {
+            if ( targetColliders != null && targetColliders.Length > 0 )
             {
                 return;
             }
 
-            AnimatorStateInfo currentAnimatorStateInfo = targetAnimator.GetCurrentAnimatorStateInfo( 0 );
-            int currentFullPathHash = currentAnimatorStateInfo.fullPathHash;
-            targetAnimator.Play( currentFullPathHash, 0, 0.0f );
+            Collider2D[] resolvedColliders = GetComponentsInChildren<Collider2D>( true );
+            targetColliders = resolvedColliders;
         }
 
         ///<summary>
-        /// 바닥 체크 범위를 에디터에서 표시한다.
+        /// 몬스터 접촉 중첩 검사
+        ///</summary>
+        private void EvaluateMonsterContactOverlap()
+        {
+            if ( currentState == ePlayerState.Die || isInvincible )
+            {
+                return;
+            }
+
+            if ( targetColliders == null || targetColliders.Length == 0 )
+            {
+                return;
+            }
+
+            ContactFilter2D contactFilter = BuildMonsterContactFilter();
+
+            for ( int index = 0; index < targetColliders.Length; index++ )
+            {
+                Collider2D playerCollider = targetColliders[ index ];
+
+                if ( playerCollider == null || playerCollider.enabled == false )
+                {
+                    continue;
+                }
+
+                int overlapCount = playerCollider.Overlap( contactFilter, overlapResultBuffer );
+
+                if ( overlapCount <= 0 )
+                {
+                    continue;
+                }
+
+                bool didReceiveHit = TryHandleMonsterContactOverlap( overlapCount );
+
+                if ( didReceiveHit )
+                {
+                    return;
+                }
+            }
+        }
+
+        ///<summary>
+        /// 몬스터 접촉 필터 구성
+        ///</summary>
+        private ContactFilter2D BuildMonsterContactFilter()
+        {
+            ContactFilter2D contactFilter = new ContactFilter2D();
+            contactFilter.useLayerMask = false;
+            contactFilter.useTriggers = true;
+            return contactFilter;
+        }
+
+        ///<summary>
+        /// 몬스터 접촉 중첩 처리
+        ///</summary>
+        private bool TryHandleMonsterContactOverlap( int _overlapCount )
+        {
+            for ( int overlapIndex = 0; overlapIndex < _overlapCount; overlapIndex++ )
+            {
+                Collider2D overlapCollider = overlapResultBuffer[ overlapIndex ];
+
+                if ( overlapCollider == null )
+                {
+                    continue;
+                }
+
+                MonsterContactHitbox monsterContactHitbox = overlapCollider.GetComponent<MonsterContactHitbox>();
+
+                if ( monsterContactHitbox == null )
+                {
+                    monsterContactHitbox = overlapCollider.GetComponentInParent<MonsterContactHitbox>();
+                }
+
+                if ( monsterContactHitbox == null )
+                {
+                    continue;
+                }
+
+                bool didReceiveHit = TryReceiveContactHit();
+                return didReceiveHit;
+            }
+
+            return false;
+        }
+
+        ///<summary>
+        /// 스프라이트 렌더러 캐시
+        ///</summary>
+        private void CacheSpriteRenderers()
+        {
+            if ( targetSpriteRenderers != null && targetSpriteRenderers.Length > 0 )
+            {
+                return;
+            }
+
+            SpriteRenderer[] resolvedSpriteRenderers = GetComponentsInChildren<SpriteRenderer>( true );
+            targetSpriteRenderers = resolvedSpriteRenderers;
+        }
+
+        ///<summary>
+        /// 기본 스프라이트 색상 캐시
+        ///</summary>
+        private void CacheDefaultSpriteColors()
+        {
+            if ( targetSpriteRenderers == null || targetSpriteRenderers.Length == 0 )
+            {
+                defaultSpriteColors = new Color[ 0 ];
+                return;
+            }
+
+            defaultSpriteColors = new Color[ targetSpriteRenderers.Length ];
+
+            for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
+                defaultSpriteColors[ index ] = spriteRenderer != null ? spriteRenderer.color : Color.white;
+            }
+        }
+
+        ///<summary>
+        /// 무적 색상 적용
+        ///</summary>
+        private void ApplyInvincibilityTint( bool _useTint )
+        {
+            if ( targetSpriteRenderers == null || defaultSpriteColors == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
+
+                if ( spriteRenderer == null )
+                {
+                    continue;
+                }
+
+                Color defaultColor = defaultSpriteColors[ index ];
+                Color tintColor = Color.Lerp( defaultColor, invincibilityTintColor, 0.65f );
+                Color appliedColor = _useTint ? tintColor : defaultColor;
+                spriteRenderer.color = appliedColor;
+            }
+        }
+
+        ///<summary>
+        /// 스프라이트 색상 복원
+        ///</summary>
+        private void RestoreSpriteColors()
+        {
+            if ( targetSpriteRenderers == null || defaultSpriteColors == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
+
+                if ( spriteRenderer == null )
+                {
+                    continue;
+                }
+
+                spriteRenderer.color = defaultSpriteColors[ index ];
+            }
+        }
+
+        ///<summary>
+        /// 선택 기즈모 표시
         ///</summary>
         private void OnDrawGizmosSelected()
         {
@@ -649,3 +1149,6 @@ namespace TinyHero.Player
         }
     }
 }
+
+
+

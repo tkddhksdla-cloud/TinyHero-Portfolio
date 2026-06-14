@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace TinyHero.Maps
@@ -17,7 +17,9 @@ namespace TinyHero.Maps
     {
         public string prefabName;
         public string resourcePath;
+        public string portalId;
         public string targetMapId;
+        public string targetPortalId;
         public CMapToolTransformData transform;
     }
 
@@ -37,3 +39,5 @@ namespace TinyHero.Maps
         public float[] scale = new float[ 3 ];
     }
 }
+
+

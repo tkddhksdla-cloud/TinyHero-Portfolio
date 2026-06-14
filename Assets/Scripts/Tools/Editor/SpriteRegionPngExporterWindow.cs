@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace TinyHero.Tools
 {
-    /// <summary>
-    /// 단일 스프라이트를 비율 유지 리사이즈 후 PNG로 저장하는 에디터 창이다.
-    /// </summary>
+    ///<summary>
+    /// 스프라이트 영역 PNG 내보내기 에디터 창
+    ///</summary>
     public sealed class SpriteRegionPngExporterWindow : EditorWindow
     {
         private const string DefaultOutputFolder = "Assets/ResizedSprites";
@@ -32,14 +32,14 @@ namespace TinyHero.Tools
         [SerializeField] private bool allowUpscale;
 
         private Vector2 scrollPosition;
-        private string statusMessage = "소스 이미지를 지정한 뒤 저장을 실행하세요.";
+        private string statusMessage = "?뚯뒪 ?대?吏瑜?吏?뺥븳 ????μ쓣 ?ㅽ뻾?섏꽭??";
         private MessageType statusMessageType = MessageType.Info;
         private bool useAutoFileName = true;
         private string lastSuggestedFileName = string.Empty;
 
-        /// <summary>
-        /// 리사이즈 전용 PNG 저장 도구 창을 연다.
-        /// </summary>
+        ///<summary>
+        /// 에디터 창 표시
+        ///</summary>
         [MenuItem( "Tools/TinyHero/Sprite Resize PNG Exporter" )]
         private static void ShowWindow()
         {
@@ -49,22 +49,22 @@ namespace TinyHero.Tools
             window.Show();
         }
 
-        /// <summary>
-        /// 창이 활성화될 때 기본 파일명 상태를 초기화한다.
-        /// </summary>
+        ///<summary>
+        /// 활성화 처리
+        ///</summary>
         private void OnEnable()
         {
             RefreshSuggestedFileName( true );
         }
 
-        /// <summary>
-        /// 에디터 창의 입력 UI와 저장 버튼을 그린다.
-        /// </summary>
+        ///<summary>
+        /// 에디터 GUI 렌더링
+        ///</summary>
         private void OnGUI()
         {
             EditorGUILayout.Space();
             EditorGUILayout.LabelField( "Sprite Resize PNG Exporter", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "원본 스프라이트를 비율 유지 리사이즈 후 PNG로 저장합니다.", MessageType.None );
+            EditorGUILayout.HelpBox( "?먮낯 ?ㅽ봽?쇱씠?몃? 鍮꾩쑉 ?좎? 由ъ궗?댁쫰 ??PNG濡???ν빀?덈떎.", MessageType.None );
             EditorGUILayout.Space();
 
             scrollPosition = EditorGUILayout.BeginScrollView( scrollPosition );
@@ -80,9 +80,9 @@ namespace TinyHero.Tools
             EditorGUILayout.EndScrollView();
         }
 
-        /// <summary>
-        /// 소스 텍스처와 출력 경로 입력 영역을 그린다.
-        /// </summary>
+        ///<summary>
+        /// 원본 섹션 렌더링
+        ///</summary>
         private void DrawSourceSection()
         {
             EditorGUILayout.LabelField( "Source", EditorStyles.boldLabel );
@@ -104,9 +104,9 @@ namespace TinyHero.Tools
             }
         }
 
-        /// <summary>
-        /// 리사이즈 옵션 입력 영역을 그린다.
-        /// </summary>
+        ///<summary>
+        /// 옵션 섹션 렌더링
+        ///</summary>
         private void DrawOptionSection()
         {
             EditorGUILayout.LabelField( "Options", EditorStyles.boldLabel );
@@ -126,16 +126,16 @@ namespace TinyHero.Tools
             allowUpscale = EditorGUILayout.Toggle( "Allow Upscale", allowUpscale );
         }
 
-        /// <summary>
-        /// 현재 원본과 결과 크기 정보를 미리 보여준다.
-        /// </summary>
+        ///<summary>
+        /// 프리뷰 섹션 렌더링
+        ///</summary>
         private void DrawPreviewSection()
         {
             EditorGUILayout.LabelField( "Preview", EditorStyles.boldLabel );
 
             if ( sourceTexture == null )
             {
-                EditorGUILayout.HelpBox( "소스 텍스처를 지정하세요.", MessageType.None );
+                EditorGUILayout.HelpBox( "?뚯뒪 ?띿뒪泥섎? 吏?뺥븯?몄슂.", MessageType.None );
                 return;
             }
 
@@ -146,9 +146,9 @@ namespace TinyHero.Tools
             EditorGUILayout.LabelField( $"Target Size: {targetSize.x} x {targetSize.y}" );
         }
 
-        /// <summary>
-        /// 저장 버튼과 상태 메시지를 그린다.
-        /// </summary>
+        ///<summary>
+        /// 동작 섹션 렌더링
+        ///</summary>
         private void DrawActionSection()
         {
             EditorGUILayout.LabelField( "Actions", EditorStyles.boldLabel );
@@ -161,20 +161,20 @@ namespace TinyHero.Tools
             EditorGUILayout.HelpBox( statusMessage, statusMessageType );
         }
 
-        /// <summary>
-        /// 현재 입력값이 저장 가능한 상태인지 검사한다.
-        /// </summary>
+        ///<summary>
+        /// 입력 검증
+        ///</summary>
         private string ValidateInputs()
         {
             if ( sourceTexture == null )
             {
-                string result = "소스 텍스처를 먼저 지정하세요.";
+                string result = "?뚯뒪 ?띿뒪泥섎? 癒쇱? 吏?뺥븯?몄슂.";
                 return result;
             }
 
             if ( string.IsNullOrWhiteSpace( outputFolder ) )
             {
-                string result = "출력 폴더를 입력하세요.";
+                string result = "異쒕젰 ?대뜑瑜??낅젰?섏꽭??";
                 return result;
             }
 
@@ -182,19 +182,19 @@ namespace TinyHero.Tools
 
             if ( isAssetsFolder == false )
             {
-                string result = "출력 폴더는 Assets 하위 경로여야 합니다.";
+                string result = "異쒕젰 ?대뜑??Assets ?섏쐞 寃쎈줈?ъ빞 ?⑸땲??";
                 return result;
             }
 
             if ( resizeMode == eResizeMode.PERCENT && resizeScalePercent <= 0.0f )
             {
-                string result = "Scale Percent는 0보다 커야 합니다.";
+                string result = "Scale Percent??0蹂대떎 而ㅼ빞 ?⑸땲??";
                 return result;
             }
 
             if ( resizeMode == eResizeMode.VALUE && ( maxResizeWidth < 1 || maxResizeHeight < 1 ) )
             {
-                string result = "Max Width와 Max Height는 1 이상이어야 합니다.";
+                string result = "Max Width? Max Height??1 ?댁긽?댁뼱???⑸땲??";
                 return result;
             }
 
@@ -202,9 +202,9 @@ namespace TinyHero.Tools
             return resultMessage;
         }
 
-        /// <summary>
-        /// 원본 텍스처를 리사이즈하여 PNG 파일로 저장한다.
-        /// </summary>
+        ///<summary>
+        /// 리사이즈 PNG 저장
+        ///</summary>
         private void SaveResizedTexture()
         {
             string validationError = ValidateInputs();
@@ -219,7 +219,7 @@ namespace TinyHero.Tools
 
             if ( readableTexture == null )
             {
-                SetStatus( "텍스처를 읽을 수 없습니다.", MessageType.Error );
+                SetStatus( "?띿뒪泥섎? ?쎌쓣 ???놁뒿?덈떎.", MessageType.Error );
                 return;
             }
 
@@ -236,7 +236,7 @@ namespace TinyHero.Tools
                 string assetPath = Path.Combine( outputFolder, $"{safeFileName}.png" );
                 File.WriteAllBytes( assetPath, pngBytes );
                 AssetDatabase.Refresh();
-                SetStatus( $"PNG 저장 완료: {assetPath}", MessageType.Info );
+                SetStatus( $"PNG ????꾨즺: {assetPath}", MessageType.Info );
                 RefreshSuggestedFileName( useAutoFileName );
             }
             finally
@@ -250,25 +250,25 @@ namespace TinyHero.Tools
             }
         }
 
-        /// <summary>
-        /// GPU 복사를 이용해 읽기 가능한 텍스처 사본을 만든다.
-        /// </summary>
-        private Texture2D CreateReadableTexture( Texture2D texture )
+        ///<summary>
+        /// 읽기 가능 텍스처 생성
+        ///</summary>
+        private Texture2D CreateReadableTexture(Texture2D _texture)
         {
-            if ( texture == null )
+            if ( _texture == null )
             {
                 return null;
             }
 
-            int width = texture.width;
-            int height = texture.height;
+            int width = _texture.width;
+            int height = _texture.height;
             RenderTexture temporaryRenderTexture = RenderTexture.GetTemporary( width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default );
             RenderTexture previousRenderTexture = RenderTexture.active;
             Texture2D readableTexture = null;
 
             try
             {
-                Graphics.Blit( texture, temporaryRenderTexture );
+                Graphics.Blit( _texture, temporaryRenderTexture );
                 RenderTexture.active = temporaryRenderTexture;
                 readableTexture = new Texture2D( width, height, TextureFormat.RGBA32, false );
                 Rect sourceRect = new Rect( 0.0f, 0.0f, width, height );
@@ -284,31 +284,31 @@ namespace TinyHero.Tools
             return readableTexture;
         }
 
-        /// <summary>
-        /// 현재 설정에 따라 저장용 텍스처를 비율 유지 리사이즈한다.
-        /// </summary>
-        private Texture2D CreateResizedTextureIfNeeded( Texture2D sourceTextureToResize )
+        ///<summary>
+        /// 리사이즈 텍스처 조건부 필요 생성
+        ///</summary>
+        private Texture2D CreateResizedTextureIfNeeded(Texture2D _sourceTextureToResize)
         {
-            if ( sourceTextureToResize == null )
+            if ( _sourceTextureToResize == null )
             {
                 return null;
             }
 
-            Vector2Int targetSize = CalculateResizeTargetSize( sourceTextureToResize.width, sourceTextureToResize.height );
+            Vector2Int targetSize = CalculateResizeTargetSize( _sourceTextureToResize.width, _sourceTextureToResize.height );
 
-            if ( targetSize.x == sourceTextureToResize.width && targetSize.y == sourceTextureToResize.height )
+            if ( targetSize.x == _sourceTextureToResize.width && targetSize.y == _sourceTextureToResize.height )
             {
                 return null;
             }
 
-            Texture2D resizedTexture = ResizeTexture( sourceTextureToResize, targetSize.x, targetSize.y );
+            Texture2D resizedTexture = ResizeTexture( _sourceTextureToResize, targetSize.x, targetSize.y );
             return resizedTexture;
         }
 
-        /// <summary>
-        /// 현재 리사이즈 설정에 맞는 목표 크기를 계산한다.
-        /// </summary>
-        private Vector2Int CalculateResizeTargetSize( int sourceWidth, int sourceHeight )
+        ///<summary>
+        /// 리사이즈 대상 크기 계산
+        ///</summary>
+        private Vector2Int CalculateResizeTargetSize(int _sourceWidth, int _sourceHeight)
         {
             if ( resizeMode == eResizeMode.PERCENT )
             {
@@ -319,14 +319,14 @@ namespace TinyHero.Tools
                     scale = Mathf.Min( 1.0f, scale );
                 }
 
-                int targetWidth = Mathf.Max( 1, Mathf.RoundToInt( sourceWidth * scale ) );
-                int targetHeight = Mathf.Max( 1, Mathf.RoundToInt( sourceHeight * scale ) );
+                int targetWidth = Mathf.Max( 1, Mathf.RoundToInt( _sourceWidth * scale ) );
+                int targetHeight = Mathf.Max( 1, Mathf.RoundToInt( _sourceHeight * scale ) );
                 Vector2Int scaledSize = new Vector2Int( targetWidth, targetHeight );
                 return scaledSize;
             }
 
-            float widthRatio = ( float )maxResizeWidth / sourceWidth;
-            float heightRatio = ( float )maxResizeHeight / sourceHeight;
+            float widthRatio = ( float )maxResizeWidth / _sourceWidth;
+            float heightRatio = ( float )maxResizeHeight / _sourceHeight;
             float fitScale = Mathf.Min( widthRatio, heightRatio );
 
             if ( allowUpscale == false )
@@ -334,33 +334,33 @@ namespace TinyHero.Tools
                 fitScale = Mathf.Min( 1.0f, fitScale );
             }
 
-            int fitWidth = Mathf.Max( 1, Mathf.RoundToInt( sourceWidth * fitScale ) );
-            int fitHeight = Mathf.Max( 1, Mathf.RoundToInt( sourceHeight * fitScale ) );
+            int fitWidth = Mathf.Max( 1, Mathf.RoundToInt( _sourceWidth * fitScale ) );
+            int fitHeight = Mathf.Max( 1, Mathf.RoundToInt( _sourceHeight * fitScale ) );
             Vector2Int fitSize = new Vector2Int( fitWidth, fitHeight );
             return fitSize;
         }
 
-        /// <summary>
-        /// 최근접 샘플링으로 새 크기의 텍스처를 생성한다.
-        /// </summary>
-        private Texture2D ResizeTexture( Texture2D sourceTextureToResize, int targetWidth, int targetHeight )
+        ///<summary>
+        /// 리사이즈 텍스처 처리
+        ///</summary>
+        private Texture2D ResizeTexture(Texture2D _sourceTextureToResize, int _targetWidth, int _targetHeight)
         {
-            Texture2D resizedTexture = new Texture2D( targetWidth, targetHeight, TextureFormat.RGBA32, false );
-            Color[] resizedPixels = new Color[ targetWidth * targetHeight ];
-            int sourceWidth = sourceTextureToResize.width;
-            int sourceHeight = sourceTextureToResize.height;
+            Texture2D resizedTexture = new Texture2D( _targetWidth, _targetHeight, TextureFormat.RGBA32, false );
+            Color[] resizedPixels = new Color[ _targetWidth * _targetHeight ];
+            int sourceWidth = _sourceTextureToResize.width;
+            int sourceHeight = _sourceTextureToResize.height;
 
-            for ( int y = 0; y < targetHeight; y++ )
+            for ( int y = 0; y < _targetHeight; y++ )
             {
-                float normalizedY = ( y + 0.5f ) / targetHeight;
+                float normalizedY = ( y + 0.5f ) / _targetHeight;
                 int sourceY = Mathf.Clamp( Mathf.FloorToInt( normalizedY * sourceHeight ), 0, sourceHeight - 1 );
 
-                for ( int x = 0; x < targetWidth; x++ )
+                for ( int x = 0; x < _targetWidth; x++ )
                 {
-                    float normalizedX = ( x + 0.5f ) / targetWidth;
+                    float normalizedX = ( x + 0.5f ) / _targetWidth;
                     int sourceX = Mathf.Clamp( Mathf.FloorToInt( normalizedX * sourceWidth ), 0, sourceWidth - 1 );
-                    int pixelIndex = y * targetWidth + x;
-                    Color sourceColor = sourceTextureToResize.GetPixel( sourceX, sourceY );
+                    int pixelIndex = y * _targetWidth + x;
+                    Color sourceColor = _sourceTextureToResize.GetPixel( sourceX, sourceY );
                     resizedPixels[ pixelIndex ] = sourceColor;
                 }
             }
@@ -370,9 +370,9 @@ namespace TinyHero.Tools
             return resizedTexture;
         }
 
-        /// <summary>
-        /// 출력 폴더 경로를 프로젝트 내부에 생성한다.
-        /// </summary>
+        ///<summary>
+        /// 출력 폴더 존재 보장
+        ///</summary>
         private void EnsureOutputFolderExists()
         {
             string fullPath = Path.GetFullPath( outputFolder );
@@ -385,19 +385,19 @@ namespace TinyHero.Tools
             Directory.CreateDirectory( fullPath );
         }
 
-        /// <summary>
-        /// 파일명 수동 입력 여부에 따라 자동 채번 상태를 갱신한다.
-        /// </summary>
-        private void HandleFileNameChanged( string newFileName )
+        ///<summary>
+        /// 파일 이름 변경 처리
+        ///</summary>
+        private void HandleFileNameChanged(string _newFileName)
         {
-            if ( string.IsNullOrWhiteSpace( newFileName ) )
+            if ( string.IsNullOrWhiteSpace( _newFileName ) )
             {
                 useAutoFileName = true;
                 RefreshSuggestedFileName( true );
                 return;
             }
 
-            string sanitizedFileName = SanitizeFileName( newFileName );
+            string sanitizedFileName = SanitizeFileName( _newFileName );
             string currentSuggestedFileName = BuildSuggestedFileName();
             bool isSuggestedFileName = string.Equals( sanitizedFileName, currentSuggestedFileName, StringComparison.Ordinal );
 
@@ -411,23 +411,23 @@ namespace TinyHero.Tools
             }
         }
 
-        /// <summary>
-        /// 현재 폴더 상태에 맞는 기본 파일명을 계산하고 필요 시 적용한다.
-        /// </summary>
-        private void RefreshSuggestedFileName( bool applyToField )
+        ///<summary>
+        /// 권장 파일 이름 갱신
+        ///</summary>
+        private void RefreshSuggestedFileName(bool _applyToField)
         {
             string suggestedFileName = BuildSuggestedFileName();
             lastSuggestedFileName = suggestedFileName;
 
-            if ( applyToField )
+            if ( _applyToField )
             {
                 fileName = suggestedFileName;
             }
         }
 
-        /// <summary>
-        /// 출력 폴더의 파일 개수를 기준으로 다음 기본 파일명을 생성한다.
-        /// </summary>
+        ///<summary>
+        /// 권장 파일 이름 구성
+        ///</summary>
         private string BuildSuggestedFileName()
         {
             string fullPath = Path.GetFullPath( outputFolder );
@@ -444,12 +444,12 @@ namespace TinyHero.Tools
             return suggestedFileName;
         }
 
-        /// <summary>
-        /// 파일명에 사용할 수 없는 문자를 제거한다.
-        /// </summary>
-        private string SanitizeFileName( string rawName )
+        ///<summary>
+        /// 파일 이름 정리 처리
+        ///</summary>
+        private string SanitizeFileName(string _rawName)
         {
-            string candidate = string.IsNullOrWhiteSpace( rawName ) ? DefaultFileName : rawName.Trim();
+            string candidate = string.IsNullOrWhiteSpace( _rawName ) ? DefaultFileName : _rawName.Trim();
             char[] invalidCharacters = Path.GetInvalidFileNameChars();
 
             foreach ( char invalidCharacter in invalidCharacters )
@@ -469,13 +469,15 @@ namespace TinyHero.Tools
             return result;
         }
 
-        /// <summary>
-        /// 상태 메시지와 표시 유형을 갱신한다.
-        /// </summary>
-        private void SetStatus( string message, MessageType messageType )
+        ///<summary>
+        /// 상태 메시지 설정
+        ///</summary>
+        private void SetStatus(string _message, MessageType _messageType)
         {
-            statusMessage = message;
-            statusMessageType = messageType;
+            statusMessage = _message;
+            statusMessageType = _messageType;
         }
     }
 }
+
+

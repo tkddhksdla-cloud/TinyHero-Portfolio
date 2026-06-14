@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,17 +12,17 @@ using UnityEngine;
 
 namespace TinyHero.DataEditor
 {
-    /// <summary>
-    /// NPOI를 사용해 헤더 기반 엑셀 데이터를 ScriptableObject로 가져오는 importer이다.
-    /// </summary>
+    ///<summary>
+    /// 엑셀 테이블 가져오기 도구 클래스
+    ///</summary>
     public static class CExcelTableImporter
     {
         private const int HeaderRowIndex = 0;
         private const int DataRowStartIndex = 1;
 
-        /// <summary>
-        /// 선택된 import profile 자산을 모두 가져온다.
-        /// </summary>
+        ///<summary>
+        /// 선택 프로필 목록 가져오기
+        ///</summary>
         [MenuItem( "Tools/TinyHero/Data/Import Selected Excel Profiles" )]
         private static void ImportSelectedProfiles()
         {
@@ -30,9 +30,9 @@ namespace TinyHero.DataEditor
             ImportProfiles( profileArray );
         }
 
-        /// <summary>
-        /// 선택된 import profile 자산이 있을 때만 메뉴를 활성화한다.
-        /// </summary>
+        ///<summary>
+        /// 가져오기 선택 프로필 목록 검증
+        ///</summary>
         [MenuItem( "Tools/TinyHero/Data/Import Selected Excel Profiles", true )]
         private static bool ValidateImportSelectedProfiles()
         {
@@ -41,9 +41,9 @@ namespace TinyHero.DataEditor
             return hasProfile;
         }
 
-        /// <summary>
-        /// 프로젝트 내 모든 import profile 자산을 가져온다.
-        /// </summary>
+        ///<summary>
+        /// 전체 프로필 목록 가져오기
+        ///</summary>
         [MenuItem( "Tools/TinyHero/Data/Import All Excel Profiles" )]
         private static void ImportAllProfiles()
         {
@@ -68,22 +68,22 @@ namespace TinyHero.DataEditor
             ImportProfiles( profileArray );
         }
 
-        /// <summary>
-        /// 지정된 엑셀 파일과 테이블 자산으로 데이터를 직접 가져온다.
-        /// </summary>
-        public static bool ImportTable( DefaultAsset sourceExcelFile, string worksheetName, CExcelTableDataBase targetTableData )
+        ///<summary>
+        /// 테이블 데이터 가져오기
+        ///</summary>
+        public static bool ImportTable(DefaultAsset _sourceExcelFile, string _worksheetName, CExcelTableDataBase _targetTableData)
         {
-            bool isValid = ValidateImportArguments( sourceExcelFile, targetTableData, out string validationMessage );
+            bool isValid = ValidateImportArguments( _sourceExcelFile, _targetTableData, out string validationMessage );
 
             if ( isValid == false )
             {
-                Debug.LogError( validationMessage, targetTableData );
+                Debug.LogError( validationMessage, _targetTableData );
                 return false;
             }
 
             RegisterCodePageProvider();
 
-            string sourceExcelAssetPath = AssetDatabase.GetAssetPath( sourceExcelFile );
+            string sourceExcelAssetPath = AssetDatabase.GetAssetPath( _sourceExcelFile );
             string sourceExcelFullPath = Path.GetFullPath( sourceExcelAssetPath );
 
             try
@@ -91,49 +91,49 @@ namespace TinyHero.DataEditor
                 using ( FileStream fileStream = new FileStream( sourceExcelFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ) )
                 {
                     IWorkbook workbook = WorkbookFactory.Create( fileStream );
-                    ISheet worksheet = ResolveWorksheet( workbook, worksheetName );
+                    ISheet worksheet = ResolveWorksheet( workbook, _worksheetName );
 
                     if ( worksheet == null )
                     {
-                        Debug.LogError( $"Worksheet was not found in {sourceExcelAssetPath}.", targetTableData );
+                        Debug.LogError( $"Worksheet was not found in {sourceExcelAssetPath}.", _targetTableData );
                         return false;
                     }
 
                     Dictionary<string, int> headerIndexDictionary = BuildHeaderIndexDictionary( worksheet );
-                    Type rowType = targetTableData.GetRowType();
+                    Type rowType = _targetTableData.GetRowType();
                     IList rowList = BuildRowList( worksheet, rowType, headerIndexDictionary );
-                    targetTableData.ReplaceRowList( rowList );
-                    targetTableData.SetSourceExcelAssetPath( sourceExcelAssetPath );
-                    EditorUtility.SetDirty( targetTableData );
+                    _targetTableData.ReplaceRowList( rowList );
+                    _targetTableData.SetSourceExcelAssetPath( sourceExcelAssetPath );
+                    EditorUtility.SetDirty( _targetTableData );
                     AssetDatabase.SaveAssets();
-                    Debug.Log( $"Imported excel data from {sourceExcelAssetPath} to {targetTableData.name}.", targetTableData );
+                    Debug.Log( $"Imported excel data from {sourceExcelAssetPath} to {_targetTableData.name}.", _targetTableData );
                     return true;
                 }
             }
             catch ( Exception exception )
             {
-                Debug.LogError( $"Failed to import excel file {sourceExcelAssetPath}. {exception.Message}", targetTableData );
+                Debug.LogError( $"Failed to import excel file {sourceExcelAssetPath}. {exception.Message}", _targetTableData );
                 return false;
             }
         }
 
-        /// <summary>
-        /// 지정된 엑셀 파일의 워크시트 이름 목록을 반환한다.
-        /// </summary>
-        public static string[] GetWorksheetNameArray( DefaultAsset sourceExcelFile )
+        ///<summary>
+        /// 워크시트 이름 배열 반환
+        ///</summary>
+        public static string[] GetWorksheetNameArray(DefaultAsset _sourceExcelFile)
         {
-            bool isValid = ValidateExcelFileOnly( sourceExcelFile, out string validationMessage );
+            bool isValid = ValidateExcelFileOnly( _sourceExcelFile, out string validationMessage );
 
             if ( isValid == false )
             {
-                Debug.LogError( validationMessage, sourceExcelFile );
+                Debug.LogError( validationMessage, _sourceExcelFile );
                 string[] emptyArray = Array.Empty<string>();
                 return emptyArray;
             }
 
             RegisterCodePageProvider();
 
-            string sourceExcelAssetPath = AssetDatabase.GetAssetPath( sourceExcelFile );
+            string sourceExcelAssetPath = AssetDatabase.GetAssetPath( _sourceExcelFile );
             string sourceExcelFullPath = Path.GetFullPath( sourceExcelAssetPath );
             List<string> worksheetNameList = new List<string>();
 
@@ -158,36 +158,36 @@ namespace TinyHero.DataEditor
             }
             catch ( Exception exception )
             {
-                Debug.LogError( $"Failed to read worksheet names from {sourceExcelAssetPath}. {exception.Message}", sourceExcelFile );
+                Debug.LogError( $"Failed to read worksheet names from {sourceExcelAssetPath}. {exception.Message}", _sourceExcelFile );
             }
 
             string[] result = worksheetNameList.ToArray();
             return result;
         }
 
-        /// <summary>
-        /// 지정된 import profile 하나를 가져온다.
-        /// </summary>
-        public static bool ImportProfile( CExcelImportProfile profile )
+        ///<summary>
+        /// 프로필 데이터 가져오기
+        ///</summary>
+        public static bool ImportProfile(CExcelImportProfile _profile)
         {
-            bool isValid = ValidateProfile( profile, out string validationMessage );
+            bool isValid = ValidateProfile( _profile, out string validationMessage );
 
             if ( isValid == false )
             {
-                Debug.LogError( validationMessage, profile );
+                Debug.LogError( validationMessage, _profile );
                 return false;
             }
 
-            DefaultAsset sourceExcelFile = profile.GetSourceExcelFile();
-            string worksheetName = profile.GetWorksheetName();
-            CExcelTableDataBase targetTableData = profile.GetTargetTableData();
+            DefaultAsset sourceExcelFile = _profile.GetSourceExcelFile();
+            string worksheetName = _profile.GetWorksheetName();
+            CExcelTableDataBase targetTableData = _profile.GetTargetTableData();
             bool result = ImportTable( sourceExcelFile, worksheetName, targetTableData );
             return result;
         }
 
-        /// <summary>
-        /// 선택된 오브젝트에서 import profile만 추려낸다.
-        /// </summary>
+        ///<summary>
+        /// 선택 프로필 목록 반환
+        ///</summary>
         private static CExcelImportProfile[] GetSelectedProfiles()
         {
             UnityEngine.Object[] selectedObjectArray = Selection.objects;
@@ -209,16 +209,16 @@ namespace TinyHero.DataEditor
             return result;
         }
 
-        /// <summary>
-        /// 여러 import profile을 순차적으로 가져온다.
-        /// </summary>
-        private static void ImportProfiles( CExcelImportProfile[] profileArray )
+        ///<summary>
+        /// 프로필 목록 가져오기
+        ///</summary>
+        private static void ImportProfiles(CExcelImportProfile[] _profileArray)
         {
             int successCount = 0;
 
-            for ( int i = 0; i < profileArray.Length; i++ )
+            for ( int i = 0; i < _profileArray.Length; i++ )
             {
-                CExcelImportProfile profile = profileArray[ i ];
+                CExcelImportProfile profile = _profileArray[ i ];
                 bool isSuccess = ImportProfile( profile );
 
                 if ( isSuccess )
@@ -228,105 +228,105 @@ namespace TinyHero.DataEditor
             }
 
             AssetDatabase.Refresh();
-            Debug.Log( $"Excel import completed. Success: {successCount}, Total: {profileArray.Length}." );
+            Debug.Log( $"Excel import completed. Success: {successCount}, Total: {_profileArray.Length}." );
         }
 
-        /// <summary>
-        /// 엑셀 파일과 대상 테이블 자산의 유효성을 검사한다.
-        /// </summary>
-        private static bool ValidateImportArguments( DefaultAsset sourceExcelFile, CExcelTableDataBase targetTableData, out string validationMessage )
+        ///<summary>
+        /// 가져오기 인자 검증
+        ///</summary>
+        private static bool ValidateImportArguments(DefaultAsset _sourceExcelFile, CExcelTableDataBase _targetTableData, out string _validationMessage)
         {
-            bool isExcelValid = ValidateExcelFileOnly( sourceExcelFile, out validationMessage );
+            bool isExcelValid = ValidateExcelFileOnly( _sourceExcelFile, out _validationMessage );
 
             if ( isExcelValid == false )
             {
                 return false;
             }
 
-            if ( targetTableData == null )
+            if ( _targetTableData == null )
             {
-                validationMessage = "Target table asset is missing.";
+                _validationMessage = "Target table asset is missing.";
                 return false;
             }
 
-            validationMessage = string.Empty;
+            _validationMessage = string.Empty;
             return true;
         }
 
-        /// <summary>
-        /// import profile의 필요한 참조와 파일 확장자를 검사한다.
-        /// </summary>
-        private static bool ValidateProfile( CExcelImportProfile profile, out string validationMessage )
+        ///<summary>
+        /// 프로필 검증
+        ///</summary>
+        private static bool ValidateProfile(CExcelImportProfile _profile, out string _validationMessage)
         {
-            if ( profile == null )
+            if ( _profile == null )
             {
-                validationMessage = "Excel import profile is null.";
+                _validationMessage = "Excel import _profile is null.";
                 return false;
             }
 
-            DefaultAsset sourceExcelFile = profile.GetSourceExcelFile();
-            CExcelTableDataBase targetTableData = profile.GetTargetTableData();
-            bool result = ValidateImportArguments( sourceExcelFile, targetTableData, out validationMessage );
+            DefaultAsset sourceExcelFile = _profile.GetSourceExcelFile();
+            CExcelTableDataBase targetTableData = _profile.GetTargetTableData();
+            bool result = ValidateImportArguments( sourceExcelFile, targetTableData, out _validationMessage );
             return result;
         }
 
-        /// <summary>
-        /// 엑셀 파일 참조와 확장자의 유효성을 검사한다.
-        /// </summary>
-        private static bool ValidateExcelFileOnly( DefaultAsset sourceExcelFile, out string validationMessage )
+        ///<summary>
+        /// 엑셀 파일 단독 검증
+        ///</summary>
+        private static bool ValidateExcelFileOnly(DefaultAsset _sourceExcelFile, out string _validationMessage)
         {
-            if ( sourceExcelFile == null )
+            if ( _sourceExcelFile == null )
             {
-                validationMessage = "Source excel file is missing.";
+                _validationMessage = "Source excel file is missing.";
                 return false;
             }
 
-            string sourceExcelAssetPath = AssetDatabase.GetAssetPath( sourceExcelFile );
+            string sourceExcelAssetPath = AssetDatabase.GetAssetPath( _sourceExcelFile );
             string extension = Path.GetExtension( sourceExcelAssetPath );
             bool isSupportedExtension = string.Equals( extension, ".xlsx", StringComparison.OrdinalIgnoreCase ) || string.Equals( extension, ".xls", StringComparison.OrdinalIgnoreCase );
 
             if ( isSupportedExtension == false )
             {
-                validationMessage = $"Unsupported excel extension on {sourceExcelAssetPath}.";
+                _validationMessage = $"Unsupported excel extension on {sourceExcelAssetPath}.";
                 return false;
             }
 
-            validationMessage = string.Empty;
+            _validationMessage = string.Empty;
             return true;
         }
 
-        /// <summary>
-        /// 코드 페이지 인코딩 공급자를 등록한다.
-        /// </summary>
+        ///<summary>
+        /// 코드 페이지 공급자 등록
+        ///</summary>
         private static void RegisterCodePageProvider()
         {
             Encoding.RegisterProvider( CodePagesEncodingProvider.Instance );
         }
 
-        /// <summary>
-        /// 지정된 이름 또는 첫 번째 워크시트를 반환한다.
-        /// </summary>
-        private static ISheet ResolveWorksheet( IWorkbook workbook, string worksheetName )
+        ///<summary>
+        /// 워크시트 결정
+        ///</summary>
+        private static ISheet ResolveWorksheet(IWorkbook _workbook, string _worksheetName)
         {
-            bool hasWorksheetName = string.IsNullOrWhiteSpace( worksheetName ) == false;
+            bool hasWorksheetName = string.IsNullOrWhiteSpace( _worksheetName ) == false;
 
             if ( hasWorksheetName )
             {
-                ISheet namedWorksheet = workbook.GetSheet( worksheetName );
+                ISheet namedWorksheet = _workbook.GetSheet( _worksheetName );
                 return namedWorksheet;
             }
 
-            ISheet firstWorksheet = workbook.NumberOfSheets > 0 ? workbook.GetSheetAt( 0 ) : null;
+            ISheet firstWorksheet = _workbook.NumberOfSheets > 0 ? _workbook.GetSheetAt( 0 ) : null;
             return firstWorksheet;
         }
 
-        /// <summary>
-        /// 헤더 row를 읽어 헤더명과 컬럼 인덱스 사전을 만든다.
-        /// </summary>
-        private static Dictionary<string, int> BuildHeaderIndexDictionary( ISheet worksheet )
+        ///<summary>
+        /// 헤더 인덱스 사전 구성
+        ///</summary>
+        private static Dictionary<string, int> BuildHeaderIndexDictionary(ISheet _worksheet)
         {
             Dictionary<string, int> headerIndexDictionary = new Dictionary<string, int>( StringComparer.OrdinalIgnoreCase );
-            IRow headerRow = worksheet.GetRow( HeaderRowIndex );
+            IRow headerRow = _worksheet.GetRow( HeaderRowIndex );
 
             if ( headerRow == null )
             {
@@ -354,31 +354,31 @@ namespace TinyHero.DataEditor
             return headerIndexDictionary;
         }
 
-        /// <summary>
-        /// row 타입에 맞는 객체 목록을 워크시트에서 생성한다.
-        /// </summary>
-        private static IList BuildRowList( ISheet worksheet, Type rowType, Dictionary<string, int> headerIndexDictionary )
+        ///<summary>
+        /// 행 목록 구성
+        ///</summary>
+        private static IList BuildRowList(ISheet _worksheet, Type _rowType, Dictionary<string, int> _headerIndexDictionary)
         {
-            Type listType = typeof( List<> ).MakeGenericType( rowType );
+            Type listType = typeof( List<> ).MakeGenericType( _rowType );
             IList rowList = ( IList )Activator.CreateInstance( listType );
-            FieldInfo[] fieldInfoArray = GetRowFieldInfoArray( rowType );
+            FieldInfo[] fieldInfoArray = GetRowFieldInfoArray( _rowType );
 
-            for ( int rowIndex = DataRowStartIndex; rowIndex <= worksheet.LastRowNum; rowIndex++ )
+            for ( int rowIndex = DataRowStartIndex; rowIndex <= _worksheet.LastRowNum; rowIndex++ )
             {
-                IRow excelRow = worksheet.GetRow( rowIndex );
+                IRow excelRow = _worksheet.GetRow( rowIndex );
 
                 if ( IsEmptyRow( excelRow ) )
                 {
                     continue;
                 }
 
-                object rowData = Activator.CreateInstance( rowType );
+                object rowData = Activator.CreateInstance( _rowType );
 
                 for ( int fieldIndex = 0; fieldIndex < fieldInfoArray.Length; fieldIndex++ )
                 {
                     FieldInfo fieldInfo = fieldInfoArray[ fieldIndex ];
                     string headerName = GetHeaderName( fieldInfo );
-                    bool hasColumn = headerIndexDictionary.TryGetValue( headerName, out int columnIndex );
+                    bool hasColumn = _headerIndexDictionary.TryGetValue( headerName, out int columnIndex );
 
                     if ( hasColumn == false )
                     {
@@ -397,12 +397,12 @@ namespace TinyHero.DataEditor
             return rowList;
         }
 
-        /// <summary>
-        /// row 타입에서 직렬화 가능한 필드 목록을 추린다.
-        /// </summary>
-        private static FieldInfo[] GetRowFieldInfoArray( Type rowType )
+        ///<summary>
+        /// 행 필드 정보 배열 반환
+        ///</summary>
+        private static FieldInfo[] GetRowFieldInfoArray(Type _rowType)
         {
-            FieldInfo[] allFieldInfoArray = rowType.GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+            FieldInfo[] allFieldInfoArray = _rowType.GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
             List<FieldInfo> fieldInfoList = new List<FieldInfo>();
 
             for ( int i = 0; i < allFieldInfoArray.Length; i++ )
@@ -423,13 +423,13 @@ namespace TinyHero.DataEditor
             return result;
         }
 
-        /// <summary>
-        /// 필드에 대응되는 엑셀 헤더명을 반환한다.
-        /// </summary>
-        private static string GetHeaderName( FieldInfo fieldInfo )
+        ///<summary>
+        /// 헤더 이름 반환
+        ///</summary>
+        private static string GetHeaderName(FieldInfo _fieldInfo)
         {
             Type headerAttributeType = typeof( CExcelHeaderAttribute );
-            CExcelHeaderAttribute headerAttribute = Attribute.GetCustomAttribute( fieldInfo, headerAttributeType ) as CExcelHeaderAttribute;
+            CExcelHeaderAttribute headerAttribute = Attribute.GetCustomAttribute( _fieldInfo, headerAttributeType ) as CExcelHeaderAttribute;
 
             if ( headerAttribute != null )
             {
@@ -437,7 +437,7 @@ namespace TinyHero.DataEditor
                 return attributedHeaderName;
             }
 
-            string normalizedFieldName = fieldInfo.Name;
+            string normalizedFieldName = _fieldInfo.Name;
 
             if ( normalizedFieldName.StartsWith( "m_", StringComparison.Ordinal ) )
             {
@@ -448,19 +448,19 @@ namespace TinyHero.DataEditor
             return result;
         }
 
-        /// <summary>
-        /// 비어 있는 엑셀 row인지 검사한다.
-        /// </summary>
-        private static bool IsEmptyRow( IRow excelRow )
+        ///<summary>
+        /// 빈 행 여부
+        ///</summary>
+        private static bool IsEmptyRow(IRow _excelRow)
         {
-            if ( excelRow == null )
+            if ( _excelRow == null )
             {
                 return true;
             }
 
-            for ( int cellIndex = excelRow.FirstCellNum; cellIndex < excelRow.LastCellNum; cellIndex++ )
+            for ( int cellIndex = _excelRow.FirstCellNum; cellIndex < _excelRow.LastCellNum; cellIndex++ )
             {
-                ICell cell = excelRow.GetCell( cellIndex );
+                ICell cell = _excelRow.GetCell( cellIndex );
                 string cellValue = GetCellStringValue( cell );
 
                 if ( string.IsNullOrWhiteSpace( cellValue ) == false )
@@ -472,28 +472,28 @@ namespace TinyHero.DataEditor
             return true;
         }
 
-        /// <summary>
-        /// 셀 값을 문자열 기준으로 읽는다.
-        /// </summary>
-        private static string GetCellStringValue( ICell cell )
+        ///<summary>
+        /// 셀 문자열 값 반환
+        ///</summary>
+        private static string GetCellStringValue(ICell _cell)
         {
-            if ( cell == null )
+            if ( _cell == null )
             {
                 return string.Empty;
             }
 
             DataFormatter dataFormatter = new DataFormatter( CultureInfo.InvariantCulture );
-            string result = dataFormatter.FormatCellValue( cell );
+            string result = dataFormatter.FormatCellValue( _cell );
             return result;
         }
 
-        /// <summary>
-        /// 셀 값을 대상 필드 타입에 맞게 변환한다.
-        /// </summary>
-        private static object ConvertCellValue( ICell cell, Type targetType, string headerName, int rowIndex )
+        ///<summary>
+        /// 셀 값 변환
+        ///</summary>
+        private static object ConvertCellValue(ICell _cell, Type _targetType, string _headerName, int _rowIndex)
         {
-            Type resolvedType = Nullable.GetUnderlyingType( targetType ) ?? targetType;
-            string rawCellValue = GetCellStringValue( cell );
+            Type resolvedType = Nullable.GetUnderlyingType( _targetType ) ?? _targetType;
+            string rawCellValue = GetCellStringValue( _cell );
             string cellStringValue = rawCellValue.Trim();
 
             if ( string.IsNullOrWhiteSpace( cellStringValue ) )
@@ -551,42 +551,44 @@ namespace TinyHero.DataEditor
             }
             catch ( Exception exception )
             {
-                throw new InvalidOperationException( $"Failed to parse header '{headerName}' at excel row {rowIndex + 1}. {exception.Message}" );
+                throw new InvalidOperationException( $"Failed to parse header '{_headerName}' at excel row {_rowIndex + 1}. {exception.Message}" );
             }
         }
 
-        /// <summary>
-        /// 문자열을 bool 값으로 변환한다.
-        /// </summary>
-        private static bool ParseBoolean( string cellStringValue )
+        ///<summary>
+        /// 불리언 파싱
+        ///</summary>
+        private static bool ParseBoolean(string _cellStringValue)
         {
-            if ( string.Equals( cellStringValue, "1", StringComparison.OrdinalIgnoreCase ) )
+            if ( string.Equals( _cellStringValue, "1", StringComparison.OrdinalIgnoreCase ) )
             {
                 return true;
             }
 
-            if ( string.Equals( cellStringValue, "0", StringComparison.OrdinalIgnoreCase ) )
+            if ( string.Equals( _cellStringValue, "0", StringComparison.OrdinalIgnoreCase ) )
             {
                 return false;
             }
 
-            bool result = bool.Parse( cellStringValue );
+            bool result = bool.Parse( _cellStringValue );
             return result;
         }
 
-        /// <summary>
-        /// 타입에 맞는 기본값을 반환한다.
-        /// </summary>
-        private static object GetDefaultValue( Type targetType )
+        ///<summary>
+        /// 기본 값 반환
+        ///</summary>
+        private static object GetDefaultValue(Type _targetType)
         {
-            if ( targetType == typeof( string ) )
+            if ( _targetType == typeof( string ) )
             {
                 string emptyValue = string.Empty;
                 return emptyValue;
             }
 
-            object defaultValue = targetType.IsValueType ? Activator.CreateInstance( targetType ) : null;
+            object defaultValue = _targetType.IsValueType ? Activator.CreateInstance( _targetType ) : null;
             return defaultValue;
         }
     }
 }
+
+
