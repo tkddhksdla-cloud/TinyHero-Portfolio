@@ -24,16 +24,39 @@ namespace TinyHero.Maps
         private const string FadeCanvasObjectName = "MapFadeCanvas";
         private const string FadeImageObjectName = "FadeImage";
         private const string GameplaySceneName = "SceneMap";
+        private const string MapTitleLogoUiPrefabResourcePath = "Prefabs/UI/Map/MapTitleLogoUI";
+        private const string MapTitleLogoUiPoolObjectName = "MapTitleLogoUIPool";
+
+        private sealed class CMapMonsterRespawnContext
+        {
+            public int mapRuntimeVersion;
+            public string monsterId;
+            public string monsterName;
+            public string monsterPoolKey;
+            public Vector3 spawnPosition;
+            public Vector3 spawnRotation;
+            public Vector3 spawnScale;
+            public float respawnDelaySeconds;
+        }
 
         [SerializeField] private float fadeDuration = DefaultFadeDuration;
 
         private static string pendingMapId = string.Empty;
         private static string pendingEntryPortalId = string.Empty;
         private readonly List<MapRuntimeSpawnMarker> spawnedRuntimeObjects = new List<MapRuntimeSpawnMarker>();
+        private readonly List<MonsterObject> activePooledMonsterObjects = new List<MonsterObject>();
+        private readonly List<MapTitleLogoUI> activeMapTitleLogoUiList = new List<MapTitleLogoUI>();
         private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, CObjectPool<MonsterObject>> monsterPoolByKey = new Dictionary<string, CObjectPool<MonsterObject>>();
         private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
         private Canvas fadeCanvas;
         private Image fadeImage;
+        private RectTransform mapTitleLogoUiPoolRectTransform;
+        private GameObject mapTitleLogoUiPrefab;
+        private CObjectPool<MapTitleLogoUI> mapTitleLogoUiPool;
+        private string currentMapId = string.Empty;
+        private string currentMapName = string.Empty;
+        private int currentMapRuntimeVersion;
         private bool isTransitionInProgress;
 
         ///<summary>
@@ -61,6 +84,35 @@ namespace TinyHero.Maps
         {
             bool result = isTransitionInProgress;
             return result;
+        }
+
+        ///<summary>
+        /// 현재 맵 ID 반환
+        ///</summary>
+        public string GetCurrentMapId()
+        {
+            string result = currentMapId;
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 맵 이름 반환
+        ///</summary>
+        public string GetCurrentMapName()
+        {
+            string result = currentMapName;
+            return result;
+        }
+
+        ///<summary>
+        /// 인스턴스 조회 시도
+        ///</summary>
+        public static bool TryGetInstance( out CMapManager _instance )
+        {
+            CMapManager resolvedInstance = Instance;
+            _instance = resolvedInstance;
+            bool hasInstance = _instance != null;
+            return hasInstance;
         }
 
         ///<summary>
@@ -153,6 +205,7 @@ namespace TinyHero.Maps
             yield return IE_FadeAlpha( 0.0f, 1.0f );
             LoadMapImmediately( _mapId, _entryPortalId );
             yield return IE_FadeAlpha( 1.0f, 0.0f );
+            ShowCurrentMapTitleLogoUi();
             isTransitionInProgress = false;
         }
 
@@ -203,6 +256,7 @@ namespace TinyHero.Maps
             LoadMapImmediately( _mapId, _entryPortalId );
             yield return null;
             yield return IE_FadeAlpha( 1.0f, 0.0f );
+            ShowCurrentMapTitleLogoUi();
             isTransitionInProgress = false;
         }
 
@@ -386,7 +440,14 @@ namespace TinyHero.Maps
                 _loadedData.monsters = new List<CMapToolMonsterSaveData>();
             }
 
+            ReleaseMapTransitionPooledObjects();
+            currentMapId = string.IsNullOrWhiteSpace( _loadedData.mapId ) ? string.Empty : _loadedData.mapId.Trim();
+            currentMapName = string.IsNullOrWhiteSpace( _loadedData.mapName ) ? currentMapId : _loadedData.mapName.Trim();
+            currentMapRuntimeVersion++;
+            HashSet<string> requiredMonsterPoolKeySet = CollectRequiredMonsterPoolKeys( _loadedData.monsters );
+            ReturnAllActivePooledMonsters();
             ClearSpawnedRuntimeObjects();
+            PrepareMonsterPools( requiredMonsterPoolKeySet );
             ApplyBackgroundSprite( _loadedData.backgroundSpriteName );
             SpawnPortals( _loadedData.portals );
             SpawnMonsters( _loadedData.monsters );
@@ -509,26 +570,454 @@ namespace TinyHero.Maps
                     transformData = BuildDefaultTransformData( monsterPrefab.transform );
                 }
 
+                string monsterPoolKey = ResolveMonsterPoolKey( monsterSaveData );
                 Vector3 spawnPosition = CreateVector3FromTransformData( transformData.position, Vector3.zero );
                 Vector3 spawnRotation = CreateVector3FromTransformData( transformData.rotation, Vector3.zero );
                 Vector3 spawnScale = ResolveMonsterSpawnScale( monsterPrefab );
-                GameObject monsterObject = Instantiate( monsterPrefab, spawnPosition, Quaternion.Euler( spawnRotation ) );
-                monsterObject.transform.localScale = spawnScale;
-                monsterObject.name = monsterPrefab.name;
-                MonsterObject monsterComponent = monsterObject.GetComponent<MonsterObject>();
+                MonsterObject monsterComponent = AcquirePooledMonster( monsterPoolKey, monsterPrefab );
 
                 if ( monsterComponent != null )
                 {
-                    monsterComponent.ConfigureMonster( monsterPrefab.name, monsterPrefab.name );
+                    InitializeSpawnedMonster( monsterComponent, monsterPoolKey, monsterPrefab.name, monsterPrefab.name, spawnPosition, spawnRotation, spawnScale );
+                    RegisterActivePooledMonster( monsterComponent );
+                }
+            }
+        }
 
-                    if ( CMonsterInfoManager.TryGetInstance( out CMonsterInfoManager monsterInfoManager ) )
-                    {
-                        monsterInfoManager.RegisterMonster( monsterComponent );
-                    }
+        ///<summary>
+        /// 맵 사용 몬스터 풀 키 수집
+        ///</summary>
+        private HashSet<string> CollectRequiredMonsterPoolKeys( List<CMapToolMonsterSaveData> _monsterSaveDataList )
+        {
+            HashSet<string> requiredPoolKeySet = new HashSet<string>();
+
+            if ( _monsterSaveDataList == null )
+            {
+                return requiredPoolKeySet;
+            }
+
+            int monsterCount = _monsterSaveDataList.Count;
+
+            for ( int index = 0; index < monsterCount; index++ )
+            {
+                CMapToolMonsterSaveData monsterSaveData = _monsterSaveDataList[ index ];
+
+                if ( monsterSaveData == null )
+                {
+                    continue;
                 }
 
-                RegisterSpawnedRuntimeObject( monsterObject );
+                string monsterPoolKey = ResolveMonsterPoolKey( monsterSaveData );
+
+                if ( string.IsNullOrWhiteSpace( monsterPoolKey ) )
+                {
+                    continue;
+                }
+
+                requiredPoolKeySet.Add( monsterPoolKey );
             }
+
+            return requiredPoolKeySet;
+        }
+
+        ///<summary>
+        /// 현재 맵 몬스터 풀 구성
+        ///</summary>
+        private void PrepareMonsterPools( HashSet<string> _requiredMonsterPoolKeySet )
+        {
+            if ( _requiredMonsterPoolKeySet == null )
+            {
+                return;
+            }
+
+            EnsureMonsterPools( _requiredMonsterPoolKeySet );
+            ClearUnusedMonsterPools( _requiredMonsterPoolKeySet );
+        }
+
+        ///<summary>
+        /// 필요 몬스터 풀 생성 보장
+        ///</summary>
+        private void EnsureMonsterPools( HashSet<string> _requiredMonsterPoolKeySet )
+        {
+            foreach ( string poolKey in _requiredMonsterPoolKeySet )
+            {
+                if ( string.IsNullOrWhiteSpace( poolKey ) )
+                {
+                    continue;
+                }
+
+                GetOrCreateMonsterPool( poolKey );
+            }
+        }
+
+        ///<summary>
+        /// 미사용 몬스터 풀 정리
+        ///</summary>
+        private void ClearUnusedMonsterPools( HashSet<string> _requiredMonsterPoolKeySet )
+        {
+            List<string> removalKeyList = new List<string>();
+
+            foreach ( KeyValuePair<string, CObjectPool<MonsterObject>> pairData in monsterPoolByKey )
+            {
+                string poolKey = pairData.Key;
+
+                if ( _requiredMonsterPoolKeySet.Contains( poolKey ) )
+                {
+                    continue;
+                }
+
+                CObjectPool<MonsterObject> monsterPool = pairData.Value;
+
+                if ( monsterPool != null )
+                {
+                    monsterPool.Clear();
+                }
+
+                removalKeyList.Add( poolKey );
+            }
+
+            for ( int index = 0; index < removalKeyList.Count; index++ )
+            {
+                string removalKey = removalKeyList[ index ];
+                monsterPoolByKey.Remove( removalKey );
+            }
+        }
+
+        ///<summary>
+        /// 활성 풀 몬스터 일괄 반환
+        ///</summary>
+        private void ReturnAllActivePooledMonsters()
+        {
+            List<MonsterObject> activeMonsterList = new List<MonsterObject>( activePooledMonsterObjects );
+
+            for ( int index = 0; index < activeMonsterList.Count; index++ )
+            {
+                MonsterObject monsterObject = activeMonsterList[ index ];
+
+                if ( monsterObject == null )
+                {
+                    continue;
+                }
+
+                ReleasePooledMonsterInternal( monsterObject, monsterObject.GetMapRuntimePoolKey(), false );
+            }
+
+            activePooledMonsterObjects.Clear();
+        }
+
+        ///<summary>
+        /// 몬스터 풀 키 결정
+        ///</summary>
+        private string ResolveMonsterPoolKey( CMapToolMonsterSaveData _monsterSaveData )
+        {
+            if ( _monsterSaveData == null )
+            {
+                return string.Empty;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false )
+            {
+                string resultFromPrefabName = _monsterSaveData.prefabName.Trim();
+                return resultFromPrefabName;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _monsterSaveData.resourcePath ) == false )
+            {
+                string resultFromResourcePath = _monsterSaveData.resourcePath.Trim();
+                return resultFromResourcePath;
+            }
+
+            return string.Empty;
+        }
+
+        ///<summary>
+        /// 몬스터 풀 획득 또는 생성
+        ///</summary>
+        private CObjectPool<MonsterObject> GetOrCreateMonsterPool( string _monsterPoolKey )
+        {
+            if ( string.IsNullOrWhiteSpace( _monsterPoolKey ) )
+            {
+                return null;
+            }
+
+            if ( monsterPoolByKey.TryGetValue( _monsterPoolKey, out CObjectPool<MonsterObject> existingPool ) )
+            {
+                return existingPool;
+            }
+
+            GameObject monsterPrefab = ResolveMonsterPrefab( _monsterPoolKey, _monsterPoolKey );
+
+            if ( monsterPrefab == null )
+            {
+                monsterPrefab = ResolveMonsterPrefab( _monsterPoolKey, string.Empty );
+            }
+
+            if ( monsterPrefab == null )
+            {
+                return null;
+            }
+
+            CObjectPool<MonsterObject> createdPool = new CObjectPool<MonsterObject>(
+                () => CreatePooledMonsterInstance( _monsterPoolKey, monsterPrefab ),
+                OnGetPooledMonsterInstance,
+                OnReleasePooledMonsterInstance,
+                OnDestroyPooledMonsterInstance );
+            monsterPoolByKey[ _monsterPoolKey ] = createdPool;
+            return createdPool;
+        }
+
+        ///<summary>
+        /// 풀 몬스터 대여
+        ///</summary>
+        private MonsterObject AcquirePooledMonster( string _monsterPoolKey, GameObject _monsterPrefab )
+        {
+            if ( string.IsNullOrWhiteSpace( _monsterPoolKey ) )
+            {
+                return null;
+            }
+
+            CObjectPool<MonsterObject> monsterPool = GetOrCreateMonsterPool( _monsterPoolKey );
+
+            if ( monsterPool == null )
+            {
+                return null;
+            }
+
+            MonsterObject monsterObject = monsterPool.Get();
+
+            if ( monsterObject == null )
+            {
+                return null;
+            }
+
+            monsterObject.SetMapRuntimePoolKey( _monsterPoolKey );
+            GameObject monsterGameObject = monsterObject.gameObject;
+            monsterGameObject.name = _monsterPrefab != null ? _monsterPrefab.name : _monsterPoolKey;
+            return monsterObject;
+        }
+
+        ///<summary>
+        /// 활성 풀 몬스터 등록
+        ///</summary>
+        private void RegisterActivePooledMonster( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null )
+            {
+                return;
+            }
+
+            bool isAlreadyRegistered = activePooledMonsterObjects.Contains( _monsterObject );
+
+            if ( isAlreadyRegistered )
+            {
+                return;
+            }
+
+            activePooledMonsterObjects.Add( _monsterObject );
+        }
+
+        ///<summary>
+        /// 풀 몬스터 반환 처리
+        ///</summary>
+        public bool ReleasePooledMonster( MonsterObject _monsterObject, string _monsterPoolKey )
+        {
+            bool result = ReleasePooledMonsterInternal( _monsterObject, _monsterPoolKey, true );
+            return result;
+        }
+
+        ///<summary>
+        /// 풀 몬스터 반환 공통 처리
+        ///</summary>
+        private bool ReleasePooledMonsterInternal( MonsterObject _monsterObject, string _monsterPoolKey, bool _shouldScheduleRespawn )
+        {
+            if ( _monsterObject == null || string.IsNullOrWhiteSpace( _monsterPoolKey ) )
+            {
+                return false;
+            }
+
+            if ( monsterPoolByKey.TryGetValue( _monsterPoolKey, out CObjectPool<MonsterObject> monsterPool ) == false || monsterPool == null )
+            {
+                return false;
+            }
+
+            CMapMonsterRespawnContext respawnContext = null;
+
+            if ( _shouldScheduleRespawn )
+            {
+                respawnContext = BuildMonsterRespawnContext( _monsterObject, _monsterPoolKey );
+            }
+
+            activePooledMonsterObjects.Remove( _monsterObject );
+            _monsterObject.ClearMapRuntimePoolKey();
+            monsterPool.Release( _monsterObject );
+
+            if ( respawnContext != null )
+            {
+                StartCoroutine( IE_RespawnPooledMonster( respawnContext ) );
+            }
+
+            return true;
+        }
+
+        ///<summary>
+        /// 몬스터 리스폰 문맥 구성
+        ///</summary>
+        private CMapMonsterRespawnContext BuildMonsterRespawnContext( MonsterObject _monsterObject, string _monsterPoolKey )
+        {
+            if ( _monsterObject == null || string.IsNullOrWhiteSpace( _monsterPoolKey ) )
+            {
+                return null;
+            }
+
+            float respawnDelaySeconds = _monsterObject.GetRespawnDelaySeconds();
+
+            if ( respawnDelaySeconds <= 0.0f )
+            {
+                return null;
+            }
+
+            CMapMonsterRespawnContext respawnContext = new CMapMonsterRespawnContext();
+            respawnContext.mapRuntimeVersion = currentMapRuntimeVersion;
+            respawnContext.monsterId = _monsterObject.GetMonsterId();
+            respawnContext.monsterName = _monsterObject.GetMonsterName();
+            respawnContext.monsterPoolKey = _monsterPoolKey;
+            respawnContext.spawnPosition = _monsterObject.GetMapRuntimeSpawnPosition();
+            respawnContext.spawnRotation = _monsterObject.GetMapRuntimeSpawnRotation();
+            respawnContext.spawnScale = _monsterObject.GetMapRuntimeSpawnScale();
+            respawnContext.respawnDelaySeconds = respawnDelaySeconds;
+            return respawnContext;
+        }
+
+        ///<summary>
+        /// 풀 몬스터 리스폰 대기 처리
+        ///</summary>
+        private IEnumerator IE_RespawnPooledMonster( CMapMonsterRespawnContext _respawnContext )
+        {
+            if ( _respawnContext == null )
+            {
+                yield break;
+            }
+
+            float respawnDelaySeconds = _respawnContext.respawnDelaySeconds;
+
+            if ( respawnDelaySeconds > 0.0f )
+            {
+                yield return new WaitForSeconds( respawnDelaySeconds );
+            }
+
+            if ( _respawnContext.mapRuntimeVersion != currentMapRuntimeVersion )
+            {
+                yield break;
+            }
+
+            MonsterObject monsterObject = AcquirePooledMonster( _respawnContext.monsterPoolKey, null );
+
+            if ( monsterObject == null )
+            {
+                yield break;
+            }
+
+            InitializeSpawnedMonster(
+                monsterObject,
+                _respawnContext.monsterPoolKey,
+                _respawnContext.monsterId,
+                _respawnContext.monsterName,
+                _respawnContext.spawnPosition,
+                _respawnContext.spawnRotation,
+                _respawnContext.spawnScale );
+            RegisterActivePooledMonster( monsterObject );
+        }
+
+        ///<summary>
+        /// 맵 런타임 몬스터 초기화
+        ///</summary>
+        private void InitializeSpawnedMonster( MonsterObject _monsterObject, string _monsterPoolKey, string _monsterId, string _monsterName, Vector3 _spawnPosition, Vector3 _spawnRotation, Vector3 _spawnScale )
+        {
+            if ( _monsterObject == null )
+            {
+                return;
+            }
+
+            GameObject monsterGameObject = _monsterObject.gameObject;
+            monsterGameObject.name = string.IsNullOrWhiteSpace( _monsterId ) ? _monsterPoolKey : _monsterId;
+            monsterGameObject.transform.SetPositionAndRotation( _spawnPosition, Quaternion.Euler( _spawnRotation ) );
+            monsterGameObject.transform.localScale = _spawnScale;
+            _monsterObject.SetMapRuntimeSpawnTransform( _spawnPosition, _spawnRotation, _spawnScale );
+            monsterGameObject.SetActive( true );
+            _monsterObject.ResetRuntimeStateForRespawn();
+            _monsterObject.ConfigureMonster( _monsterId, _monsterName );
+            _monsterObject.SetMapRuntimePoolKey( _monsterPoolKey );
+
+            if ( CMonsterInfoManager.TryGetInstance( out CMonsterInfoManager monsterInfoManager ) )
+            {
+                monsterInfoManager.RegisterMonster( _monsterObject );
+            }
+        }
+
+        ///<summary>
+        /// 풀 몬스터 인스턴스 생성
+        ///</summary>
+        private MonsterObject CreatePooledMonsterInstance( string _monsterPoolKey, GameObject _monsterPrefab )
+        {
+            if ( _monsterPrefab == null )
+            {
+                return null;
+            }
+
+            GameObject createdMonsterObject = Instantiate( _monsterPrefab );
+            createdMonsterObject.name = _monsterPrefab.name;
+            createdMonsterObject.SetActive( false );
+            MonsterObject monsterComponent = createdMonsterObject.GetComponent<MonsterObject>();
+
+            if ( monsterComponent == null )
+            {
+                Destroy( createdMonsterObject );
+                return null;
+            }
+
+            monsterComponent.SetMapRuntimePoolKey( _monsterPoolKey );
+            return monsterComponent;
+        }
+
+        ///<summary>
+        /// 풀 몬스터 대여 후처리
+        ///</summary>
+        private void OnGetPooledMonsterInstance( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null )
+            {
+                return;
+            }
+
+            GameObject monsterGameObject = _monsterObject.gameObject;
+            monsterGameObject.SetActive( false );
+        }
+
+        ///<summary>
+        /// 풀 몬스터 반환 후처리
+        ///</summary>
+        private void OnReleasePooledMonsterInstance( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null )
+            {
+                return;
+            }
+
+            GameObject monsterGameObject = _monsterObject.gameObject;
+            monsterGameObject.SetActive( false );
+        }
+
+        ///<summary>
+        /// 풀 몬스터 파기 처리
+        ///</summary>
+        private void OnDestroyPooledMonsterInstance( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null )
+            {
+                return;
+            }
+
+            Destroy( _monsterObject.gameObject );
         }
 
         ///<summary>
@@ -574,6 +1063,30 @@ namespace TinyHero.Maps
                 playerRigidbody.linearVelocity = Vector2.zero;
                 playerRigidbody.angularVelocity = 0.0f;
             }
+
+            InitializePlayerStatusUi( playerController );
+        }
+
+        ///<summary>
+        /// 플레이어 상태 UI 초기화 처리
+        ///</summary>
+        private void InitializePlayerStatusUi( PlayerController _playerController )
+        {
+            if ( _playerController == null )
+            {
+                return;
+            }
+
+            CPlayerStatManager playerStatManager = _playerController.GetComponent<CPlayerStatManager>();
+            CPlayerStatusUI playerStatusUi = FindFirstObjectByType<CPlayerStatusUI>();
+
+            if ( playerStatusUi == null || playerStatManager == null )
+            {
+                return;
+            }
+
+            playerStatusUi.Bind( playerStatManager );
+            playerStatusUi.InitializeStatusUi();
         }
 
         ///<summary>
@@ -712,11 +1225,242 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 맵 전환 풀링 오브젝트 정리
+        ///</summary>
+        private void ReleaseMapTransitionPooledObjects()
+        {
+            ReturnAllActiveMapTitleLogoUis();
+            ReleaseAllPlayerPooledEffects();
+        }
+
+        ///<summary>
+        /// 현재 맵 제목 UI 표시
+        ///</summary>
+        private void ShowCurrentMapTitleLogoUi()
+        {
+            if ( string.IsNullOrWhiteSpace( currentMapName ) )
+            {
+                return;
+            }
+
+            EnsureMapTitleLogoUiPoolInitialized();
+
+            if ( mapTitleLogoUiPool == null )
+            {
+                return;
+            }
+
+            MapTitleLogoUI mapTitleLogoUi = mapTitleLogoUiPool.Get();
+
+            if ( mapTitleLogoUi == null )
+            {
+                return;
+            }
+
+            if ( activeMapTitleLogoUiList.Contains( mapTitleLogoUi ) == false )
+            {
+                activeMapTitleLogoUiList.Add( mapTitleLogoUi );
+            }
+        }
+
+        ///<summary>
+        /// 맵 제목 UI 풀 초기화 보장
+        ///</summary>
+        private void EnsureMapTitleLogoUiPoolInitialized()
+        {
+            if ( mapTitleLogoUiPool != null )
+            {
+                return;
+            }
+
+            EnsureFadeOverlayExists();
+            mapTitleLogoUiPrefab = Resources.Load<GameObject>( MapTitleLogoUiPrefabResourcePath );
+
+            if ( mapTitleLogoUiPrefab == null || fadeCanvas == null )
+            {
+                return;
+            }
+
+            RectTransform fadeCanvasRectTransform = fadeCanvas.transform as RectTransform;
+
+            if ( fadeCanvasRectTransform == null )
+            {
+                return;
+            }
+
+            if ( mapTitleLogoUiPoolRectTransform == null )
+            {
+                Transform existingPoolTransform = fadeCanvasRectTransform.Find( MapTitleLogoUiPoolObjectName );
+
+                if ( existingPoolTransform != null )
+                {
+                    mapTitleLogoUiPoolRectTransform = existingPoolTransform as RectTransform;
+                }
+            }
+
+            if ( mapTitleLogoUiPoolRectTransform == null )
+            {
+                GameObject poolObject = new GameObject( MapTitleLogoUiPoolObjectName, typeof( RectTransform ) );
+                RectTransform poolRectTransform = poolObject.GetComponent<RectTransform>();
+                poolRectTransform.SetParent( fadeCanvasRectTransform, false );
+                poolRectTransform.anchorMin = Vector2.zero;
+                poolRectTransform.anchorMax = Vector2.one;
+                poolRectTransform.offsetMin = Vector2.zero;
+                poolRectTransform.offsetMax = Vector2.zero;
+                mapTitleLogoUiPoolRectTransform = poolRectTransform;
+            }
+
+            CObjectPool<MapTitleLogoUI> createdPool = new CObjectPool<MapTitleLogoUI>(
+                CreateMapTitleLogoUi,
+                OnGetMapTitleLogoUi,
+                OnReleaseMapTitleLogoUi );
+            mapTitleLogoUiPool = createdPool;
+        }
+
+        ///<summary>
+        /// 맵 제목 UI 인스턴스 생성
+        ///</summary>
+        private MapTitleLogoUI CreateMapTitleLogoUi()
+        {
+            if ( mapTitleLogoUiPrefab == null || mapTitleLogoUiPoolRectTransform == null )
+            {
+                return null;
+            }
+
+            GameObject createdUiObject = Instantiate( mapTitleLogoUiPrefab, mapTitleLogoUiPoolRectTransform );
+            createdUiObject.name = mapTitleLogoUiPrefab.name;
+            MapTitleLogoUI mapTitleLogoUi = createdUiObject.GetComponent<MapTitleLogoUI>();
+
+            if ( mapTitleLogoUi == null )
+            {
+                mapTitleLogoUi = createdUiObject.AddComponent<MapTitleLogoUI>();
+            }
+
+            mapTitleLogoUi.SetReturnToPoolHandler( HandleAutoReturnObjectToMapTitleLogoUiPool );
+            createdUiObject.SetActive( false );
+            return mapTitleLogoUi;
+        }
+
+        ///<summary>
+        /// 맵 제목 UI 대여 후처리
+        ///</summary>
+        private void OnGetMapTitleLogoUi( MapTitleLogoUI _mapTitleLogoUi )
+        {
+            if ( _mapTitleLogoUi == null )
+            {
+                return;
+            }
+
+            _mapTitleLogoUi.transform.SetParent( mapTitleLogoUiPoolRectTransform, false );
+            _mapTitleLogoUi.gameObject.SetActive( true );
+        }
+
+        ///<summary>
+        /// 맵 제목 UI 반환 후처리
+        ///</summary>
+        private void OnReleaseMapTitleLogoUi( MapTitleLogoUI _mapTitleLogoUi )
+        {
+            if ( _mapTitleLogoUi == null )
+            {
+                return;
+            }
+
+            activeMapTitleLogoUiList.Remove( _mapTitleLogoUi );
+
+            if ( mapTitleLogoUiPoolRectTransform != null )
+            {
+                _mapTitleLogoUi.transform.SetParent( mapTitleLogoUiPoolRectTransform, false );
+            }
+
+            _mapTitleLogoUi.gameObject.SetActive( false );
+        }
+
+        ///<summary>
+        /// 맵 제목 UI 자동 반환 처리
+        ///</summary>
+        private void HandleAutoReturnObjectToMapTitleLogoUiPool( CAutoPoolReturnObject _autoPoolReturnObject )
+        {
+            if ( _autoPoolReturnObject is MapTitleLogoUI mapTitleLogoUi == false || mapTitleLogoUiPool == null )
+            {
+                return;
+            }
+
+            mapTitleLogoUiPool.Release( mapTitleLogoUi );
+        }
+
+        ///<summary>
+        /// 활성 맵 제목 UI 일괄 반환
+        ///</summary>
+        private void ReturnAllActiveMapTitleLogoUis()
+        {
+            if ( mapTitleLogoUiPool == null )
+            {
+                return;
+            }
+
+            List<MapTitleLogoUI> activeUiList = new List<MapTitleLogoUI>( activeMapTitleLogoUiList );
+
+            for ( int index = 0; index < activeUiList.Count; index++ )
+            {
+                MapTitleLogoUI mapTitleLogoUi = activeUiList[ index ];
+
+                if ( mapTitleLogoUi == null )
+                {
+                    continue;
+                }
+
+                mapTitleLogoUiPool.Release( mapTitleLogoUi );
+            }
+
+            activeMapTitleLogoUiList.Clear();
+        }
+
+        ///<summary>
+        /// 플레이어 활성 풀링 이펙트 정리
+        ///</summary>
+        private void ReleaseAllPlayerPooledEffects()
+        {
+            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+
+            if ( playerController == null )
+            {
+                return;
+            }
+
+            playerController.ReleaseAllPooledEffects();
+        }
+
+        ///<summary>
+        /// 모든 몬스터 풀 정리
+        ///</summary>
+        private void ClearAllMonsterPools()
+        {
+            ReturnAllActiveMapTitleLogoUis();
+
+            foreach ( KeyValuePair<string, CObjectPool<MonsterObject>> pairData in monsterPoolByKey )
+            {
+                CObjectPool<MonsterObject> monsterPool = pairData.Value;
+
+                if ( monsterPool == null )
+                {
+                    continue;
+                }
+
+                monsterPool.Clear();
+            }
+
+            monsterPoolByKey.Clear();
+            activePooledMonsterObjects.Clear();
+        }
+
+        ///<summary>
         /// 인스턴스 참조 정리
         ///</summary>
         protected override void OnDestroy()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            ReturnAllActivePooledMonsters();
+            ClearAllMonsterPools();
             base.OnDestroy();
         }
     }

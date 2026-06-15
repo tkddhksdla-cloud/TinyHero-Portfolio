@@ -7,6 +7,7 @@ namespace TinyHero.Maps
     public sealed class CMapToolSaveData
     {
         public string mapId;
+        public string mapName;
         public string backgroundSpriteName;
         public List<CMapToolPortalSaveData> portals = new List<CMapToolPortalSaveData>();
         public List<CMapToolMonsterSaveData> monsters = new List<CMapToolMonsterSaveData>();

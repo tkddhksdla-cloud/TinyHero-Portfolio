@@ -44,6 +44,8 @@ namespace TinyHero.Maps
         private const string PortalIdTitleObjectName = "PortalIdTitle";
         private const string PortalTargetMapTitleObjectName = "PortalTargetMapTitle";
         private const string PortalTargetPortalTitleObjectName = "PortalTargetPortalTitle";
+        private const string MapIdTitleObjectName = "MapIdTitle";
+        private const string MapNameTitleObjectName = "MapNameTitle";
         private const string MapInfoPanelObjectName = "MapInfoPanel";
         private const string LoadMapPanelObjectName = "LoadMapPanel";
         private const string ButtonObjectPrefix = "Button_";
@@ -68,15 +70,15 @@ namespace TinyHero.Maps
         private const float PanelPadding = 14.0f;
         private const float ItemSpacing = 8.0f;
         private const float MapInfoPanelWidth = 360.0f;
-        private const float MapInfoPanelHeight = 190.0f;
+        private const float MapInfoPanelHeight = 340.0f;
         private const float MapInfoInputWidth = 300.0f;
         private const float MapInfoButtonWidth = 142.0f;
         private const float MapInfoPanelLeftOffset = 20.0f;
         private const float MapInfoPanelTopOffset = -20.0f;
         private const float LoadPanelWidth = 360.0f;
         private const float LoadPanelHeight = 360.0f;
-        private const float LoadPanelLeftOffset = 20.0f;
-        private const float LoadPanelTopOffset = -220.0f;
+        private const float LoadPanelLeftOffset = 400.0f;
+        private const float LoadPanelTopOffset = -200.0f;
         private const int MouseButtonLeft = 0;
         private const int MouseButtonRight = 1;
         private const int SortingOrderPanel = 10;
@@ -102,6 +104,7 @@ namespace TinyHero.Maps
         [SerializeField] private RectTransform monsterListRoot;
         [SerializeField] private RectTransform loadMapListRoot;
         [SerializeField] private TMP_InputField mapIdInputField;
+        [SerializeField] private TMP_InputField mapNameInputField;
         [SerializeField] private TMP_InputField portalIdInputField;
         [SerializeField] private TMP_InputField portalTargetMapIdInputField;
         [SerializeField] private TMP_InputField portalTargetPortalIdInputField;
@@ -435,11 +438,27 @@ namespace TinyHero.Maps
                 mapIdRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 mapIdRectTransform.pivot = new Vector2( 0.0f, 1.0f );
                 mapIdRectTransform.sizeDelta = new Vector2( MapInfoInputWidth, 54.0f );
-                mapIdRectTransform.anchoredPosition = new Vector2( PanelPadding, -20.0f );
+                mapIdRectTransform.anchoredPosition = new Vector2( PanelPadding, -52.0f );
                 mapIdInputField = createdMapIdInputField;
             }
 
+            EnsureInputFieldTitle( MapIdTitleObjectName, mapInfoPanelRoot, "Map ID", new Vector2( 0.0f, -12.0f ) );
             UpdateInputFieldPlaceholder( mapIdInputField, "맵 ID" );
+
+            if ( mapNameInputField == null )
+            {
+                TMP_InputField createdMapNameInputField = CreateInputField( "MapNameInputField", mapInfoPanelRoot, "맵 이름", string.Empty );
+                RectTransform mapNameRectTransform = createdMapNameInputField.GetComponent<RectTransform>();
+                mapNameRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
+                mapNameRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
+                mapNameRectTransform.pivot = new Vector2( 0.0f, 1.0f );
+                mapNameRectTransform.sizeDelta = new Vector2( MapInfoInputWidth, 54.0f );
+                mapNameRectTransform.anchoredPosition = new Vector2( PanelPadding, -158.0f );
+                mapNameInputField = createdMapNameInputField;
+            }
+
+            EnsureInputFieldTitle( MapNameTitleObjectName, mapInfoPanelRoot, "Map Name", new Vector2( 0.0f, -126.0f ) );
+            UpdateInputFieldPlaceholder( mapNameInputField, "맵 이름" );
 
             if ( saveMapButton == null )
             {
@@ -448,7 +467,7 @@ namespace TinyHero.Maps
                 saveButtonRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 saveButtonRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 saveButtonRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                saveButtonRectTransform.anchoredPosition = new Vector2( PanelPadding, -90.0f );
+                saveButtonRectTransform.anchoredPosition = new Vector2( PanelPadding, -236.0f );
                 saveMapButton = createdSaveMapButton;
             }
 
@@ -459,7 +478,7 @@ namespace TinyHero.Maps
                 loadButtonRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 loadButtonRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 loadButtonRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                loadButtonRectTransform.anchoredPosition = new Vector2( PanelPadding + MapInfoButtonWidth + 12.0f, -90.0f );
+                loadButtonRectTransform.anchoredPosition = new Vector2( PanelPadding + MapInfoButtonWidth + 12.0f, -236.0f );
                 loadMapButton = createdLoadMapButton;
             }
 
@@ -470,7 +489,7 @@ namespace TinyHero.Maps
                 toggleRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 toggleRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 toggleRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -154.0f );
+                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -300.0f );
                 disableMonsterBehaviorToggle = createdDisableMonsterBehaviorToggle;
             }
 
@@ -520,6 +539,12 @@ namespace TinyHero.Maps
             {
                 string initialMapId = ResolveInitialMapId();
                 mapIdInputField.text = initialMapId;
+            }
+
+            if ( mapNameInputField != null && string.IsNullOrWhiteSpace( mapNameInputField.text ) )
+            {
+                string initialMapName = ResolveInitialMapName();
+                mapNameInputField.text = initialMapName;
             }
 
             if ( portalIdInputField != null && string.IsNullOrWhiteSpace( portalIdInputField.text ) )
@@ -820,6 +845,12 @@ namespace TinyHero.Maps
                 mapIdInputField.text = _loadedData.mapId;
             }
 
+            if ( mapNameInputField != null )
+            {
+                string resolvedMapName = string.IsNullOrWhiteSpace( _loadedData.mapName ) ? _loadedData.mapId : _loadedData.mapName;
+                mapNameInputField.text = resolvedMapName;
+            }
+
             if ( string.IsNullOrEmpty( _loadedData.backgroundSpriteName ) == false )
             {
                 ApplyBackgroundSpriteByName( _loadedData.backgroundSpriteName, false );
@@ -953,6 +984,7 @@ namespace TinyHero.Maps
         {
             CMapToolSaveData saveData = new CMapToolSaveData();
             saveData.mapId = ResolveMapId();
+            saveData.mapName = ResolveMapName();
 
             if ( backgroundRenderer != null && backgroundRenderer.sprite != null )
             {
@@ -1169,6 +1201,27 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 맵 이름 결정
+        ///</summary>
+        private string ResolveMapName()
+        {
+            if ( mapNameInputField != null )
+            {
+                string inputMapName = mapNameInputField.text;
+
+                if ( string.IsNullOrWhiteSpace( inputMapName ) == false )
+                {
+                    string trimmedInputMapName = inputMapName.Trim();
+                    mapNameInputField.text = trimmedInputMapName;
+                    return trimmedInputMapName;
+                }
+            }
+
+            string fallbackMapName = ResolveMapId();
+            return fallbackMapName;
+        }
+
+        ///<summary>
         /// 초기 맵 ID 결정
         ///</summary>
         private string ResolveInitialMapId()
@@ -1182,6 +1235,15 @@ namespace TinyHero.Maps
             Scene activeScene = SceneManager.GetActiveScene();
             string fallbackMapId = activeScene.name;
             return fallbackMapId;
+        }
+
+        ///<summary>
+        /// 초기 맵 이름 결정
+        ///</summary>
+        private string ResolveInitialMapName()
+        {
+            string initialMapName = ResolveMapId();
+            return initialMapName;
         }
 
         ///<summary>
