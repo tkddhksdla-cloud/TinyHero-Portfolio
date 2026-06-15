@@ -1,4 +1,5 @@
 using TMPro;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,11 +13,20 @@ namespace TinyHero.UI
         private const string LevelTextObjectName = "LevelText";
         private const string NameTextObjectName = "NameText";
         private const string HpGaugeObjectName = "HPGauge";
+        private const float DefaultGaugeAnimationDuration = 0.15f;
 
         [SerializeField] private TextMeshProUGUI levelText;
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private Image hpGaugeImage;
         [SerializeField] private RectTransform cachedRectTransform;
+        [SerializeField] private float gaugeAnimationDuration = DefaultGaugeAnimationDuration;
+
+        private float displayedHpFillAmount;
+        private float hpFillAmountStartValue;
+        private float hpFillAmountTargetValue;
+        private float hpFillAnimationElapsedTime;
+        private bool isGaugeStateInitialized;
+        private Coroutine hpGaugeAnimationRoutine;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -64,14 +74,10 @@ namespace TinyHero.UI
 
             if ( hpGaugeImage != null )
             {
-                float fillAmount = 0.0f;
+                float previousFillAmount = hpGaugeImage.fillAmount;
+                float fillAmount = ResolveHpFillAmount( _currentHp, _maxHp );
+                SetHpGaugeAnimationTarget( fillAmount );
 
-                if ( _maxHp > 0 )
-                {
-                    fillAmount = Mathf.Clamp01( (float)_currentHp / _maxHp );
-                }
-
-                hpGaugeImage.fillAmount = fillAmount;
             }
         }
 
@@ -111,6 +117,122 @@ namespace TinyHero.UI
             {
                 hpGaugeImage.fillAmount = 0.0f;
             }
+
+            displayedHpFillAmount = 0.0f;
+            hpFillAmountStartValue = 0.0f;
+            hpFillAmountTargetValue = 0.0f;
+            hpFillAnimationElapsedTime = 0.0f;
+            isGaugeStateInitialized = false;
+            StopHpGaugeAnimationRoutine();
+        }
+
+        ///<summary>
+        /// 체력 게이지 애니메이션 목표 설정
+        ///</summary>
+        private void SetHpGaugeAnimationTarget( float _fillAmount )
+        {
+            if ( isGaugeStateInitialized == false )
+            {
+                ApplyImmediateHpGaugeState( _fillAmount );
+                return;
+            }
+
+            hpFillAmountStartValue = displayedHpFillAmount;
+            hpFillAmountTargetValue = _fillAmount;
+            hpFillAnimationElapsedTime = 0.0f;
+            RestartHpGaugeAnimationRoutine();
+        }
+
+        ///<summary>
+        /// 체력 게이지 즉시 반영
+        ///</summary>
+        private void ApplyImmediateHpGaugeState( float _fillAmount )
+        {
+            displayedHpFillAmount = _fillAmount;
+            hpFillAmountStartValue = _fillAmount;
+            hpFillAmountTargetValue = _fillAmount;
+            hpFillAnimationElapsedTime = gaugeAnimationDuration;
+            isGaugeStateInitialized = true;
+
+            if ( hpGaugeImage != null )
+            {
+                hpGaugeImage.fillAmount = _fillAmount;
+            }
+
+            StopHpGaugeAnimationRoutine();
+        }
+
+    ///<summary>
+        /// 체력 게이지 애니메이션 재시작
+        ///</summary>
+        private void RestartHpGaugeAnimationRoutine()
+        {
+            StopHpGaugeAnimationRoutine();
+            hpGaugeAnimationRoutine = StartCoroutine( IE_AnimateHpGauge() );
+        }
+
+        ///<summary>
+        /// 체력 게이지 애니메이션 중단
+        ///</summary>
+        private void StopHpGaugeAnimationRoutine()
+        {
+            if ( hpGaugeAnimationRoutine == null )
+            {
+                return;
+            }
+
+            StopCoroutine( hpGaugeAnimationRoutine );
+            hpGaugeAnimationRoutine = null;
+        }
+
+        ///<summary>
+        /// 체력 비율 계산
+        ///</summary>
+        private float ResolveHpFillAmount( long _currentHp, long _maxHp )
+        {
+            float fillAmount = 0.0f;
+
+            if ( _maxHp > 0 )
+            {
+                fillAmount = Mathf.Clamp01( (float)_currentHp / _maxHp );
+            }
+
+            return fillAmount;
+        }
+
+        ///<summary>
+        /// 게이지 애니메이션 진행률 계산
+        ///</summary>
+        private float ResolveAnimationNormalizedTime( float _elapsedTime )
+        {
+            float duration = Mathf.Max( 0.001f, gaugeAnimationDuration );
+            float normalizedTime = Mathf.Clamp01( _elapsedTime / duration );
+            return normalizedTime;
+        }
+
+        ///<summary>
+        /// 체력 게이지 보간 처리
+        ///</summary>
+        private IEnumerator IE_AnimateHpGauge()
+        {
+            if ( isGaugeStateInitialized == false || hpGaugeImage == null )
+            {
+                hpGaugeAnimationRoutine = null;
+                yield break;
+            }
+
+            while ( hpFillAnimationElapsedTime < gaugeAnimationDuration )
+            {
+                hpFillAnimationElapsedTime += Time.unscaledDeltaTime;
+                float normalizedTime = ResolveAnimationNormalizedTime( hpFillAnimationElapsedTime );
+                displayedHpFillAmount = Mathf.Lerp( hpFillAmountStartValue, hpFillAmountTargetValue, normalizedTime );
+                hpGaugeImage.fillAmount = displayedHpFillAmount;
+                yield return null;
+            }
+
+            displayedHpFillAmount = hpFillAmountTargetValue;
+            hpGaugeImage.fillAmount = displayedHpFillAmount;
+            hpGaugeAnimationRoutine = null;
         }
 
         ///<summary>

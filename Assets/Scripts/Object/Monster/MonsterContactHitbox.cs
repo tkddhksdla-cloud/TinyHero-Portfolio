@@ -61,7 +61,8 @@ public sealed class MonsterContactHitbox : MonoBehaviour
             return;
         }
 
-        playerController.TryReceiveContactHit();
+        MonsterObject monsterObject = GetComponentInParent<MonsterObject>();
+        playerController.TryReceiveContactHit( monsterObject );
     }
 
     ///<summary>

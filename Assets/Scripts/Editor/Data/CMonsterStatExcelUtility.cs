@@ -137,7 +137,7 @@ namespace TinyHero.DataEditor
                 return;
             }
 
-            string rowSummary = $"{rowData.GetId()} | NAME={rowData.GetName()} | HP={rowData.GetHp()} | LV={rowData.GetLv()} | ATK={rowData.GetAtk()} | DEF={rowData.GetDef()} | ATS={rowData.GetAts()} | MVS={rowData.GetMvs()} | AT_Available={rowData.GetAtAvailable()}";
+            string rowSummary = $"{rowData.GetId()} | NAME={rowData.GetName()} | HP={rowData.GetHp()} | LV={rowData.GetLv()} | ATK={rowData.GetAtk()} | DEF={rowData.GetDef()} | ATS={rowData.GetAts()} | MVS={rowData.GetMvs()} | EXP={rowData.GetExp()} | AT_Available={rowData.GetAtAvailable()}";
             _logBuilder.AppendLine( rowSummary );
         }
     }

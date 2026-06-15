@@ -42,6 +42,10 @@ namespace TinyHero.Core.Data
         private long mvs;
 
         [SerializeField]
+        [CExcelHeader( "EXP" )]
+        private long exp;
+
+        [SerializeField]
         [CExcelHeader( "AT_Available" )]
         private bool atAvailable;
 
@@ -114,6 +118,15 @@ namespace TinyHero.Core.Data
         public long GetMvs()
         {
             long result = mvs;
+            return result;
+        }
+
+        ///<summary>
+        /// 경험치 보상 반환
+        ///</summary>
+        public long GetExp()
+        {
+            long result = exp;
             return result;
         }
 

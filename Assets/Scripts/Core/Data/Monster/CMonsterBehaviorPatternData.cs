@@ -92,7 +92,7 @@ namespace TinyHero.Core.Data
     [Serializable]
     public sealed class CMonsterPlayerDistancePatternData
     {
-        [SerializeField] private float playerDistance = 5.0f;
+        [SerializeField] private float playerDistance = 2.0f;
         [SerializeField] private List<CMonsterBehaviorActionEntry> actionEntryList = new List<CMonsterBehaviorActionEntry>();
         [SerializeField] private CMonsterAttackPatternData attackPatternData = new CMonsterAttackPatternData();
 
@@ -139,6 +139,7 @@ namespace TinyHero.Core.Data
     public sealed class CMonsterBehaviorPatternData : ScriptableObject
     {
         [SerializeField] private string monsterId = string.Empty;
+        [SerializeField] private float respawnDelaySeconds = 4.0f;
         [SerializeField] private CMonsterAlwaysPatternData alwaysPatternData = new CMonsterAlwaysPatternData();
         [SerializeField] private CMonsterPlayerDistancePatternData playerDistancePatternData = new CMonsterPlayerDistancePatternData();
 
@@ -157,6 +158,23 @@ namespace TinyHero.Core.Data
         public void SetMonsterId( string _monsterId )
         {
             monsterId = string.IsNullOrWhiteSpace( _monsterId ) ? string.Empty : _monsterId.Trim();
+        }
+
+        ///<summary>
+        /// 몬스터 리스폰 대기 시간 반환
+        ///</summary>
+        public float GetRespawnDelaySeconds()
+        {
+            float result = respawnDelaySeconds;
+            return result;
+        }
+
+        ///<summary>
+        /// 몬스터 리스폰 대기 시간 설정
+        ///</summary>
+        public void SetRespawnDelaySeconds( float _respawnDelaySeconds )
+        {
+            respawnDelaySeconds = Mathf.Max( 0.0f, _respawnDelaySeconds );
         }
 
         ///<summary>

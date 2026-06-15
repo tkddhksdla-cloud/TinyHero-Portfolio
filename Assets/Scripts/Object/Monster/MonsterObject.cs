@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using TinyHero.Core.Data;
+using TinyHero.Maps;
 using TinyHero.Player;
 using TinyHero.UI;
 using UnityEngine;
@@ -32,6 +34,8 @@ public sealed class MonsterObject : MonoBehaviour
     private const string MonsterStatTableResourcePath = "Data/Monster/MonsterStatTableData";
     private const string IdleAnimationStateName = "Idle";
     private const string WalkAnimationStateName = "Walk";
+    private const string HitAnimationStateName = "Hit";
+    private const string DeadAnimationStateName = "Dead";
     private const float DefaultFacingScaleX = 1.0f;
     private const float DefaultMoveSpeed = 1.0f;
     private const float MoveSpeedStatToUnitsMultiplier = 0.01f;
@@ -40,6 +44,9 @@ public sealed class MonsterObject : MonoBehaviour
     private const float TeleportHorizontalOffset = 1.25f;
     private const float PlayerDetectionRetentionSeconds = 2.0f;
     private const float DefaultAttackStateDuration = 0.35f;
+    private const float DefaultHitStateDuration = 0.5f;
+    private const float DefaultDeathFallbackDuration = 5.0f;
+    private const float DefaultDeathReleaseNormalizedTime = 0.7f;
 
     [SerializeField] private string monsterId = string.Empty;
     [SerializeField] private string monsterName = string.Empty;
@@ -50,6 +57,7 @@ public sealed class MonsterObject : MonoBehaviour
     [SerializeField] private long def;
     [SerializeField] private long ats;
     [SerializeField] private long mvs;
+    [SerializeField] private long expReward;
     [SerializeField] private bool atAvailable = true;
     [SerializeField] private Animator targetAnimator;
     [SerializeField] private Rigidbody2D targetRigidbody;
@@ -71,9 +79,17 @@ public sealed class MonsterObject : MonoBehaviour
     private float currentWanderDirection = 1.0f;
     private float defaultScaleX = DefaultFacingScaleX;
     private float desiredHorizontalVelocity;
+    private float hitStateDuration = DefaultHitStateDuration;
+    private string mapRuntimePoolKey = string.Empty;
+    private string pendingAnimationStateName = string.Empty;
+    private Vector3 mapRuntimeSpawnPosition;
+    private Vector3 mapRuntimeSpawnRotation;
+    private Vector3 mapRuntimeSpawnScale = Vector3.one;
     private float playerDetectionRetentionRemaining;
     private bool hasTeleportedInCurrentAction;
     private bool isConfigured;
+    private bool isDeathSequenceStarted;
+    private Coroutine deathSequenceRoutine;
 
     ///<summary>
     /// 컴포넌트 초기화
@@ -108,7 +124,7 @@ public sealed class MonsterObject : MonoBehaviour
 
         if ( hasMonsterId )
         {
-            ApplyMonsterStatData();
+            ApplyMonsterStatData( false, currentHp );
             isConfigured = true;
             ChangeState( eMonsterState.IDLE );
             RegisterMonsterInfo();
@@ -124,6 +140,10 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void OnEnable()
     {
+        isDeathSequenceStarted = false;
+        SetBodyColliderEnabled( true );
+        SetContactHitboxEnabled( true );
+        TryPlayPendingAnimationState();
         RegisterMonsterInfo();
     }
 
@@ -132,6 +152,7 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void OnDisable()
     {
+        StopDeathSequence();
         StopHorizontalMovement();
         UnregisterMonsterInfo();
     }
@@ -169,13 +190,114 @@ public sealed class MonsterObject : MonoBehaviour
     {
         string trimmedMonsterId = string.IsNullOrWhiteSpace( _monsterId ) ? string.Empty : _monsterId.Trim();
         string trimmedMonsterName = string.IsNullOrWhiteSpace( _monsterName ) ? trimmedMonsterId : _monsterName.Trim();
+        bool shouldPreserveCurrentHp = isConfigured
+            && string.Equals( monsterId, trimmedMonsterId, System.StringComparison.Ordinal )
+            && currentHp > 0;
+        long previousCurrentHp = currentHp;
         monsterId = trimmedMonsterId;
         monsterName = trimmedMonsterName;
-        ApplyMonsterStatData();
+        ApplyMonsterStatData( shouldPreserveCurrentHp, previousCurrentHp );
         ClearBehaviorState();
         isConfigured = true;
         ChangeState( eMonsterState.IDLE );
         RegisterMonsterInfo();
+    }
+
+    ///<summary>
+    /// 런타임 맵 풀 키 설정
+    ///</summary>
+    public void SetMapRuntimePoolKey( string _poolKey )
+    {
+        string resolvedPoolKey = string.IsNullOrWhiteSpace( _poolKey ) ? string.Empty : _poolKey.Trim();
+        mapRuntimePoolKey = resolvedPoolKey;
+    }
+
+    ///<summary>
+    /// 런타임 맵 풀 키 반환
+    ///</summary>
+    public string GetMapRuntimePoolKey()
+    {
+        string result = mapRuntimePoolKey;
+        return result;
+    }
+
+    ///<summary>
+    /// 런타임 맵 풀 키 초기화
+    ///</summary>
+    public void ClearMapRuntimePoolKey()
+    {
+        mapRuntimePoolKey = string.Empty;
+    }
+
+    ///<summary>
+    /// 맵 런타임 리스폰 기준점 설정
+    ///</summary>
+    public void SetMapRuntimeSpawnTransform( Vector3 _spawnPosition, Vector3 _spawnRotation, Vector3 _spawnScale )
+    {
+        mapRuntimeSpawnPosition = _spawnPosition;
+        mapRuntimeSpawnRotation = _spawnRotation;
+        mapRuntimeSpawnScale = _spawnScale;
+    }
+
+    ///<summary>
+    /// 맵 런타임 리스폰 위치 반환
+    ///</summary>
+    public Vector3 GetMapRuntimeSpawnPosition()
+    {
+        Vector3 result = mapRuntimeSpawnPosition;
+        return result;
+    }
+
+    ///<summary>
+    /// 맵 런타임 리스폰 회전 반환
+    ///</summary>
+    public Vector3 GetMapRuntimeSpawnRotation()
+    {
+        Vector3 result = mapRuntimeSpawnRotation;
+        return result;
+    }
+
+    ///<summary>
+    /// 맵 런타임 리스폰 스케일 반환
+    ///</summary>
+    public Vector3 GetMapRuntimeSpawnScale()
+    {
+        Vector3 result = mapRuntimeSpawnScale;
+        return result;
+    }
+
+    ///<summary>
+    /// 몬스터 리스폰 대기 시간 반환
+    ///</summary>
+    public float GetRespawnDelaySeconds()
+    {
+        if ( behaviorPatternData == null )
+        {
+            return 0.0f;
+        }
+
+        float result = behaviorPatternData.GetRespawnDelaySeconds();
+        return result;
+    }
+
+    ///<summary>
+    /// 리스폰용 런타임 상태 초기화
+    ///</summary>
+    public void ResetRuntimeStateForRespawn()
+    {
+        StopDeathSequence();
+        isDeathSequenceStarted = false;
+        SetBodyColliderEnabled( true );
+        SetContactHitboxEnabled( true );
+        StopHorizontalMovement();
+
+        if ( targetRigidbody != null )
+        {
+            targetRigidbody.linearVelocity = Vector2.zero;
+            targetRigidbody.angularVelocity = 0.0f;
+        }
+
+        ResetAnimatorRuntimeState();
     }
 
     ///<summary>
@@ -257,6 +379,15 @@ public sealed class MonsterObject : MonoBehaviour
     public long GetMvs()
     {
         long result = mvs;
+        return result;
+    }
+
+    ///<summary>
+    /// 경험치 보상 반환
+    ///</summary>
+    public long GetExpReward()
+    {
+        long result = expReward;
         return result;
     }
 
@@ -351,6 +482,37 @@ public sealed class MonsterObject : MonoBehaviour
         }
 
         RefreshMonsterInfo();
+    }
+
+    ///<summary>
+    /// 몬스터 피해 적용
+    ///</summary>
+    public void TakeDamage( long _damage )
+    {
+        if ( currentState == eMonsterState.DIE )
+        {
+            return;
+        }
+
+        long appliedDamage = _damage;
+
+        if ( appliedDamage < 0 )
+        {
+            appliedDamage = 0;
+        }
+
+        EnsurePlayerTransform();
+        ApplyFacingDirectionTowardPlayer();
+
+        long previousCurrentHp = currentHp;
+        long nextHp = currentHp - appliedDamage;
+        SetCurrentHp( nextHp );
+        if ( currentHp <= 0 )
+        {
+            return;
+        }
+
+        ChangeState( eMonsterState.HIT );
     }
 
     ///<summary>
@@ -503,7 +665,8 @@ public sealed class MonsterObject : MonoBehaviour
     private void EnterHitState()
     {
         StopHorizontalMovement();
-        PlayAnimationState( IdleAnimationStateName );
+        ApplyFacingDirectionTowardPlayer();
+        PlayAnimationState( HitAnimationStateName );
     }
 
     ///<summary>
@@ -512,7 +675,16 @@ public sealed class MonsterObject : MonoBehaviour
     private void EnterDieState()
     {
         StopHorizontalMovement();
-        PlayAnimationState( IdleAnimationStateName );
+        SetContactHitboxEnabled( false );
+
+        if ( targetRigidbody != null )
+        {
+            targetRigidbody.linearVelocity = Vector2.zero;
+            targetRigidbody.angularVelocity = 0.0f;
+        }
+
+        PlayAnimationState( DeadAnimationStateName );
+        StartDeathSequence();
     }
 
     ///<summary>
@@ -566,6 +738,11 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void UpdateHitState()
     {
+        if ( currentStateElapsedTime < hitStateDuration )
+        {
+            return;
+        }
+
         ChangeState( eMonsterState.IDLE );
     }
 
@@ -1295,7 +1472,207 @@ public sealed class MonsterObject : MonoBehaviour
             return;
         }
 
+        if ( targetAnimator.gameObject.activeInHierarchy == false || targetAnimator.isActiveAndEnabled == false )
+        {
+            pendingAnimationStateName = _animationStateName;
+            return;
+        }
+
+        pendingAnimationStateName = string.Empty;
         targetAnimator.Play( _animationStateName );
+    }
+
+    ///<summary>
+    /// 보류된 애니메이션 상태 재생 시도
+    ///</summary>
+    private void TryPlayPendingAnimationState()
+    {
+        if ( targetAnimator == null || string.IsNullOrWhiteSpace( pendingAnimationStateName ) )
+        {
+            return;
+        }
+
+        if ( targetAnimator.gameObject.activeInHierarchy == false || targetAnimator.isActiveAndEnabled == false )
+        {
+            return;
+        }
+
+        string animationStateName = pendingAnimationStateName;
+        pendingAnimationStateName = string.Empty;
+        targetAnimator.Play( animationStateName );
+    }
+
+    ///<summary>
+    /// 애니메이터 런타임 상태 초기화
+    ///</summary>
+    private void ResetAnimatorRuntimeState()
+    {
+        if ( targetAnimator == null )
+        {
+            return;
+        }
+
+        targetAnimator.Rebind();
+        targetAnimator.Update( 0.0f );
+    }
+
+    ///<summary>
+    /// 전투 콜라이더 활성 상태 설정
+    ///</summary>
+    private void SetBodyColliderEnabled( bool _isEnabled )
+    {
+        if ( bodyCollider != null )
+        {
+            bodyCollider.enabled = _isEnabled;
+        }
+    }
+
+    ///<summary>
+    /// 플레이어 상호작용 충돌체 활성 상태 설정
+    ///</summary>
+    private void SetContactHitboxEnabled( bool _isEnabled )
+    {
+        if ( contactHitboxCollider != null )
+        {
+            contactHitboxCollider.enabled = _isEnabled;
+        }
+    }
+
+    ///<summary>
+    /// 사망 시퀀스 시작
+    ///</summary>
+    private void StartDeathSequence()
+    {
+        if ( isDeathSequenceStarted )
+        {
+            return;
+        }
+
+        isDeathSequenceStarted = true;
+        StopDeathSequence();
+        deathSequenceRoutine = StartCoroutine( IE_HandleDeathSequence() );
+    }
+
+    ///<summary>
+    /// 사망 시퀀스 중단
+    ///</summary>
+    private void StopDeathSequence()
+    {
+        if ( deathSequenceRoutine == null )
+        {
+            return;
+        }
+
+        StopCoroutine( deathSequenceRoutine );
+        deathSequenceRoutine = null;
+    }
+
+    ///<summary>
+    /// 사망 애니메이션 종료 대기
+    ///</summary>
+    private IEnumerator IE_HandleDeathSequence()
+    {
+        float fallbackElapsedTime = 0.0f;
+
+        while ( HasDeathAnimationFinished() == false )
+        {
+            fallbackElapsedTime += Time.deltaTime;
+
+            if ( fallbackElapsedTime >= DefaultDeathFallbackDuration )
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        ReleaseMonsterObject();
+    }
+
+    ///<summary>
+    /// 사망 애니메이션 종료 여부 반환
+    ///</summary>
+    private bool HasDeathAnimationFinished()
+    {
+        if ( targetAnimator == null )
+        {
+            return true;
+        }
+
+        AnimatorStateInfo animatorStateInfo = targetAnimator.GetCurrentAnimatorStateInfo( 0 );
+
+        if ( animatorStateInfo.IsName( DeadAnimationStateName ) == false )
+        {
+            return false;
+        }
+
+        bool hasFinished = animatorStateInfo.normalizedTime >= DefaultDeathReleaseNormalizedTime;
+        return hasFinished;
+    }
+
+    ///<summary>
+    /// 몬스터 비활성 처리
+    ///</summary>
+    private void ReleaseMonsterObject()
+    {
+        deathSequenceRoutine = null;
+        RestoreIdleStateBeforeRelease();
+
+        bool wasReleasedToPool = TryReleaseToMapRuntimePool();
+
+        if ( wasReleasedToPool )
+        {
+            return;
+        }
+
+        gameObject.SetActive( false );
+    }
+
+    ///<summary>
+    /// 반환 직전 유휴 상태 복원
+    ///</summary>
+    private void RestoreIdleStateBeforeRelease()
+    {
+        isDeathSequenceStarted = false;
+        currentActionEntry = null;
+        currentSelectionContext = eMonsterBehaviorSelectionContext.NONE;
+        currentActionElapsedTime = 0.0f;
+        currentActionCooldownRemaining = 0.0f;
+        hasTeleportedInCurrentAction = false;
+        ChangeState( eMonsterState.IDLE );
+
+        if ( targetAnimator == null )
+        {
+            return;
+        }
+
+        if ( targetAnimator.gameObject.activeInHierarchy == false || targetAnimator.isActiveAndEnabled == false )
+        {
+            return;
+        }
+
+        targetAnimator.Update( 0.0f );
+    }
+
+    ///<summary>
+    /// 런타임 맵 풀 반환 시도
+    ///</summary>
+    private bool TryReleaseToMapRuntimePool()
+    {
+        if ( string.IsNullOrWhiteSpace( mapRuntimePoolKey ) )
+        {
+            return false;
+        }
+
+        bool hasMapManager = CMapManager.TryGetInstance( out CMapManager mapManager );
+
+        if ( hasMapManager == false || mapManager == null )
+        {
+            return false;
+        }
+
+        bool wasReleased = mapManager.ReleasePooledMonster( this, mapRuntimePoolKey );
+        return wasReleased;
     }
 
     ///<summary>
@@ -1407,7 +1784,7 @@ public sealed class MonsterObject : MonoBehaviour
     ///<summary>
     /// 몬스터 스탯 데이터 적용
     ///</summary>
-    private void ApplyMonsterStatData()
+    private void ApplyMonsterStatData( bool _preserveCurrentHp, long _previousCurrentHp )
     {
         if ( string.IsNullOrWhiteSpace( monsterId ) )
         {
@@ -1432,17 +1809,43 @@ public sealed class MonsterObject : MonoBehaviour
         string rowName = rowData.GetName();
         level = rowData.GetLv();
         maxHp = rowData.GetHp();
-        currentHp = maxHp;
+        currentHp = ResolveConfiguredCurrentHp( _preserveCurrentHp, _previousCurrentHp, maxHp );
         atk = rowData.GetAtk();
         def = rowData.GetDef();
         ats = rowData.GetAts();
         mvs = rowData.GetMvs();
+        expReward = rowData.GetExp();
         atAvailable = rowData.GetAtAvailable();
 
         if ( string.IsNullOrWhiteSpace( rowName ) == false )
         {
             monsterName = rowName;
         }
+    }
+
+    ///<summary>
+    /// 재구성 시 사용할 현재 체력 결정
+    ///</summary>
+    private long ResolveConfiguredCurrentHp( bool _preserveCurrentHp, long _previousCurrentHp, long _resolvedMaxHp )
+    {
+        if ( _preserveCurrentHp == false )
+        {
+            return _resolvedMaxHp;
+        }
+
+        long clampedCurrentHp = _previousCurrentHp;
+
+        if ( clampedCurrentHp < 0 )
+        {
+            clampedCurrentHp = 0;
+        }
+
+        if ( clampedCurrentHp > _resolvedMaxHp )
+        {
+            clampedCurrentHp = _resolvedMaxHp;
+        }
+
+        return clampedCurrentHp;
     }
 
     ///<summary>

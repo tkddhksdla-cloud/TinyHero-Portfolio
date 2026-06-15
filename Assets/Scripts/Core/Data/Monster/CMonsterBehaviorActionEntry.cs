@@ -12,7 +12,7 @@ namespace TinyHero.Core.Data
         [SerializeField] private eMonsterBehaviorAction actionType = eMonsterBehaviorAction.IDLE;
         [SerializeField] private float weight = 1.0f;
         [SerializeField] private float durationSeconds = 1.0f;
-        [SerializeField] private float cooldownSeconds = 0.25f;
+        [SerializeField] private float cooldownSeconds = 1.0f;
 
         ///<summary>
         /// 행동 종류 반환

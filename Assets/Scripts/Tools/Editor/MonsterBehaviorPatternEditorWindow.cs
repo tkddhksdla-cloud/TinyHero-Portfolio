@@ -251,6 +251,8 @@ namespace TinyHero.Tools
 
             EditorGUILayout.LabelField("Pattern Settings", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Monster Id", workingPatternData.GetMonsterId());
+            float updatedRespawnDelaySeconds = EditorGUILayout.FloatField("Respawn Delay Seconds", workingPatternData.GetRespawnDelaySeconds());
+            workingPatternData.SetRespawnDelaySeconds(updatedRespawnDelaySeconds);
             EditorGUILayout.Space();
             DrawPatternColumnsSection();
         }
@@ -615,7 +617,7 @@ namespace TinyHero.Tools
             entryData.SetActionType(defaultAction);
             entryData.SetWeight(1.0f);
             entryData.SetDurationSeconds(1.0f);
-            entryData.SetCooldownSeconds(0.25f);
+            entryData.SetCooldownSeconds(1.0f);
             _entryList.Add(entryData);
         }
 

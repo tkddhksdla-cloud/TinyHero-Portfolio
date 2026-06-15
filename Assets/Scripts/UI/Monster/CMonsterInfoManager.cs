@@ -135,6 +135,7 @@ namespace TinyHero.UI
 
             if ( hasView == false || monsterInfoView == null )
             {
+                RegisterMonster( _monsterObject );
                 return;
             }
 
