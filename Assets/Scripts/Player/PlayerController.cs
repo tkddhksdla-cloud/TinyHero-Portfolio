@@ -1,5 +1,7 @@
 ﻿using TinyHero.Core;
 using System.Collections;
+using System.Collections.Generic;
+using LayerLab.ArtMakerUnity;
 using UnityEngine;
 
 namespace TinyHero.Player
@@ -8,6 +10,7 @@ namespace TinyHero.Player
     /// 플레이어 제어 컴포넌트
     ///</summary>
     [RequireComponent( typeof( Rigidbody2D ) )]
+    [RequireComponent( typeof( CPlayerStatManager ) )]
     public sealed class PlayerController : MonoBehaviour
     {
         ///<summary>
@@ -25,15 +28,21 @@ namespace TinyHero.Player
 
         private const float DefaultGravityScale = 1.0f;
         private const float GroundDetachVelocityThreshold = 0.01f;
+        private const string DefaultAttackSlashFxResourcePath = "Prefabs/FX/FX_DefaultAttack_Slash";
         private const string IdleAnimationStateName = "Idle";
         private const string MoveAnimationStateName = "Move";
         private const string AttackAnimationStateName = "Attack";
         private const string HitAnimationStateName = "Hit";
         private const string DieAnimationStateName = "Die";
+        private const float DefaultAttackSlashFxLifetime = 0.5f;
 
         [Header( "References" )]
         [SerializeField] private Animator targetAnimator;
+        [SerializeField] private AnimationEventReceiver animationEventReceiver;
         [SerializeField] private Rigidbody2D targetRigidbody;
+        [SerializeField] private CPlayerStatManager targetStatManager;
+        [SerializeField] private BoxCollider2D bodyCollider;
+        [SerializeField] private Collider2D attackHitCollider;
         [SerializeField] private Transform groundCheckPoint;
         [SerializeField] private Collider2D[] targetColliders;
 
@@ -55,6 +64,8 @@ namespace TinyHero.Player
 
         [Header( "Combat" )]
         [SerializeField] private float attackDuration = 0.2f;
+        [SerializeField] private float attackAnimationSpeedMultiplier = 3.0f;
+        [SerializeField] private float attackSlashFxLifetime = DefaultAttackSlashFxLifetime;
         [SerializeField] private float hitStateDuration = 0.25f;
         [SerializeField] private float hitKnockbackDistance = 0.45f;
         [SerializeField] private float invincibilityDuration = 1.25f;
@@ -62,17 +73,24 @@ namespace TinyHero.Player
         [SerializeField] private Color invincibilityTintColor = new Color( 0.35f, 0.35f, 0.35f, 1.0f );
         [SerializeField] private SpriteRenderer[] targetSpriteRenderers;
 
+        private const float DefaultAnimatorSpeed = 1.0f;
         private ePlayerState currentState = ePlayerState.Idle;
         private float horizontalInput;
         private float attackElapsedTime;
         private float defaultScaleX;
+        private float defaultAnimatorSpeed = DefaultAnimatorSpeed;
         private float hitElapsedTime;
         private float hitReactionDirection = -1.0f;
+        private float nextAttackAvailableTime;
         private int currentJumpCount;
         private Color[] defaultSpriteColors;
+        private GameObject attackSlashFxPrefab;
+        private CObjectPool<GameObject> attackSlashFxPool;
         private Coroutine hitReactionRoutine;
         private Coroutine invincibilityRoutine;
         private readonly Collider2D[] overlapResultBuffer = new Collider2D[ 16 ];
+        private readonly Collider2D[] attackHitResultBuffer = new Collider2D[ 16 ];
+        private readonly List<GameObject> activeAttackSlashFxObjectList = new List<GameObject>();
         private bool isGrounded;
         private bool isHitReactionActive;
         private bool isInvincible;
@@ -112,6 +130,17 @@ namespace TinyHero.Player
                 targetAnimator = resolvedAnimator;
             }
 
+            if ( targetAnimator != null )
+            {
+                defaultAnimatorSpeed = targetAnimator.speed;
+            }
+
+            if ( animationEventReceiver == null )
+            {
+                AnimationEventReceiver resolvedAnimationEventReceiver = GetComponentInChildren<AnimationEventReceiver>( true );
+                animationEventReceiver = resolvedAnimationEventReceiver;
+            }
+
             if ( targetRigidbody == null )
             {
                 Rigidbody2D resolvedRigidbody = GetComponent<Rigidbody2D>();
@@ -122,6 +151,25 @@ namespace TinyHero.Player
             {
                 targetRigidbody.constraints |= RigidbodyConstraints2D.FreezeRotation;
             }
+
+            ResolveStatManager();
+
+            if ( bodyCollider == null )
+            {
+                BoxCollider2D resolvedBodyCollider = ResolveBodyCollider();
+                bodyCollider = resolvedBodyCollider;
+            }
+
+            if ( attackHitCollider == null )
+            {
+                Collider2D resolvedAttackHitCollider = ResolveAttackHitCollider();
+                attackHitCollider = resolvedAttackHitCollider;
+            }
+
+            ConfigureAttackHitCollider();
+            SetAttackHitColliderActive( false );
+            SubscribeAnimationEventReceiver();
+            EnsureAttackSlashFxPoolInitialized();
 
             CacheTargetColliders();
             CacheSpriteRenderers();
@@ -135,6 +183,45 @@ namespace TinyHero.Player
         {
             currentState = ePlayerState.Die;
             ChangeState( ePlayerState.Idle );
+        }
+
+        ///<summary>
+        /// 활성화 시 이벤트 재구독
+        ///</summary>
+        private void OnEnable()
+        {
+            if ( animationEventReceiver == null )
+            {
+                AnimationEventReceiver resolvedAnimationEventReceiver = GetComponentInChildren<AnimationEventReceiver>( true );
+                animationEventReceiver = resolvedAnimationEventReceiver;
+            }
+
+            if ( attackHitCollider == null )
+            {
+                Collider2D resolvedAttackHitCollider = ResolveAttackHitCollider();
+                attackHitCollider = resolvedAttackHitCollider;
+            }
+
+            if ( bodyCollider == null )
+            {
+                BoxCollider2D resolvedBodyCollider = ResolveBodyCollider();
+                bodyCollider = resolvedBodyCollider;
+            }
+
+            ConfigureAttackHitCollider();
+            SetAttackHitColliderActive( false );
+            CacheTargetColliders();
+            SubscribeAnimationEventReceiver();
+            EnsureAttackSlashFxPoolInitialized();
+        }
+
+        ///<summary>
+        /// 비활성화 시 이벤트 구독 해제
+        ///</summary>
+        private void OnDisable()
+        {
+            UnsubscribeAnimationEventReceiver();
+            SetAttackHitColliderActive( false );
         }
 
         ///<summary>
@@ -176,7 +263,37 @@ namespace TinyHero.Player
         private void OnDestroy()
         {
             StopHitReaction();
+            RestoreAnimatorSpeed();
+            SetAttackHitColliderActive( false );
+            ReleaseAllPooledEffects();
             RestoreSpriteColors();
+        }
+
+        ///<summary>
+        /// 활성 풀링 이펙트 일괄 반환
+        ///</summary>
+        public void ReleaseAllPooledEffects()
+        {
+            if ( attackSlashFxPool == null )
+            {
+                return;
+            }
+
+            List<GameObject> activeFxObjectList = new List<GameObject>( activeAttackSlashFxObjectList );
+
+            for ( int index = 0; index < activeFxObjectList.Count; index++ )
+            {
+                GameObject fxObject = activeFxObjectList[ index ];
+
+                if ( fxObject == null )
+                {
+                    continue;
+                }
+
+                attackSlashFxPool.Release( fxObject );
+            }
+
+            activeAttackSlashFxObjectList.Clear();
         }
 
         ///<summary>
@@ -196,19 +313,57 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 공격 타격 이벤트 수신
+        ///</summary>
+        public void OnAttackHit()
+        {
+            HandleAttackHitEvent();
+        }
+
+        ///<summary>
         /// 접촉 피격 처리
         ///</summary>
         public bool TryReceiveContactHit()
+        {
+            bool didReceiveHit = TryReceiveContactHit( null );
+            return didReceiveHit;
+        }
+
+        ///<summary>
+        /// 접촉 피격 처리
+        ///</summary>
+        public bool TryReceiveContactHit( MonsterObject _monsterObject )
         {
             if ( currentState == ePlayerState.Die || isInvincible )
             {
                 return false;
             }
 
+            ApplyMonsterContactDamage( _monsterObject );
             hitReactionDirection = -ResolveFacingDirection();
             Hit();
             BeginInvincibility();
             return true;
+        }
+
+        ///<summary>
+        /// 플레이어 스탯 매니저 결정
+        ///</summary>
+        private void ResolveStatManager()
+        {
+            if ( targetStatManager != null )
+            {
+                return;
+            }
+
+            CPlayerStatManager resolvedStatManager = GetComponent<CPlayerStatManager>();
+
+            if ( resolvedStatManager == null )
+            {
+                resolvedStatManager = gameObject.AddComponent<CPlayerStatManager>();
+            }
+
+            targetStatManager = resolvedStatManager;
         }
 
         ///<summary>
@@ -243,6 +398,16 @@ namespace TinyHero.Player
             bool capturedInteractionHeld = inputManager.GetInteractionHeld();
             bool capturedJumpDown = inputManager.GetJumpDown();
             bool capturedAttackDown = inputManager.GetAttackDown();
+
+            if ( currentState == ePlayerState.Attack )
+            {
+                horizontalInput = 0.0f;
+                isJumpHeld = capturedJumpHeld;
+                isInteractionHeld = false;
+                isPendingJump = false;
+                isPendingAttack = false;
+                return;
+            }
 
             horizontalInput = capturedHorizontalInput;
             isJumpHeld = capturedJumpHeld;
@@ -295,8 +460,18 @@ namespace TinyHero.Player
                 return;
             }
 
-            if ( isPendingAttack && isGrounded )
+            if ( currentState == ePlayerState.Attack )
             {
+                return;
+            }
+
+            if ( isPendingAttack )
+            {
+                if ( CanStartAttack() == false )
+                {
+                    return;
+                }
+
                 ChangeState( ePlayerState.Attack );
                 return;
             }
@@ -317,12 +492,6 @@ namespace TinyHero.Player
             {
                 ePlayerState nextGroundedState = ResolveGroundedLocomotionState();
                 ChangeState( nextGroundedState );
-                return;
-            }
-
-            if ( currentState == ePlayerState.Attack && isGrounded == false )
-            {
-                ChangeState( ePlayerState.Jump );
                 return;
             }
 
@@ -410,6 +579,7 @@ namespace TinyHero.Player
         private void EnterIdleState()
         {
             attackElapsedTime = 0.0f;
+            RestoreAnimatorSpeed();
         }
 
         ///<summary>
@@ -418,6 +588,7 @@ namespace TinyHero.Player
         private void EnterMoveState()
         {
             attackElapsedTime = 0.0f;
+            RestoreAnimatorSpeed();
         }
 
         ///<summary>
@@ -426,6 +597,10 @@ namespace TinyHero.Player
         private void EnterAttackState()
         {
             attackElapsedTime = 0.0f;
+            ApplyAttackAnimationSpeed();
+            SetAttackHorizontalVelocity( 0.0f );
+            SetAttackHitColliderActive( false );
+            nextAttackAvailableTime = Time.time + ResolveAttackIntervalSeconds();
         }
 
         ///<summary>
@@ -433,6 +608,8 @@ namespace TinyHero.Player
         ///</summary>
         private void EnterJumpState()
         {
+            RestoreAnimatorSpeed();
+            SetAttackHitColliderActive( false );
         }
 
         ///<summary>
@@ -442,6 +619,8 @@ namespace TinyHero.Player
         {
             attackElapsedTime = 0.0f;
             hitElapsedTime = 0.0f;
+            RestoreAnimatorSpeed();
+            SetAttackHitColliderActive( false );
 
             if ( targetRigidbody != null )
             {
@@ -456,6 +635,8 @@ namespace TinyHero.Player
         ///</summary>
         private void EnterDieState()
         {
+            RestoreAnimatorSpeed();
+            SetAttackHitColliderActive( false );
             Vector2 currentVelocity = targetRigidbody.linearVelocity;
             currentVelocity.x = 0.0f;
             targetRigidbody.linearVelocity = currentVelocity;
@@ -503,7 +684,7 @@ namespace TinyHero.Player
         {
             attackElapsedTime += Time.deltaTime;
 
-            if ( attackElapsedTime < attackDuration )
+            if ( HasAttackAnimationFinished() == false )
             {
                 return;
             }
@@ -563,7 +744,7 @@ namespace TinyHero.Player
         ///</summary>
         private void ApplyHorizontalMovement()
         {
-            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit )
+            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit || currentState == ePlayerState.Attack )
             {
                 return;
             }
@@ -575,7 +756,8 @@ namespace TinyHero.Player
             }
 
             Vector2 currentVelocity = targetRigidbody.linearVelocity;
-            float horizontalVelocity = horizontalInput * moveSpeed;
+            float resolvedMoveSpeed = ResolveMoveSpeed();
+            float horizontalVelocity = horizontalInput * resolvedMoveSpeed;
             currentVelocity.x = horizontalVelocity;
             targetRigidbody.linearVelocity = currentVelocity;
         }
@@ -585,7 +767,7 @@ namespace TinyHero.Player
         ///</summary>
         private void ApplyFacingDirection()
         {
-            if ( currentState == ePlayerState.Hit )
+            if ( currentState == ePlayerState.Hit || currentState == ePlayerState.Attack )
             {
                 return;
             }
@@ -689,10 +871,38 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 이동 속도 결정
+        ///</summary>
+        private float ResolveMoveSpeed()
+        {
+            if ( targetStatManager == null )
+            {
+                float fallbackMoveSpeed = moveSpeed;
+                return fallbackMoveSpeed;
+            }
+
+            float statMoveSpeed = targetStatManager.GetFinalStatValue( ePlayerStatType.MOVE );
+
+            if ( statMoveSpeed <= 0.0f )
+            {
+                float fallbackMoveSpeed = moveSpeed;
+                return fallbackMoveSpeed;
+            }
+
+            float result = statMoveSpeed;
+            return result;
+        }
+
+        ///<summary>
         /// 공중 수평 힘 적용
         ///</summary>
         private void ApplyAirHorizontalForce()
         {
+            if ( currentState == ePlayerState.Attack )
+            {
+                return;
+            }
+
             if ( HasHorizontalInput() == false )
             {
                 return;
@@ -960,13 +1170,19 @@ namespace TinyHero.Player
         ///</summary>
         private void CacheTargetColliders()
         {
-            if ( targetColliders != null && targetColliders.Length > 0 )
+            if ( bodyCollider == null )
             {
+                BoxCollider2D resolvedBodyCollider = ResolveBodyCollider();
+                bodyCollider = resolvedBodyCollider;
+            }
+
+            if ( bodyCollider == null )
+            {
+                targetColliders = new Collider2D[ 0 ];
                 return;
             }
 
-            Collider2D[] resolvedColliders = GetComponentsInChildren<Collider2D>( true );
-            targetColliders = resolvedColliders;
+            targetColliders = new Collider2D[] { bodyCollider };
         }
 
         ///<summary>
@@ -1023,6 +1239,15 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 플레이어 몸통 충돌체 결정
+        ///</summary>
+        private BoxCollider2D ResolveBodyCollider()
+        {
+            BoxCollider2D resolvedBodyCollider = GetComponent<BoxCollider2D>();
+            return resolvedBodyCollider;
+        }
+
+        ///<summary>
         /// 몬스터 접촉 중첩 처리
         ///</summary>
         private bool TryHandleMonsterContactOverlap( int _overlapCount )
@@ -1048,7 +1273,8 @@ namespace TinyHero.Player
                     continue;
                 }
 
-                bool didReceiveHit = TryReceiveContactHit();
+                MonsterObject monsterObject = overlapCollider.GetComponentInParent<MonsterObject>();
+                bool didReceiveHit = TryReceiveContactHit( monsterObject );
                 return didReceiveHit;
             }
 
@@ -1136,6 +1362,508 @@ namespace TinyHero.Player
 
                 spriteRenderer.color = defaultSpriteColors[ index ];
             }
+        }
+
+        ///<summary>
+        /// 애니메이션 이벤트 수신기 구독
+        ///</summary>
+        private void SubscribeAnimationEventReceiver()
+        {
+            if ( animationEventReceiver == null )
+            {
+                return;
+            }
+
+            animationEventReceiver.OnAttackHitEvent -= HandleAttackHitEvent;
+            animationEventReceiver.OnAttackHitEvent += HandleAttackHitEvent;
+        }
+
+        ///<summary>
+        /// 애니메이션 이벤트 수신기 구독 해제
+        ///</summary>
+        private void UnsubscribeAnimationEventReceiver()
+        {
+            if ( animationEventReceiver == null )
+            {
+                return;
+            }
+
+            animationEventReceiver.OnAttackHitEvent -= HandleAttackHitEvent;
+        }
+
+        ///<summary>
+        /// 공격 이벤트 처리
+        ///</summary>
+        private void HandleAttackHitEvent()
+        {
+            if ( currentState != ePlayerState.Attack )
+            {
+                return;
+            }
+
+            PlayAttackSlashFx();
+
+            MonsterObject attackTarget = ResolveHighestPriorityAttackTarget();
+
+            if ( attackTarget == null )
+            {
+                return;
+            }
+
+            bool wasAliveBeforeHit = attackTarget.GetCurrentHp() > 0;
+            int attackDamage = ResolveAttackDamage( attackTarget );
+            attackTarget.TakeDamage( attackDamage );
+
+            if ( wasAliveBeforeHit && attackTarget.GetCurrentHp() <= 0 )
+            {
+                AwardMonsterExp( attackTarget );
+            }
+        }
+
+        ///<summary>
+        /// 공격 대상 결정
+        ///</summary>
+        private MonsterObject ResolveHighestPriorityAttackTarget()
+        {
+            if ( attackHitCollider == null )
+            {
+                return null;
+            }
+
+            SetAttackHitColliderActive( true );
+
+            ContactFilter2D contactFilter = new ContactFilter2D();
+            int monsterLayer = LayerMask.NameToLayer( "Monster" );
+            contactFilter.useLayerMask = monsterLayer >= 0;
+            contactFilter.useTriggers = true;
+            contactFilter.layerMask = monsterLayer >= 0 ? LayerMask.GetMask( "Monster" ) : Physics2D.AllLayers;
+            int overlapCount = attackHitCollider.Overlap( contactFilter, attackHitResultBuffer );
+            MonsterObject highestPriorityMonster = null;
+            int highestPriorityScore = int.MinValue;
+
+            for ( int overlapIndex = 0; overlapIndex < overlapCount; overlapIndex++ )
+            {
+                Collider2D overlapCollider = attackHitResultBuffer[ overlapIndex ];
+                MonsterObject monsterObject = ResolveMonsterObjectFromCollider( overlapCollider );
+
+                if ( monsterObject == null )
+                {
+                    continue;
+                }
+
+                int priorityScore = ResolveMonsterPriorityScore( monsterObject );
+
+                if ( priorityScore <= highestPriorityScore )
+                {
+                    continue;
+                }
+
+                highestPriorityScore = priorityScore;
+                highestPriorityMonster = monsterObject;
+            }
+
+            SetAttackHitColliderActive( false );
+            return highestPriorityMonster;
+        }
+
+        ///<summary>
+        /// 공격 범위 콜라이더 결정
+        ///</summary>
+        private Collider2D ResolveAttackHitCollider()
+        {
+            Collider2D[] colliderArray = GetComponentsInChildren<Collider2D>( true );
+
+            for ( int index = 0; index < colliderArray.Length; index++ )
+            {
+                Collider2D childCollider = colliderArray[ index ];
+
+                if ( childCollider == null )
+                {
+                    continue;
+                }
+
+                if ( string.Equals( childCollider.gameObject.name, "AttackHitCollider", System.StringComparison.Ordinal ) == false )
+                {
+                    continue;
+                }
+
+                return childCollider;
+            }
+
+            return null;
+        }
+
+        ///<summary>
+        /// 공격 범위 활성 상태 설정
+        ///</summary>
+        private void ConfigureAttackHitCollider()
+        {
+            if ( attackHitCollider == null )
+            {
+                return;
+            }
+
+            attackHitCollider.isTrigger = true;
+            int monsterLayer = LayerMask.NameToLayer( "Monster" );
+
+            if ( monsterLayer >= 0 )
+            {
+                attackHitCollider.includeLayers = LayerMask.GetMask( "Monster" );
+                attackHitCollider.excludeLayers = ~LayerMask.GetMask( "Monster" );
+            }
+        }
+
+        ///<summary>
+        /// 공격 범위 활성 상태 설정
+        ///</summary>
+        private void SetAttackHitColliderActive( bool _isActive )
+        {
+            if ( attackHitCollider == null )
+            {
+                return;
+            }
+
+            GameObject attackHitObject = attackHitCollider.gameObject;
+
+            if ( attackHitObject.activeSelf == _isActive )
+            {
+                attackHitCollider.enabled = _isActive;
+                return;
+            }
+
+            attackHitObject.SetActive( _isActive );
+            attackHitCollider.enabled = _isActive;
+        }
+
+        ///<summary>
+        /// 콜라이더 기반 몬스터 결정
+        ///</summary>
+        private MonsterObject ResolveMonsterObjectFromCollider( Collider2D _overlapCollider )
+        {
+            if ( _overlapCollider == null )
+            {
+                return null;
+            }
+
+            MonsterObject resolvedMonsterObject = _overlapCollider.GetComponent<MonsterObject>();
+
+            if ( resolvedMonsterObject != null )
+            {
+                return resolvedMonsterObject;
+            }
+
+            MonsterObject resolvedParentMonsterObject = _overlapCollider.GetComponentInParent<MonsterObject>();
+            return resolvedParentMonsterObject;
+        }
+
+        ///<summary>
+        /// 몬스터 표시 우선순위 점수 계산
+        ///</summary>
+        private int ResolveMonsterPriorityScore( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null )
+            {
+                return int.MinValue;
+            }
+
+            SpriteRenderer[] spriteRendererArray = _monsterObject.GetComponentsInChildren<SpriteRenderer>( true );
+            int highestScore = int.MinValue;
+
+            for ( int index = 0; index < spriteRendererArray.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = spriteRendererArray[ index ];
+
+                if ( spriteRenderer == null )
+                {
+                    continue;
+                }
+
+                int sortingLayerValue = SortingLayer.GetLayerValueFromID( spriteRenderer.sortingLayerID );
+                int currentScore = sortingLayerValue * 10000 + spriteRenderer.sortingOrder;
+
+                if ( currentScore > highestScore )
+                {
+                    highestScore = currentScore;
+                }
+            }
+
+            return highestScore;
+        }
+
+        ///<summary>
+        /// 플레이어 공격 피해량 계산
+        ///</summary>
+        private int ResolveAttackDamage( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null )
+            {
+                return 0;
+            }
+
+            float playerAtk = targetStatManager != null ? targetStatManager.GetFinalStatValue( ePlayerStatType.ATK ) : 0.0f;
+            float monsterDef = _monsterObject.GetDef();
+            float rawDamage = playerAtk - monsterDef;
+            int damage = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
+            return damage;
+        }
+
+        ///<summary>
+        /// 공격 시작 가능 여부 반환
+        ///</summary>
+        private bool CanStartAttack()
+        {
+            bool result = Time.time >= nextAttackAvailableTime;
+            return result;
+        }
+
+        ///<summary>
+        /// 공격 주기 시간 결정
+        ///</summary>
+        private float ResolveAttackIntervalSeconds()
+        {
+            if ( targetStatManager == null )
+            {
+                return 1.0f;
+            }
+
+            float result = targetStatManager.GetAttackIntervalSeconds();
+            return result;
+        }
+
+        ///<summary>
+        /// 몬스터 처치 경험치 지급
+        ///</summary>
+        private void AwardMonsterExp( MonsterObject _monsterObject )
+        {
+            if ( _monsterObject == null || targetStatManager == null )
+            {
+                return;
+            }
+
+            long expReward = _monsterObject.GetExpReward();
+
+            if ( expReward <= 0 )
+            {
+                return;
+            }
+
+            targetStatManager.AddExp( expReward );
+        }
+
+        ///<summary>
+        /// 접촉 피해량 적용
+        ///</summary>
+        private void ApplyMonsterContactDamage( MonsterObject _monsterObject )
+        {
+            if ( targetStatManager == null || _monsterObject == null )
+            {
+                return;
+            }
+
+            float playerDef = targetStatManager.GetFinalStatValue( ePlayerStatType.DEF );
+            float rawDamage = _monsterObject.GetAtk() - playerDef;
+            float damage = Mathf.Max( 0.0f, rawDamage );
+            targetStatManager.ConsumeHp( damage );
+        }
+
+        ///<summary>
+        /// 공격 중 수평 속도 설정
+        ///</summary>
+        private void SetAttackHorizontalVelocity( float _horizontalVelocity )
+        {
+            if ( targetRigidbody == null )
+            {
+                return;
+            }
+
+            Vector2 currentVelocity = targetRigidbody.linearVelocity;
+            currentVelocity.x = _horizontalVelocity;
+            targetRigidbody.linearVelocity = currentVelocity;
+        }
+
+        ///<summary>
+        /// 공격 애니메이션 속도 적용
+        ///</summary>
+        private void ApplyAttackAnimationSpeed()
+        {
+            if ( targetAnimator == null )
+            {
+                return;
+            }
+
+            float resolvedSpeed = Mathf.Max( 0.01f, attackAnimationSpeedMultiplier );
+            targetAnimator.speed = defaultAnimatorSpeed * resolvedSpeed;
+        }
+
+        ///<summary>
+        /// 공격 애니메이션 종료 여부 반환
+        ///</summary>
+        private bool HasAttackAnimationFinished()
+        {
+            if ( targetAnimator == null )
+            {
+                return attackElapsedTime >= attackDuration;
+            }
+
+            AnimatorStateInfo animatorStateInfo = targetAnimator.GetCurrentAnimatorStateInfo( 0 );
+
+            if ( animatorStateInfo.IsName( AttackAnimationStateName ) == false )
+            {
+                return false;
+            }
+
+            bool hasFinished = animatorStateInfo.normalizedTime >= 1.0f;
+            return hasFinished;
+        }
+
+        ///<summary>
+        /// 기본 애니메이션 속도 복원
+        ///</summary>
+        private void RestoreAnimatorSpeed()
+        {
+            if ( targetAnimator == null )
+            {
+                return;
+            }
+
+            targetAnimator.speed = defaultAnimatorSpeed;
+        }
+
+        ///<summary>
+        /// 공격 이펙트 풀 초기화
+        ///</summary>
+        private void EnsureAttackSlashFxPoolInitialized()
+        {
+            if ( attackSlashFxPool != null )
+            {
+                return;
+            }
+
+            GameObject loadedFxPrefab = Resources.Load<GameObject>( DefaultAttackSlashFxResourcePath );
+            attackSlashFxPrefab = loadedFxPrefab;
+
+            if ( attackSlashFxPrefab == null )
+            {
+                Debug.LogWarning( $"Attack slash FX prefab was not found at Resources/{DefaultAttackSlashFxResourcePath}.", this );
+                return;
+            }
+
+            CObjectPool<GameObject> createdPool = new CObjectPool<GameObject>( CreateAttackSlashFxInstance, OnGetAttackSlashFxInstance, OnReleaseAttackSlashFxInstance );
+            attackSlashFxPool = createdPool;
+        }
+
+        ///<summary>
+        /// 공격 이펙트 인스턴스 생성
+        ///</summary>
+        private GameObject CreateAttackSlashFxInstance()
+        {
+            if ( attackSlashFxPrefab == null )
+            {
+                return null;
+            }
+
+            GameObject createdFxObject = Instantiate( attackSlashFxPrefab );
+            createdFxObject.name = attackSlashFxPrefab.name;
+            createdFxObject.SetActive( false );
+            return createdFxObject;
+        }
+
+        ///<summary>
+        /// 공격 이펙트 대여 처리
+        ///</summary>
+        private void OnGetAttackSlashFxInstance( GameObject _fxObject )
+        {
+            if ( _fxObject == null )
+            {
+                return;
+            }
+
+            _fxObject.transform.SetParent( null, true );
+            _fxObject.SetActive( true );
+
+            if ( activeAttackSlashFxObjectList.Contains( _fxObject ) == false )
+            {
+                activeAttackSlashFxObjectList.Add( _fxObject );
+            }
+        }
+
+        ///<summary>
+        /// 공격 이펙트 반환 처리
+        ///</summary>
+        private void OnReleaseAttackSlashFxInstance( GameObject _fxObject )
+        {
+            if ( _fxObject == null )
+            {
+                return;
+            }
+
+            activeAttackSlashFxObjectList.Remove( _fxObject );
+            _fxObject.transform.SetParent( null, true );
+            _fxObject.SetActive( false );
+        }
+
+        ///<summary>
+        /// 공격 이펙트 재생
+        ///</summary>
+        private void PlayAttackSlashFx()
+        {
+            if ( attackHitCollider == null )
+            {
+                return;
+            }
+
+            EnsureAttackSlashFxPoolInitialized();
+
+            if ( attackSlashFxPool == null )
+            {
+                return;
+            }
+
+            GameObject attackSlashFxObject = attackSlashFxPool.Get();
+
+            if ( attackSlashFxObject == null )
+            {
+                return;
+            }
+
+            Transform fxTransform = attackSlashFxObject.transform;
+            Transform attackColliderTransform = attackHitCollider.transform;
+            fxTransform.position = attackColliderTransform.position;
+            Quaternion fxRotation = attackSlashFxPrefab != null ? attackSlashFxPrefab.transform.rotation : Quaternion.identity;
+            fxTransform.rotation = fxRotation;
+
+            Vector3 fxScale = attackSlashFxPrefab != null ? attackSlashFxPrefab.transform.localScale : Vector3.one;
+            float facingDirection = ResolveFacingDirection();
+            fxScale.x = Mathf.Abs( fxScale.x ) * facingDirection;
+            fxTransform.localScale = fxScale;
+
+            float fxLifetime = Mathf.Max( 0.01f, attackSlashFxLifetime );
+            StartCoroutine( IE_ReturnAttackSlashFxAfterDelay( attackSlashFxObject, fxLifetime ) );
+        }
+
+        ///<summary>
+        /// 공격 이펙트 지연 반환
+        ///</summary>
+        private IEnumerator IE_ReturnAttackSlashFxAfterDelay( GameObject _fxObject, float _delay )
+        {
+            if ( _fxObject == null )
+            {
+                yield break;
+            }
+
+            yield return new WaitForSeconds( _delay );
+
+            if ( attackSlashFxPool == null )
+            {
+                yield break;
+            }
+
+            if ( activeAttackSlashFxObjectList.Contains( _fxObject ) == false )
+            {
+                yield break;
+            }
+
+            attackSlashFxPool.Release( _fxObject );
         }
 
         ///<summary>
