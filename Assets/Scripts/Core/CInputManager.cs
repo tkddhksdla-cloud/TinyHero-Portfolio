@@ -9,11 +9,11 @@ namespace TinyHero.Core
     public sealed class CInputManager : CSingleTon<CInputManager>
     {
         [SerializeField] private KeyCode leftKey = KeyCode.LeftArrow;
-        [SerializeField] private KeyCode alternateLeftKey = KeyCode.A;
+        [SerializeField] private KeyCode alternateLeftKey = KeyCode.None;
         [SerializeField] private KeyCode rightKey = KeyCode.RightArrow;
         [SerializeField] private KeyCode alternateRightKey = KeyCode.D;
         [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-        [SerializeField] private KeyCode attackKey = KeyCode.Z;
+        [SerializeField] private KeyCode attackKey = KeyCode.A;
         [SerializeField] private KeyCode interactionKey = KeyCode.UpArrow;
 
         ///<summary>
