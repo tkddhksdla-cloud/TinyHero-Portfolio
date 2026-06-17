@@ -1,0 +1,447 @@
+using System.Collections.Generic;
+using TinyHero.Player;
+using UnityEngine;
+
+namespace TinyHero.Skill
+{
+    ///<summary>
+    /// 스킬 정적 데이터 정의
+    ///</summary>
+    [CreateAssetMenu( fileName = "SkillDefinition", menuName = "TinyHero/Skill/Skill Definition" )]
+    public sealed class CSkillDefinition : ScriptableObject
+    {
+        [SerializeField] private string skillId;
+        [SerializeField] private string skillName;
+        [SerializeField] private Sprite skillIcon;
+        [SerializeField] private eSkillType skillType = eSkillType.ACTIVE;
+        [SerializeField] private eActiveSkillType activeSkillType = eActiveSkillType.NONE;
+        [SerializeField] private int quickSlotIndex;
+        [SerializeField] private int requiredLevel = 1;
+        [SerializeField] private float cooldownSeconds = 1.0f;
+        [SerializeField] private float mpCost;
+        [SerializeField] private float castLockDurationSeconds = 0.15f;
+        [SerializeField] private ePlayerSkillCastAnimation castAnimation = ePlayerSkillCastAnimation.ATTACK;
+        [SerializeField] private string castAnimationName = "Attack";
+        [SerializeField] private float castAnimationSpeed = 1.0f;
+        [SerializeField] [TextArea( 2, 4 )] private string description;
+        [SerializeField] private GameObject castVfxPrefab;
+        [SerializeField] private Vector3 castVfxOffset;
+        [SerializeField] private float castVfxReturnDelay = 1.0f;
+        [SerializeField] private GameObject hitVfxPrefab;
+        [SerializeField] private Vector3 hitVfxOffset;
+        [SerializeField] private float hitVfxReturnDelay = 1.0f;
+        [SerializeField] private GameObject loopVfxPrefab;
+        [SerializeField] private Vector3 loopVfxOffset;
+        [SerializeField] private float loopVfxReturnDelay = 1.0f;
+        [SerializeField] private CPlayerStatRuntimeData passiveStatBonus = new CPlayerStatRuntimeData();
+        [SerializeField] private CSkillActionBase activeAction;
+        [SerializeField] private CActiveSkillEffectBase activeSkillEffect;
+        [SerializeField] private List<CPassiveSkillEffectBase> passiveSkillEffectList = new List<CPassiveSkillEffectBase>();
+        [SerializeField] private List<CSkillUnlockConditionBase> unlockConditionList = new List<CSkillUnlockConditionBase>();
+
+        ///<summary>
+        /// 스킬 식별자 반환
+        ///</summary>
+        public string GetSkillId()
+        {
+            string result = string.IsNullOrWhiteSpace( skillId ) ? name : skillId;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 이름 반환
+        ///</summary>
+        public string GetSkillName()
+        {
+            string result = string.IsNullOrWhiteSpace( skillName ) ? name : skillName;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 아이콘 반환
+        ///</summary>
+        public Sprite GetSkillIcon()
+        {
+            Sprite result = skillIcon;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 분류 반환
+        ///</summary>
+        public eSkillType GetSkillType()
+        {
+            eSkillType result = skillType;
+            return result;
+        }
+
+        ///<summary>
+        /// 액티브 스킬 세부 분류 반환
+        ///</summary>
+        public eActiveSkillType GetActiveSkillType()
+        {
+            eActiveSkillType result = activeSkillType;
+            return result;
+        }
+
+        ///<summary>
+        /// 퀵슬롯 인덱스 반환
+        ///</summary>
+        public int GetQuickSlotIndex()
+        {
+            int result = quickSlotIndex;
+            return result;
+        }
+
+        ///<summary>
+        /// 필요 레벨 반환
+        ///</summary>
+        public int GetRequiredLevel()
+        {
+            int result = requiredLevel;
+            return result;
+        }
+
+        ///<summary>
+        /// 쿨타임 반환
+        ///</summary>
+        public float GetCooldownSeconds()
+        {
+            float result = Mathf.Max( 0.0f, cooldownSeconds );
+            return result;
+        }
+
+        ///<summary>
+        /// MP 소모량 반환
+        ///</summary>
+        public float GetMpCost()
+        {
+            float result = Mathf.Max( 0.0f, mpCost );
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 잠금 시간 반환
+        ///</summary>
+        public float GetCastLockDurationSeconds()
+        {
+            float result = Mathf.Max( 0.0f, castLockDurationSeconds );
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 애니메이션 종류 반환
+        ///</summary>
+        public ePlayerSkillCastAnimation GetCastAnimation()
+        {
+            ePlayerSkillCastAnimation result = castAnimation;
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 애니메이션 이름 반환
+        ///</summary>
+        public string GetCastAnimationName()
+        {
+            string result = string.IsNullOrWhiteSpace( castAnimationName ) ? "Attack" : castAnimationName.Trim();
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 애니메이션 실사용 이름 반환
+        ///</summary>
+        public string GetResolvedCastAnimationName()
+        {
+            string result = ResolveCastAnimationName( castAnimation, castAnimationName );
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 애니메이션 속도 반환
+        ///</summary>
+        public float GetCastAnimationSpeed()
+        {
+            float result = Mathf.Max( 0.01f, castAnimationSpeed );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 설명 반환
+        ///</summary>
+        public string GetDescription()
+        {
+            string result = description;
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 이펙트 프리팹 반환
+        ///</summary>
+        public GameObject GetCastVfxPrefab()
+        {
+            GameObject result = castVfxPrefab;
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 이펙트 오프셋 반환
+        ///</summary>
+        public Vector3 GetCastVfxOffset()
+        {
+            Vector3 result = castVfxOffset;
+            return result;
+        }
+
+        ///<summary>
+        /// 시전 이펙트 반환 시간 반환
+        ///</summary>
+        public float GetCastVfxReturnDelay()
+        {
+            float result = Mathf.Max( 0.0f, castVfxReturnDelay );
+            return result;
+        }
+
+        ///<summary>
+        /// 타격 이펙트 프리팹 반환
+        ///</summary>
+        public GameObject GetHitVfxPrefab()
+        {
+            GameObject result = hitVfxPrefab;
+            return result;
+        }
+
+        ///<summary>
+        /// 타격 이펙트 오프셋 반환
+        ///</summary>
+        public Vector3 GetHitVfxOffset()
+        {
+            Vector3 result = hitVfxOffset;
+            return result;
+        }
+
+        ///<summary>
+        /// 타격 이펙트 반환 시간 반환
+        ///</summary>
+        public float GetHitVfxReturnDelay()
+        {
+            float result = Mathf.Max( 0.0f, hitVfxReturnDelay );
+            return result;
+        }
+
+        ///<summary>
+        /// 지속 이펙트 프리팹 반환
+        ///</summary>
+        public GameObject GetLoopVfxPrefab()
+        {
+            GameObject result = loopVfxPrefab;
+            return result;
+        }
+
+        ///<summary>
+        /// 지속 이펙트 오프셋 반환
+        ///</summary>
+        public Vector3 GetLoopVfxOffset()
+        {
+            Vector3 result = loopVfxOffset;
+            return result;
+        }
+
+        ///<summary>
+        /// 지속 이펙트 반환 시간 반환
+        ///</summary>
+        public float GetLoopVfxReturnDelay()
+        {
+            float result = Mathf.Max( 0.0f, loopVfxReturnDelay );
+            return result;
+        }
+
+        ///<summary>
+        /// 레거시 패시브 스탯 보너스 반환
+        ///</summary>
+        public CPlayerStatRuntimeData GetPassiveStatBonus()
+        {
+            CPlayerStatRuntimeData result = passiveStatBonus;
+            return result;
+        }
+
+        ///<summary>
+        /// 레거시 액티브 실행 정의 반환
+        ///</summary>
+        public CSkillActionBase GetActiveAction()
+        {
+            CSkillActionBase result = activeAction;
+            return result;
+        }
+
+        ///<summary>
+        /// 액티브 스킬 효과 정의 반환
+        ///</summary>
+        public CActiveSkillEffectBase GetActiveSkillEffect()
+        {
+            CActiveSkillEffectBase result = activeSkillEffect;
+            return result;
+        }
+
+        ///<summary>
+        /// 패시브 스킬 효과 목록 반환
+        ///</summary>
+        public List<CPassiveSkillEffectBase> GetPassiveSkillEffectList()
+        {
+            List<CPassiveSkillEffectBase> result = passiveSkillEffectList;
+            return result;
+        }
+
+        ///<summary>
+        /// 해금 조건 목록 반환
+        ///</summary>
+        public List<CSkillUnlockConditionBase> GetUnlockConditionList()
+        {
+            List<CSkillUnlockConditionBase> result = unlockConditionList;
+            return result;
+        }
+
+        ///<summary>
+        /// 레거시 레벨 조건 기반 해금 여부 반환
+        ///</summary>
+        public bool CanUnlock( int _level )
+        {
+            bool result = _level >= requiredLevel;
+            return result;
+        }
+
+        ///<summary>
+        /// 해금 조건 충족 여부 반환
+        ///</summary>
+        public bool AreUnlockConditionsSatisfied( CSkillManager _skillManager, int _playerLevel, CQuestStateProvider _questStateProvider )
+        {
+            if ( unlockConditionList == null || unlockConditionList.Count == 0 )
+            {
+                bool fallbackResult = CanUnlock( _playerLevel );
+                return fallbackResult;
+            }
+
+            for ( int index = 0; index < unlockConditionList.Count; index++ )
+            {
+                CSkillUnlockConditionBase unlockCondition = unlockConditionList[ index ];
+
+                if ( unlockCondition == null )
+                {
+                    continue;
+                }
+
+                bool isSatisfied = unlockCondition.IsSatisfied( _skillManager, _playerLevel, _questStateProvider );
+
+                if ( isSatisfied == false )
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        ///<summary>
+        /// 액티브 스킬 데이터 구성
+        ///</summary>
+        public void ConfigureActiveSkill( string _skillId, string _skillName, Sprite _skillIcon, int _quickSlotIndex, int _requiredLevel, float _cooldownSeconds, float _mpCost, string _description, CActiveSkillEffectBase _activeSkillEffect )
+        {
+            skillId = _skillId;
+            skillName = _skillName;
+            skillIcon = _skillIcon;
+            skillType = eSkillType.ACTIVE;
+            activeSkillType = _activeSkillEffect != null ? _activeSkillEffect.GetActiveSkillType() : eActiveSkillType.NONE;
+            quickSlotIndex = Mathf.Max( 0, _quickSlotIndex );
+            requiredLevel = Mathf.Max( 1, _requiredLevel );
+            cooldownSeconds = Mathf.Max( 0.0f, _cooldownSeconds );
+            mpCost = Mathf.Max( 0.0f, _mpCost );
+            castLockDurationSeconds = 0.15f;
+            castAnimation = ePlayerSkillCastAnimation.ATTACK;
+            castAnimationName = "Attack";
+            castAnimationSpeed = 1.0f;
+            description = _description;
+            activeAction = null;
+            activeSkillEffect = _activeSkillEffect;
+            passiveStatBonus.Clear();
+            passiveSkillEffectList.Clear();
+        }
+
+        ///<summary>
+        /// 패시브 스킬 데이터 구성
+        ///</summary>
+        public void ConfigurePassiveSkill( string _skillId, string _skillName, Sprite _skillIcon, string _description, List<CPassiveSkillEffectBase> _passiveSkillEffectList )
+        {
+            skillId = _skillId;
+            skillName = _skillName;
+            skillIcon = _skillIcon;
+            skillType = eSkillType.PASSIVE;
+            activeSkillType = eActiveSkillType.NONE;
+            quickSlotIndex = -1;
+            cooldownSeconds = 0.0f;
+            mpCost = 0.0f;
+            castLockDurationSeconds = 0.0f;
+            castAnimation = ePlayerSkillCastAnimation.ATTACK;
+            castAnimationName = "Attack";
+            castAnimationSpeed = 1.0f;
+            description = _description;
+            activeAction = null;
+            activeSkillEffect = null;
+            passiveStatBonus.Clear();
+            passiveSkillEffectList = _passiveSkillEffectList != null ? _passiveSkillEffectList : new List<CPassiveSkillEffectBase>();
+        }
+
+        ///<summary>
+        /// 시전 설정 구성
+        ///</summary>
+        public void ConfigureCastSetting( float _castLockDurationSeconds, ePlayerSkillCastAnimation _castAnimation, string _castAnimationName, float _castAnimationSpeed )
+        {
+            castLockDurationSeconds = Mathf.Max( 0.0f, _castLockDurationSeconds );
+            castAnimation = _castAnimation;
+            castAnimationName = string.IsNullOrWhiteSpace( _castAnimationName ) ? "Attack" : _castAnimationName.Trim();
+            castAnimationSpeed = Mathf.Max( 0.01f, _castAnimationSpeed );
+        }
+
+        ///<summary>
+        /// 시전 애니메이션 이름 결정
+        ///</summary>
+        private string ResolveCastAnimationName( ePlayerSkillCastAnimation _castAnimation, string _castAnimationName )
+        {
+            switch ( _castAnimation )
+            {
+                case ePlayerSkillCastAnimation.ATTACK:
+                    return "Attack";
+
+                case ePlayerSkillCastAnimation.IDLE:
+                    return "Idle";
+
+                case ePlayerSkillCastAnimation.MOVE:
+                    return "Move";
+
+                case ePlayerSkillCastAnimation.HIT:
+                    return "Hit";
+
+                case ePlayerSkillCastAnimation.DIE:
+                    return "Die";
+
+                case ePlayerSkillCastAnimation.CUSTOM:
+                default:
+                    return string.IsNullOrWhiteSpace( _castAnimationName ) ? "Attack" : _castAnimationName.Trim();
+            }
+        }
+
+        ///<summary>
+        /// 해금 조건 목록 설정
+        ///</summary>
+        public void SetUnlockConditions( List<CSkillUnlockConditionBase> _unlockConditionList )
+        {
+            unlockConditionList = _unlockConditionList != null ? _unlockConditionList : new List<CSkillUnlockConditionBase>();
+        }
+
+        ///<summary>
+        /// 패시브 효과 목록 설정
+        ///</summary>
+        public void SetPassiveSkillEffects( List<CPassiveSkillEffectBase> _passiveSkillEffectList )
+        {
+            passiveSkillEffectList = _passiveSkillEffectList != null ? _passiveSkillEffectList : new List<CPassiveSkillEffectBase>();
+        }
+    }
+}

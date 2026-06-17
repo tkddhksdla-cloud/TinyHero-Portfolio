@@ -1,8 +1,10 @@
 ﻿using TinyHero.Core;
 using System.Collections;
+using TinyHero.Skill;
 using System.Collections.Generic;
 using LayerLab.ArtMakerUnity;
 using UnityEngine;
+using TinyHero.UI;
 
 namespace TinyHero.Player
 {
@@ -21,6 +23,7 @@ namespace TinyHero.Player
             Idle,
             Move,
             Attack,
+            Skill,
             Jump,
             Hit,
             Die
@@ -41,6 +44,7 @@ namespace TinyHero.Player
         [SerializeField] private AnimationEventReceiver animationEventReceiver;
         [SerializeField] private Rigidbody2D targetRigidbody;
         [SerializeField] private CPlayerStatManager targetStatManager;
+        [SerializeField] private CSkillManager targetSkillManager;
         [SerializeField] private BoxCollider2D bodyCollider;
         [SerializeField] private Collider2D attackHitCollider;
         [SerializeField] private Transform groundCheckPoint;
@@ -82,12 +86,19 @@ namespace TinyHero.Player
         private float hitElapsedTime;
         private float hitReactionDirection = -1.0f;
         private float nextAttackAvailableTime;
+        private float skillCastElapsedTime;
+        private float skillCastDuration;
+        private float skillCastAnimationSpeedMultiplier = DefaultAnimatorSpeed;
+        private float skillFinalAttackPercentBonus;
+        private float skillFinalAttackBuffRemaining;
+        private float skillInvincibilityRemaining;
         private int currentJumpCount;
         private Color[] defaultSpriteColors;
         private GameObject attackSlashFxPrefab;
         private CObjectPool<GameObject> attackSlashFxPool;
         private Coroutine hitReactionRoutine;
         private Coroutine invincibilityRoutine;
+        private string skillAnimationStateName = AttackAnimationStateName;
         private readonly Collider2D[] overlapResultBuffer = new Collider2D[ 16 ];
         private readonly Collider2D[] attackHitResultBuffer = new Collider2D[ 16 ];
         private readonly List<GameObject> activeAttackSlashFxObjectList = new List<GameObject>();
@@ -153,6 +164,7 @@ namespace TinyHero.Player
             }
 
             ResolveStatManager();
+            ResolveSkillManager();
 
             if ( bodyCollider == null )
             {
@@ -222,6 +234,7 @@ namespace TinyHero.Player
         {
             UnsubscribeAnimationEventReceiver();
             SetAttackHitColliderActive( false );
+            ClearSkillBuffState();
         }
 
         ///<summary>
@@ -234,6 +247,7 @@ namespace TinyHero.Player
                 return;
             }
 
+            TickSkillBuffState();
             CaptureInput();
             UpdateGroundState();
             ProcessStateTransitions();
@@ -321,6 +335,32 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 툴 전용 스킬 시전 상태 시작
+        ///</summary>
+        public bool TryBeginToolSkillCast( string _animationStateName, float _animationSpeedMultiplier, float _lockDurationSeconds )
+        {
+            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit )
+            {
+                return false;
+            }
+
+            skillCastElapsedTime = 0.0f;
+            skillCastDuration = Mathf.Max( 0.0f, _lockDurationSeconds );
+            skillCastAnimationSpeedMultiplier = Mathf.Max( 0.01f, _animationSpeedMultiplier );
+            skillAnimationStateName = ResolveSkillAnimationStateName( _animationStateName );
+
+            if ( currentState == ePlayerState.Skill )
+            {
+                EnterSkillState();
+                ApplyAnimationState();
+                return true;
+            }
+
+            ChangeState( ePlayerState.Skill );
+            return true;
+        }
+
+        ///<summary>
         /// 접촉 피격 처리
         ///</summary>
         public bool TryReceiveContactHit()
@@ -334,7 +374,7 @@ namespace TinyHero.Player
         ///</summary>
         public bool TryReceiveContactHit( MonsterObject _monsterObject )
         {
-            if ( currentState == ePlayerState.Die || isInvincible )
+            if ( currentState == ePlayerState.Die || IsAnyInvincibleStateActive() )
             {
                 return false;
             }
@@ -344,6 +384,47 @@ namespace TinyHero.Player
             Hit();
             BeginInvincibility();
             return true;
+        }
+
+        ///<summary>
+        /// 스킬 최종 공격력 증가 버프 적용
+        ///</summary>
+        public void ApplyFinalAttackPercentBuff( float _increasePercent, float _durationSeconds )
+        {
+            float resolvedIncreasePercent = Mathf.Max( 0.0f, _increasePercent );
+            float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+
+            if ( resolvedIncreasePercent <= 0.0f || resolvedDurationSeconds <= 0.0f )
+            {
+                return;
+            }
+
+            skillFinalAttackPercentBonus = resolvedIncreasePercent;
+            skillFinalAttackBuffRemaining = resolvedDurationSeconds;
+        }
+
+        ///<summary>
+        /// 스킬 무적 버프 적용
+        ///</summary>
+        public void ApplySkillInvincibility( float _durationSeconds )
+        {
+            float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+
+            if ( resolvedDurationSeconds <= 0.0f )
+            {
+                return;
+            }
+
+            skillInvincibilityRemaining = resolvedDurationSeconds;
+        }
+
+        ///<summary>
+        /// 스킬 기반 공격력 배수 반환
+        ///</summary>
+        public float GetSkillAttackPowerMultiplier()
+        {
+            float result = 1.0f + Mathf.Max( 0.0f, skillFinalAttackPercentBonus );
+            return result;
         }
 
         ///<summary>
@@ -364,6 +445,26 @@ namespace TinyHero.Player
             }
 
             targetStatManager = resolvedStatManager;
+        }
+
+        ///<summary>
+        /// 플레이어 스킬 매니저 결정
+        ///</summary>
+        private void ResolveSkillManager()
+        {
+            if ( targetSkillManager != null )
+            {
+                return;
+            }
+
+            CSkillManager resolvedSkillManager = GetComponent<CSkillManager>();
+
+            if ( resolvedSkillManager == null )
+            {
+                resolvedSkillManager = gameObject.AddComponent<CSkillManager>();
+            }
+
+            targetSkillManager = resolvedSkillManager;
         }
 
         ///<summary>
@@ -403,6 +504,16 @@ namespace TinyHero.Player
             {
                 horizontalInput = 0.0f;
                 isJumpHeld = capturedJumpHeld;
+                isInteractionHeld = false;
+                isPendingJump = false;
+                isPendingAttack = false;
+                return;
+            }
+
+            if ( currentState == ePlayerState.Skill )
+            {
+                horizontalInput = 0.0f;
+                isJumpHeld = false;
                 isInteractionHeld = false;
                 isPendingJump = false;
                 isPendingAttack = false;
@@ -465,6 +576,11 @@ namespace TinyHero.Player
                 return;
             }
 
+            if ( currentState == ePlayerState.Skill )
+            {
+                return;
+            }
+
             if ( isPendingAttack )
             {
                 if ( CanStartAttack() == false )
@@ -516,6 +632,10 @@ namespace TinyHero.Player
                     UpdateAttackState();
                     break;
 
+                case ePlayerState.Skill:
+                    UpdateSkillState();
+                    break;
+
                 case ePlayerState.Jump:
                     UpdateJumpState();
                     break;
@@ -555,6 +675,10 @@ namespace TinyHero.Player
 
                 case ePlayerState.Attack:
                     EnterAttackState();
+                    break;
+
+                case ePlayerState.Skill:
+                    EnterSkillState();
                     break;
 
                 case ePlayerState.Jump:
@@ -609,6 +733,18 @@ namespace TinyHero.Player
         private void EnterJumpState()
         {
             RestoreAnimatorSpeed();
+            SetAttackHitColliderActive( false );
+        }
+
+        ///<summary>
+        /// 스킬 상태 진입 처리
+        ///</summary>
+        private void EnterSkillState()
+        {
+            attackElapsedTime = 0.0f;
+            skillCastElapsedTime = 0.0f;
+            ApplySkillAnimationSpeed();
+            SetAttackHorizontalVelocity( 0.0f );
             SetAttackHitColliderActive( false );
         }
 
@@ -694,6 +830,22 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 스킬 상태 갱신
+        ///</summary>
+        private void UpdateSkillState()
+        {
+            skillCastElapsedTime += Time.deltaTime;
+
+            if ( skillCastElapsedTime < skillCastDuration )
+            {
+                return;
+            }
+
+            ePlayerState nextState = isGrounded ? ResolveGroundedLocomotionState() : ePlayerState.Jump;
+            ChangeState( nextState );
+        }
+
+        ///<summary>
         /// 점프 상태 갱신
         ///</summary>
         private void UpdateJumpState()
@@ -744,7 +896,7 @@ namespace TinyHero.Player
         ///</summary>
         private void ApplyHorizontalMovement()
         {
-            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit || currentState == ePlayerState.Attack )
+            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit || currentState == ePlayerState.Attack || currentState == ePlayerState.Skill )
             {
                 return;
             }
@@ -767,7 +919,7 @@ namespace TinyHero.Player
         ///</summary>
         private void ApplyFacingDirection()
         {
-            if ( currentState == ePlayerState.Hit || currentState == ePlayerState.Attack )
+            if ( currentState == ePlayerState.Hit || currentState == ePlayerState.Attack || currentState == ePlayerState.Skill )
             {
                 return;
             }
@@ -1048,6 +1200,10 @@ namespace TinyHero.Player
                     animationStateName = AttackAnimationStateName;
                     break;
 
+                case ePlayerState.Skill:
+                    animationStateName = skillAnimationStateName;
+                    break;
+
                 case ePlayerState.Jump:
                     animationStateName = HasHorizontalInput() ? MoveAnimationStateName : IdleAnimationStateName;
                     break;
@@ -1085,6 +1241,48 @@ namespace TinyHero.Player
             }
 
             invincibilityRoutine = StartCoroutine( IE_HandleInvincibilityVisual() );
+        }
+
+        ///<summary>
+        /// 스킬 버프 지속시간 갱신
+        ///</summary>
+        private void TickSkillBuffState()
+        {
+            float deltaTime = Time.deltaTime;
+
+            if ( skillFinalAttackBuffRemaining > 0.0f )
+            {
+                skillFinalAttackBuffRemaining = Mathf.Max( 0.0f, skillFinalAttackBuffRemaining - deltaTime );
+
+                if ( skillFinalAttackBuffRemaining <= 0.0f )
+                {
+                    skillFinalAttackPercentBonus = 0.0f;
+                }
+            }
+
+            if ( skillInvincibilityRemaining > 0.0f )
+            {
+                skillInvincibilityRemaining = Mathf.Max( 0.0f, skillInvincibilityRemaining - deltaTime );
+            }
+        }
+
+        ///<summary>
+        /// 스킬 버프 상태 초기화
+        ///</summary>
+        private void ClearSkillBuffState()
+        {
+            skillFinalAttackPercentBonus = 0.0f;
+            skillFinalAttackBuffRemaining = 0.0f;
+            skillInvincibilityRemaining = 0.0f;
+        }
+
+        ///<summary>
+        /// 현재 무적 상태 여부 반환
+        ///</summary>
+        private bool IsAnyInvincibleStateActive()
+        {
+            bool result = isInvincible || skillInvincibilityRemaining > 0.0f;
+            return result;
         }
 
         ///<summary>
@@ -1190,7 +1388,7 @@ namespace TinyHero.Player
         ///</summary>
         private void EvaluateMonsterContactOverlap()
         {
-            if ( currentState == ePlayerState.Die || isInvincible )
+            if ( currentState == ePlayerState.Die || IsAnyInvincibleStateActive() )
             {
                 return;
             }
@@ -1601,8 +1799,9 @@ namespace TinyHero.Player
             }
 
             float playerAtk = targetStatManager != null ? targetStatManager.GetFinalStatValue( ePlayerStatType.ATK ) : 0.0f;
+            float skillAttackPowerMultiplier = GetSkillAttackPowerMultiplier();
             float monsterDef = _monsterObject.GetDef();
-            float rawDamage = playerAtk - monsterDef;
+            float rawDamage = playerAtk * skillAttackPowerMultiplier - monsterDef;
             int damage = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
             return damage;
         }
@@ -1664,6 +1863,11 @@ namespace TinyHero.Player
             float rawDamage = _monsterObject.GetAtk() - playerDef;
             float damage = Mathf.Max( 0.0f, rawDamage );
             targetStatManager.ConsumeHp( damage );
+
+            if ( damage > 0.0f && CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager ) )
+            {
+                damageFontManager.ShowPlayerDamage( transform, damage );
+            }
         }
 
         ///<summary>
@@ -1727,6 +1931,29 @@ namespace TinyHero.Player
             }
 
             targetAnimator.speed = defaultAnimatorSpeed;
+        }
+
+        ///<summary>
+        /// 스킬 애니메이션 속도 적용
+        ///</summary>
+        private void ApplySkillAnimationSpeed()
+        {
+            if ( targetAnimator == null )
+            {
+                return;
+            }
+
+            float resolvedSpeed = Mathf.Max( 0.01f, skillCastAnimationSpeedMultiplier );
+            targetAnimator.speed = defaultAnimatorSpeed * resolvedSpeed;
+        }
+
+        ///<summary>
+        /// 스킬 애니메이션 이름 결정
+        ///</summary>
+        private string ResolveSkillAnimationStateName( string _animationStateName )
+        {
+            string result = string.IsNullOrWhiteSpace( _animationStateName ) ? AttackAnimationStateName : _animationStateName.Trim();
+            return result;
         }
 
         ///<summary>

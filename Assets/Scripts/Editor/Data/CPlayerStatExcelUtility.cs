@@ -180,7 +180,7 @@ namespace TinyHero.DataEditor
                 return;
             }
 
-            string rowSummary = $"LV={rowData.GetLv()} | NeedExp={rowData.GetNeedExp()} | HP={rowData.GetHp()} | MP={rowData.GetMp()} | ATK={rowData.GetAtk()} | DEF={rowData.GetDef()}";
+            string rowSummary = $"LV={rowData.GetLv()} | NeedExp={rowData.GetNeedExp()} | HP={rowData.GetHp()} | MP={rowData.GetMp()} | ATK={rowData.GetAtk()} | DEF={rowData.GetDef()} | HR={rowData.GetHr()} | MR={rowData.GetMr()}";
             _logBuilder.AppendLine( rowSummary );
         }
     }

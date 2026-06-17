@@ -79,7 +79,10 @@ public sealed class MonsterObject : MonoBehaviour
     private float currentWanderDirection = 1.0f;
     private float defaultScaleX = DefaultFacingScaleX;
     private float desiredHorizontalVelocity;
+    private float defReductionDebuffRemaining;
+    private float defReductionPercent;
     private float hitStateDuration = DefaultHitStateDuration;
+    private float atkReductionDebuffRemaining;
     private string mapRuntimePoolKey = string.Empty;
     private string pendingAnimationStateName = string.Empty;
     private Vector3 mapRuntimeSpawnPosition;
@@ -90,6 +93,7 @@ public sealed class MonsterObject : MonoBehaviour
     private bool isConfigured;
     private bool isDeathSequenceStarted;
     private Coroutine deathSequenceRoutine;
+    private long atkReductionAmount;
 
     ///<summary>
     /// 컴포넌트 초기화
@@ -141,6 +145,7 @@ public sealed class MonsterObject : MonoBehaviour
     private void OnEnable()
     {
         isDeathSequenceStarted = false;
+        ClearSkillDebuffState();
         SetBodyColliderEnabled( true );
         SetContactHitboxEnabled( true );
         TryPlayPendingAnimationState();
@@ -154,6 +159,7 @@ public sealed class MonsterObject : MonoBehaviour
     {
         StopDeathSequence();
         StopHorizontalMovement();
+        ClearSkillDebuffState();
         UnregisterMonsterInfo();
     }
 
@@ -166,6 +172,8 @@ public sealed class MonsterObject : MonoBehaviour
         {
             return;
         }
+
+        TickSkillDebuffState();
 
         if ( currentHp <= 0 && currentState != eMonsterState.DIE )
         {
@@ -287,6 +295,7 @@ public sealed class MonsterObject : MonoBehaviour
     {
         StopDeathSequence();
         isDeathSequenceStarted = false;
+        ClearSkillDebuffState();
         SetBodyColliderEnabled( true );
         SetContactHitboxEnabled( true );
         StopHorizontalMovement();
@@ -351,7 +360,14 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     public long GetAtk()
     {
-        long result = atk;
+        long reducedAtk = atk;
+
+        if ( atkReductionDebuffRemaining > 0.0f )
+        {
+            reducedAtk = System.Math.Max( 0L, atk - atkReductionAmount );
+        }
+
+        long result = reducedAtk;
         return result;
     }
 
@@ -360,7 +376,16 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     public long GetDef()
     {
-        long result = def;
+        long reducedDef = def;
+
+        if ( defReductionDebuffRemaining > 0.0f )
+        {
+            float debuffedDef = def * ( 1.0f - Mathf.Clamp01( defReductionPercent ) );
+            long roundedDefValue = Mathf.RoundToInt( debuffedDef );
+            reducedDef = System.Math.Max( 0L, roundedDefValue );
+        }
+
+        long result = reducedDef;
         return result;
     }
 
@@ -487,7 +512,7 @@ public sealed class MonsterObject : MonoBehaviour
     ///<summary>
     /// 몬스터 피해 적용
     ///</summary>
-    public void TakeDamage( long _damage )
+    public void TakeDamage( long _damage, bool _isCritical = false )
     {
         if ( currentState == eMonsterState.DIE )
         {
@@ -507,12 +532,61 @@ public sealed class MonsterObject : MonoBehaviour
         long previousCurrentHp = currentHp;
         long nextHp = currentHp - appliedDamage;
         SetCurrentHp( nextHp );
+
+        if ( appliedDamage > 0 && CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager ) )
+        {
+            damageFontManager.ShowMonsterDamage( this, appliedDamage, _isCritical );
+        }
+
         if ( currentHp <= 0 )
         {
             return;
         }
 
+        if ( currentState == eMonsterState.HIT )
+        {
+            RestartHitState();
+            return;
+        }
+
         ChangeState( eMonsterState.HIT );
+    }
+
+    ///<summary>
+    /// 몬스터 정보 UI 새로고침 요청
+    ///</summary>
+    ///<summary>
+    /// 방어력 감소 디버프 적용
+    ///</summary>
+    public void ApplyDefReductionDebuff( float _reductionPercent, float _durationSeconds )
+    {
+        float resolvedReductionPercent = Mathf.Clamp01( _reductionPercent );
+        float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+
+        if ( resolvedReductionPercent <= 0.0f || resolvedDurationSeconds <= 0.0f )
+        {
+            return;
+        }
+
+        defReductionPercent = Mathf.Max( defReductionPercent, resolvedReductionPercent );
+        defReductionDebuffRemaining = Mathf.Max( defReductionDebuffRemaining, resolvedDurationSeconds );
+    }
+
+    ///<summary>
+    /// 공격력 감소 디버프 적용
+    ///</summary>
+    public void ApplyAtkReductionDebuff( long _reductionAmount, float _durationSeconds )
+    {
+        long resolvedReductionAmount = _reductionAmount > 0 ? _reductionAmount : 0;
+        float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+
+        if ( resolvedReductionAmount <= 0 || resolvedDurationSeconds <= 0.0f )
+        {
+            return;
+        }
+
+        atkReductionAmount = System.Math.Max( atkReductionAmount, resolvedReductionAmount );
+        atkReductionDebuffRemaining = Mathf.Max( atkReductionDebuffRemaining, resolvedDurationSeconds );
     }
 
     ///<summary>
@@ -563,6 +637,48 @@ public sealed class MonsterObject : MonoBehaviour
 
         Animator resolvedAnimator = GetComponentInChildren<Animator>( true );
         targetAnimator = resolvedAnimator;
+    }
+
+    ///<summary>
+    /// 상태 머신 갱신
+    ///</summary>
+    ///<summary>
+    /// 스킬 디버프 지속시간 갱신
+    ///</summary>
+    private void TickSkillDebuffState()
+    {
+        float deltaTime = Time.deltaTime;
+
+        if ( defReductionDebuffRemaining > 0.0f )
+        {
+            defReductionDebuffRemaining = Mathf.Max( 0.0f, defReductionDebuffRemaining - deltaTime );
+
+            if ( defReductionDebuffRemaining <= 0.0f )
+            {
+                defReductionPercent = 0.0f;
+            }
+        }
+
+        if ( atkReductionDebuffRemaining > 0.0f )
+        {
+            atkReductionDebuffRemaining = Mathf.Max( 0.0f, atkReductionDebuffRemaining - deltaTime );
+
+            if ( atkReductionDebuffRemaining <= 0.0f )
+            {
+                atkReductionAmount = 0;
+            }
+        }
+    }
+
+    ///<summary>
+    /// 스킬 디버프 상태 초기화
+    ///</summary>
+    private void ClearSkillDebuffState()
+    {
+        defReductionDebuffRemaining = 0.0f;
+        defReductionPercent = 0.0f;
+        atkReductionDebuffRemaining = 0.0f;
+        atkReductionAmount = 0;
     }
 
     ///<summary>
@@ -666,7 +782,18 @@ public sealed class MonsterObject : MonoBehaviour
     {
         StopHorizontalMovement();
         ApplyFacingDirectionTowardPlayer();
-        PlayAnimationState( HitAnimationStateName );
+        PlayAnimationStateFromStart( HitAnimationStateName );
+    }
+
+    ///<summary>
+    /// 피격 상태 재시작 처리
+    ///</summary>
+    private void RestartHitState()
+    {
+        currentStateElapsedTime = 0.0f;
+        StopHorizontalMovement();
+        ApplyFacingDirectionTowardPlayer();
+        PlayAnimationStateFromStart( HitAnimationStateName );
     }
 
     ///<summary>
@@ -1483,6 +1610,26 @@ public sealed class MonsterObject : MonoBehaviour
     }
 
     ///<summary>
+    /// 애니메이션 상태 처음부터 재생
+    ///</summary>
+    private void PlayAnimationStateFromStart( string _animationStateName )
+    {
+        if ( targetAnimator == null || string.IsNullOrWhiteSpace( _animationStateName ) )
+        {
+            return;
+        }
+
+        if ( targetAnimator.gameObject.activeInHierarchy == false || targetAnimator.isActiveAndEnabled == false )
+        {
+            pendingAnimationStateName = _animationStateName;
+            return;
+        }
+
+        pendingAnimationStateName = string.Empty;
+        targetAnimator.Play( _animationStateName, 0, 0.0f );
+    }
+
+    ///<summary>
     /// 보류된 애니메이션 상태 재생 시도
     ///</summary>
     private void TryPlayPendingAnimationState()
@@ -1634,6 +1781,7 @@ public sealed class MonsterObject : MonoBehaviour
     private void RestoreIdleStateBeforeRelease()
     {
         isDeathSequenceStarted = false;
+        ClearSkillDebuffState();
         currentActionEntry = null;
         currentSelectionContext = eMonsterBehaviorSelectionContext.NONE;
         currentActionElapsedTime = 0.0f;
@@ -1816,6 +1964,7 @@ public sealed class MonsterObject : MonoBehaviour
         mvs = rowData.GetMvs();
         expReward = rowData.GetExp();
         atAvailable = rowData.GetAtAvailable();
+        ClearSkillDebuffState();
 
         if ( string.IsNullOrWhiteSpace( rowName ) == false )
         {

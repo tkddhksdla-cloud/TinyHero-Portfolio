@@ -33,6 +33,14 @@ namespace TinyHero.Core.Data
         [CExcelHeader( "DEF" )]
         private float def;
 
+        [SerializeField]
+        [CExcelHeader( "HR" )]
+        private float hr;
+
+        [SerializeField]
+        [CExcelHeader( "MR" )]
+        private float mr;
+
         ///<summary>
         /// 레벨 반환
         ///</summary>
@@ -84,6 +92,24 @@ namespace TinyHero.Core.Data
         public float GetDef()
         {
             float result = def;
+            return result;
+        }
+
+        ///<summary>
+        /// 초당 체력 회복력 반환
+        ///</summary>
+        public float GetHr()
+        {
+            float result = hr;
+            return result;
+        }
+
+        ///<summary>
+        /// 초당 마나 회복력 반환
+        ///</summary>
+        public float GetMr()
+        {
+            float result = mr;
             return result;
         }
     }

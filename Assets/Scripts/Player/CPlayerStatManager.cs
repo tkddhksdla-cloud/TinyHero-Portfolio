@@ -20,6 +20,7 @@ namespace TinyHero.Player
         [Header( "Bonus Stats" )]
         [SerializeField] private CPlayerStatRuntimeData equipmentStatBonus = new CPlayerStatRuntimeData();
         [SerializeField] private CPlayerStatRuntimeData levelStatBonus = new CPlayerStatRuntimeData();
+        [SerializeField] private CPlayerStatRuntimeData skillStatBonus = new CPlayerStatRuntimeData();
 
         [Header( "Runtime" )]
         [SerializeField] private bool restoreResourceOnAwake = true;
@@ -112,6 +113,15 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 스킬 보너스 스탯 반환
+        ///</summary>
+        public float GetSkillStatValue( ePlayerStatType _statType )
+        {
+            float result = skillStatBonus.GetStatValue( _statType );
+            return result;
+        }
+
+        ///<summary>
         /// 최종 스탯 값 반환
         ///</summary>
         public float GetFinalStatValue( ePlayerStatType _statType )
@@ -119,7 +129,8 @@ namespace TinyHero.Player
             float baseValue = GetBaseStatValue( _statType );
             float equipmentValue = GetEquipmentStatValue( _statType );
             float levelValue = GetLevelStatValue( _statType );
-            float summedValue = baseValue + equipmentValue + levelValue;
+            float skillValue = GetSkillStatValue( _statType );
+            float summedValue = baseValue + equipmentValue + levelValue + skillValue;
             float result = Mathf.Max( 0.0f, summedValue );
             return result;
         }
@@ -316,6 +327,24 @@ namespace TinyHero.Player
         public void ClearEquipmentStatBonus()
         {
             equipmentStatBonus.Clear();
+            NotifyStatChanged();
+        }
+
+        ///<summary>
+        /// 스킬 스탯 보너스 일괄 반영
+        ///</summary>
+        public void ApplySkillStatBonus( CPlayerStatRuntimeData _bonusData )
+        {
+            skillStatBonus.CopyFrom( _bonusData );
+            NotifyStatChanged();
+        }
+
+        ///<summary>
+        /// 스킬 스탯 보너스 초기화
+        ///</summary>
+        public void ClearSkillStatBonus()
+        {
+            skillStatBonus.Clear();
             NotifyStatChanged();
         }
 
@@ -778,7 +807,7 @@ namespace TinyHero.Player
                 return true;
             }
 
-            if ( _statType == ePlayerStatType.HP || _statType == ePlayerStatType.MP || _statType == ePlayerStatType.ATK || _statType == ePlayerStatType.DEF )
+            if ( _statType == ePlayerStatType.HP || _statType == ePlayerStatType.MP || _statType == ePlayerStatType.ATK || _statType == ePlayerStatType.DEF || _statType == ePlayerStatType.HR || _statType == ePlayerStatType.MR )
             {
                 CPlayerLevelStatRow currentLevelRow = ResolveCurrentLevelRow( currentLevel );
 
@@ -804,6 +833,14 @@ namespace TinyHero.Player
 
                     case ePlayerStatType.DEF:
                         _value = currentLevelRow.GetDef();
+                        return true;
+
+                    case ePlayerStatType.HR:
+                        _value = currentLevelRow.GetHr();
+                        return true;
+
+                    case ePlayerStatType.MR:
+                        _value = currentLevelRow.GetMr();
                         return true;
                 }
             }

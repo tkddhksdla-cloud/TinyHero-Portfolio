@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TinyHero.Core;
 using TinyHero.Player;
+using TinyHero.Skill;
 using TinyHero.Tools;
 using TinyHero.UI;
 using UnityEngine;
@@ -1230,7 +1231,32 @@ namespace TinyHero.Maps
         private void ReleaseMapTransitionPooledObjects()
         {
             ReturnAllActiveMapTitleLogoUis();
+            ReleaseAllPlacedSkillAreas();
+            ReleaseAllActiveDamageFonts();
             ReleaseAllPlayerPooledEffects();
+        }
+
+        ///<summary>
+        /// 활성 설치형 스킬 영역 정리
+        ///</summary>
+        private void ReleaseAllPlacedSkillAreas()
+        {
+            CPlacedSkillAreaRuntime.ReleaseAllActivePlacedSkillAreas();
+        }
+
+        ///<summary>
+        /// 활성 데미지 폰트 정리
+        ///</summary>
+        private void ReleaseAllActiveDamageFonts()
+        {
+            bool hasDamageFontManager = CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager );
+
+            if ( hasDamageFontManager == false || damageFontManager == null )
+            {
+                return;
+            }
+
+            damageFontManager.ReleaseAllActiveDamageFonts();
         }
 
         ///<summary>

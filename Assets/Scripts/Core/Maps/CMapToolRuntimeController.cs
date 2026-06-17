@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using TMPro;
 using TinyHero.Player;
+using TinyHero.Skill;
 using TinyHero.Tools;
 using TinyHero.UI;
 using UnityEngine;
@@ -41,6 +43,7 @@ namespace TinyHero.Maps
         private const string BackgroundPanelObjectName = "BackgroundPanel";
         private const string MonsterPanelObjectName = "MonsterPanel";
         private const string PortalPanelObjectName = "PortalPanel";
+        private const string SkillTestPanelObjectName = "SkillTestPanel";
         private const string PortalIdTitleObjectName = "PortalIdTitle";
         private const string PortalTargetMapTitleObjectName = "PortalTargetMapTitle";
         private const string PortalTargetPortalTitleObjectName = "PortalTargetPortalTitle";
@@ -79,6 +82,7 @@ namespace TinyHero.Maps
         private const float LoadPanelHeight = 360.0f;
         private const float LoadPanelLeftOffset = 400.0f;
         private const float LoadPanelTopOffset = -200.0f;
+        private const float SkillPreviewDisplayDurationSeconds = 1.2f;
         private const int MouseButtonLeft = 0;
         private const int MouseButtonRight = 1;
         private const int SortingOrderPanel = 10;
@@ -100,9 +104,11 @@ namespace TinyHero.Maps
         [SerializeField] private RectTransform portalPanelRoot;
         [SerializeField] private RectTransform mapInfoPanelRoot;
         [SerializeField] private RectTransform loadMapPanelRoot;
+        [SerializeField] private RectTransform skillTestPanelRoot;
         [SerializeField] private RectTransform backgroundListRoot;
         [SerializeField] private RectTransform monsterListRoot;
         [SerializeField] private RectTransform loadMapListRoot;
+        [SerializeField] private RectTransform skillTestListRoot;
         [SerializeField] private TMP_InputField mapIdInputField;
         [SerializeField] private TMP_InputField mapNameInputField;
         [SerializeField] private TMP_InputField portalIdInputField;
@@ -112,10 +118,14 @@ namespace TinyHero.Maps
         [SerializeField] private CButtonEx backgroundModeButton;
         [SerializeField] private CButtonEx monsterModeButton;
         [SerializeField] private CButtonEx portalModeButton;
+        [SerializeField] private CButtonEx skillTestModeButton;
         [SerializeField] private CButtonEx clearObjectsButton;
         [SerializeField] private CButtonEx saveMapButton;
         [SerializeField] private CButtonEx loadMapButton;
         [SerializeField] private CButtonEx startPortalPlacementButton;
+        [SerializeField] private CSkillManager skillManager;
+        [SerializeField] private CMapToolSkillRangeVisualizer hoverSkillRangeVisualizer;
+        [SerializeField] private CMapToolSkillRangeVisualizer activeSkillRangeVisualizer;
 
         private readonly List<MapToolPlacedObject> placedObjects = new List<MapToolPlacedObject>();
         private readonly List<Sprite> backgroundSprites = new List<Sprite>();
@@ -133,6 +143,7 @@ namespace TinyHero.Maps
         private string selectedPortalTargetPortalId = string.Empty;
         private bool isMonsterBehaviorDisabledInMapTool;
         private bool isDraggingPlacedObject;
+        private CSkillDefinition hoveredSkillDefinition;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -143,11 +154,13 @@ namespace TinyHero.Maps
             EnsureBackgroundObjectExists();
             EnsureBackgroundColliderVisualizerExists();
             EnsurePlayerObjectExists();
+            EnsureSkillManagerExists();
             EnsureUiRootExists();
             EnsureToolbarExists();
             EnsurePanelsExist();
             EnsureMapInfoPanelExists();
             EnsureLoadMapPanelExists();
+            EnsureSkillRangeVisualizersExist();
         }
 
         ///<summary>
@@ -161,10 +174,12 @@ namespace TinyHero.Maps
             RebuildBackgroundPanel();
             RebuildMonsterPanel();
             RebuildLoadMapPanel();
+            RebuildSkillTestPanel();
             SetPanelVisible( backgroundPanelRoot, false );
             SetPanelVisible( monsterPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
         }
 
         ///<summary>
@@ -177,6 +192,7 @@ namespace TinyHero.Maps
             HandlePlacedObjectDragInput();
             HandlePlacementInput();
             HandleDeleteInput();
+            UpdateSkillPreviewTarget();
         }
 
         ///<summary>
@@ -294,6 +310,49 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 스킬 매니저 참조 보장
+        ///</summary>
+        private void EnsureSkillManagerExists()
+        {
+            if ( skillManager != null )
+            {
+                return;
+            }
+
+            CSkillManager resolvedSkillManager = FindFirstObjectByType<CSkillManager>();
+            skillManager = resolvedSkillManager;
+        }
+
+        ///<summary>
+        /// 스킬 범위 시각화 참조 보장
+        ///</summary>
+        private void EnsureSkillRangeVisualizersExist()
+        {
+            if ( hoverSkillRangeVisualizer == null )
+            {
+                CMapToolSkillRangeVisualizer createdHoverVisualizer = CreateSkillRangeVisualizer( "HoverSkillRangeVisualizer" );
+                hoverSkillRangeVisualizer = createdHoverVisualizer;
+            }
+
+            if ( activeSkillRangeVisualizer == null )
+            {
+                CMapToolSkillRangeVisualizer createdActiveVisualizer = CreateSkillRangeVisualizer( "ActiveSkillRangeVisualizer" );
+                activeSkillRangeVisualizer = createdActiveVisualizer;
+            }
+        }
+
+        ///<summary>
+        /// 스킬 범위 시각화 오브젝트 생성
+        ///</summary>
+        private CMapToolSkillRangeVisualizer CreateSkillRangeVisualizer( string _objectName )
+        {
+            GameObject visualizerObject = new GameObject( _objectName );
+            visualizerObject.transform.SetParent( transform, false );
+            CMapToolSkillRangeVisualizer createdVisualizer = visualizerObject.AddComponent<CMapToolSkillRangeVisualizer>();
+            return createdVisualizer;
+        }
+
+        ///<summary>
         /// UI 루트 존재 보장
         ///</summary>
         private void EnsureUiRootExists()
@@ -387,6 +446,12 @@ namespace TinyHero.Maps
                 monsterModeButton = createdMonsterButton;
             }
 
+            if ( skillTestModeButton == null )
+            {
+                CButtonEx createdSkillTestButton = CreateTextButton( "SkillTestModeButton", toolbarRoot, "스킬 테스트", ToolbarButtonWidth, ToolbarButtonHeight );
+                skillTestModeButton = createdSkillTestButton;
+            }
+
             if ( clearObjectsButton == null )
             {
                 CButtonEx createdClearObjectsButton = CreateTextButton( "ClearObjectsButton", toolbarRoot, "오브젝트 초기화", ToolbarButtonWidth, ToolbarButtonHeight );
@@ -403,6 +468,7 @@ namespace TinyHero.Maps
             backgroundPanelRoot = EnsureSelectionPanel( backgroundPanelRoot, BackgroundPanelObjectName, canvasRectTransform, out backgroundListRoot );
             monsterPanelRoot = EnsureSelectionPanel( monsterPanelRoot, MonsterPanelObjectName, canvasRectTransform, out monsterListRoot );
             portalPanelRoot = EnsurePortalPanel( portalPanelRoot, canvasRectTransform );
+            skillTestPanelRoot = EnsureSelectionPanel( skillTestPanelRoot, SkillTestPanelObjectName, canvasRectTransform, out skillTestListRoot );
         }
 
         ///<summary>
@@ -580,6 +646,8 @@ namespace TinyHero.Maps
             monsterModeButton.onClick.AddListener( OnMonsterModeButtonClicked );
             portalModeButton.onClick.RemoveAllListeners();
             portalModeButton.onClick.AddListener( OnPortalModeButtonClicked );
+            skillTestModeButton.onClick.RemoveAllListeners();
+            skillTestModeButton.onClick.AddListener( OnSkillTestModeButtonClicked );
             clearObjectsButton.onClick.RemoveAllListeners();
             clearObjectsButton.onClick.AddListener( OnClearObjectsButtonClicked );
             startPortalPlacementButton.onClick.RemoveAllListeners();
@@ -681,6 +749,48 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 스킬 테스트 패널 재구성
+        ///</summary>
+        private void RebuildSkillTestPanel()
+        {
+            ClearChildren( skillTestListRoot );
+
+            if ( skillManager == null || skillTestListRoot == null )
+            {
+                return;
+            }
+
+            int skillCount = skillManager.GetSkillCount();
+
+            for ( int index = 0; index < skillCount; index++ )
+            {
+                CSkillRuntimeData runtimeData = skillManager.GetSkillRuntimeData( index );
+
+                if ( runtimeData == null )
+                {
+                    continue;
+                }
+
+                CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
+
+                if ( skillDefinition == null )
+                {
+                    continue;
+                }
+
+                string skillId = skillDefinition.GetSkillId();
+                string skillLabel = BuildSkillTestButtonLabel( skillDefinition );
+                CButtonEx listButton = CreateTextButton( ButtonObjectPrefix + skillId, skillTestListRoot, skillLabel, PanelWidth - ( PanelPadding * 2.0f ), ListButtonHeight * 1.45f );
+                CMapToolSkillTestItemUI itemUi = listButton.gameObject.AddComponent<CMapToolSkillTestItemUI>();
+                itemUi.Initialize( this, skillDefinition );
+                listButton.onClick.AddListener( delegate
+                {
+                    OnSkillTestItemClicked( skillDefinition );
+                } );
+            }
+        }
+
+        ///<summary>
         /// 로드 맵 패널 재구성
         ///</summary>
         private void RebuildLoadMapPanel()
@@ -743,6 +853,7 @@ namespace TinyHero.Maps
             }
 
             SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
             LoadSavedMapData();
         }
 
@@ -789,7 +900,17 @@ namespace TinyHero.Maps
         private void ToggleLoadMapPanel()
         {
             bool shouldActivate = loadMapPanelRoot.gameObject.activeSelf == false;
+            hoveredSkillDefinition = null;
+            SetPanelVisible( backgroundPanelRoot, false );
+            SetPanelVisible( monsterPanelRoot, false );
+            SetPanelVisible( portalPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, shouldActivate );
+
+            if ( hoverSkillRangeVisualizer != null )
+            {
+                hoverSkillRangeVisualizer.HidePreview();
+            }
         }
 
         ///<summary>
@@ -1289,6 +1410,16 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 스킬 테스트 버튼 클릭 처리
+        ///</summary>
+        private void OnSkillTestModeButtonClicked()
+        {
+            CancelPlacementMode();
+            StopPlacedObjectDrag();
+            ToggleSinglePanel( skillTestPanelRoot );
+        }
+
+        ///<summary>
         /// 시작 포탈 배치 버튼 클릭 처리
         ///</summary>
         private void OnStartPortalPlacementButtonClicked()
@@ -1320,6 +1451,372 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 스킬 테스트 항목 클릭 처리
+        ///</summary>
+        private void OnSkillTestItemClicked( CSkillDefinition _skillDefinition )
+        {
+            if ( _skillDefinition == null )
+            {
+                return;
+            }
+
+            ShowSkillActivePreview( _skillDefinition );
+            StartCoroutine( IE_ExecuteSkillForMapTool( _skillDefinition ) );
+        }
+
+        ///<summary>
+        /// 스킬 테스트 항목 포인터 진입 처리
+        ///</summary>
+        public void HandleSkillTestItemPointerEnter( CSkillDefinition _skillDefinition )
+        {
+            hoveredSkillDefinition = _skillDefinition;
+            ShowHoveredSkillPreview();
+        }
+
+        ///<summary>
+        /// 스킬 테스트 항목 포인터 이탈 처리
+        ///</summary>
+        public void HandleSkillTestItemPointerExit( CSkillDefinition _skillDefinition )
+        {
+            if ( hoveredSkillDefinition != _skillDefinition )
+            {
+                return;
+            }
+
+            hoveredSkillDefinition = null;
+
+            if ( hoverSkillRangeVisualizer != null )
+            {
+                hoverSkillRangeVisualizer.HidePreview();
+            }
+        }
+
+        ///<summary>
+        /// 스킬 테스트 버튼 라벨 생성
+        ///</summary>
+        private string BuildSkillTestButtonLabel( CSkillDefinition _skillDefinition )
+        {
+            if ( _skillDefinition == null )
+            {
+                return string.Empty;
+            }
+
+            string skillName = _skillDefinition.GetSkillName();
+            string skillId = _skillDefinition.GetSkillId();
+            eSkillType skillType = _skillDefinition.GetSkillType();
+            string result = $"[ {skillType} ] {skillName}\n{skillId}";
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 호버 미리보기 대상 갱신
+        ///</summary>
+        private void UpdateSkillPreviewTarget()
+        {
+            if ( hoveredSkillDefinition == null || hoverSkillRangeVisualizer == null )
+            {
+                return;
+            }
+
+            ShowHoveredSkillPreview();
+        }
+
+        ///<summary>
+        /// 스킬 호버 미리보기 표시
+        ///</summary>
+        private void ShowHoveredSkillPreview()
+        {
+            if ( hoveredSkillDefinition == null || hoverSkillRangeVisualizer == null )
+            {
+                return;
+            }
+
+            Transform ownerTransform = ResolveSkillPreviewOwnerTransform();
+
+            if ( ownerTransform == null )
+            {
+                hoverSkillRangeVisualizer.HidePreview();
+                return;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = hoveredSkillDefinition.GetActiveSkillEffect();
+
+            if ( activeSkillEffect != null )
+            {
+                hoverSkillRangeVisualizer.ShowFollowingPreview( activeSkillEffect, ownerTransform );
+                return;
+            }
+
+            bool hasPreviewData = TryGetFallbackSkillPreviewData( hoveredSkillDefinition, ownerTransform, out CSkillToolRangePreviewData previewData );
+
+            if ( hasPreviewData == false )
+            {
+                hoverSkillRangeVisualizer.HidePreview();
+                return;
+            }
+
+            hoverSkillRangeVisualizer.ShowFixedPreview( previewData, 0.0f );
+        }
+
+        ///<summary>
+        /// 스킬 사용 미리보기 표시
+        ///</summary>
+        private void ShowSkillActivePreview( CSkillDefinition _skillDefinition )
+        {
+            if ( _skillDefinition == null || activeSkillRangeVisualizer == null )
+            {
+                return;
+            }
+
+            Transform ownerTransform = ResolveSkillPreviewOwnerTransform();
+
+            if ( ownerTransform == null )
+            {
+                return;
+            }
+
+            bool hasPreviewData = TryGetSkillPreviewData( _skillDefinition, ownerTransform, out CSkillToolRangePreviewData previewData );
+
+            if ( hasPreviewData == false )
+            {
+                return;
+            }
+
+            float previewDurationSeconds = GetSkillPreviewDurationSeconds( _skillDefinition ) + _skillDefinition.GetCastLockDurationSeconds();
+            activeSkillRangeVisualizer.ShowFixedPreview( previewData, previewDurationSeconds );
+        }
+
+        ///<summary>
+        /// 맵 툴 전용 스킬 시전 코루틴 처리
+        ///</summary>
+        private IEnumerator IE_ExecuteSkillForMapTool( CSkillDefinition _skillDefinition )
+        {
+            if ( _skillDefinition == null )
+            {
+                yield break;
+            }
+
+            if ( _skillDefinition.GetSkillType() == eSkillType.PASSIVE )
+            {
+                ExecuteSkillForMapTool( _skillDefinition );
+                yield break;
+            }
+
+            bool hasExecutionContext = TryResolveToolSkillExecutionContext( _skillDefinition, out CSkillManager _, out CSkillRuntimeData _, out PlayerController playerController, out CPlayerStatManager _, out Transform _ );
+
+            if ( hasExecutionContext == false )
+            {
+                yield break;
+            }
+
+            if ( playerController != null )
+            {
+                string castAnimationName = _skillDefinition.GetResolvedCastAnimationName();
+                float castAnimationSpeed = _skillDefinition.GetCastAnimationSpeed();
+                float castLockDurationSeconds = _skillDefinition.GetCastLockDurationSeconds();
+                bool didStartCast = playerController.TryBeginToolSkillCast( castAnimationName, castAnimationSpeed, castLockDurationSeconds );
+
+                if ( didStartCast && castLockDurationSeconds > 0.0f )
+                {
+                    yield return new WaitForSeconds( castLockDurationSeconds );
+                }
+            }
+
+            ExecuteSkillForMapTool( _skillDefinition );
+        }
+
+        ///<summary>
+        /// 맵 툴 전용 스킬 실행 처리
+        ///</summary>
+        private bool ExecuteSkillForMapTool( CSkillDefinition _skillDefinition )
+        {
+            bool hasExecutionContext = TryResolveToolSkillExecutionContext( _skillDefinition, out CSkillManager resolvedSkillManager, out CSkillRuntimeData runtimeData, out PlayerController playerController, out CPlayerStatManager playerStatManager, out Transform ownerTransform );
+
+            if ( hasExecutionContext == false )
+            {
+                return false;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+            CSkillActionBase activeAction = _skillDefinition.GetActiveAction();
+            CSkillContext skillContext = new CSkillContext( resolvedSkillManager, playerController, playerStatManager, _skillDefinition, runtimeData, ownerTransform );
+
+            if ( activeSkillEffect != null )
+            {
+                bool canExecute = activeSkillEffect.CanExecute( skillContext );
+
+                if ( canExecute == false )
+                {
+                    return false;
+                }
+
+                activeSkillEffect.Execute( skillContext );
+                return true;
+            }
+
+            if ( activeAction == null )
+            {
+                return false;
+            }
+
+            bool canExecuteAction = activeAction.CanExecute( skillContext );
+
+            if ( canExecuteAction == false )
+            {
+                return false;
+            }
+
+            activeAction.Execute( skillContext );
+            return true;
+        }
+
+        ///<summary>
+        /// 툴 스킬 실행 문맥 결정
+        ///</summary>
+        private bool TryResolveToolSkillExecutionContext( CSkillDefinition _skillDefinition, out CSkillManager _resolvedSkillManager, out CSkillRuntimeData _runtimeData, out PlayerController _playerController, out CPlayerStatManager _playerStatManager, out Transform _ownerTransform )
+        {
+            _resolvedSkillManager = null;
+            _runtimeData = null;
+            _playerController = null;
+            _playerStatManager = null;
+            _ownerTransform = null;
+
+            if ( _skillDefinition == null )
+            {
+                return false;
+            }
+
+            EnsurePlayerObjectExists();
+            PlayerController resolvedPlayerController = FindFirstObjectByType<PlayerController>();
+            _playerController = resolvedPlayerController;
+
+            if ( resolvedPlayerController != null )
+            {
+                CSkillManager playerSkillManager = resolvedPlayerController.GetComponent<CSkillManager>();
+
+                if ( playerSkillManager != null )
+                {
+                    skillManager = playerSkillManager;
+                }
+            }
+
+            EnsureSkillManagerExists();
+            _resolvedSkillManager = skillManager;
+
+            if ( _resolvedSkillManager == null )
+            {
+                return false;
+            }
+
+            _playerStatManager = _resolvedSkillManager.GetComponent<CPlayerStatManager>();
+            _ownerTransform = resolvedPlayerController != null ? resolvedPlayerController.transform : _resolvedSkillManager.transform;
+
+            string skillId = _skillDefinition.GetSkillId();
+            _runtimeData = _resolvedSkillManager.GetSkillRuntimeData( skillId );
+
+            if ( _runtimeData == null )
+            {
+                return false;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+            CSkillActionBase activeAction = _skillDefinition.GetActiveAction();
+            bool hasExecutableContent = activeSkillEffect != null || activeAction != null || _skillDefinition.GetSkillType() == eSkillType.PASSIVE;
+            return hasExecutableContent;
+        }
+
+        ///<summary>
+        /// 스킬 미리보기 데이터 반환
+        ///</summary>
+        private bool TryGetSkillPreviewData( CSkillDefinition _skillDefinition, Transform _ownerTransform, out CSkillToolRangePreviewData _previewData )
+        {
+            _previewData = default;
+
+            if ( _skillDefinition == null || _ownerTransform == null )
+            {
+                return false;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+
+            if ( activeSkillEffect != null )
+            {
+                bool hasPreviewData = activeSkillEffect.TryGetToolRangePreviewData( _ownerTransform, out _previewData );
+                return hasPreviewData;
+            }
+
+            bool hasFallbackPreviewData = TryGetFallbackSkillPreviewData( _skillDefinition, _ownerTransform, out _previewData );
+            return hasFallbackPreviewData;
+        }
+
+        ///<summary>
+        /// 스킬 대체 미리보기 데이터 반환
+        ///</summary>
+        private bool TryGetFallbackSkillPreviewData( CSkillDefinition _skillDefinition, Transform _ownerTransform, out CSkillToolRangePreviewData _previewData )
+        {
+            _previewData = default;
+
+            if ( _skillDefinition == null || _ownerTransform == null )
+            {
+                return false;
+            }
+
+            if ( _skillDefinition.GetSkillType() != eSkillType.PASSIVE )
+            {
+                return false;
+            }
+
+            _previewData.isValid = true;
+            _previewData.shapeType = eSkillToolRangePreviewShape.CIRCLE;
+            _previewData.worldCenterPosition = _ownerTransform.position;
+            _previewData.radius = 0.75f;
+            return true;
+        }
+
+        ///<summary>
+        /// 스킬 미리보기 표시 시간 반환
+        ///</summary>
+        private float GetSkillPreviewDurationSeconds( CSkillDefinition _skillDefinition )
+        {
+            if ( _skillDefinition == null )
+            {
+                return SkillPreviewDisplayDurationSeconds;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+
+            if ( activeSkillEffect != null )
+            {
+                float previewDurationSeconds = activeSkillEffect.GetToolPreviewDurationSeconds();
+                return previewDurationSeconds;
+            }
+
+            return SkillPreviewDisplayDurationSeconds;
+        }
+
+        ///<summary>
+        /// 스킬 미리보기 기준 트랜스폼 반환
+        ///</summary>
+        private Transform ResolveSkillPreviewOwnerTransform()
+        {
+            if ( skillManager == null )
+            {
+                PlayerController resolvedPlayerController = FindFirstObjectByType<PlayerController>();
+
+                if ( resolvedPlayerController != null )
+                {
+                    return resolvedPlayerController.transform;
+                }
+
+                return null;
+            }
+
+            PlayerController playerController = skillManager.GetComponent<PlayerController>();
+            Transform ownerTransform = playerController != null ? playerController.transform : skillManager.transform;
+            return ownerTransform;
+        }
+
+        ///<summary>
         /// 싱글 패널 전환
         ///</summary>
         private void ToggleSinglePanel(RectTransform _targetPanel)
@@ -1330,10 +1827,17 @@ namespace TinyHero.Maps
             }
 
             bool shouldActivate = _targetPanel.gameObject.activeSelf == false;
+            hoveredSkillDefinition = null;
             SetPanelVisible( backgroundPanelRoot, false );
             SetPanelVisible( monsterPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
+
+            if ( hoverSkillRangeVisualizer != null )
+            {
+                hoverSkillRangeVisualizer.HidePreview();
+            }
 
             if ( shouldActivate )
             {
@@ -1417,6 +1921,7 @@ namespace TinyHero.Maps
             SetPanelVisible( monsterPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
             RebuildPreviewInstance();
         }
 
@@ -1431,6 +1936,7 @@ namespace TinyHero.Maps
             SetPanelVisible( monsterPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
             RebuildPreviewInstance();
         }
 
@@ -1908,6 +2414,7 @@ namespace TinyHero.Maps
             StopPlacedObjectDrag();
             SetPanelVisible( monsterPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
 
             int placedObjectCount = placedObjects.Count;
 

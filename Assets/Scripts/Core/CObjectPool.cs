@@ -9,6 +9,7 @@ namespace TinyHero.Core
     public sealed class CObjectPool<T> where T : class
     {
         private readonly Stack<T> pooledItemStack = new Stack<T>();
+        private readonly HashSet<T> pooledItemSet = new HashSet<T>();
         private readonly Func<T> createItemHandler;
         private readonly Action<T> onGetItemHandler;
         private readonly Action<T> onReleaseItemHandler;
@@ -17,7 +18,7 @@ namespace TinyHero.Core
         ///<summary>
         /// 객체 풀 초기화
         ///</summary>
-        public CObjectPool(Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler = null)
+        public CObjectPool( Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler = null )
         {
             createItemHandler = _createItemHandler ?? throw new ArgumentNullException( nameof( _createItemHandler ) );
             onGetItemHandler = _onGetItemHandler;
@@ -35,6 +36,13 @@ namespace TinyHero.Core
             while ( pooledItemStack.Count > 0 && pooledItem == null )
             {
                 T stackedItem = pooledItemStack.Pop();
+
+                if ( stackedItem == null )
+                {
+                    continue;
+                }
+
+                pooledItemSet.Remove( stackedItem );
                 pooledItem = stackedItem;
             }
 
@@ -51,15 +59,21 @@ namespace TinyHero.Core
         ///<summary>
         /// 풀 아이템 반환
         ///</summary>
-        public void Release(T _item)
+        public void Release( T _item )
         {
             if ( _item == null )
             {
                 return;
             }
 
+            if ( pooledItemSet.Contains( _item ) )
+            {
+                return;
+            }
+
             onReleaseItemHandler?.Invoke( _item );
             pooledItemStack.Push( _item );
+            pooledItemSet.Add( _item );
         }
 
         ///<summary>
@@ -76,8 +90,11 @@ namespace TinyHero.Core
                     continue;
                 }
 
+                pooledItemSet.Remove( pooledItem );
                 onDestroyItemHandler?.Invoke( pooledItem );
             }
+
+            pooledItemSet.Clear();
         }
     }
 }

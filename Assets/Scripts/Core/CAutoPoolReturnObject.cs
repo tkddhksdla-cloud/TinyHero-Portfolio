@@ -39,6 +39,21 @@ public class CAutoPoolReturnObject : MonoBehaviour
     }
 
     ///<summary>
+    /// 자동 반환 지연 시간 설정
+    ///</summary>
+    public void SetReturnDelay( float _returnDelay )
+    {
+        returnDelay = Mathf.Max( 0.0f, _returnDelay );
+
+        if ( isActiveAndEnabled == false )
+        {
+            return;
+        }
+
+        StartAutoReturnRoutine();
+    }
+
+    ///<summary>
     /// 즉시 풀 반환 처리
     ///</summary>
     public void ForceReturnToPool()
