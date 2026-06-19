@@ -1,0 +1,325 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace TinyHero.Core.Data
+{
+    ///<summary>
+    /// 아이템 분류
+    ///</summary>
+    public enum eItemType
+    {
+        EQUIPMENT,
+        CONSUMABLE,
+        CURRENCY,
+        MATERIAL,
+        QUEST_ITEM
+    }
+
+    ///<summary>
+    /// 인벤토리 보관 항목 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CInventoryItemEntryData
+    {
+        [SerializeField] private string itemId = string.Empty;
+        [SerializeField] private int quantity;
+
+        ///<summary>
+        /// 아이템 ID 반환
+        ///</summary>
+        public string GetItemId()
+        {
+            string result = itemId;
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 ID 설정
+        ///</summary>
+        public void SetItemId( string _itemId )
+        {
+            itemId = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
+        }
+
+        ///<summary>
+        /// 수량 반환
+        ///</summary>
+        public int GetQuantity()
+        {
+            int result = quantity;
+            return result;
+        }
+
+        ///<summary>
+        /// 수량 설정
+        ///</summary>
+        public void SetQuantity( int _quantity )
+        {
+            quantity = Mathf.Max( 0, _quantity );
+        }
+
+        ///<summary>
+        /// 빈 슬롯 여부 반환
+        ///</summary>
+        public bool IsEmpty()
+        {
+            bool hasItemId = string.IsNullOrWhiteSpace( itemId ) == false;
+            bool result = hasItemId == false || quantity <= 0;
+            return result;
+        }
+
+        ///<summary>
+        /// 슬롯 데이터 초기화
+        ///</summary>
+        public void Clear()
+        {
+            itemId = string.Empty;
+            quantity = 0;
+        }
+
+        ///<summary>
+        /// 슬롯 데이터 복사본 생성
+        ///</summary>
+        public CInventoryItemEntryData CreateCopy()
+        {
+            CInventoryItemEntryData copiedEntryData = new CInventoryItemEntryData();
+            copiedEntryData.SetItemId( itemId );
+            copiedEntryData.SetQuantity( quantity );
+            return copiedEntryData;
+        }
+
+        ///<summary>
+        /// 슬롯 데이터 복사 반영
+        ///</summary>
+        public void CopyFrom( CInventoryItemEntryData _sourceEntryData )
+        {
+            if ( _sourceEntryData == null )
+            {
+                Clear();
+                return;
+            }
+
+            itemId = _sourceEntryData.GetItemId();
+            quantity = _sourceEntryData.GetQuantity();
+        }
+    }
+
+    ///<summary>
+    /// 플레이어 인벤토리 저장 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CPlayerInventorySnapshotData
+    {
+        [SerializeField] private List<CInventoryItemEntryData> itemEntryList = new List<CInventoryItemEntryData>();
+
+        ///<summary>
+        /// 저장 항목 목록 반환
+        ///</summary>
+        public List<CInventoryItemEntryData> GetItemEntryList()
+        {
+            List<CInventoryItemEntryData> result = itemEntryList;
+            return result;
+        }
+
+        ///<summary>
+        /// 저장 항목 목록 설정
+        ///</summary>
+        public void SetItemEntryList( List<CInventoryItemEntryData> _itemEntryList )
+        {
+            itemEntryList = _itemEntryList ?? new List<CInventoryItemEntryData>();
+        }
+    }
+
+    ///<summary>
+    /// 몬스터 아이템 드랍 엔트리
+    ///</summary>
+    [Serializable]
+    public sealed class CMonsterItemDropEntry
+    {
+        [SerializeField] private CItemDefinition itemDefinition;
+        [SerializeField] [Range( 0.0f, 1.0f )] private float dropChance = 1.0f;
+        [SerializeField] private int minDropCount = 1;
+        [SerializeField] private int maxDropCount = 1;
+
+        ///<summary>
+        /// 아이템 정의 반환
+        ///</summary>
+        public CItemDefinition GetItemDefinition()
+        {
+            CItemDefinition result = itemDefinition;
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 정의 설정
+        ///</summary>
+        public void SetItemDefinition( CItemDefinition _itemDefinition )
+        {
+            itemDefinition = _itemDefinition;
+        }
+
+        ///<summary>
+        /// 드랍 확률 반환
+        ///</summary>
+        public float GetDropChance()
+        {
+            float result = Mathf.Clamp01( dropChance );
+            return result;
+        }
+
+        ///<summary>
+        /// 드랍 확률 설정
+        ///</summary>
+        public void SetDropChance( float _dropChance )
+        {
+            dropChance = Mathf.Clamp01( _dropChance );
+        }
+
+        ///<summary>
+        /// 최소 드랍 수량 반환
+        ///</summary>
+        public int GetMinDropCount()
+        {
+            int result = Mathf.Max( 0, minDropCount );
+            return result;
+        }
+
+        ///<summary>
+        /// 최소 드랍 수량 설정
+        ///</summary>
+        public void SetMinDropCount( int _minDropCount )
+        {
+            minDropCount = Mathf.Max( 0, _minDropCount );
+        }
+
+        ///<summary>
+        /// 최대 드랍 수량 반환
+        ///</summary>
+        public int GetMaxDropCount()
+        {
+            int normalizedMinDropCount = Mathf.Max( 0, minDropCount );
+            int result = Mathf.Max( normalizedMinDropCount, maxDropCount );
+            return result;
+        }
+
+        ///<summary>
+        /// 최대 드랍 수량 설정
+        ///</summary>
+        public void SetMaxDropCount( int _maxDropCount )
+        {
+            int normalizedMinDropCount = Mathf.Max( 0, minDropCount );
+            maxDropCount = Mathf.Max( normalizedMinDropCount, _maxDropCount );
+        }
+    }
+
+    ///<summary>
+    /// 아이템 정의 에셋
+    ///</summary>
+    [CreateAssetMenu( fileName = "ItemDefinition", menuName = "TinyHero/Data/Item Definition" )]
+    public sealed class CItemDefinition : ScriptableObject
+    {
+        [SerializeField] private string itemId = string.Empty;
+        [SerializeField] private string itemName = string.Empty;
+        [SerializeField] private eItemType itemType = eItemType.CONSUMABLE;
+        [SerializeField] [TextArea] private string description = string.Empty;
+        [SerializeField] private Sprite iconSprite;
+        [SerializeField] private GameObject worldDropPrefab;
+        [SerializeField] private bool isStackable = true;
+        [SerializeField] private int maxStackCount = 99;
+
+        ///<summary>
+        /// 아이템 ID 반환
+        ///</summary>
+        public string GetItemId()
+        {
+            string result = itemId;
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 이름 반환
+        ///</summary>
+        public string GetItemName()
+        {
+            string result = itemName;
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 타입 반환
+        ///</summary>
+        public eItemType GetItemType()
+        {
+            eItemType result = itemType;
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 설명 반환
+        ///</summary>
+        public string GetDescription()
+        {
+            string result = description;
+            return result;
+        }
+
+        ///<summary>
+        /// 아이콘 스프라이트 반환
+        ///</summary>
+        public Sprite GetIconSprite()
+        {
+            Sprite result = iconSprite;
+            return result;
+        }
+
+        ///<summary>
+        /// 월드 드랍 프리팹 반환
+        ///</summary>
+        public GameObject GetWorldDropPrefab()
+        {
+            GameObject result = worldDropPrefab;
+            return result;
+        }
+
+        ///<summary>
+        /// 중첩 가능 여부 반환
+        ///</summary>
+        public bool IsStackable()
+        {
+            bool result = isStackable;
+            return result;
+        }
+
+        ///<summary>
+        /// 최대 중첩 수량 반환
+        ///</summary>
+        public int GetMaxStackCount()
+        {
+            int result = isStackable ? Mathf.Max( 1, maxStackCount ) : 1;
+            return result;
+        }
+
+        ///<summary>
+        /// 월드 드랍 프리팹 설정
+        ///</summary>
+        public void SetWorldDropPrefab( GameObject _worldDropPrefab )
+        {
+            worldDropPrefab = _worldDropPrefab;
+        }
+
+        ///<summary>
+        /// 아이템 정의 구성
+        ///</summary>
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
+        {
+            itemId = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
+            itemName = string.IsNullOrWhiteSpace( _itemName ) ? itemId : _itemName.Trim();
+            itemType = _itemType;
+            description = string.IsNullOrWhiteSpace( _description ) ? string.Empty : _description.Trim();
+            iconSprite = _iconSprite;
+            isStackable = _isStackable;
+            maxStackCount = _isStackable ? Mathf.Max( 1, _maxStackCount ) : 1;
+        }
+    }
+}

@@ -12,6 +12,7 @@ using UnityEngine;
 [RequireComponent( typeof( Rigidbody2D ) )]
 public sealed class MonsterObject : MonoBehaviour
 {
+    private const string WorldItemDropPrefabResourcePath = "Prefabs/Item/WorldItemDropObject";
     private enum eMonsterBehaviorSelectionContext
     {
         NONE,
@@ -58,6 +59,8 @@ public sealed class MonsterObject : MonoBehaviour
     [SerializeField] private long ats;
     [SerializeField] private long mvs;
     [SerializeField] private long expReward;
+    [SerializeField] private bool useItemDrop;
+    [SerializeField] private List<CMonsterItemDropEntry> itemDropEntryList = new List<CMonsterItemDropEntry>();
     [SerializeField] private bool atAvailable = true;
     [SerializeField] private Animator targetAnimator;
     [SerializeField] private Rigidbody2D targetRigidbody;
@@ -68,6 +71,7 @@ public sealed class MonsterObject : MonoBehaviour
     [SerializeField] private bool isBehaviorEnabled = true;
 
     private static CMonsterStatTableData cachedMonsterStatTableData;
+    private static GameObject cachedDefaultWorldItemDropPrefab;
     private static bool isMonsterCollisionIgnored;
     private Transform cachedPlayerTransform;
     private CMonsterBehaviorActionEntry currentActionEntry;
@@ -92,6 +96,7 @@ public sealed class MonsterObject : MonoBehaviour
     private bool hasTeleportedInCurrentAction;
     private bool isConfigured;
     private bool isDeathSequenceStarted;
+    private bool hasRewardGranted;
     private Coroutine deathSequenceRoutine;
     private long atkReductionAmount;
 
@@ -145,6 +150,7 @@ public sealed class MonsterObject : MonoBehaviour
     private void OnEnable()
     {
         isDeathSequenceStarted = false;
+        hasRewardGranted = false;
         ClearSkillDebuffState();
         SetBodyColliderEnabled( true );
         SetContactHitboxEnabled( true );
@@ -295,6 +301,7 @@ public sealed class MonsterObject : MonoBehaviour
     {
         StopDeathSequence();
         isDeathSequenceStarted = false;
+        hasRewardGranted = false;
         ClearSkillDebuffState();
         SetBodyColliderEnabled( true );
         SetContactHitboxEnabled( true );
@@ -414,6 +421,47 @@ public sealed class MonsterObject : MonoBehaviour
     {
         long result = expReward;
         return result;
+    }
+
+    ///<summary>
+    /// 아이템 드랍 사용 여부 반환
+    ///</summary>
+    public bool GetUseItemDrop()
+    {
+        bool result = useItemDrop;
+        return result;
+    }
+
+    ///<summary>
+    /// 아이템 드랍 목록 반환
+    ///</summary>
+    public List<CMonsterItemDropEntry> GetItemDropEntryList()
+    {
+        List<CMonsterItemDropEntry> result = itemDropEntryList;
+        return result;
+    }
+
+    ///<summary>
+    /// 몬스터 보상 지급 시도
+    ///</summary>
+    public bool TryGrantReward( PlayerController _playerController )
+    {
+        if ( _playerController == null || currentHp > 0 || hasRewardGranted )
+        {
+            return false;
+        }
+
+        CPlayerStatManager playerStatManager = _playerController.GetPlayerStatManager();
+
+        hasRewardGranted = true;
+
+        if ( playerStatManager != null && expReward > 0 )
+        {
+            playerStatManager.AddExp( expReward );
+        }
+
+        SpawnDropItems();
+        return true;
     }
 
     ///<summary>
@@ -1781,6 +1829,7 @@ public sealed class MonsterObject : MonoBehaviour
     private void RestoreIdleStateBeforeRelease()
     {
         isDeathSequenceStarted = false;
+        hasRewardGranted = false;
         ClearSkillDebuffState();
         currentActionEntry = null;
         currentSelectionContext = eMonsterBehaviorSelectionContext.NONE;
@@ -1964,6 +2013,7 @@ public sealed class MonsterObject : MonoBehaviour
         mvs = rowData.GetMvs();
         expReward = rowData.GetExp();
         atAvailable = rowData.GetAtAvailable();
+        hasRewardGranted = false;
         ClearSkillDebuffState();
 
         if ( string.IsNullOrWhiteSpace( rowName ) == false )
@@ -2053,5 +2103,138 @@ public sealed class MonsterObject : MonoBehaviour
         }
 
         monsterInfoManager.UnregisterMonster( this );
+    }
+
+    ///<summary>
+    /// 드랍 아이템 지급 처리
+    ///</summary>
+    private void SpawnDropItems()
+    {
+        if ( useItemDrop == false || itemDropEntryList == null || itemDropEntryList.Count == 0 )
+        {
+            return;
+        }
+
+        for ( int index = 0; index < itemDropEntryList.Count; index++ )
+        {
+            CMonsterItemDropEntry dropEntry = itemDropEntryList[ index ];
+
+            if ( dropEntry == null )
+            {
+                continue;
+            }
+
+            CItemDefinition itemDefinition = dropEntry.GetItemDefinition();
+
+            if ( itemDefinition == null )
+            {
+                continue;
+            }
+
+            float dropChance = dropEntry.GetDropChance();
+            float randomValue = Random.value;
+
+            if ( randomValue > dropChance )
+            {
+                continue;
+            }
+
+            int dropCount = ResolveDropCount( dropEntry );
+
+            if ( dropCount <= 0 )
+            {
+                continue;
+            }
+
+            CreateWorldDropObject( itemDefinition, dropCount, index );
+        }
+    }
+
+    ///<summary>
+    /// 드랍 수량 결정
+    ///</summary>
+    private int ResolveDropCount( CMonsterItemDropEntry _dropEntry )
+    {
+        if ( _dropEntry == null )
+        {
+            return 0;
+        }
+
+        int minDropCount = _dropEntry.GetMinDropCount();
+        int maxDropCount = _dropEntry.GetMaxDropCount();
+
+        if ( maxDropCount <= minDropCount )
+        {
+            return minDropCount;
+        }
+
+        int result = Random.Range( minDropCount, maxDropCount + 1 );
+        return result;
+    }
+
+    ///<summary>
+    /// 월드 드랍 오브젝트 생성
+    ///</summary>
+    private void CreateWorldDropObject( CItemDefinition _itemDefinition, int _dropCount, int _dropIndex )
+    {
+        if ( _itemDefinition == null || _dropCount <= 0 )
+        {
+            return;
+        }
+
+        GameObject worldItemDropPrefab = ResolveWorldItemDropPrefab( _itemDefinition );
+
+        if ( worldItemDropPrefab == null )
+        {
+            return;
+        }
+
+        float randomOffsetX = Random.Range( -0.45f, 0.45f );
+        float randomOffsetY = Random.Range( 0.05f, 0.18f );
+        Vector3 basePosition = transform.position;
+        Vector3 dropPosition = new Vector3( basePosition.x + randomOffsetX, basePosition.y + randomOffsetY + ( _dropIndex * 0.05f ), basePosition.z );
+        GameObject createdDropObject = Instantiate( worldItemDropPrefab, dropPosition, Quaternion.identity );
+        CWorldItemDropObject worldItemDropObject = createdDropObject.GetComponent<CWorldItemDropObject>();
+
+        if ( worldItemDropObject == null )
+        {
+            return;
+        }
+
+        worldItemDropObject.ConfigureDrop( _itemDefinition, _dropCount );
+    }
+
+    ///<summary>
+    /// 월드 드랍 프리팹 결정
+    ///</summary>
+    private GameObject ResolveWorldItemDropPrefab( CItemDefinition _itemDefinition )
+    {
+        if ( _itemDefinition != null )
+        {
+            GameObject itemSpecificDropPrefab = _itemDefinition.GetWorldDropPrefab();
+
+            if ( itemSpecificDropPrefab != null )
+            {
+                return itemSpecificDropPrefab;
+            }
+        }
+
+        GameObject result = ResolveDefaultWorldItemDropPrefab();
+        return result;
+    }
+
+    ///<summary>
+    /// 공용 월드 드랍 프리팹 결정
+    ///</summary>
+    private GameObject ResolveDefaultWorldItemDropPrefab()
+    {
+        if ( cachedDefaultWorldItemDropPrefab != null )
+        {
+            return cachedDefaultWorldItemDropPrefab;
+        }
+
+        GameObject loadedWorldItemDropPrefab = Resources.Load<GameObject>( WorldItemDropPrefabResourcePath );
+        cachedDefaultWorldItemDropPrefab = loadedWorldItemDropPrefab;
+        return cachedDefaultWorldItemDropPrefab;
     }
 }

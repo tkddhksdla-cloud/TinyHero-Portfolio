@@ -18,6 +18,18 @@ namespace TinyHero.Tools
     }
 
     ///<summary>
+    /// 몬스터 드랍 설정 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class MonsterBehaviorDropSetting
+    {
+        public CItemDefinition itemDefinition;
+        public float dropChance = 1.0f;
+        public int minDropCount = 1;
+        public int maxDropCount = 1;
+    }
+
+    ///<summary>
     /// 몬스터 행동 패턴 편집 에디터 창
     ///</summary>
     public sealed class MonsterBehaviorPatternEditorWindow : EditorWindow
@@ -51,6 +63,8 @@ namespace TinyHero.Tools
         [SerializeField] private List<MonsterBehaviorPrefabInfo> monsterPrefabInfos = new List<MonsterBehaviorPrefabInfo>();
         [SerializeField] private int selectedPrefabIndex = -1;
         [SerializeField] private string searchText = string.Empty;
+        [SerializeField] private bool useItemDrop;
+        [SerializeField] private List<MonsterBehaviorDropSetting> itemDropSettingList = new List<MonsterBehaviorDropSetting>();
 
         private Vector2 prefabListScrollPosition;
         private Vector2 editorScrollPosition;
@@ -255,6 +269,61 @@ namespace TinyHero.Tools
             workingPatternData.SetRespawnDelaySeconds(updatedRespawnDelaySeconds);
             EditorGUILayout.Space();
             DrawPatternColumnsSection();
+            EditorGUILayout.Space();
+            DrawItemDropSection();
+        }
+
+        ///<summary>
+        /// 아이템 드랍 설정 섹션 렌더링
+        ///</summary>
+        private void DrawItemDropSection()
+        {
+            EditorGUILayout.BeginVertical("box");
+            EditorGUILayout.LabelField("Item Drop Settings", EditorStyles.boldLabel);
+            bool updatedUseItemDrop = EditorGUILayout.ToggleLeft("Use Item Drop", useItemDrop);
+            useItemDrop = updatedUseItemDrop;
+
+            if ( useItemDrop )
+            {
+                for ( int index = 0; index < itemDropSettingList.Count; index++ )
+                {
+                    MonsterBehaviorDropSetting dropSetting = itemDropSettingList[ index ];
+
+                    if ( dropSetting == null )
+                    {
+                        continue;
+                    }
+
+                    EditorGUILayout.BeginVertical("box");
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Drop Entry {index + 1}", EditorStyles.boldLabel);
+
+                    if ( GUILayout.Button("Remove", GUILayout.Width(80.0f)) )
+                    {
+                        itemDropSettingList.RemoveAt( index );
+                        EditorGUILayout.EndHorizontal();
+                        EditorGUILayout.EndVertical();
+                        break;
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                    dropSetting.itemDefinition = EditorGUILayout.ObjectField("Item", dropSetting.itemDefinition, typeof( CItemDefinition ), false ) as CItemDefinition;
+                    dropSetting.dropChance = EditorGUILayout.Slider("Drop Chance", dropSetting.dropChance, 0.0f, 1.0f);
+                    dropSetting.minDropCount = EditorGUILayout.IntField("Min Count", dropSetting.minDropCount);
+                    dropSetting.maxDropCount = EditorGUILayout.IntField("Max Count", dropSetting.maxDropCount);
+                    dropSetting.minDropCount = Mathf.Max( 0, dropSetting.minDropCount );
+                    dropSetting.maxDropCount = Mathf.Max( dropSetting.minDropCount, dropSetting.maxDropCount );
+                    EditorGUILayout.EndVertical();
+                }
+
+                if ( GUILayout.Button("Add Drop Entry") )
+                {
+                    MonsterBehaviorDropSetting createdDropSetting = new MonsterBehaviorDropSetting();
+                    itemDropSettingList.Add( createdDropSetting );
+                }
+            }
+
+            EditorGUILayout.EndVertical();
         }
 
         ///<summary>
@@ -572,6 +641,7 @@ namespace TinyHero.Tools
             }
 
             workingPatternData.SetMonsterId(selectedInfo.prefabName);
+            LoadDropSettingsFromPrefab(selectedInfo.assetPath);
         }
 
         ///<summary>
@@ -736,6 +806,8 @@ namespace TinyHero.Tools
 
                 SerializedObject serializedObject = new SerializedObject(monsterObject);
                 SerializedProperty behaviorPatternProperty = serializedObject.FindProperty("behaviorPatternData");
+                SerializedProperty useItemDropProperty = serializedObject.FindProperty("useItemDrop");
+                SerializedProperty itemDropEntryListProperty = serializedObject.FindProperty("itemDropEntryList");
 
                 if (behaviorPatternProperty == null)
                 {
@@ -744,6 +816,17 @@ namespace TinyHero.Tools
                 }
 
                 behaviorPatternProperty.objectReferenceValue = _patternData;
+
+                if ( useItemDropProperty != null )
+                {
+                    useItemDropProperty.boolValue = useItemDrop;
+                }
+
+                if ( itemDropEntryListProperty != null )
+                {
+                    ApplyItemDropEntries( itemDropEntryListProperty );
+                }
+
                 serializedObject.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, _prefabAssetPath);
                 return true;
@@ -800,7 +883,136 @@ namespace TinyHero.Tools
                 return playerDistanceAttackValidationMessage;
             }
 
+            if ( useItemDrop && BuildValidDropSettingList().Count == 0 )
+            {
+                return "아이템 드랍 사용 시 유효한 드랍 엔트리를 하나 이상 추가하세요.";
+            }
+
             return string.Empty;
+        }
+
+        ///<summary>
+        /// 프리팹 드랍 설정 로드
+        ///</summary>
+        private void LoadDropSettingsFromPrefab( string _prefabAssetPath )
+        {
+            useItemDrop = false;
+            itemDropSettingList.Clear();
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>( _prefabAssetPath );
+
+            if ( prefabAsset == null )
+            {
+                return;
+            }
+
+            MonsterObject monsterObject = prefabAsset.GetComponent<MonsterObject>();
+
+            if ( monsterObject == null )
+            {
+                return;
+            }
+
+            SerializedObject serializedObject = new SerializedObject( monsterObject );
+            SerializedProperty useItemDropProperty = serializedObject.FindProperty( "useItemDrop" );
+            SerializedProperty itemDropEntryListProperty = serializedObject.FindProperty( "itemDropEntryList" );
+            useItemDrop = useItemDropProperty != null && useItemDropProperty.boolValue;
+
+            if ( itemDropEntryListProperty == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < itemDropEntryListProperty.arraySize; index++ )
+            {
+                SerializedProperty entryProperty = itemDropEntryListProperty.GetArrayElementAtIndex( index );
+
+                if ( entryProperty == null )
+                {
+                    continue;
+                }
+
+                MonsterBehaviorDropSetting dropSetting = new MonsterBehaviorDropSetting();
+                SerializedProperty itemDefinitionProperty = entryProperty.FindPropertyRelative( "itemDefinition" );
+                SerializedProperty dropChanceProperty = entryProperty.FindPropertyRelative( "dropChance" );
+                SerializedProperty minDropCountProperty = entryProperty.FindPropertyRelative( "minDropCount" );
+                SerializedProperty maxDropCountProperty = entryProperty.FindPropertyRelative( "maxDropCount" );
+                dropSetting.itemDefinition = itemDefinitionProperty != null ? itemDefinitionProperty.objectReferenceValue as CItemDefinition : null;
+                dropSetting.dropChance = dropChanceProperty != null ? dropChanceProperty.floatValue : 1.0f;
+                dropSetting.minDropCount = minDropCountProperty != null ? minDropCountProperty.intValue : 1;
+                dropSetting.maxDropCount = maxDropCountProperty != null ? maxDropCountProperty.intValue : 1;
+                itemDropSettingList.Add( dropSetting );
+            }
+        }
+
+        ///<summary>
+        /// 프리팹 드랍 엔트리 적용
+        ///</summary>
+        private void ApplyItemDropEntries( SerializedProperty _itemDropEntryListProperty )
+        {
+            if ( _itemDropEntryListProperty == null )
+            {
+                return;
+            }
+
+            List<MonsterBehaviorDropSetting> validDropSettingList = BuildValidDropSettingList();
+            _itemDropEntryListProperty.arraySize = validDropSettingList.Count;
+
+            for ( int index = 0; index < validDropSettingList.Count; index++ )
+            {
+                MonsterBehaviorDropSetting dropSetting = validDropSettingList[ index ];
+                SerializedProperty entryProperty = _itemDropEntryListProperty.GetArrayElementAtIndex( index );
+                SerializedProperty itemDefinitionProperty = entryProperty.FindPropertyRelative( "itemDefinition" );
+                SerializedProperty dropChanceProperty = entryProperty.FindPropertyRelative( "dropChance" );
+                SerializedProperty minDropCountProperty = entryProperty.FindPropertyRelative( "minDropCount" );
+                SerializedProperty maxDropCountProperty = entryProperty.FindPropertyRelative( "maxDropCount" );
+
+                if ( itemDefinitionProperty != null )
+                {
+                    itemDefinitionProperty.objectReferenceValue = dropSetting.itemDefinition;
+                }
+
+                if ( dropChanceProperty != null )
+                {
+                    dropChanceProperty.floatValue = Mathf.Clamp01( dropSetting.dropChance );
+                }
+
+                if ( minDropCountProperty != null )
+                {
+                    minDropCountProperty.intValue = Mathf.Max( 0, dropSetting.minDropCount );
+                }
+
+                if ( maxDropCountProperty != null )
+                {
+                    maxDropCountProperty.intValue = Mathf.Max( Mathf.Max( 0, dropSetting.minDropCount ), dropSetting.maxDropCount );
+                }
+            }
+        }
+
+        ///<summary>
+        /// 유효 드랍 설정 목록 구성
+        ///</summary>
+        private List<MonsterBehaviorDropSetting> BuildValidDropSettingList()
+        {
+            List<MonsterBehaviorDropSetting> validDropSettingList = new List<MonsterBehaviorDropSetting>();
+
+            if ( useItemDrop == false )
+            {
+                return validDropSettingList;
+            }
+
+            for ( int index = 0; index < itemDropSettingList.Count; index++ )
+            {
+                MonsterBehaviorDropSetting dropSetting = itemDropSettingList[ index ];
+
+                if ( dropSetting == null || dropSetting.itemDefinition == null )
+                {
+                    continue;
+                }
+
+                validDropSettingList.Add( dropSetting );
+            }
+
+            return validDropSettingList;
         }
 
         ///<summary>

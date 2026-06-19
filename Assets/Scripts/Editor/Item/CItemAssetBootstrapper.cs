@@ -1,0 +1,135 @@
+using System.Collections.Generic;
+using System.IO;
+using TinyHero.Core.Data;
+using UnityEditor;
+using UnityEngine;
+
+namespace TinyHero.Tools
+{
+    ///<summary>
+    /// 샘플 아이템 에셋 생성 도구
+    ///</summary>
+    public static class CItemAssetBootstrapper
+    {
+        private const string RootFolderPath = "Assets/Resources/Data/Item";
+        private const string DefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
+        private const string IconFolderPath = "Assets/Resources/Data/Item/Icons";
+        private const int IconTextureSize = 64;
+
+        ///<summary>
+        /// 샘플 아이템 에셋 생성 실행
+        ///</summary>
+        public static string GenerateSampleItemAssets()
+        {
+            EnsureFolderStructure();
+            Sprite equipmentIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Equipment.png", new Color32( 120, 176, 255, 255 ) );
+            Sprite consumableIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Consumable.png", new Color32( 118, 214, 124, 255 ) );
+            Sprite currencyIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Gold.png", new Color32( 255, 210, 90, 255 ) );
+            Sprite materialIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Material.png", new Color32( 172, 133, 98, 255 ) );
+            Sprite questItemIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Quest.png", new Color32( 235, 123, 123, 255 ) );
+
+            List<CItemDefinition> createdItemDefinitionList = new List<CItemDefinition>();
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Equipment_BronzeSword.asset", "ITEM_EQUIPMENT_BRONZE_SWORD", "Bronze Sword", eItemType.EQUIPMENT, "기본 장비 샘플 검.", equipmentIcon, false, 1 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Consumable_Apple.asset", "ITEM_CONSUMABLE_APPLE", "Apple", eItemType.CONSUMABLE, "기본 소모품 샘플.", consumableIcon, true, 99 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Currency_Gold.asset", "GOLD", "Gold", eItemType.CURRENCY, "기본 재화 샘플.", currencyIcon, true, 999999 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Material_SlimeGel.asset", "ITEM_MATERIAL_SLIME_GEL", "Slime Gel", eItemType.MATERIAL, "기본 재료 샘플.", materialIcon, true, 999 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Quest_AncientSeal.asset", "ITEM_QUEST_ANCIENT_SEAL", "Ancient Seal", eItemType.QUEST_ITEM, "기본 퀘스트 아이템 샘플.", questItemIcon, true, 99 ) );
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            CItemDefinitionDatabase.Reload();
+            string result = $"Sample item assets created: {createdItemDefinitionList.Count}";
+            return result;
+        }
+
+        ///<summary>
+        /// 샘플 아이템 에셋 생성 메뉴 실행
+        ///</summary>
+        [MenuItem( "TinyHero/Item/Generate Sample Item Assets" )]
+        public static void GenerateSampleItemAssetsMenu()
+        {
+            string result = GenerateSampleItemAssets();
+            Debug.Log( result );
+        }
+
+        ///<summary>
+        /// 아이템 데이터 폴더 구조 보장
+        ///</summary>
+        private static void EnsureFolderStructure()
+        {
+            EnsureFolder( "Assets", "Resources" );
+            EnsureFolder( "Assets/Resources", "Data" );
+            EnsureFolder( "Assets/Resources/Data", "Item" );
+            EnsureFolder( RootFolderPath, "Definitions" );
+            EnsureFolder( RootFolderPath, "Icons" );
+        }
+
+        ///<summary>
+        /// 에셋 폴더 생성 보장
+        ///</summary>
+        private static string EnsureFolder( string _parentPath, string _folderName )
+        {
+            string folderPath = $"{_parentPath}/{_folderName}";
+
+            if ( AssetDatabase.IsValidFolder( folderPath ) )
+            {
+                return folderPath;
+            }
+
+            AssetDatabase.CreateFolder( _parentPath, _folderName );
+            return folderPath;
+        }
+
+        ///<summary>
+        /// 아이템 정의 생성 또는 갱신
+        ///</summary>
+        private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
+        {
+            CItemDefinition itemDefinition = AssetDatabase.LoadAssetAtPath<CItemDefinition>( _assetPath );
+
+            if ( itemDefinition == null )
+            {
+                itemDefinition = ScriptableObject.CreateInstance<CItemDefinition>();
+                AssetDatabase.CreateAsset( itemDefinition, _assetPath );
+            }
+
+            itemDefinition.Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount );
+            EditorUtility.SetDirty( itemDefinition );
+            return itemDefinition;
+        }
+
+        ///<summary>
+        /// 단색 아이콘 스프라이트 생성
+        ///</summary>
+        private static Sprite CreateColorIcon( string _assetPath, Color32 _color )
+        {
+            Texture2D texture = new Texture2D( IconTextureSize, IconTextureSize, TextureFormat.RGBA32, false );
+            Color32[] pixelArray = new Color32[ IconTextureSize * IconTextureSize ];
+
+            for ( int index = 0; index < pixelArray.Length; index++ )
+            {
+                pixelArray[ index ] = _color;
+            }
+
+            texture.SetPixels32( pixelArray );
+            texture.Apply();
+            byte[] pngBytes = texture.EncodeToPNG();
+            Object.DestroyImmediate( texture );
+            File.WriteAllBytes( _assetPath, pngBytes );
+            AssetDatabase.ImportAsset( _assetPath, ImportAssetOptions.ForceUpdate );
+            TextureImporter textureImporter = AssetImporter.GetAtPath( _assetPath ) as TextureImporter;
+
+            if ( textureImporter != null )
+            {
+                textureImporter.textureType = TextureImporterType.Sprite;
+                textureImporter.spriteImportMode = SpriteImportMode.Single;
+                textureImporter.filterMode = FilterMode.Point;
+                textureImporter.mipmapEnabled = false;
+                textureImporter.alphaIsTransparency = true;
+                textureImporter.SaveAndReimport();
+            }
+
+            Sprite result = AssetDatabase.LoadAssetAtPath<Sprite>( _assetPath );
+            return result;
+        }
+    }
+}

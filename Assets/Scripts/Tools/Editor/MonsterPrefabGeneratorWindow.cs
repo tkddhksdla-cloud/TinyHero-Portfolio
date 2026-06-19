@@ -20,6 +20,9 @@ namespace TinyHero.Tools
     }
 
     ///<summary>
+    /// 몬스터 드랍 설정 데이터
+    ///</summary>
+    ///<summary>
     /// 몬스터 프리팹 생성 에디터 창
     ///</summary>
     public sealed class MonsterPrefabGeneratorWindow : EditorWindow
