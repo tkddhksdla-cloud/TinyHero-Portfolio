@@ -61,6 +61,41 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 비지속성 활성 스킬 이펙트 일괄 정리
+        ///</summary>
+        public static void ReleaseAllTransientActiveVfx()
+        {
+            CAutoPoolReturnObject[] autoPoolReturnObjectArray = Object.FindObjectsByType<CAutoPoolReturnObject>( FindObjectsInactive.Include, FindObjectsSortMode.None );
+            int objectCount = autoPoolReturnObjectArray.Length;
+
+            for ( int index = 0; index < objectCount; index++ )
+            {
+                CAutoPoolReturnObject autoPoolReturnObject = autoPoolReturnObjectArray[ index ];
+
+                if ( autoPoolReturnObject == null )
+                {
+                    continue;
+                }
+
+                GameObject targetObject = autoPoolReturnObject.gameObject;
+
+                if ( targetObject.activeInHierarchy == false )
+                {
+                    continue;
+                }
+
+                Transform parentTransform = targetObject.transform.parent;
+
+                if ( parentTransform != null )
+                {
+                    continue;
+                }
+
+                HandleAutoReturnObjectToPool( autoPoolReturnObject );
+            }
+        }
+
+        ///<summary>
         /// 프리팹 기반 풀 엔트리 반환
         ///</summary>
         private static CPooledVfxEntry GetOrCreatePoolEntry( GameObject _prefab )
@@ -90,6 +125,7 @@ namespace TinyHero.Skill
         {
             GameObject createdObject = Object.Instantiate( _prefab );
             createdObject.name = _prefab.name;
+            CSkillRenderUtility.ApplyForegroundSorting( createdObject );
             createdObject.SetActive( false );
             CAutoPoolReturnObject autoPoolReturnObject = createdObject.GetComponent<CAutoPoolReturnObject>();
 

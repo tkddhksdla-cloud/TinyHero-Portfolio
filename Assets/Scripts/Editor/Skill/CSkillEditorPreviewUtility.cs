@@ -1,5 +1,6 @@
 using TinyHero.Skill;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace TinyHero.Skill.Editor
@@ -31,10 +32,42 @@ namespace TinyHero.Skill.Editor
     ///</summary>
     public static class CSkillEditorPreviewUtility
     {
+        private const string PlayerPrefabAssetPath = "Assets/Resources/Prefabs/Character/Player/PlayerObject.prefab";
         private const float PreviewPadding = 12.0f;
         private const float PreviewAxisThickness = 2.0f;
         private const float PreviewOwnerRadius = 6.0f;
         private const float PreviewMinRangeSize = 8.0f;
+        private const float PreviewWorldPaddingUnits = 0.35f;
+        private const float PlayerFallbackWidth = 0.9f;
+        private const float PlayerFallbackHeight = 1.6f;
+        private const float PlayerFallbackCenterY = 0.8f;
+        private const float PlayerPreviewTextureAlpha = 0.96f;
+        private const float PlayerFallbackFillAlpha = 0.20f;
+        private const float PlayerFallbackOutlineAlpha = 0.80f;
+        private static readonly Color PreviewBackgroundColor = new Color32( 0x51, 0x51, 0x51, 0xFF );
+        private static readonly Color PreviewAxisColor = new Color( 1.0f, 1.0f, 1.0f, 0.16f );
+        private static readonly Color PreviewRangeFillColor = new Color( 0.16f, 0.78f, 1.0f, 0.38f );
+        private static readonly Color PreviewRangeWireColor = new Color( 0.52f, 0.90f, 1.0f, 1.0f );
+        private static readonly Color PreviewLinkLineColor = new Color( 1.0f, 0.98f, 0.88f, 0.78f );
+        private static readonly Color PreviewPivotColor = new Color( 1.0f, 0.82f, 0.24f, 1.0f );
+
+        private static CPlayerPreviewRenderData cachedPlayerPreviewRenderData;
+
+        private struct CPreviewWorldBounds
+        {
+            public float minX;
+            public float maxX;
+            public float minY;
+            public float maxY;
+        }
+
+        private sealed class CPlayerPreviewRenderData
+        {
+            public bool isInitialized;
+            public bool isPreviewReady;
+            public Texture2D previewTexture;
+            public Rect bounds;
+        }
 
         ///<summary>
         /// 스킬 타입 요약 문구 생성
@@ -92,12 +125,24 @@ namespace TinyHero.Skill.Editor
                 return previewData;
             }
 
+            if ( effectTypeName == nameof( CProjectileActiveSkillEffect ) )
+            {
+                previewData = BuildProjectileRangePreviewData( activeEffectSerializedObject );
+                return previewData;
+            }
+
             if ( effectTypeName == nameof( CBuffActiveSkillEffect ) )
             {
                 previewData.isValid = true;
                 previewData.shapeType = eSkillRangePreviewShape.NONE;
                 previewData.title = "Self Target";
                 previewData.detail = "Buff skills are applied to the caster instead of an attack area.";
+                return previewData;
+            }
+
+            if ( effectTypeName == nameof( CCloneReplayActiveSkillEffect ) )
+            {
+                previewData = BuildCloneRangePreviewData( activeEffectSerializedObject );
                 return previewData;
             }
 
@@ -109,7 +154,7 @@ namespace TinyHero.Skill.Editor
         ///</summary>
         public static void DrawRangePreviewCanvas( Rect _previewRect, CSkillRangePreviewData _previewData )
         {
-            EditorGUI.DrawRect( _previewRect, new Color( 0.11f, 0.12f, 0.14f, 1.0f ) );
+            EditorGUI.DrawRect( _previewRect, PreviewBackgroundColor );
 
             if ( _previewData.shapeType == eSkillRangePreviewShape.NONE )
             {
@@ -124,43 +169,324 @@ namespace TinyHero.Skill.Editor
                 _previewRect.width - PreviewPadding * 2.0f,
                 _previewRect.height - PreviewPadding * 2.0f
             );
-            float maxExtent = Mathf.Max(
-                Mathf.Abs( _previewData.offset.x ) + _previewData.radius,
-                Mathf.Abs( _previewData.offset.y ) + _previewData.radius,
-                1.0f
-            );
-            float scaleX = contentRect.width * 0.5f / maxExtent;
-            float scaleY = contentRect.height * 0.5f / maxExtent;
-            float pixelPerUnit = Mathf.Min( scaleX, scaleY );
-            Vector2 ownerPosition = contentRect.center;
-            Vector2 targetCenter = ownerPosition + new Vector2( _previewData.offset.x * pixelPerUnit, -_previewData.offset.y * pixelPerUnit );
+            CPreviewWorldBounds worldBounds = BuildPreviewWorldBounds( _previewData );
+            float pixelPerUnit = ResolvePreviewPixelPerUnit( contentRect, worldBounds );
+            Rect mappedBoundsRect = BuildMappedBoundsRect( contentRect, worldBounds, pixelPerUnit );
+            Vector2 ownerPosition = ConvertWorldToPreviewPosition( Vector2.zero, worldBounds, mappedBoundsRect, pixelPerUnit );
+            Vector2 targetCenter = ConvertWorldToPreviewPosition( _previewData.offset, worldBounds, mappedBoundsRect, pixelPerUnit );
             float radius = Mathf.Max( PreviewMinRangeSize, _previewData.radius * pixelPerUnit );
+            CPlayerPreviewRenderData playerPreviewRenderData = GetPlayerPreviewRenderData();
+
+            if ( playerPreviewRenderData != null && playerPreviewRenderData.isPreviewReady == false )
+            {
+                RequestPreviewRepaint();
+            }
+
+            DrawPlayerPreview( playerPreviewRenderData, worldBounds, mappedBoundsRect, pixelPerUnit );
 
             EditorGUI.DrawRect(
-                new Rect( contentRect.x, ownerPosition.y - PreviewAxisThickness * 0.5f, contentRect.width, PreviewAxisThickness ),
-                new Color( 1.0f, 1.0f, 1.0f, 0.08f )
+                new Rect( mappedBoundsRect.x, ownerPosition.y - PreviewAxisThickness * 0.5f, mappedBoundsRect.width, PreviewAxisThickness ),
+                PreviewAxisColor
             );
             EditorGUI.DrawRect(
-                new Rect( ownerPosition.x - PreviewAxisThickness * 0.5f, contentRect.y, PreviewAxisThickness, contentRect.height ),
-                new Color( 1.0f, 1.0f, 1.0f, 0.08f )
-            );
-            EditorGUI.DrawRect(
-                new Rect( ownerPosition.x - PreviewOwnerRadius, ownerPosition.y - PreviewOwnerRadius, PreviewOwnerRadius * 2.0f, PreviewOwnerRadius * 2.0f ),
-                new Color( 0.97f, 0.84f, 0.36f, 1.0f )
+                new Rect( ownerPosition.x - PreviewAxisThickness * 0.5f, mappedBoundsRect.y, PreviewAxisThickness, mappedBoundsRect.height ),
+                PreviewAxisColor
             );
             Handles.BeginGUI();
-            Handles.color = new Color( 0.30f, 0.78f, 1.0f, 0.28f );
+            Handles.color = PreviewRangeFillColor;
             Handles.DrawSolidDisc( targetCenter, Vector3.forward, radius );
-            Handles.color = new Color( 0.30f, 0.78f, 1.0f, 1.0f );
+            Handles.color = PreviewRangeWireColor;
             Handles.DrawWireDisc( targetCenter, Vector3.forward, radius );
-            Handles.color = new Color( 1.0f, 1.0f, 1.0f, 0.45f );
+            Handles.color = PreviewLinkLineColor;
             Handles.DrawLine( ownerPosition, targetCenter );
             Handles.EndGUI();
+            EditorGUI.DrawRect(
+                new Rect( ownerPosition.x - PreviewOwnerRadius, ownerPosition.y - PreviewOwnerRadius, PreviewOwnerRadius * 2.0f, PreviewOwnerRadius * 2.0f ),
+                PreviewPivotColor
+            );
             EditorGUI.LabelField(
                 new Rect( _previewRect.x + 8.0f, _previewRect.y + 6.0f, _previewRect.width - 16.0f, 18.0f ),
-                "Yellow: player origin / Blue: attack area",
+                "Player sprite: world scale / Yellow: pivot / Blue: attack area",
                 EditorStyles.miniLabel
             );
+        }
+
+        ///<summary>
+        /// 프리뷰 월드 경계 계산
+        ///</summary>
+        private static CPreviewWorldBounds BuildPreviewWorldBounds( CSkillRangePreviewData _previewData )
+        {
+            CPreviewWorldBounds worldBounds = new CPreviewWorldBounds();
+            float radius = Mathf.Max( 0.0f, _previewData.radius );
+            Rect playerBounds = GetPlayerPreviewWorldBounds();
+            float minX = Mathf.Min( 0.0f, _previewData.offset.x - radius );
+            float maxX = Mathf.Max( 0.0f, _previewData.offset.x + radius );
+            float minY = Mathf.Min( 0.0f, _previewData.offset.y - radius );
+            float maxY = Mathf.Max( 0.0f, _previewData.offset.y + radius );
+            minX = Mathf.Min( minX, playerBounds.xMin );
+            maxX = Mathf.Max( maxX, playerBounds.xMax );
+            minY = Mathf.Min( minY, playerBounds.yMin );
+            maxY = Mathf.Max( maxY, playerBounds.yMax );
+            worldBounds.minX = minX - PreviewWorldPaddingUnits;
+            worldBounds.maxX = maxX + PreviewWorldPaddingUnits;
+            worldBounds.minY = minY - PreviewWorldPaddingUnits;
+            worldBounds.maxY = maxY + PreviewWorldPaddingUnits;
+            return worldBounds;
+        }
+
+        ///<summary>
+        /// 플레이어 프리뷰 렌더 데이터 반환
+        ///</summary>
+        private static CPlayerPreviewRenderData GetPlayerPreviewRenderData()
+        {
+            if ( cachedPlayerPreviewRenderData != null && cachedPlayerPreviewRenderData.isInitialized && cachedPlayerPreviewRenderData.isPreviewReady )
+            {
+                return cachedPlayerPreviewRenderData;
+            }
+
+            CPlayerPreviewRenderData previewRenderData = BuildPlayerPreviewRenderData();
+            cachedPlayerPreviewRenderData = previewRenderData;
+            return previewRenderData;
+        }
+
+        ///<summary>
+        /// 플레이어 프리뷰 월드 경계 반환
+        ///</summary>
+        private static Rect GetPlayerPreviewWorldBounds()
+        {
+            CPlayerPreviewRenderData previewRenderData = GetPlayerPreviewRenderData();
+            Rect result = previewRenderData.bounds;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 프리뷰 렌더 처리
+        ///</summary>
+        private static void DrawPlayerPreview( CPlayerPreviewRenderData _previewRenderData, CPreviewWorldBounds _worldBounds, Rect _mappedBoundsRect, float _pixelPerUnit )
+        {
+            if ( _previewRenderData == null )
+            {
+                return;
+            }
+
+            if ( _previewRenderData.previewTexture != null )
+            {
+                DrawPlayerPreviewTexture( _previewRenderData, _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+                return;
+            }
+
+            DrawPlayerFallbackSilhouette( _previewRenderData.bounds, _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+        }
+
+        ///<summary>
+        /// 플레이어 프리뷰 텍스처 렌더 처리
+        ///</summary>
+        private static void DrawPlayerPreviewTexture( CPlayerPreviewRenderData _previewRenderData, CPreviewWorldBounds _worldBounds, Rect _mappedBoundsRect, float _pixelPerUnit )
+        {
+            Rect previewRect = BuildMappedBoundsRectFromWorldRect(
+                _previewRenderData.bounds.center,
+                _previewRenderData.bounds.size,
+                _worldBounds,
+                _mappedBoundsRect,
+                _pixelPerUnit
+            );
+            Color previousColor = GUI.color;
+            GUI.color = new Color( 1.0f, 1.0f, 1.0f, PlayerPreviewTextureAlpha );
+            GUI.DrawTexture( previewRect, _previewRenderData.previewTexture, ScaleMode.ScaleToFit, true );
+            GUI.color = previousColor;
+        }
+
+        ///<summary>
+        /// 플레이어 대체 실루엣 렌더 처리
+        ///</summary>
+        private static void DrawPlayerFallbackSilhouette( Rect _playerBounds, CPreviewWorldBounds _worldBounds, Rect _mappedBoundsRect, float _pixelPerUnit )
+        {
+            Rect previewRect = BuildMappedBoundsRectFromWorldRect(
+                _playerBounds.center,
+                _playerBounds.size,
+                _worldBounds,
+                _mappedBoundsRect,
+                _pixelPerUnit
+            );
+            Color fillColor = new Color( 0.97f, 0.84f, 0.36f, PlayerFallbackFillAlpha );
+            Color outlineColor = new Color( 0.97f, 0.84f, 0.36f, PlayerFallbackOutlineAlpha );
+            EditorGUI.DrawRect( previewRect, fillColor );
+            Handles.BeginGUI();
+            Handles.color = outlineColor;
+            Handles.DrawAAPolyLine(
+                2.0f,
+                new Vector3( previewRect.xMin, previewRect.yMin ),
+                new Vector3( previewRect.xMax, previewRect.yMin ),
+                new Vector3( previewRect.xMax, previewRect.yMax ),
+                new Vector3( previewRect.xMin, previewRect.yMax ),
+                new Vector3( previewRect.xMin, previewRect.yMin )
+            );
+            Handles.EndGUI();
+        }
+
+        ///<summary>
+        /// 플레이어 프리뷰 렌더 데이터 생성
+        ///</summary>
+        private static CPlayerPreviewRenderData BuildPlayerPreviewRenderData()
+        {
+            CPlayerPreviewRenderData previewRenderData = new CPlayerPreviewRenderData();
+            previewRenderData.isInitialized = true;
+            previewRenderData.bounds = BuildFallbackPlayerBounds();
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( PlayerPrefabAssetPath );
+
+            if ( playerPrefab == null )
+            {
+                return previewRenderData;
+            }
+
+            Texture2D assetPreviewTexture = AssetPreview.GetAssetPreview( playerPrefab );
+            bool isLoadingPreview = AssetPreview.IsLoadingAssetPreview( playerPrefab.GetInstanceID() );
+
+            if ( assetPreviewTexture == null )
+            {
+                Texture2D miniThumbnailTexture = AssetPreview.GetMiniThumbnail( playerPrefab );
+                assetPreviewTexture = miniThumbnailTexture;
+            }
+
+            previewRenderData.isPreviewReady = assetPreviewTexture != null && isLoadingPreview == false;
+            previewRenderData.previewTexture = assetPreviewTexture;
+            SpriteRenderer[] spriteRendererArray = playerPrefab.GetComponentsInChildren<SpriteRenderer>( true );
+            bool hasAnySprite = false;
+            Bounds combinedBounds = new Bounds( Vector3.zero, Vector3.zero );
+
+            for ( int index = 0; index < spriteRendererArray.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = spriteRendererArray[ index ];
+                Bounds spriteBounds;
+                bool hasSpriteBounds = TryBuildPlayerPreviewBounds( playerPrefab.transform, spriteRenderer, out spriteBounds );
+
+                if ( hasSpriteBounds == false )
+                {
+                    continue;
+                }
+
+                if ( hasAnySprite == false )
+                {
+                    combinedBounds = spriteBounds;
+                    hasAnySprite = true;
+                }
+                else
+                {
+                    combinedBounds.Encapsulate( spriteBounds.min );
+                    combinedBounds.Encapsulate( spriteBounds.max );
+                }
+            }
+
+            if ( hasAnySprite )
+            {
+                previewRenderData.bounds = new Rect(
+                    combinedBounds.min.x,
+                    combinedBounds.min.y,
+                    combinedBounds.size.x,
+                    combinedBounds.size.y
+                );
+            }
+
+            return previewRenderData;
+        }
+
+        ///<summary>
+        /// 플레이어 프리뷰 경계 생성 여부 반환
+        ///</summary>
+        private static bool TryBuildPlayerPreviewBounds( Transform _rootTransform, SpriteRenderer _spriteRenderer, out Bounds _spriteBounds )
+        {
+            _spriteBounds = default;
+
+            if ( _rootTransform == null || _spriteRenderer == null || _spriteRenderer.sprite == null )
+            {
+                return false;
+            }
+
+            Sprite sprite = _spriteRenderer.sprite;
+            Vector3 localPosition = _rootTransform.InverseTransformPoint( _spriteRenderer.transform.position );
+            Vector3 lossyScale = _spriteRenderer.transform.lossyScale;
+            Vector3 rootLossyScale = _rootTransform.lossyScale;
+            float scaleX = rootLossyScale.x != 0.0f ? lossyScale.x / rootLossyScale.x : lossyScale.x;
+            float scaleY = rootLossyScale.y != 0.0f ? lossyScale.y / rootLossyScale.y : lossyScale.y;
+            Vector2 spriteSize = sprite.bounds.size;
+            Vector2 worldSize = new Vector2( Mathf.Abs( spriteSize.x * scaleX ), Mathf.Abs( spriteSize.y * scaleY ) );
+            Vector2 worldCenter = new Vector2( localPosition.x, localPosition.y );
+            _spriteBounds = new Bounds( worldCenter, new Vector3( worldSize.x, worldSize.y, 0.0f ) );
+            return true;
+        }
+
+        ///<summary>
+        /// 플레이어 대체 경계 생성
+        ///</summary>
+        private static Rect BuildFallbackPlayerBounds()
+        {
+            Rect result = new Rect(
+                -PlayerFallbackWidth * 0.5f,
+                PlayerFallbackCenterY - PlayerFallbackHeight * 0.5f,
+                PlayerFallbackWidth,
+                PlayerFallbackHeight
+            );
+            return result;
+        }
+
+        ///<summary>
+        /// 프리뷰 갱신 요청
+        ///</summary>
+        private static void RequestPreviewRepaint()
+        {
+            InternalEditorUtility.RepaintAllViews();
+        }
+
+        ///<summary>
+        /// 프리뷰 픽셀 스케일 계산
+        ///</summary>
+        private static float ResolvePreviewPixelPerUnit( Rect _contentRect, CPreviewWorldBounds _worldBounds )
+        {
+            float worldWidth = Mathf.Max( 1.0f, _worldBounds.maxX - _worldBounds.minX );
+            float worldHeight = Mathf.Max( 1.0f, _worldBounds.maxY - _worldBounds.minY );
+            float scaleX = _contentRect.width / worldWidth;
+            float scaleY = _contentRect.height / worldHeight;
+            float pixelPerUnit = Mathf.Min( scaleX, scaleY );
+            return pixelPerUnit;
+        }
+
+        ///<summary>
+        /// 프리뷰 경계 사각형 계산
+        ///</summary>
+        private static Rect BuildMappedBoundsRect( Rect _contentRect, CPreviewWorldBounds _worldBounds, float _pixelPerUnit )
+        {
+            float worldWidth = Mathf.Max( 1.0f, _worldBounds.maxX - _worldBounds.minX );
+            float worldHeight = Mathf.Max( 1.0f, _worldBounds.maxY - _worldBounds.minY );
+            float mappedWidth = worldWidth * _pixelPerUnit;
+            float mappedHeight = worldHeight * _pixelPerUnit;
+            float offsetX = _contentRect.x + ( _contentRect.width - mappedWidth ) * 0.5f;
+            float offsetY = _contentRect.y + ( _contentRect.height - mappedHeight ) * 0.5f;
+            Rect result = new Rect( offsetX, offsetY, mappedWidth, mappedHeight );
+            return result;
+        }
+
+        ///<summary>
+        /// 월드 좌표의 프리뷰 위치 변환
+        ///</summary>
+        private static Vector2 ConvertWorldToPreviewPosition( Vector2 _worldPosition, CPreviewWorldBounds _worldBounds, Rect _mappedBoundsRect, float _pixelPerUnit )
+        {
+            float normalizedX = ( _worldPosition.x - _worldBounds.minX ) * _pixelPerUnit;
+            float normalizedY = ( _worldBounds.maxY - _worldPosition.y ) * _pixelPerUnit;
+            Vector2 result = new Vector2( _mappedBoundsRect.x + normalizedX, _mappedBoundsRect.y + normalizedY );
+            return result;
+        }
+
+        ///<summary>
+        /// 월드 사각형의 프리뷰 사각형 계산
+        ///</summary>
+        private static Rect BuildMappedBoundsRectFromWorldRect( Vector2 _worldCenter, Vector2 _worldSize, CPreviewWorldBounds _worldBounds, Rect _mappedBoundsRect, float _pixelPerUnit )
+        {
+            Vector2 minWorldPosition = _worldCenter - _worldSize * 0.5f;
+            Vector2 maxWorldPosition = _worldCenter + _worldSize * 0.5f;
+            Vector2 topLeft = ConvertWorldToPreviewPosition( new Vector2( minWorldPosition.x, maxWorldPosition.y ), _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+            Vector2 bottomRight = ConvertWorldToPreviewPosition( new Vector2( maxWorldPosition.x, minWorldPosition.y ), _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+            Rect result = Rect.MinMaxRect( topLeft.x, topLeft.y, bottomRight.x, bottomRight.y );
+            return result;
         }
 
         ///<summary>
@@ -214,6 +540,59 @@ namespace TinyHero.Skill.Editor
             previewData.radius = radius;
             previewData.title = "Placed Circle";
             previewData.detail = $"Offset {offset}, Radius {radius:0.##}, Duration {durationSeconds:0.##}s, Tick {tickIntervalSeconds:0.##}s";
+            return previewData;
+        }
+
+        ///<summary>
+        /// 발사체 스킬 범위 데이터 생성
+        ///</summary>
+        private static CSkillRangePreviewData BuildProjectileRangePreviewData( SerializedObject _activeEffectSerializedObject )
+        {
+            CSkillRangePreviewData previewData = new CSkillRangePreviewData();
+            SerializedProperty spawnOffsetProperty = _activeEffectSerializedObject.FindProperty( "spawnOffset" );
+            SerializedProperty collisionRadiusProperty = _activeEffectSerializedObject.FindProperty( "collisionRadius" );
+            SerializedProperty travelDistanceProperty = _activeEffectSerializedObject.FindProperty( "travelDistance" );
+            SerializedProperty travelSpeedProperty = _activeEffectSerializedObject.FindProperty( "travelSpeed" );
+
+            if ( spawnOffsetProperty == null || collisionRadiusProperty == null || travelDistanceProperty == null )
+            {
+                return previewData;
+            }
+
+            Vector2 spawnOffset = spawnOffsetProperty.vector2Value;
+            float collisionRadius = Mathf.Max( 0.0f, collisionRadiusProperty.floatValue );
+            float travelDistance = Mathf.Max( 0.0f, travelDistanceProperty.floatValue );
+            float travelSpeed = travelSpeedProperty != null ? Mathf.Max( 0.0f, travelSpeedProperty.floatValue ) : 0.0f;
+            Vector2 impactOffset = spawnOffset + new Vector2( travelDistance, 0.0f );
+            previewData.isValid = true;
+            previewData.shapeType = eSkillRangePreviewShape.CIRCLE;
+            previewData.offset = impactOffset;
+            previewData.radius = collisionRadius;
+            previewData.title = "Projectile Impact";
+            previewData.detail = $"Spawn {spawnOffset}, Travel {travelDistance:0.##}, Radius {collisionRadius:0.##}, Speed {travelSpeed:0.##}";
+            return previewData;
+        }
+
+        ///<summary>
+        /// 분신 스킬 범위 데이터 생성
+        ///</summary>
+        private static CSkillRangePreviewData BuildCloneRangePreviewData( SerializedObject _activeEffectSerializedObject )
+        {
+            CSkillRangePreviewData previewData = new CSkillRangePreviewData();
+            SerializedProperty durationSecondsProperty = _activeEffectSerializedObject.FindProperty( "durationSeconds" );
+            SerializedProperty followDelaySecondsProperty = _activeEffectSerializedObject.FindProperty( "followDelaySeconds" );
+            SerializedProperty replayOffsetProperty = _activeEffectSerializedObject.FindProperty( "replayOffset" );
+            SerializedProperty previewRadiusProperty = _activeEffectSerializedObject.FindProperty( "previewRadius" );
+            Vector3 replayOffset = replayOffsetProperty != null ? replayOffsetProperty.vector3Value : Vector3.zero;
+            float previewRadius = previewRadiusProperty != null ? Mathf.Max( 0.0f, previewRadiusProperty.floatValue ) : 0.0f;
+            float durationSeconds = durationSecondsProperty != null ? Mathf.Max( 0.0f, durationSecondsProperty.floatValue ) : 0.0f;
+            float followDelaySeconds = followDelaySecondsProperty != null ? Mathf.Max( 0.0f, followDelaySecondsProperty.floatValue ) : 0.0f;
+            previewData.isValid = true;
+            previewData.shapeType = eSkillRangePreviewShape.CIRCLE;
+            previewData.offset = new Vector2( replayOffset.x, replayOffset.y );
+            previewData.radius = previewRadius;
+            previewData.title = "Replay Clone";
+            previewData.detail = $"Offset {previewData.offset}, Duration {durationSeconds:0.##}s, Delay {followDelaySeconds:0.##}s";
             return previewData;
         }
     }

@@ -46,7 +46,6 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty skillTypeProperty;
         private SerializedProperty activeSkillTypeProperty;
         private SerializedProperty quickSlotIndexProperty;
-        private SerializedProperty requiredLevelProperty;
         private SerializedProperty cooldownSecondsProperty;
         private SerializedProperty mpCostProperty;
         private SerializedProperty castLockDurationSecondsProperty;
@@ -60,6 +59,9 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty hitVfxPrefabProperty;
         private SerializedProperty hitVfxOffsetProperty;
         private SerializedProperty hitVfxReturnDelayProperty;
+        private SerializedProperty projectileVfxPrefabProperty;
+        private SerializedProperty projectileVfxOffsetProperty;
+        private SerializedProperty projectileVfxReturnDelayProperty;
         private SerializedProperty loopVfxPrefabProperty;
         private SerializedProperty loopVfxOffsetProperty;
         private SerializedProperty loopVfxReturnDelayProperty;
@@ -390,6 +392,7 @@ namespace TinyHero.Skill.Editor
             EditorGUILayout.LabelField( "VFX 설정", EditorStyles.boldLabel );
             DrawVfxBlock( "Cast VFX", castVfxPrefabProperty, castVfxOffsetProperty, castVfxReturnDelayProperty );
             DrawVfxBlock( "Hit VFX", hitVfxPrefabProperty, hitVfxOffsetProperty, hitVfxReturnDelayProperty );
+            DrawVfxBlock( "Projectile VFX", projectileVfxPrefabProperty, projectileVfxOffsetProperty, projectileVfxReturnDelayProperty );
             DrawVfxBlock( "Loop VFX", loopVfxPrefabProperty, loopVfxOffsetProperty, loopVfxReturnDelayProperty );
             EditorGUILayout.EndVertical();
         }
@@ -401,7 +404,6 @@ namespace TinyHero.Skill.Editor
         {
             EditorGUILayout.BeginVertical( EditorStyles.helpBox );
             EditorGUILayout.LabelField( "해금 조건", EditorStyles.boldLabel );
-            EditorGUILayout.PropertyField( requiredLevelProperty );
             EditorGUILayout.PropertyField( unlockConditionListProperty, true );
             EditorGUILayout.EndVertical();
         }
@@ -507,7 +509,15 @@ namespace TinyHero.Skill.Editor
         {
             EditorGUILayout.BeginVertical( EditorStyles.helpBox );
             EditorGUILayout.LabelField( _title, EditorStyles.boldLabel );
+            EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField( _prefabProperty );
+
+            if ( EditorGUI.EndChangeCheck() )
+            {
+                GameObject assignedPrefab = _prefabProperty.objectReferenceValue as GameObject;
+                CSkillEditorVfxSortingUtility.ApplySkillEffectSortingLayer( assignedPrefab );
+            }
+
             EditorGUILayout.PropertyField( _offsetProperty );
             EditorGUILayout.PropertyField( _returnDelayProperty );
             EditorGUILayout.EndVertical();
@@ -544,7 +554,6 @@ namespace TinyHero.Skill.Editor
             skillTypeProperty = selectedSkillSerializedObject.FindProperty( "skillType" );
             activeSkillTypeProperty = selectedSkillSerializedObject.FindProperty( "activeSkillType" );
             quickSlotIndexProperty = selectedSkillSerializedObject.FindProperty( "quickSlotIndex" );
-            requiredLevelProperty = selectedSkillSerializedObject.FindProperty( "requiredLevel" );
             cooldownSecondsProperty = selectedSkillSerializedObject.FindProperty( "cooldownSeconds" );
             mpCostProperty = selectedSkillSerializedObject.FindProperty( "mpCost" );
             castLockDurationSecondsProperty = selectedSkillSerializedObject.FindProperty( "castLockDurationSeconds" );
@@ -558,6 +567,9 @@ namespace TinyHero.Skill.Editor
             hitVfxPrefabProperty = selectedSkillSerializedObject.FindProperty( "hitVfxPrefab" );
             hitVfxOffsetProperty = selectedSkillSerializedObject.FindProperty( "hitVfxOffset" );
             hitVfxReturnDelayProperty = selectedSkillSerializedObject.FindProperty( "hitVfxReturnDelay" );
+            projectileVfxPrefabProperty = selectedSkillSerializedObject.FindProperty( "projectileVfxPrefab" );
+            projectileVfxOffsetProperty = selectedSkillSerializedObject.FindProperty( "projectileVfxOffset" );
+            projectileVfxReturnDelayProperty = selectedSkillSerializedObject.FindProperty( "projectileVfxReturnDelay" );
             loopVfxPrefabProperty = selectedSkillSerializedObject.FindProperty( "loopVfxPrefab" );
             loopVfxOffsetProperty = selectedSkillSerializedObject.FindProperty( "loopVfxOffset" );
             loopVfxReturnDelayProperty = selectedSkillSerializedObject.FindProperty( "loopVfxReturnDelay" );
@@ -723,6 +735,8 @@ namespace TinyHero.Skill.Editor
                 return;
             }
 
+            ClearInputFieldFocus();
+            ReleaseCachedEditors();
             selectedSkillAssetPath = _assetPath;
             selectedSkillDefinition = skillDefinition;
             selectedSkillSerializedObject = new SerializedObject( selectedSkillDefinition );
@@ -742,11 +756,22 @@ namespace TinyHero.Skill.Editor
         ///</summary>
         private void ClearSelectedSkillDefinition()
         {
+            ClearInputFieldFocus();
             selectedSkillAssetPath = string.Empty;
             selectedSkillDefinition = null;
             selectedSkillSerializedObject = null;
             lastLoadedSkillAssetPath = string.Empty;
             ReleaseCachedEditors();
+        }
+
+        ///<summary>
+        /// 편집 필드 포커스 해제
+        ///</summary>
+        private void ClearInputFieldFocus()
+        {
+            GUI.FocusControl( null );
+            EditorGUI.FocusTextInControl( string.Empty );
+            GUIUtility.keyboardControl = 0;
         }
 
         ///<summary>

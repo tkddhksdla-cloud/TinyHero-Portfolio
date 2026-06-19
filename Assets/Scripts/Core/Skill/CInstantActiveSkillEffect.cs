@@ -87,8 +87,8 @@ namespace TinyHero.Skill
 
             if ( damageStartDelaySeconds <= 0.0f )
             {
-                bool result = ApplyDelayedDamage( _skillContext );
-                return result;
+                ApplyDelayedDamage( _skillContext );
+                return true;
             }
 
             CSkillManager skillManager = _skillContext.GetSkillManager();

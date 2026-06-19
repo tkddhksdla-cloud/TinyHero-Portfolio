@@ -14,11 +14,21 @@ namespace TinyHero.Skill
         private readonly CSkillDefinition skillDefinition;
         private readonly CSkillRuntimeData skillRuntimeData;
         private readonly Transform ownerTransform;
+        private readonly float attackStatOverride;
+        private readonly float skillAttackPowerMultiplierOverride;
 
         ///<summary>
         /// 스킬 실행 문맥 생성자
         ///</summary>
         public CSkillContext( CSkillManager _skillManager, PlayerController _playerController, CPlayerStatManager _playerStatManager, CSkillDefinition _skillDefinition, CSkillRuntimeData _skillRuntimeData, Transform _ownerTransform )
+            : this( _skillManager, _playerController, _playerStatManager, _skillDefinition, _skillRuntimeData, _ownerTransform, -1.0f, -1.0f )
+        {
+        }
+
+        ///<summary>
+        /// 스킬 실행 컨텍스트 생성
+        ///</summary>
+        public CSkillContext( CSkillManager _skillManager, PlayerController _playerController, CPlayerStatManager _playerStatManager, CSkillDefinition _skillDefinition, CSkillRuntimeData _skillRuntimeData, Transform _ownerTransform, float _attackStatOverride, float _skillAttackPowerMultiplierOverride )
         {
             skillManager = _skillManager;
             playerController = _playerController;
@@ -26,6 +36,8 @@ namespace TinyHero.Skill
             skillDefinition = _skillDefinition;
             skillRuntimeData = _skillRuntimeData;
             ownerTransform = _ownerTransform;
+            attackStatOverride = _attackStatOverride;
+            skillAttackPowerMultiplierOverride = _skillAttackPowerMultiplierOverride;
         }
 
         ///<summary>
@@ -79,6 +91,24 @@ namespace TinyHero.Skill
         public Transform GetOwnerTransform()
         {
             Transform result = ownerTransform;
+            return result;
+        }
+
+        ///<summary>
+        /// 공격력 스냅샷 오버라이드 반환
+        ///</summary>
+        public float GetAttackStatOverride()
+        {
+            float result = attackStatOverride;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 공격 배수 스냅샷 오버라이드 반환
+        ///</summary>
+        public float GetSkillAttackPowerMultiplierOverride()
+        {
+            float result = skillAttackPowerMultiplierOverride;
             return result;
         }
     }

@@ -33,6 +33,8 @@ namespace TinyHero.Skill.Editor
 
             Sprite flameIcon = CreateColorIcon( $"{IconFolderPath}/Icon_FlameSlash.png", new Color32( 232, 103, 58, 255 ) );
             Sprite frostIcon = CreateColorIcon( $"{IconFolderPath}/Icon_FrostField.png", new Color32( 88, 178, 255, 255 ) );
+            Sprite arcBoltIcon = CreateColorIcon( $"{IconFolderPath}/Icon_ArcBolt.png", new Color32( 104, 255, 181, 255 ) );
+            Sprite echoCloneIcon = CreateColorIcon( $"{IconFolderPath}/Icon_EchoClone.png", new Color32( 173, 139, 255, 255 ) );
             Sprite warCryIcon = CreateColorIcon( $"{IconFolderPath}/Icon_WarCry.png", new Color32( 255, 189, 64, 255 ) );
             Sprite ironSkinIcon = CreateColorIcon( $"{IconFolderPath}/Icon_IronSkin.png", new Color32( 144, 144, 144, 255 ) );
 
@@ -51,6 +53,14 @@ namespace TinyHero.Skill.Editor
             CLevelUnlockCondition ironSkinUnlockCondition = CreateOrReplaceAsset<CLevelUnlockCondition>( $"{ConditionFolderPath}/Cond_Level_03.asset" );
             ironSkinUnlockCondition.Configure( 3 );
             EditorUtility.SetDirty( ironSkinUnlockCondition );
+
+            CLevelUnlockCondition arcBoltUnlockCondition = CreateOrReplaceAsset<CLevelUnlockCondition>( $"{ConditionFolderPath}/Cond_Level_04.asset" );
+            arcBoltUnlockCondition.Configure( 4 );
+            EditorUtility.SetDirty( arcBoltUnlockCondition );
+
+            CLevelUnlockCondition echoCloneUnlockCondition = CreateOrReplaceAsset<CLevelUnlockCondition>( $"{ConditionFolderPath}/Cond_Level_05.asset" );
+            echoCloneUnlockCondition.Configure( 5 );
+            EditorUtility.SetDirty( echoCloneUnlockCondition );
 
             CDefReductionDebuffEffect flameDebuffEffect = CreateOrReplaceAsset<CDefReductionDebuffEffect>( $"{DebuffEffectFolderPath}/Debuff_FlameSlash_DefReduction.asset" );
             flameDebuffEffect.Configure( 4.0f, 0.2f, 0.35f );
@@ -82,6 +92,14 @@ namespace TinyHero.Skill.Editor
             frostActiveEffect.SetDebuffEffects( new List<CEnemyDebuffEffectBase> { frostDebuffEffect } );
             EditorUtility.SetDirty( frostActiveEffect );
 
+            CProjectileActiveSkillEffect arcBoltActiveEffect = CreateOrReplaceAsset<CProjectileActiveSkillEffect>( $"{ActiveEffectFolderPath}/Effect_ArcBolt_Projectile.asset" );
+            arcBoltActiveEffect.Configure( new Vector2( 0.7f, 0.2f ), 0.45f, 6.0f, 10.5f, 1.35f, 3, 1 );
+            EditorUtility.SetDirty( arcBoltActiveEffect );
+
+            CCloneReplayActiveSkillEffect echoCloneActiveEffect = CreateOrReplaceAsset<CCloneReplayActiveSkillEffect>( $"{ActiveEffectFolderPath}/Effect_EchoClone_Replay.asset" );
+            echoCloneActiveEffect.Configure( 6.0f, 0.45f, 0.65f, new Vector3( -0.35f, 0.0f, 0.0f ), 0.85f );
+            EditorUtility.SetDirty( echoCloneActiveEffect );
+
             CBuffActiveSkillEffect warCryActiveEffect = CreateOrReplaceAsset<CBuffActiveSkillEffect>( $"{ActiveEffectFolderPath}/Effect_WarCry_Buff.asset" );
             warCryActiveEffect.SetBuffEffects( new List<CPlayerBuffEffectBase> { warCryAttackBuffEffect, warCryInvincibleBuffEffect } );
             EditorUtility.SetDirty( warCryActiveEffect );
@@ -96,8 +114,18 @@ namespace TinyHero.Skill.Editor
             frostSkillDefinition.SetUnlockConditions( new List<CSkillUnlockConditionBase> { frostUnlockCondition } );
             EditorUtility.SetDirty( frostSkillDefinition );
 
+            CSkillDefinition arcBoltSkillDefinition = CreateOrReplaceAsset<CSkillDefinition>( $"{DefinitionFolderPath}/Skill_ArcBolt.asset" );
+            arcBoltSkillDefinition.ConfigureActiveSkill( "skill_arc_bolt", "Arc Bolt", arcBoltIcon, 2, 4, 3.0f, 12.0f, "Projectile skill that travels forward and damages the first target hit.", arcBoltActiveEffect );
+            arcBoltSkillDefinition.SetUnlockConditions( new List<CSkillUnlockConditionBase> { arcBoltUnlockCondition } );
+            EditorUtility.SetDirty( arcBoltSkillDefinition );
+
+            CSkillDefinition echoCloneSkillDefinition = CreateOrReplaceAsset<CSkillDefinition>( $"{DefinitionFolderPath}/Skill_EchoClone.asset" );
+            echoCloneSkillDefinition.ConfigureActiveSkill( "skill_echo_clone", "Echo Clone", echoCloneIcon, 4, 5, 12.0f, 24.0f, "Summons a delayed replay clone that mimics movement, attacks, and skills.", echoCloneActiveEffect );
+            echoCloneSkillDefinition.SetUnlockConditions( new List<CSkillUnlockConditionBase> { echoCloneUnlockCondition } );
+            EditorUtility.SetDirty( echoCloneSkillDefinition );
+
             CSkillDefinition warCrySkillDefinition = CreateOrReplaceAsset<CSkillDefinition>( $"{DefinitionFolderPath}/Skill_WarCry.asset" );
-            warCrySkillDefinition.ConfigureActiveSkill( "skill_war_cry", "War Cry", warCryIcon, 2, 1, 8.0f, 20.0f, "Buff skill that grants final attack increase and brief invincibility.", warCryActiveEffect );
+            warCrySkillDefinition.ConfigureActiveSkill( "skill_war_cry", "War Cry", warCryIcon, 3, 1, 8.0f, 20.0f, "Buff skill that grants final attack increase and brief invincibility.", warCryActiveEffect );
             warCrySkillDefinition.SetUnlockConditions( new List<CSkillUnlockConditionBase> { warCryUnlockCondition } );
             EditorUtility.SetDirty( warCrySkillDefinition );
 
@@ -106,7 +134,7 @@ namespace TinyHero.Skill.Editor
             ironSkinSkillDefinition.SetUnlockConditions( new List<CSkillUnlockConditionBase> { ironSkinUnlockCondition } );
             EditorUtility.SetDirty( ironSkinSkillDefinition );
 
-            string bindingResult = BindSampleSkillsToPlayer( flameSkillDefinition, frostSkillDefinition, warCrySkillDefinition, ironSkinSkillDefinition );
+            string bindingResult = BindSampleSkillsToPlayer( flameSkillDefinition, frostSkillDefinition, arcBoltSkillDefinition, echoCloneSkillDefinition, warCrySkillDefinition, ironSkinSkillDefinition );
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             return bindingResult;
@@ -163,7 +191,7 @@ namespace TinyHero.Skill.Editor
 
             if ( existingAsset != null )
             {
-                AssetDatabase.DeleteAsset( _assetPath );
+                return existingAsset;
             }
 
             T createdAsset = ScriptableObject.CreateInstance<T>();
@@ -210,7 +238,7 @@ namespace TinyHero.Skill.Editor
         ///<summary>
         /// 샘플 스킬을 플레이어 스킬 매니저에 연결
         ///</summary>
-        private static string BindSampleSkillsToPlayer( CSkillDefinition _flameSkillDefinition, CSkillDefinition _frostSkillDefinition, CSkillDefinition _warCrySkillDefinition, CSkillDefinition _ironSkinSkillDefinition )
+        private static string BindSampleSkillsToPlayer( CSkillDefinition _flameSkillDefinition, CSkillDefinition _frostSkillDefinition, CSkillDefinition _arcBoltSkillDefinition, CSkillDefinition _echoCloneSkillDefinition, CSkillDefinition _warCrySkillDefinition, CSkillDefinition _ironSkinSkillDefinition )
         {
             GameObject playerObject = GameObject.Find( PlayerObjectName );
 
@@ -230,11 +258,13 @@ namespace TinyHero.Skill.Editor
             SerializedProperty useDefaultSampleSkillsProperty = serializedSkillManager.FindProperty( "useDefaultSampleSkills" );
             SerializedProperty skillDefinitionListProperty = serializedSkillManager.FindProperty( "skillDefinitionList" );
             useDefaultSampleSkillsProperty.boolValue = false;
-            skillDefinitionListProperty.arraySize = 4;
+            skillDefinitionListProperty.arraySize = 6;
             skillDefinitionListProperty.GetArrayElementAtIndex( 0 ).objectReferenceValue = _flameSkillDefinition;
             skillDefinitionListProperty.GetArrayElementAtIndex( 1 ).objectReferenceValue = _frostSkillDefinition;
-            skillDefinitionListProperty.GetArrayElementAtIndex( 2 ).objectReferenceValue = _warCrySkillDefinition;
-            skillDefinitionListProperty.GetArrayElementAtIndex( 3 ).objectReferenceValue = _ironSkinSkillDefinition;
+            skillDefinitionListProperty.GetArrayElementAtIndex( 2 ).objectReferenceValue = _arcBoltSkillDefinition;
+            skillDefinitionListProperty.GetArrayElementAtIndex( 3 ).objectReferenceValue = _warCrySkillDefinition;
+            skillDefinitionListProperty.GetArrayElementAtIndex( 4 ).objectReferenceValue = _echoCloneSkillDefinition;
+            skillDefinitionListProperty.GetArrayElementAtIndex( 5 ).objectReferenceValue = _ironSkinSkillDefinition;
             serializedSkillManager.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty( skillManager );
 

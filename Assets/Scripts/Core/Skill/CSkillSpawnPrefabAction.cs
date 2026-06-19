@@ -47,6 +47,7 @@ namespace TinyHero.Skill
             Transform parentTransform = attachToOwner ? ownerTransform : null;
             GameObject createdSkillObject = Instantiate( skillPrefab, spawnPosition, spawnRotation, parentTransform );
             createdSkillObject.name = skillPrefab.name;
+            CSkillRenderUtility.ApplyForegroundSorting( createdSkillObject );
             ApplyFacingScale( createdSkillObject.transform, facingDirection );
             DestroySkillObjectAfterLifetime( createdSkillObject );
             return true;

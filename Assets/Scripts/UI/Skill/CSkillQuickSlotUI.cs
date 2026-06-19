@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Player;
 using TinyHero.Skill;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ namespace TinyHero.UI
         ///</summary>
         private void Awake()
         {
-            ResolveSkillManager();
+            EnsureSkillManagerBinding();
             CollectSlotViews();
             BindSlotViews();
         }
@@ -27,9 +28,8 @@ namespace TinyHero.UI
         ///</summary>
         private void OnEnable()
         {
-            ResolveSkillManager();
+            EnsureSkillManagerBinding();
             CollectSlotViews();
-            SubscribeEvents();
             BindSlotViews();
             RefreshView();
         }
@@ -47,6 +47,7 @@ namespace TinyHero.UI
         ///</summary>
         private void Update()
         {
+            EnsureSkillManagerBinding();
             ProcessSlotInput();
             RefreshView();
         }
@@ -64,13 +65,63 @@ namespace TinyHero.UI
         ///</summary>
         private void ResolveSkillManager()
         {
-            if ( targetSkillManager != null )
+            PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
+            CSkillManager resolvedSkillManager = null;
+            int playerControllerCount = playerControllerArray.Length;
+
+            for ( int index = 0; index < playerControllerCount; index++ )
+            {
+                PlayerController playerController = playerControllerArray[ index ];
+
+                if ( playerController == null )
+                {
+                    continue;
+                }
+
+                if ( playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
+                {
+                    continue;
+                }
+
+                CSkillManager playerSkillManager = playerController.GetComponent<CSkillManager>();
+
+                if ( playerSkillManager == null || playerSkillManager.enabled == false )
+                {
+                    continue;
+                }
+
+                resolvedSkillManager = playerSkillManager;
+                break;
+            }
+
+            targetSkillManager = resolvedSkillManager;
+        }
+
+        ///<summary>
+        /// 스킬 매니저 바인딩 최신 상태 보장
+        ///</summary>
+        private void EnsureSkillManagerBinding()
+        {
+            CSkillManager previousSkillManager = targetSkillManager;
+            ResolveSkillManager();
+
+            if ( previousSkillManager == targetSkillManager )
             {
                 return;
             }
 
-            CSkillManager resolvedSkillManager = FindFirstObjectByType<CSkillManager>();
-            targetSkillManager = resolvedSkillManager;
+            if ( previousSkillManager != null )
+            {
+                previousSkillManager.OnSkillStateChanged -= HandleSkillStateChanged;
+            }
+
+            if ( targetSkillManager != null )
+            {
+                targetSkillManager.OnSkillStateChanged -= HandleSkillStateChanged;
+                targetSkillManager.OnSkillStateChanged += HandleSkillStateChanged;
+            }
+
+            BindSlotViews();
         }
 
         ///<summary>
@@ -163,6 +214,13 @@ namespace TinyHero.UI
                 return;
             }
 
+            PlayerController targetPlayerController = targetSkillManager.GetComponent<PlayerController>();
+
+            if ( targetPlayerController != null )
+            {
+                return;
+            }
+
             for ( int index = 0; index < slotViewList.Count; index++ )
             {
                 CSkillQuickSlotItemView slotView = slotViewList[ index ];
@@ -188,10 +246,7 @@ namespace TinyHero.UI
         ///</summary>
         public void RefreshView()
         {
-            if ( targetSkillManager == null )
-            {
-                return;
-            }
+            EnsureSkillManagerBinding();
 
             for ( int index = 0; index < slotViewList.Count; index++ )
             {

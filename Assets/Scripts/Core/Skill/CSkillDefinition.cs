@@ -16,7 +16,6 @@ namespace TinyHero.Skill
         [SerializeField] private eSkillType skillType = eSkillType.ACTIVE;
         [SerializeField] private eActiveSkillType activeSkillType = eActiveSkillType.NONE;
         [SerializeField] private int quickSlotIndex;
-        [SerializeField] private int requiredLevel = 1;
         [SerializeField] private float cooldownSeconds = 1.0f;
         [SerializeField] private float mpCost;
         [SerializeField] private float castLockDurationSeconds = 0.15f;
@@ -30,6 +29,9 @@ namespace TinyHero.Skill
         [SerializeField] private GameObject hitVfxPrefab;
         [SerializeField] private Vector3 hitVfxOffset;
         [SerializeField] private float hitVfxReturnDelay = 1.0f;
+        [SerializeField] private GameObject projectileVfxPrefab;
+        [SerializeField] private Vector3 projectileVfxOffset;
+        [SerializeField] private float projectileVfxReturnDelay = 1.0f;
         [SerializeField] private GameObject loopVfxPrefab;
         [SerializeField] private Vector3 loopVfxOffset;
         [SerializeField] private float loopVfxReturnDelay = 1.0f;
@@ -98,7 +100,7 @@ namespace TinyHero.Skill
         ///</summary>
         public int GetRequiredLevel()
         {
-            int result = requiredLevel;
+            int result = ResolveRequiredLevelFromUnlockConditions();
             return result;
         }
 
@@ -229,6 +231,33 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 발사체 이펙트 프리팹 반환
+        ///</summary>
+        public GameObject GetProjectileVfxPrefab()
+        {
+            GameObject result = projectileVfxPrefab;
+            return result;
+        }
+
+        ///<summary>
+        /// 발사체 이펙트 오프셋 반환
+        ///</summary>
+        public Vector3 GetProjectileVfxOffset()
+        {
+            Vector3 result = projectileVfxOffset;
+            return result;
+        }
+
+        ///<summary>
+        /// 발사체 이펙트 반환 시간 반환
+        ///</summary>
+        public float GetProjectileVfxReturnDelay()
+        {
+            float result = Mathf.Max( 0.0f, projectileVfxReturnDelay );
+            return result;
+        }
+
+        ///<summary>
         /// 지속 이펙트 프리팹 반환
         ///</summary>
         public GameObject GetLoopVfxPrefab()
@@ -305,7 +334,7 @@ namespace TinyHero.Skill
         ///</summary>
         public bool CanUnlock( int _level )
         {
-            bool result = _level >= requiredLevel;
+            bool result = _level >= GetRequiredLevel();
             return result;
         }
 
@@ -351,7 +380,6 @@ namespace TinyHero.Skill
             skillType = eSkillType.ACTIVE;
             activeSkillType = _activeSkillEffect != null ? _activeSkillEffect.GetActiveSkillType() : eActiveSkillType.NONE;
             quickSlotIndex = Mathf.Max( 0, _quickSlotIndex );
-            requiredLevel = Mathf.Max( 1, _requiredLevel );
             cooldownSeconds = Mathf.Max( 0.0f, _cooldownSeconds );
             mpCost = Mathf.Max( 0.0f, _mpCost );
             castLockDurationSeconds = 0.15f;
@@ -426,6 +454,35 @@ namespace TinyHero.Skill
                 default:
                     return string.IsNullOrWhiteSpace( _castAnimationName ) ? "Attack" : _castAnimationName.Trim();
             }
+        }
+
+        ///<summary>
+        /// 해금 조건 기반 요구 레벨 계산
+        ///</summary>
+        private int ResolveRequiredLevelFromUnlockConditions()
+        {
+            if ( unlockConditionList == null || unlockConditionList.Count == 0 )
+            {
+                return 1;
+            }
+
+            int requiredLevel = 1;
+
+            for ( int index = 0; index < unlockConditionList.Count; index++ )
+            {
+                CSkillUnlockConditionBase unlockCondition = unlockConditionList[ index ];
+                CLevelUnlockCondition levelUnlockCondition = unlockCondition as CLevelUnlockCondition;
+
+                if ( levelUnlockCondition == null )
+                {
+                    continue;
+                }
+
+                int conditionRequiredLevel = levelUnlockCondition.GetRequiredLevel();
+                requiredLevel = Mathf.Max( requiredLevel, conditionRequiredLevel );
+            }
+
+            return requiredLevel;
         }
 
         ///<summary>

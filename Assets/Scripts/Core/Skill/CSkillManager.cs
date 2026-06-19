@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TinyHero.Player;
 using UnityEngine;
@@ -29,6 +30,7 @@ namespace TinyHero.Skill
 
         public event Action<CSkillDefinition> OnSkillUnlocked;
         public event Action<CSkillDefinition> OnSkillUsed;
+        public event Action<CSkillDefinition> OnSkillExecuted;
         public event Action OnSkillStateChanged;
 
         ///<summary>
@@ -302,8 +304,12 @@ namespace TinyHero.Skill
             List<CSkillDefinition> defaultSkillDefinitionList = new List<CSkillDefinition>();
             CSkillDefinition flameSlashDefinition = CreateDefaultInstantSampleSkillDefinition();
             CSkillDefinition frostFieldDefinition = CreateDefaultPlaceSampleSkillDefinition();
+            CSkillDefinition arcBoltDefinition = CreateDefaultProjectileSampleSkillDefinition();
+            CSkillDefinition echoCloneDefinition = CreateDefaultCloneSampleSkillDefinition();
             defaultSkillDefinitionList.Add( flameSlashDefinition );
             defaultSkillDefinitionList.Add( frostFieldDefinition );
+            defaultSkillDefinitionList.Add( arcBoltDefinition );
+            defaultSkillDefinitionList.Add( echoCloneDefinition );
             skillDefinitionList = defaultSkillDefinitionList;
         }
 
@@ -364,6 +370,50 @@ namespace TinyHero.Skill
             Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 79, 176, 255, 255 ) );
             skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 1, 2, 5.0f, 18.0f, "설치 후 주기 피해 및 공격력 감소 부여", placeActiveSkillEffect );
             skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 2 ) );
+            return skillDefinition;
+        }
+
+        ///<summary>
+        /// 기본 발사체 샘플 스킬 정의 생성
+        ///</summary>
+        private CSkillDefinition CreateDefaultProjectileSampleSkillDefinition()
+        {
+            string skillId = "sample_arc_bolt";
+            string skillName = "Arc Bolt";
+            CSkillDefinition skillDefinition = ScriptableObject.CreateInstance<CSkillDefinition>();
+            skillDefinition.name = skillName;
+            runtimeGeneratedScriptableObjectList.Add( skillDefinition );
+
+            CProjectileActiveSkillEffect projectileActiveSkillEffect = ScriptableObject.CreateInstance<CProjectileActiveSkillEffect>();
+            projectileActiveSkillEffect.name = $"{skillName}_Effect";
+            projectileActiveSkillEffect.Configure( new Vector2( 0.7f, 0.2f ), 0.45f, 6.0f, 10.5f, 1.35f, 3, 1 );
+            runtimeGeneratedScriptableObjectList.Add( projectileActiveSkillEffect );
+
+            Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 104, 255, 181, 255 ) );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 2, 3, 3.0f, 12.0f, "Projectile skill that travels forward and damages the first target hit.", projectileActiveSkillEffect );
+            skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 3 ) );
+            return skillDefinition;
+        }
+
+        ///<summary>
+        /// 기본 분신 샘플 스킬 정의 생성
+        ///</summary>
+        private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
+        {
+            string skillId = "sample_echo_clone";
+            string skillName = "Echo Clone";
+            CSkillDefinition skillDefinition = ScriptableObject.CreateInstance<CSkillDefinition>();
+            skillDefinition.name = skillName;
+            runtimeGeneratedScriptableObjectList.Add( skillDefinition );
+
+            CCloneReplayActiveSkillEffect cloneReplayActiveSkillEffect = ScriptableObject.CreateInstance<CCloneReplayActiveSkillEffect>();
+            cloneReplayActiveSkillEffect.name = $"{skillName}_Effect";
+            cloneReplayActiveSkillEffect.Configure( 6.0f, 0.45f, 0.65f, new Vector3( -0.35f, 0.0f, 0.0f ), 0.85f );
+            runtimeGeneratedScriptableObjectList.Add( cloneReplayActiveSkillEffect );
+
+            Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 173, 139, 255, 255 ) );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 3, 4, 12.0f, 24.0f, "Summons a delayed replay clone that mimics movement, attacks, and skills.", cloneReplayActiveSkillEffect );
+            skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 4 ) );
             return skillDefinition;
         }
 
@@ -663,16 +713,27 @@ namespace TinyHero.Skill
                 return eSkillUseResult.NOT_ENOUGH_MP;
             }
 
-            bool didExecute = false;
+            float castLockDurationSeconds = skillDefinition.GetCastLockDurationSeconds();
+            bool shouldUseCastFlow = targetPlayerController != null && castLockDurationSeconds > 0.0f;
 
-            if ( activeSkillEffect != null )
+            if ( shouldUseCastFlow )
             {
-                didExecute = activeSkillEffect.Execute( skillContext );
+                bool didBeginCast = TryBeginSkillCast( skillDefinition );
+
+                if ( didBeginCast == false )
+                {
+                    targetStatManager.RecoverMp( mpCost );
+                    return eSkillUseResult.BLOCKED;
+                }
+
+                float acceptedTime = Time.time;
+                _runtimeData.MarkUsed( acceptedTime );
+                NotifySkillUse( skillDefinition );
+                StartCoroutine( IE_ExecuteSkillAfterCastDelay( activeSkillEffect, activeAction, skillContext, castLockDurationSeconds ) );
+                return eSkillUseResult.SUCCESS;
             }
-            else if ( activeAction != null )
-            {
-                didExecute = activeAction.Execute( skillContext );
-            }
+
+            bool didExecute = ExecuteSkillContents( activeSkillEffect, activeAction, skillContext );
 
             if ( didExecute == false )
             {
@@ -682,17 +743,7 @@ namespace TinyHero.Skill
 
             float currentTime = Time.time;
             _runtimeData.MarkUsed( currentTime );
-
-            if ( OnSkillUsed != null )
-            {
-                OnSkillUsed( skillDefinition );
-            }
-
-            if ( OnSkillStateChanged != null )
-            {
-                OnSkillStateChanged();
-            }
-
+            NotifySkillUse( skillDefinition );
             return eSkillUseResult.SUCCESS;
         }
 
@@ -743,6 +794,11 @@ namespace TinyHero.Skill
                 return eSkillUseResult.BLOCKED;
             }
 
+            if ( targetPlayerController != null && targetPlayerController.CurrentState == PlayerController.ePlayerState.Skill )
+            {
+                return eSkillUseResult.BLOCKED;
+            }
+
             float currentMp = targetStatManager.GetCurrentMp();
             float mpCost = skillDefinition.GetMpCost();
 
@@ -755,6 +811,101 @@ namespace TinyHero.Skill
             bool canExecute = activeSkillEffect != null ? activeSkillEffect.CanExecute( skillContext ) : activeAction.CanExecute( skillContext );
             eSkillUseResult result = canExecute ? eSkillUseResult.SUCCESS : eSkillUseResult.BLOCKED;
             return result;
+        }
+
+        ///<summary>
+        /// 스킬 실행 문맥 생성
+        ///</summary>
+        ///<summary>
+        /// 스킬 캐스팅 시작 처리
+        ///</summary>
+        private bool TryBeginSkillCast( CSkillDefinition _skillDefinition )
+        {
+            if ( _skillDefinition == null || targetPlayerController == null )
+            {
+                return false;
+            }
+
+            string castAnimationName = _skillDefinition.GetResolvedCastAnimationName();
+            float castAnimationSpeed = _skillDefinition.GetCastAnimationSpeed();
+            float castLockDurationSeconds = _skillDefinition.GetCastLockDurationSeconds();
+            bool result = targetPlayerController.TryBeginToolSkillCast( castAnimationName, castAnimationSpeed, castLockDurationSeconds );
+            return result;
+        }
+
+        ///<summary>
+        /// 캐스팅 종료 후 스킬 실행 코루틴
+        ///</summary>
+        private IEnumerator IE_ExecuteSkillAfterCastDelay( CActiveSkillEffectBase _activeSkillEffect, CSkillActionBase _activeAction, CSkillContext _skillContext, float _castLockDurationSeconds )
+        {
+            if ( _castLockDurationSeconds > 0.0f )
+            {
+                yield return new WaitForSeconds( _castLockDurationSeconds );
+            }
+
+            ExecuteSkillContents( _activeSkillEffect, _activeAction, _skillContext );
+        }
+
+        ///<summary>
+        /// 스킬 본체 실행 처리
+        ///</summary>
+        private bool ExecuteSkillContents( CActiveSkillEffectBase _activeSkillEffect, CSkillActionBase _activeAction, CSkillContext _skillContext )
+        {
+            if ( _activeSkillEffect != null )
+            {
+                bool didExecuteEffect = _activeSkillEffect.Execute( _skillContext );
+
+                if ( didExecuteEffect )
+                {
+                    NotifySkillExecuted( _skillContext );
+                }
+
+                return didExecuteEffect;
+            }
+
+            if ( _activeAction != null )
+            {
+                bool didExecuteAction = _activeAction.Execute( _skillContext );
+
+                if ( didExecuteAction )
+                {
+                    NotifySkillExecuted( _skillContext );
+                }
+
+                return didExecuteAction;
+            }
+
+            return false;
+        }
+
+        ///<summary>
+        /// 스킬 사용 이벤트 통지
+        ///</summary>
+        private void NotifySkillUse( CSkillDefinition _skillDefinition )
+        {
+            if ( OnSkillUsed != null )
+            {
+                OnSkillUsed( _skillDefinition );
+            }
+
+            if ( OnSkillStateChanged != null )
+            {
+                OnSkillStateChanged();
+            }
+        }
+
+        ///<summary>
+        /// 스킬 실제 실행 이벤트 전파
+        ///</summary>
+        private void NotifySkillExecuted( CSkillContext _skillContext )
+        {
+            if ( _skillContext == null || OnSkillExecuted == null )
+            {
+                return;
+            }
+
+            CSkillDefinition skillDefinition = _skillContext.GetSkillDefinition();
+            OnSkillExecuted( skillDefinition );
         }
 
         ///<summary>

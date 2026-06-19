@@ -18,7 +18,6 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty skillTypeProperty;
         private SerializedProperty activeSkillTypeProperty;
         private SerializedProperty quickSlotIndexProperty;
-        private SerializedProperty requiredLevelProperty;
         private SerializedProperty cooldownSecondsProperty;
         private SerializedProperty mpCostProperty;
         private SerializedProperty castLockDurationSecondsProperty;
@@ -32,6 +31,9 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty hitVfxPrefabProperty;
         private SerializedProperty hitVfxOffsetProperty;
         private SerializedProperty hitVfxReturnDelayProperty;
+        private SerializedProperty projectileVfxPrefabProperty;
+        private SerializedProperty projectileVfxOffsetProperty;
+        private SerializedProperty projectileVfxReturnDelayProperty;
         private SerializedProperty loopVfxPrefabProperty;
         private SerializedProperty loopVfxOffsetProperty;
         private SerializedProperty loopVfxReturnDelayProperty;
@@ -62,7 +64,6 @@ namespace TinyHero.Skill.Editor
             skillTypeProperty = serializedObject.FindProperty( "skillType" );
             activeSkillTypeProperty = serializedObject.FindProperty( "activeSkillType" );
             quickSlotIndexProperty = serializedObject.FindProperty( "quickSlotIndex" );
-            requiredLevelProperty = serializedObject.FindProperty( "requiredLevel" );
             cooldownSecondsProperty = serializedObject.FindProperty( "cooldownSeconds" );
             mpCostProperty = serializedObject.FindProperty( "mpCost" );
             castLockDurationSecondsProperty = serializedObject.FindProperty( "castLockDurationSeconds" );
@@ -76,6 +77,9 @@ namespace TinyHero.Skill.Editor
             hitVfxPrefabProperty = serializedObject.FindProperty( "hitVfxPrefab" );
             hitVfxOffsetProperty = serializedObject.FindProperty( "hitVfxOffset" );
             hitVfxReturnDelayProperty = serializedObject.FindProperty( "hitVfxReturnDelay" );
+            projectileVfxPrefabProperty = serializedObject.FindProperty( "projectileVfxPrefab" );
+            projectileVfxOffsetProperty = serializedObject.FindProperty( "projectileVfxOffset" );
+            projectileVfxReturnDelayProperty = serializedObject.FindProperty( "projectileVfxReturnDelay" );
             loopVfxPrefabProperty = serializedObject.FindProperty( "loopVfxPrefab" );
             loopVfxOffsetProperty = serializedObject.FindProperty( "loopVfxOffset" );
             loopVfxReturnDelayProperty = serializedObject.FindProperty( "loopVfxReturnDelay" );
@@ -341,6 +345,7 @@ namespace TinyHero.Skill.Editor
             {
                 DrawVfxBlock( "Cast VFX", castVfxPrefabProperty, castVfxOffsetProperty, castVfxReturnDelayProperty );
                 DrawVfxBlock( "Hit VFX", hitVfxPrefabProperty, hitVfxOffsetProperty, hitVfxReturnDelayProperty );
+                DrawVfxBlock( "Projectile VFX", projectileVfxPrefabProperty, projectileVfxOffsetProperty, projectileVfxReturnDelayProperty );
                 DrawVfxBlock( "Loop VFX", loopVfxPrefabProperty, loopVfxOffsetProperty, loopVfxReturnDelayProperty );
             }
 
@@ -356,7 +361,6 @@ namespace TinyHero.Skill.Editor
 
             if ( isUnlockFoldoutOpen )
             {
-                EditorGUILayout.PropertyField( requiredLevelProperty );
                 EditorGUILayout.PropertyField( unlockConditionListProperty, true );
             }
 
@@ -402,7 +406,15 @@ namespace TinyHero.Skill.Editor
         {
             EditorGUILayout.BeginVertical( EditorStyles.helpBox );
             EditorGUILayout.LabelField( _title, EditorStyles.boldLabel );
+            EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField( _prefabProperty );
+
+            if ( EditorGUI.EndChangeCheck() )
+            {
+                GameObject assignedPrefab = _prefabProperty.objectReferenceValue as GameObject;
+                CSkillEditorVfxSortingUtility.ApplySkillEffectSortingLayer( assignedPrefab );
+            }
+
             EditorGUILayout.PropertyField( _offsetProperty );
             EditorGUILayout.PropertyField( _returnDelayProperty );
             EditorGUILayout.EndVertical();

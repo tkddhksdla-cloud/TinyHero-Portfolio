@@ -19,11 +19,20 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 요구 레벨 반환
+        ///</summary>
+        public int GetRequiredLevel()
+        {
+            int result = Mathf.Max( 1, requiredLevel );
+            return result;
+        }
+
+        ///<summary>
         /// 해금 조건 충족 여부 반환
         ///</summary>
         public override bool IsSatisfied( CSkillManager _skillManager, int _playerLevel, CQuestStateProvider _questStateProvider )
         {
-            bool result = _playerLevel >= requiredLevel;
+            bool result = _playerLevel >= GetRequiredLevel();
             return result;
         }
     }

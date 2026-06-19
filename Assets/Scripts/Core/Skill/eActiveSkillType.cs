@@ -7,7 +7,9 @@ namespace TinyHero.Skill
     {
         NONE,
         INSTANT,
+        PROJECTILE,
         PLACE,
-        BUFF
+        BUFF,
+        CLONE
     }
 }

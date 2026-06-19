@@ -25,9 +25,11 @@ namespace TinyHero.Skill
                 return 0;
             }
 
-            float playerAtk = playerStatManager.GetFinalStatValue( ePlayerStatType.ATK );
+            float attackStatOverride = _skillContext.GetAttackStatOverride();
+            float playerAtk = attackStatOverride >= 0.0f ? attackStatOverride : playerStatManager.GetFinalStatValue( ePlayerStatType.ATK );
             PlayerController playerController = _skillContext.GetPlayerController();
-            float attackMultiplier = playerController != null ? playerController.GetSkillAttackPowerMultiplier() : 1.0f;
+            float attackMultiplierOverride = _skillContext.GetSkillAttackPowerMultiplierOverride();
+            float attackMultiplier = attackMultiplierOverride >= 0.0f ? attackMultiplierOverride : ( playerController != null ? playerController.GetSkillAttackPowerMultiplier() : 1.0f );
             float rawDamage = playerAtk * attackMultiplier * _damageMultiplier + _flatDamageBonus - _monsterObject.GetDef();
             long damage = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
             return damage;
@@ -53,21 +55,14 @@ namespace TinyHero.Skill
                 return;
             }
 
-            CPlayerStatManager playerStatManager = _skillContext.GetPlayerStatManager();
+            PlayerController playerController = _skillContext.GetPlayerController();
 
-            if ( playerStatManager == null )
+            if ( playerController == null )
             {
                 return;
             }
 
-            long expReward = _monsterObject.GetExpReward();
-
-            if ( expReward <= 0 )
-            {
-                return;
-            }
-
-            playerStatManager.AddExp( expReward );
+            _monsterObject.TryGrantReward( playerController );
         }
     }
 }
