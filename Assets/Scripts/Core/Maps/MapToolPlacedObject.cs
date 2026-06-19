@@ -10,7 +10,8 @@ namespace TinyHero.Maps
         public enum eMapToolPlacedObjectType
         {
             MONSTER,
-            PORTAL
+            PORTAL,
+            NPC
         }
 
         [SerializeField] private eMapToolPlacedObjectType placedObjectType;
@@ -98,6 +99,19 @@ namespace TinyHero.Maps
             portalId = _assignedPortalId;
             targetMapId = _assignedTargetMapId;
             targetPortalId = _assignedTargetPortalId;
+        }
+
+        ///<summary>
+        /// NPC 배치 정보 설정
+        ///</summary>
+        public void SetupNpc( string _assignedPrefabName, string _assignedResourcePath )
+        {
+            placedObjectType = eMapToolPlacedObjectType.NPC;
+            prefabName = _assignedPrefabName;
+            resourcePath = _assignedResourcePath;
+            portalId = string.Empty;
+            targetMapId = string.Empty;
+            targetPortalId = string.Empty;
         }
     }
 }

@@ -38,12 +38,15 @@ namespace TinyHero.Player
         private const string HitAnimationStateName = "Hit";
         private const string DieAnimationStateName = "Die";
         private const float DefaultAttackSlashFxLifetime = 0.5f;
+        private const int InvalidSkillSlotIndex = -1;
+        private const int MaxSkillSlotCount = 8;
 
         [Header( "References" )]
         [SerializeField] private Animator targetAnimator;
         [SerializeField] private AnimationEventReceiver animationEventReceiver;
         [SerializeField] private Rigidbody2D targetRigidbody;
         [SerializeField] private CPlayerStatManager targetStatManager;
+        [SerializeField] private CPlayerInventoryManager targetInventoryManager;
         [SerializeField] private CSkillManager targetSkillManager;
         [SerializeField] private BoxCollider2D bodyCollider;
         [SerializeField] private Collider2D attackHitCollider;
@@ -70,6 +73,7 @@ namespace TinyHero.Player
         [SerializeField] private float attackDuration = 0.2f;
         [SerializeField] private float attackAnimationSpeedMultiplier = 3.0f;
         [SerializeField] private float attackSlashFxLifetime = DefaultAttackSlashFxLifetime;
+        [SerializeField] private bool isMonsterContactHitEnabled = true;
         [SerializeField] private float hitStateDuration = 0.25f;
         [SerializeField] private float hitKnockbackDistance = 0.45f;
         [SerializeField] private float invincibilityDuration = 1.25f;
@@ -110,6 +114,9 @@ namespace TinyHero.Player
         private bool isPendingJump;
         private bool isPendingAttack;
         private bool wasGrounded;
+        private int pendingSkillSlotIndex = InvalidSkillSlotIndex;
+
+        public event System.Action OnAttackHitTriggered;
 
         ///<summary>
         /// 현재 상태 정보
@@ -121,6 +128,68 @@ namespace TinyHero.Player
                 ePlayerState result = currentState;
                 return result;
             }
+        }
+
+        ///<summary>
+        /// 플레이어 스킬 매니저 반환
+        ///</summary>
+        public CSkillManager GetSkillManager()
+        {
+            CSkillManager result = targetSkillManager;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 스탯 매니저 반환
+        ///</summary>
+        public CPlayerStatManager GetPlayerStatManager()
+        {
+            CPlayerStatManager result = targetStatManager;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 인벤토리 매니저 반환
+        ///</summary>
+        public CPlayerInventoryManager GetInventoryManager()
+        {
+            CPlayerInventoryManager result = targetInventoryManager;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 애니메이터 반환
+        ///</summary>
+        public Animator GetTargetAnimator()
+        {
+            Animator result = targetAnimator;
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 애니메이션 상태 이름 반환
+        ///</summary>
+        public string GetCurrentAnimationStateName()
+        {
+            string result = ResolveAnimationStateName();
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 애니메이터 속도 반환
+        ///</summary>
+        public float GetCurrentAnimatorSpeed()
+        {
+            float result = targetAnimator != null ? targetAnimator.speed : DefaultAnimatorSpeed;
+            return result;
+        }
+
+        ///<summary>
+        /// 몬스터 접촉 피격 활성 상태 설정
+        ///</summary>
+        public void SetMonsterContactHitEnabled( bool _isEnabled )
+        {
+            isMonsterContactHitEnabled = _isEnabled;
         }
 
         ///<summary>
@@ -164,6 +233,7 @@ namespace TinyHero.Player
             }
 
             ResolveStatManager();
+            ResolveInventoryManager();
             ResolveSkillManager();
 
             if ( bodyCollider == null )
@@ -250,6 +320,7 @@ namespace TinyHero.Player
             TickSkillBuffState();
             CaptureInput();
             UpdateGroundState();
+            ApplyNpcInteractionControlLock();
             ProcessStateTransitions();
             UpdateCurrentState();
             EvaluateMonsterContactOverlap();
@@ -374,6 +445,11 @@ namespace TinyHero.Player
         ///</summary>
         public bool TryReceiveContactHit( MonsterObject _monsterObject )
         {
+            if ( isMonsterContactHitEnabled == false )
+            {
+                return false;
+            }
+
             if ( currentState == ePlayerState.Die || IsAnyInvincibleStateActive() )
             {
                 return false;
@@ -468,6 +544,26 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 플레이어 인벤토리 매니저 결정
+        ///</summary>
+        private void ResolveInventoryManager()
+        {
+            if ( targetInventoryManager != null )
+            {
+                return;
+            }
+
+            CPlayerInventoryManager resolvedInventoryManager = GetComponent<CPlayerInventoryManager>();
+
+            if ( resolvedInventoryManager == null )
+            {
+                resolvedInventoryManager = gameObject.AddComponent<CPlayerInventoryManager>();
+            }
+
+            targetInventoryManager = resolvedInventoryManager;
+        }
+
+        ///<summary>
         /// 입력 수집
         ///</summary>
         private void CaptureInput()
@@ -479,6 +575,7 @@ namespace TinyHero.Player
                 isInteractionHeld = false;
                 isPendingJump = false;
                 isPendingAttack = false;
+                pendingSkillSlotIndex = InvalidSkillSlotIndex;
                 return;
             }
 
@@ -491,6 +588,19 @@ namespace TinyHero.Player
                 isInteractionHeld = false;
                 isPendingJump = false;
                 isPendingAttack = false;
+                pendingSkillSlotIndex = InvalidSkillSlotIndex;
+                return;
+            }
+
+            if ( CNPCInteractionManager.TryGetInstance( out CNPCInteractionManager interactionManager ) && interactionManager != null && interactionManager.IsInteractionInProgress() )
+            {
+                horizontalInput = 0.0f;
+                isJumpHeld = false;
+                isInteractionHeld = false;
+                isPendingJump = false;
+                isPendingAttack = false;
+                pendingSkillSlotIndex = InvalidSkillSlotIndex;
+                interactionManager.TryProcessInteractionInput( inputManager.GetInteractionDown() );
                 return;
             }
 
@@ -499,6 +609,12 @@ namespace TinyHero.Player
             bool capturedInteractionHeld = inputManager.GetInteractionHeld();
             bool capturedJumpDown = inputManager.GetJumpDown();
             bool capturedAttackDown = inputManager.GetAttackDown();
+            bool capturedInteractionDown = inputManager.GetInteractionDown();
+
+            if ( CNPCInteractionManager.TryGetInstance( out CNPCInteractionManager availableInteractionManager ) && availableInteractionManager != null )
+            {
+                availableInteractionManager.TryProcessInteractionInput( capturedInteractionDown );
+            }
 
             if ( currentState == ePlayerState.Attack )
             {
@@ -507,6 +623,7 @@ namespace TinyHero.Player
                 isInteractionHeld = false;
                 isPendingJump = false;
                 isPendingAttack = false;
+                pendingSkillSlotIndex = InvalidSkillSlotIndex;
                 return;
             }
 
@@ -517,6 +634,7 @@ namespace TinyHero.Player
                 isInteractionHeld = false;
                 isPendingJump = false;
                 isPendingAttack = false;
+                pendingSkillSlotIndex = InvalidSkillSlotIndex;
                 return;
             }
 
@@ -525,6 +643,7 @@ namespace TinyHero.Player
             isInteractionHeld = capturedInteractionHeld;
             isPendingJump = capturedJumpDown;
             isPendingAttack = capturedAttackDown;
+            pendingSkillSlotIndex = ResolvePendingSkillSlotIndex( inputManager );
         }
 
         ///<summary>
@@ -577,6 +696,16 @@ namespace TinyHero.Player
             }
 
             if ( currentState == ePlayerState.Skill )
+            {
+                return;
+            }
+
+            if ( IsNpcInteractionBlockingControls() )
+            {
+                return;
+            }
+
+            if ( TryProcessPendingSkillInput() )
             {
                 return;
             }
@@ -896,6 +1025,11 @@ namespace TinyHero.Player
         ///</summary>
         private void ApplyHorizontalMovement()
         {
+            if ( IsNpcInteractionBlockingControls() )
+            {
+                return;
+            }
+
             if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit || currentState == ePlayerState.Attack || currentState == ePlayerState.Skill )
             {
                 return;
@@ -919,6 +1053,11 @@ namespace TinyHero.Player
         ///</summary>
         private void ApplyFacingDirection()
         {
+            if ( IsNpcInteractionBlockingControls() )
+            {
+                return;
+            }
+
             if ( currentState == ePlayerState.Hit || currentState == ePlayerState.Attack || currentState == ePlayerState.Skill )
             {
                 return;
@@ -1163,6 +1302,101 @@ namespace TinyHero.Player
         {
             isPendingJump = false;
             isPendingAttack = false;
+            pendingSkillSlotIndex = InvalidSkillSlotIndex;
+        }
+
+        ///<summary>
+        /// NPC 상호작용 입력 차단 여부 반환
+        ///</summary>
+        private bool IsNpcInteractionBlockingControls()
+        {
+            if ( CNPCInteractionManager.TryGetInstance( out CNPCInteractionManager interactionManager ) == false )
+            {
+                return false;
+            }
+
+            if ( interactionManager == null )
+            {
+                return false;
+            }
+
+            bool isBlocking = interactionManager.IsInteractionInProgress();
+            return isBlocking;
+        }
+
+        ///<summary>
+        /// NPC 상호작용 중 플레이어 상태 잠금
+        ///</summary>
+        private void ApplyNpcInteractionControlLock()
+        {
+            if ( IsNpcInteractionBlockingControls() == false )
+            {
+                return;
+            }
+
+            if ( currentState == ePlayerState.Die || currentState == ePlayerState.Hit )
+            {
+                return;
+            }
+
+            SetAttackHitColliderActive( false );
+
+            if ( targetRigidbody != null )
+            {
+                Vector2 currentVelocity = targetRigidbody.linearVelocity;
+                currentVelocity.x = 0.0f;
+                targetRigidbody.linearVelocity = currentVelocity;
+            }
+
+            if ( currentState == ePlayerState.Jump && isGrounded == false )
+            {
+                return;
+            }
+
+            if ( currentState != ePlayerState.Idle )
+            {
+                ChangeState( ePlayerState.Idle );
+            }
+        }
+
+        ///<summary>
+        /// 대기 중인 스킬 슬롯 인덱스 결정
+        ///</summary>
+        private int ResolvePendingSkillSlotIndex( CInputManager _inputManager )
+        {
+            if ( _inputManager == null )
+            {
+                return InvalidSkillSlotIndex;
+            }
+
+            for ( int slotIndex = 0; slotIndex < MaxSkillSlotCount; slotIndex++ )
+            {
+                bool isSkillSlotDown = _inputManager.GetSkillSlotDown( slotIndex );
+
+                if ( isSkillSlotDown == false )
+                {
+                    continue;
+                }
+
+                return slotIndex;
+            }
+
+            return InvalidSkillSlotIndex;
+        }
+
+        ///<summary>
+        /// 대기 중인 스킬 입력 처리
+        ///</summary>
+        private bool TryProcessPendingSkillInput()
+        {
+            if ( pendingSkillSlotIndex == InvalidSkillSlotIndex || targetSkillManager == null )
+            {
+                return false;
+            }
+
+            eSkillUseResult useResult = targetSkillManager.TryUseSkillByQuickSlotIndex( pendingSkillSlotIndex );
+            bool didUseSkill = useResult == eSkillUseResult.SUCCESS;
+            return didUseSkill;
         }
 
         ///<summary>
@@ -1388,6 +1622,11 @@ namespace TinyHero.Player
         ///</summary>
         private void EvaluateMonsterContactOverlap()
         {
+            if ( isMonsterContactHitEnabled == false )
+            {
+                return;
+            }
+
             if ( currentState == ePlayerState.Die || IsAnyInvincibleStateActive() )
             {
                 return;
@@ -1599,6 +1838,11 @@ namespace TinyHero.Player
                 return;
             }
 
+            if ( OnAttackHitTriggered != null )
+            {
+                OnAttackHitTriggered();
+            }
+
             PlayAttackSlashFx();
 
             MonsterObject attackTarget = ResolveHighestPriorityAttackTarget();
@@ -1614,7 +1858,7 @@ namespace TinyHero.Player
 
             if ( wasAliveBeforeHit && attackTarget.GetCurrentHp() <= 0 )
             {
-                AwardMonsterExp( attackTarget );
+                GrantMonsterReward( attackTarget );
             }
         }
 
@@ -1832,21 +2076,14 @@ namespace TinyHero.Player
         ///<summary>
         /// 몬스터 처치 경험치 지급
         ///</summary>
-        private void AwardMonsterExp( MonsterObject _monsterObject )
+        private void GrantMonsterReward( MonsterObject _monsterObject )
         {
-            if ( _monsterObject == null || targetStatManager == null )
+            if ( _monsterObject == null )
             {
                 return;
             }
 
-            long expReward = _monsterObject.GetExpReward();
-
-            if ( expReward <= 0 )
-            {
-                return;
-            }
-
-            targetStatManager.AddExp( expReward );
+            _monsterObject.TryGrantReward( this );
         }
 
         ///<summary>

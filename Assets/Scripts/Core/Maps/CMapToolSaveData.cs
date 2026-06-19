@@ -11,6 +11,7 @@ namespace TinyHero.Maps
         public string backgroundSpriteName;
         public List<CMapToolPortalSaveData> portals = new List<CMapToolPortalSaveData>();
         public List<CMapToolMonsterSaveData> monsters = new List<CMapToolMonsterSaveData>();
+        public List<CMapToolNpcSaveData> npcs = new List<CMapToolNpcSaveData>();
     }
 
     [Serializable]
@@ -26,6 +27,14 @@ namespace TinyHero.Maps
 
     [Serializable]
     public sealed class CMapToolMonsterSaveData
+    {
+        public string prefabName;
+        public string resourcePath;
+        public CMapToolTransformData transform;
+    }
+
+    [Serializable]
+    public sealed class CMapToolNpcSaveData
     {
         public string prefabName;
         public string resourcePath;

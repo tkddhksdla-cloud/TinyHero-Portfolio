@@ -12,10 +12,12 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode alternateLeftKey = KeyCode.None;
         [SerializeField] private KeyCode rightKey = KeyCode.RightArrow;
         [SerializeField] private KeyCode alternateRightKey = KeyCode.None;
-        [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-        [SerializeField] private KeyCode attackKey = KeyCode.LeftControl;
-        [SerializeField] private KeyCode alternateAttackKey = KeyCode.RightControl;
-        [SerializeField] private KeyCode interactionKey = KeyCode.UpArrow;
+        [SerializeField] private KeyCode jumpKey = KeyCode.C;
+        [SerializeField] private KeyCode attackKey = KeyCode.Z;
+        [SerializeField] private KeyCode alternateAttackKey = KeyCode.None;
+        [SerializeField] private KeyCode interactionKey = KeyCode.Space;
+        [SerializeField] private KeyCode inventoryKey = KeyCode.I;
+        [SerializeField] private KeyCode portalKey = KeyCode.UpArrow;
         [SerializeField] private KeyCode skillSlot1Key = KeyCode.Q;
         [SerializeField] private KeyCode skillSlot2Key = KeyCode.W;
         [SerializeField] private KeyCode skillSlot3Key = KeyCode.E;
@@ -86,6 +88,24 @@ namespace TinyHero.Core
         {
             bool isInteractionHeld = Input.GetKey( interactionKey );
             return isInteractionHeld;
+        }
+
+        ///<summary>
+        /// 인벤토리 다운 입력 반환
+        ///</summary>
+        public bool GetInventoryDown()
+        {
+            bool isInventoryDown = Input.GetKeyDown( inventoryKey );
+            return isInventoryDown;
+        }
+
+        ///<summary>
+        /// 포탈 다운 입력 반환
+        ///</summary>
+        public bool GetPortalDown()
+        {
+            bool isPortalDown = Input.GetKeyDown( portalKey );
+            return isPortalDown;
         }
 
         ///<summary>

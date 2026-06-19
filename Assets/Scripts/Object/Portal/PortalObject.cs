@@ -1,5 +1,6 @@
-﻿using TinyHero.Core;
+using TinyHero.Core;
 using TinyHero.Player;
+using TinyHero.UI;
 using UnityEngine;
 
 public class PortalObject : MonoBehaviour
@@ -16,19 +17,19 @@ public class PortalObject : MonoBehaviour
     ///</summary>
     private void Awake()
     {
-        if (targetTriggerCollider == null)
+        if ( targetTriggerCollider == null )
         {
             Collider2D resolvedCollider = GetComponent<Collider2D>();
 
-            if (resolvedCollider == null)
+            if ( resolvedCollider == null )
             {
-                resolvedCollider = GetComponentInChildren<Collider2D>(true);
+                resolvedCollider = GetComponentInChildren<Collider2D>( true );
             }
 
             targetTriggerCollider = resolvedCollider;
         }
 
-        if (targetTriggerCollider != null)
+        if ( targetTriggerCollider != null )
         {
             targetTriggerCollider.isTrigger = true;
         }
@@ -39,46 +40,51 @@ public class PortalObject : MonoBehaviour
     ///</summary>
     private void Update()
     {
-        if (currentPlayerController == null)
+        if ( currentPlayerController == null )
         {
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(targetSceneID))
+        if ( string.IsNullOrWhiteSpace( targetSceneID ) )
         {
             return;
         }
 
         CInputManager inputManager = CInputManager.Instance;
 
-        if (inputManager == null)
+        if ( inputManager == null )
         {
             return;
         }
 
-        if (inputManager.GetInteractionDown() == false)
+        if ( inputManager.GetPortalDown() == false )
+        {
+            return;
+        }
+
+        if ( CNPCInteractionManager.TryGetInstance( out CNPCInteractionManager interactionManager ) && interactionManager != null && interactionManager.IsInteractionInProgress() )
         {
             return;
         }
 
         TinyHero.Maps.CMapManager mapManager = TinyHero.Maps.CMapManager.Instance;
 
-        if (mapManager == null)
+        if ( mapManager == null )
         {
             return;
         }
 
-        mapManager.TransitionToMap(targetSceneID, targetPortalId);
+        mapManager.TransitionToMap( targetSceneID, targetPortalId );
     }
 
     ///<summary>
     /// 트리거 진입 처리
     ///</summary>
-    private void OnTriggerEnter2D(Collider2D _other)
+    private void OnTriggerEnter2D( Collider2D _other )
     {
-        PlayerController detectedPlayerController = ResolvePlayerController(_other);
+        PlayerController detectedPlayerController = ResolvePlayerController( _other );
 
-        if (detectedPlayerController == null)
+        if ( detectedPlayerController == null )
         {
             return;
         }
@@ -89,16 +95,16 @@ public class PortalObject : MonoBehaviour
     ///<summary>
     /// 트리거 이탈 처리
     ///</summary>
-    private void OnTriggerExit2D(Collider2D _other)
+    private void OnTriggerExit2D( Collider2D _other )
     {
-        PlayerController detectedPlayerController = ResolvePlayerController(_other);
+        PlayerController detectedPlayerController = ResolvePlayerController( _other );
 
-        if (detectedPlayerController == null)
+        if ( detectedPlayerController == null )
         {
             return;
         }
 
-        if (currentPlayerController != detectedPlayerController)
+        if ( currentPlayerController != detectedPlayerController )
         {
             return;
         }
@@ -109,28 +115,44 @@ public class PortalObject : MonoBehaviour
     ///<summary>
     /// 플레이어 제어 결정
     ///</summary>
-    private PlayerController ResolvePlayerController(Collider2D _other)
+    private PlayerController ResolvePlayerController( Collider2D _other )
     {
-        if (_other == null)
+        if ( _other == null )
         {
             return null;
         }
 
         PlayerController detectedPlayerController = _other.GetComponent<PlayerController>();
 
-        if (detectedPlayerController != null)
+        if ( detectedPlayerController != null )
         {
+            if ( detectedPlayerController.enabled == false || detectedPlayerController.gameObject.activeInHierarchy == false )
+            {
+                return null;
+            }
+
             return detectedPlayerController;
         }
 
         PlayerController detectedParentPlayerController = _other.GetComponentInParent<PlayerController>();
+
+        if ( detectedParentPlayerController == null )
+        {
+            return null;
+        }
+
+        if ( detectedParentPlayerController.enabled == false || detectedParentPlayerController.gameObject.activeInHierarchy == false )
+        {
+            return null;
+        }
+
         return detectedParentPlayerController;
     }
 
     ///<summary>
     /// 포탈 설정
     ///</summary>
-    public void ConfigurePortal(string _assignedPortalId, string _assignedTargetSceneID, string _assignedTargetPortalId)
+    public void ConfigurePortal( string _assignedPortalId, string _assignedTargetSceneID, string _assignedTargetPortalId )
     {
         portalId = _assignedPortalId;
         targetSceneID = _assignedTargetSceneID;
@@ -149,7 +171,7 @@ public class PortalObject : MonoBehaviour
     ///<summary>
     /// 대상 씬 ID 설정
     ///</summary>
-    public void SetTargetSceneID(string _assignedTargetSceneID)
+    public void SetTargetSceneID( string _assignedTargetSceneID )
     {
         targetSceneID = _assignedTargetSceneID;
     }
@@ -166,7 +188,7 @@ public class PortalObject : MonoBehaviour
     ///<summary>
     /// 대상 포탈 ID 설정
     ///</summary>
-    public void SetTargetPortalId(string _assignedTargetPortalId)
+    public void SetTargetPortalId( string _assignedTargetPortalId )
     {
         targetPortalId = _assignedTargetPortalId;
     }
@@ -180,5 +202,3 @@ public class PortalObject : MonoBehaviour
         return result;
     }
 }
-
-

@@ -14,7 +14,7 @@ namespace TinyHero.Title
     public sealed class SceneTitleStartButton : MonoBehaviour
     {
         private const string GameplaySceneName = "SceneMap";
-        private const string StarterMapId = "MAP_STARTER_001";
+        private const string StarterMapId = "MAP_STARTER_000_VILLAGE";
         private const string FadeImageObjectName = "TitleFadeImage";
         private const float DefaultFadeDuration = 0.35f;
 

@@ -27,7 +27,8 @@ namespace TinyHero.Maps
         {
             NONE,
             PLACE_PORTAL,
-            PLACE_MONSTER
+            PLACE_MONSTER,
+            PLACE_NPC
         }
 
         private const string BackgroundPrefabResourcePath = "Prefabs/BackgroundObject/BackgroundObject";
@@ -35,6 +36,7 @@ namespace TinyHero.Maps
         private const string PlayerObjectName = "PlayerObject";
         private const string PortalPrefabResourcePath = "Prefabs/Portal/PortalObject";
         private const string MonsterPrefabResourceFolderPath = "Prefabs/Character/Monster";
+        private const string NpcPrefabResourceFolderPath = "Prefabs/Character/NPC";
         private const string BackgroundSpriteResourceFolderPath = "RawImages/BG";
         private const string MapDataFolderPath = "Assets/Resources/MapData";
         private const string DefaultPortalTargetMapId = "SceneMap";
@@ -42,6 +44,7 @@ namespace TinyHero.Maps
         private const string ToolbarObjectName = "Toolbar";
         private const string BackgroundPanelObjectName = "BackgroundPanel";
         private const string MonsterPanelObjectName = "MonsterPanel";
+        private const string NpcPanelObjectName = "NpcPanel";
         private const string PortalPanelObjectName = "PortalPanel";
         private const string SkillTestPanelObjectName = "SkillTestPanel";
         private const string PortalIdTitleObjectName = "PortalIdTitle";
@@ -51,6 +54,8 @@ namespace TinyHero.Maps
         private const string MapNameTitleObjectName = "MapNameTitle";
         private const string MapInfoPanelObjectName = "MapInfoPanel";
         private const string LoadMapPanelObjectName = "LoadMapPanel";
+        private const string SaveConfirmPopupObjectName = "SaveConfirmPopup";
+        private const string SaveConfirmMessageObjectName = "SaveConfirmMessage";
         private const string ButtonObjectPrefix = "Button_";
         private const string LabelObjectName = "Label";
         private const string InputFieldTextObjectName = "Text";
@@ -73,7 +78,7 @@ namespace TinyHero.Maps
         private const float PanelPadding = 14.0f;
         private const float ItemSpacing = 8.0f;
         private const float MapInfoPanelWidth = 360.0f;
-        private const float MapInfoPanelHeight = 340.0f;
+        private const float MapInfoPanelHeight = 388.0f;
         private const float MapInfoInputWidth = 300.0f;
         private const float MapInfoButtonWidth = 142.0f;
         private const float MapInfoPanelLeftOffset = 20.0f;
@@ -82,10 +87,15 @@ namespace TinyHero.Maps
         private const float LoadPanelHeight = 360.0f;
         private const float LoadPanelLeftOffset = 400.0f;
         private const float LoadPanelTopOffset = -200.0f;
+        private const float SaveConfirmPopupWidth = 420.0f;
+        private const float SaveConfirmPopupHeight = 220.0f;
+        private const float SaveConfirmButtonWidth = 150.0f;
+        private const float SaveConfirmButtonHeight = 54.0f;
         private const float SkillPreviewDisplayDurationSeconds = 1.2f;
         private const int MouseButtonLeft = 0;
         private const int MouseButtonRight = 1;
         private const int SortingOrderPanel = 10;
+        private const KeyCode NpcFlipKey = KeyCode.X;
 
         [Header( "Map" )]
         [SerializeField] private string customMapId;
@@ -101,27 +111,35 @@ namespace TinyHero.Maps
         [SerializeField] private RectTransform toolbarRoot;
         [SerializeField] private RectTransform backgroundPanelRoot;
         [SerializeField] private RectTransform monsterPanelRoot;
+        [SerializeField] private RectTransform npcPanelRoot;
         [SerializeField] private RectTransform portalPanelRoot;
         [SerializeField] private RectTransform mapInfoPanelRoot;
         [SerializeField] private RectTransform loadMapPanelRoot;
         [SerializeField] private RectTransform skillTestPanelRoot;
+        [SerializeField] private RectTransform saveConfirmPopupRoot;
         [SerializeField] private RectTransform backgroundListRoot;
         [SerializeField] private RectTransform monsterListRoot;
+        [SerializeField] private RectTransform npcListRoot;
         [SerializeField] private RectTransform loadMapListRoot;
         [SerializeField] private RectTransform skillTestListRoot;
+        [SerializeField] private TMP_Text saveConfirmMessageText;
         [SerializeField] private TMP_InputField mapIdInputField;
         [SerializeField] private TMP_InputField mapNameInputField;
         [SerializeField] private TMP_InputField portalIdInputField;
         [SerializeField] private TMP_InputField portalTargetMapIdInputField;
         [SerializeField] private TMP_InputField portalTargetPortalIdInputField;
         [SerializeField] private Toggle disableMonsterBehaviorToggle;
+        [SerializeField] private Toggle disableMonsterContactHitToggle;
         [SerializeField] private CButtonEx backgroundModeButton;
         [SerializeField] private CButtonEx monsterModeButton;
+        [SerializeField] private CButtonEx npcModeButton;
         [SerializeField] private CButtonEx portalModeButton;
         [SerializeField] private CButtonEx skillTestModeButton;
         [SerializeField] private CButtonEx clearObjectsButton;
         [SerializeField] private CButtonEx saveMapButton;
         [SerializeField] private CButtonEx loadMapButton;
+        [SerializeField] private CButtonEx confirmSaveButton;
+        [SerializeField] private CButtonEx cancelSaveButton;
         [SerializeField] private CButtonEx startPortalPlacementButton;
         [SerializeField] private CSkillManager skillManager;
         [SerializeField] private CMapToolSkillRangeVisualizer hoverSkillRangeVisualizer;
@@ -130,18 +148,24 @@ namespace TinyHero.Maps
         private readonly List<MapToolPlacedObject> placedObjects = new List<MapToolPlacedObject>();
         private readonly List<Sprite> backgroundSprites = new List<Sprite>();
         private readonly List<GameObject> monsterPrefabs = new List<GameObject>();
+        private readonly List<GameObject> npcPrefabs = new List<GameObject>();
         private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
+        private readonly Dictionary<string, GameObject> npcPrefabByName = new Dictionary<string, GameObject>();
         private eMapToolMode currentMode;
         private GameObject previewInstance;
         private MapToolPlacedObject draggedPlacedObject;
         private Vector3 draggedObjectOffset;
         private string selectedMonsterResourcePath = string.Empty;
         private string selectedMonsterPrefabName = string.Empty;
+        private string selectedNpcResourcePath = string.Empty;
+        private string selectedNpcPrefabName = string.Empty;
         private string selectedPortalId = string.Empty;
         private string selectedPortalTargetMapId = DefaultPortalTargetMapId;
         private string selectedPortalTargetPortalId = string.Empty;
+        private float selectedNpcFacingSignX = 1.0f;
         private bool isMonsterBehaviorDisabledInMapTool;
+        private bool isMonsterContactHitDisabledInMapTool;
         private bool isDraggingPlacedObject;
         private CSkillDefinition hoveredSkillDefinition;
 
@@ -160,6 +184,7 @@ namespace TinyHero.Maps
             EnsurePanelsExist();
             EnsureMapInfoPanelExists();
             EnsureLoadMapPanelExists();
+            EnsureSaveConfirmPopupExists();
             EnsureSkillRangeVisualizersExist();
         }
 
@@ -173,13 +198,16 @@ namespace TinyHero.Maps
             BindUiEvents();
             RebuildBackgroundPanel();
             RebuildMonsterPanel();
+            RebuildNpcPanel();
             RebuildLoadMapPanel();
             RebuildSkillTestPanel();
             SetPanelVisible( backgroundPanelRoot, false );
             SetPanelVisible( monsterPanelRoot, false );
+            SetPanelVisible( npcPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, false );
             SetPanelVisible( skillTestPanelRoot, false );
+            SetPanelVisible( saveConfirmPopupRoot, false );
         }
 
         ///<summary>
@@ -191,6 +219,7 @@ namespace TinyHero.Maps
             UpdatePreviewTransform();
             HandlePlacedObjectDragInput();
             HandlePlacementInput();
+            HandleNpcFlipInput();
             HandleDeleteInput();
             UpdateSkillPreviewTarget();
         }
@@ -287,6 +316,7 @@ namespace TinyHero.Maps
 
             if ( existingPlayerController != null )
             {
+                ApplyMonsterContactHitEnabledToPlayer( existingPlayerController );
                 return;
             }
 
@@ -307,6 +337,31 @@ namespace TinyHero.Maps
             Vector3 spawnPosition = defaultPlayerSpawnPosition;
             GameObject playerObject = Instantiate( playerPrefab, spawnPosition, Quaternion.identity );
             playerObject.name = PlayerObjectName;
+            PlayerController createdPlayerController = playerObject.GetComponent<PlayerController>();
+            ApplyMonsterContactHitEnabledToPlayer( createdPlayerController );
+        }
+
+        ///<summary>
+        /// 플레이어 접촉 피격 토글 적용
+        ///</summary>
+        private void ApplyMonsterContactHitToggleToPlayer()
+        {
+            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+            ApplyMonsterContactHitEnabledToPlayer( playerController );
+        }
+
+        ///<summary>
+        /// 플레이어 접촉 피격 활성 상태 적용
+        ///</summary>
+        private void ApplyMonsterContactHitEnabledToPlayer( PlayerController _playerController )
+        {
+            if ( _playerController == null )
+            {
+                return;
+            }
+
+            bool isEnabled = isMonsterContactHitDisabledInMapTool == false;
+            _playerController.SetMonsterContactHitEnabled( isEnabled );
         }
 
         ///<summary>
@@ -446,6 +501,12 @@ namespace TinyHero.Maps
                 monsterModeButton = createdMonsterButton;
             }
 
+            if ( npcModeButton == null )
+            {
+                CButtonEx createdNpcButton = CreateTextButton( "NpcModeButton", toolbarRoot, "NPC 배치", ToolbarButtonWidth, ToolbarButtonHeight );
+                npcModeButton = createdNpcButton;
+            }
+
             if ( skillTestModeButton == null )
             {
                 CButtonEx createdSkillTestButton = CreateTextButton( "SkillTestModeButton", toolbarRoot, "스킬 테스트", ToolbarButtonWidth, ToolbarButtonHeight );
@@ -467,6 +528,7 @@ namespace TinyHero.Maps
             RectTransform canvasRectTransform = rootCanvas.GetComponent<RectTransform>();
             backgroundPanelRoot = EnsureSelectionPanel( backgroundPanelRoot, BackgroundPanelObjectName, canvasRectTransform, out backgroundListRoot );
             monsterPanelRoot = EnsureSelectionPanel( monsterPanelRoot, MonsterPanelObjectName, canvasRectTransform, out monsterListRoot );
+            npcPanelRoot = EnsureSelectionPanel( npcPanelRoot, NpcPanelObjectName, canvasRectTransform, out npcListRoot );
             portalPanelRoot = EnsurePortalPanel( portalPanelRoot, canvasRectTransform );
             skillTestPanelRoot = EnsureSelectionPanel( skillTestPanelRoot, SkillTestPanelObjectName, canvasRectTransform, out skillTestListRoot );
         }
@@ -560,6 +622,19 @@ namespace TinyHero.Maps
             }
 
             disableMonsterBehaviorToggle.isOn = isMonsterBehaviorDisabledInMapTool;
+
+            if ( disableMonsterContactHitToggle == null )
+            {
+                Toggle createdDisableMonsterContactHitToggle = CreateToggle( "DisableMonsterContactHitToggle", mapInfoPanelRoot, "몬스터 접촉 피격 끄기" );
+                RectTransform toggleRectTransform = createdDisableMonsterContactHitToggle.GetComponent<RectTransform>();
+                toggleRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
+                toggleRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
+                toggleRectTransform.pivot = new Vector2( 0.0f, 1.0f );
+                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -334.0f );
+                disableMonsterContactHitToggle = createdDisableMonsterContactHitToggle;
+            }
+
+            disableMonsterContactHitToggle.isOn = isMonsterContactHitDisabledInMapTool;
             UpdateButtonLabel( saveMapButton, "맵 저장" );
             UpdateButtonLabel( loadMapButton, "맵 불러오기" );
         }
@@ -633,6 +708,13 @@ namespace TinyHero.Maps
             {
                 disableMonsterBehaviorToggle.isOn = isMonsterBehaviorDisabledInMapTool;
             }
+
+            if ( disableMonsterContactHitToggle != null )
+            {
+                disableMonsterContactHitToggle.isOn = isMonsterContactHitDisabledInMapTool;
+            }
+
+            ApplyMonsterContactHitToggleToPlayer();
         }
 
         ///<summary>
@@ -644,6 +726,8 @@ namespace TinyHero.Maps
             backgroundModeButton.onClick.AddListener( OnBackgroundModeButtonClicked );
             monsterModeButton.onClick.RemoveAllListeners();
             monsterModeButton.onClick.AddListener( OnMonsterModeButtonClicked );
+            npcModeButton.onClick.RemoveAllListeners();
+            npcModeButton.onClick.AddListener( OnNpcModeButtonClicked );
             portalModeButton.onClick.RemoveAllListeners();
             portalModeButton.onClick.AddListener( OnPortalModeButtonClicked );
             skillTestModeButton.onClick.RemoveAllListeners();
@@ -662,6 +746,90 @@ namespace TinyHero.Maps
                 disableMonsterBehaviorToggle.onValueChanged.RemoveAllListeners();
                 disableMonsterBehaviorToggle.onValueChanged.AddListener( OnDisableMonsterBehaviorToggleValueChanged );
             }
+
+            if ( disableMonsterContactHitToggle != null )
+            {
+                disableMonsterContactHitToggle.onValueChanged.RemoveAllListeners();
+                disableMonsterContactHitToggle.onValueChanged.AddListener( OnDisableMonsterContactHitToggleValueChanged );
+            }
+
+            if ( confirmSaveButton != null )
+            {
+                confirmSaveButton.onClick.RemoveAllListeners();
+                confirmSaveButton.onClick.AddListener( OnConfirmSaveButtonClicked );
+            }
+
+            if ( cancelSaveButton != null )
+            {
+                cancelSaveButton.onClick.RemoveAllListeners();
+                cancelSaveButton.onClick.AddListener( OnCancelSaveButtonClicked );
+            }
+        }
+
+        ///<summary>
+        /// 저장 확인 팝업 존재 보장
+        ///</summary>
+        private void EnsureSaveConfirmPopupExists()
+        {
+            RectTransform canvasRectTransform = rootCanvas.GetComponent<RectTransform>();
+
+            if ( saveConfirmPopupRoot == null )
+            {
+                RectTransform foundPopupRoot = FindChildRectTransform( canvasRectTransform, SaveConfirmPopupObjectName );
+                saveConfirmPopupRoot = foundPopupRoot;
+            }
+
+            if ( saveConfirmPopupRoot == null )
+            {
+                RectTransform createdPopupRoot = CreatePanelRoot( SaveConfirmPopupObjectName, canvasRectTransform, new Vector2( 0.5f, 0.5f ), new Vector2( 0.5f, 0.5f ), new Vector2( 0.5f, 0.5f ) );
+                Image popupImage = createdPopupRoot.gameObject.AddComponent<Image>();
+                popupImage.color = new Color( 0.12f, 0.14f, 0.18f, 0.97f );
+                LayoutElement layoutElement = createdPopupRoot.gameObject.AddComponent<LayoutElement>();
+                layoutElement.ignoreLayout = true;
+                createdPopupRoot.sizeDelta = new Vector2( SaveConfirmPopupWidth, SaveConfirmPopupHeight );
+                createdPopupRoot.anchoredPosition = Vector2.zero;
+                saveConfirmPopupRoot = createdPopupRoot;
+            }
+
+            if ( saveConfirmMessageText == null )
+            {
+                GameObject messageObject = new GameObject( SaveConfirmMessageObjectName, typeof( RectTransform ), typeof( TextMeshProUGUI ) );
+                RectTransform messageRectTransform = messageObject.GetComponent<RectTransform>();
+                messageRectTransform.SetParent( saveConfirmPopupRoot, false );
+                messageRectTransform.anchorMin = new Vector2( 0.5f, 1.0f );
+                messageRectTransform.anchorMax = new Vector2( 0.5f, 1.0f );
+                messageRectTransform.pivot = new Vector2( 0.5f, 1.0f );
+                messageRectTransform.sizeDelta = new Vector2( SaveConfirmPopupWidth - 40.0f, 96.0f );
+                messageRectTransform.anchoredPosition = new Vector2( 0.0f, -28.0f );
+                TextMeshProUGUI createdMessageText = messageObject.GetComponent<TextMeshProUGUI>();
+                createdMessageText.fontSize = 24.0f;
+                createdMessageText.alignment = TextAlignmentOptions.Center;
+                createdMessageText.color = Color.white;
+                createdMessageText.text = "이미 존재하는 맵 데이터입니다.\n덮어쓰시겠습니까?";
+                saveConfirmMessageText = createdMessageText;
+            }
+
+            if ( confirmSaveButton == null )
+            {
+                CButtonEx createdConfirmSaveButton = CreateTextButton( "ConfirmSaveButton", saveConfirmPopupRoot, "저장", SaveConfirmButtonWidth, SaveConfirmButtonHeight );
+                RectTransform buttonRectTransform = createdConfirmSaveButton.GetComponent<RectTransform>();
+                buttonRectTransform.anchorMin = new Vector2( 0.5f, 0.0f );
+                buttonRectTransform.anchorMax = new Vector2( 0.5f, 0.0f );
+                buttonRectTransform.pivot = new Vector2( 0.5f, 0.0f );
+                buttonRectTransform.anchoredPosition = new Vector2( -88.0f, 24.0f );
+                confirmSaveButton = createdConfirmSaveButton;
+            }
+
+            if ( cancelSaveButton == null )
+            {
+                CButtonEx createdCancelSaveButton = CreateTextButton( "CancelSaveButton", saveConfirmPopupRoot, "취소", SaveConfirmButtonWidth, SaveConfirmButtonHeight );
+                RectTransform buttonRectTransform = createdCancelSaveButton.GetComponent<RectTransform>();
+                buttonRectTransform.anchorMin = new Vector2( 0.5f, 0.0f );
+                buttonRectTransform.anchorMax = new Vector2( 0.5f, 0.0f );
+                buttonRectTransform.pivot = new Vector2( 0.5f, 0.0f );
+                buttonRectTransform.anchoredPosition = new Vector2( 88.0f, 24.0f );
+                cancelSaveButton = createdCancelSaveButton;
+            }
         }
 
         ///<summary>
@@ -671,8 +839,10 @@ namespace TinyHero.Maps
         {
             backgroundSprites.Clear();
             monsterPrefabs.Clear();
+            npcPrefabs.Clear();
             backgroundSpriteByName.Clear();
             monsterPrefabByName.Clear();
+            npcPrefabByName.Clear();
 
             Sprite[] loadedBackgroundSprites = Resources.LoadAll<Sprite>( BackgroundSpriteResourceFolderPath );
             int backgroundSpriteCount = loadedBackgroundSprites.Length;
@@ -704,6 +874,22 @@ namespace TinyHero.Maps
 
                 monsterPrefabs.Add( monsterPrefab );
                 monsterPrefabByName[ monsterPrefab.name ] = monsterPrefab;
+            }
+
+            GameObject[] loadedNpcPrefabs = Resources.LoadAll<GameObject>( NpcPrefabResourceFolderPath );
+            int npcPrefabCount = loadedNpcPrefabs.Length;
+
+            for ( int index = 0; index < npcPrefabCount; index++ )
+            {
+                GameObject npcPrefab = loadedNpcPrefabs[ index ];
+
+                if ( npcPrefab == null )
+                {
+                    continue;
+                }
+
+                npcPrefabs.Add( npcPrefab );
+                npcPrefabByName[ npcPrefab.name ] = npcPrefab;
             }
         }
 
@@ -744,6 +930,27 @@ namespace TinyHero.Maps
                 listButton.onClick.AddListener( delegate
                 {
                     BeginMonsterPlacement( prefabName, resourcePath );
+                } );
+            }
+        }
+
+        ///<summary>
+        /// NPC 패널 재구성
+        ///</summary>
+        private void RebuildNpcPanel()
+        {
+            ClearChildren( npcListRoot );
+            int npcCount = npcPrefabs.Count;
+
+            for ( int index = 0; index < npcCount; index++ )
+            {
+                GameObject npcPrefab = npcPrefabs[ index ];
+                string prefabName = npcPrefab.name;
+                string resourcePath = NpcPrefabResourceFolderPath + "/" + prefabName;
+                CButtonEx listButton = CreateTextButton( ButtonObjectPrefix + prefabName, npcListRoot, prefabName, PanelWidth - ( PanelPadding * 2.0f ), ListButtonHeight );
+                listButton.onClick.AddListener( delegate
+                {
+                    BeginNpcPlacement( prefabName, resourcePath );
                 } );
             }
         }
@@ -862,6 +1069,14 @@ namespace TinyHero.Maps
         ///</summary>
         private void OnSaveMapButtonClicked()
         {
+            bool isExistingMapData = IsCurrentMapDataAlreadySaved();
+
+            if ( isExistingMapData )
+            {
+                ShowSaveConfirmPopup();
+                return;
+            }
+
             SaveMapData();
             RebuildLoadMapPanel();
         }
@@ -884,6 +1099,33 @@ namespace TinyHero.Maps
         {
             isMonsterBehaviorDisabledInMapTool = _isOn;
             ApplyMonsterBehaviorToggleToAllMonsters();
+        }
+
+        ///<summary>
+        /// 몬스터 접촉 피격 토글 값 변경 처리
+        ///</summary>
+        private void OnDisableMonsterContactHitToggleValueChanged( bool _isOn )
+        {
+            isMonsterContactHitDisabledInMapTool = _isOn;
+            ApplyMonsterContactHitToggleToPlayer();
+        }
+
+        ///<summary>
+        /// 저장 확인 버튼 클릭 처리
+        ///</summary>
+        private void OnConfirmSaveButtonClicked()
+        {
+            HideSaveConfirmPopup();
+            SaveMapData();
+            RebuildLoadMapPanel();
+        }
+
+        ///<summary>
+        /// 저장 취소 버튼 클릭 처리
+        ///</summary>
+        private void OnCancelSaveButtonClicked()
+        {
+            HideSaveConfirmPopup();
         }
 
         ///<summary>
@@ -961,6 +1203,11 @@ namespace TinyHero.Maps
                 _loadedData.monsters = new List<CMapToolMonsterSaveData>();
             }
 
+            if ( _loadedData.npcs == null )
+            {
+                _loadedData.npcs = new List<CMapToolNpcSaveData>();
+            }
+
             if ( string.IsNullOrWhiteSpace( _loadedData.mapId ) == false && mapIdInputField != null )
             {
                 mapIdInputField.text = _loadedData.mapId;
@@ -991,6 +1238,14 @@ namespace TinyHero.Maps
             {
                 CMapToolMonsterSaveData monsterSaveData = _loadedData.monsters[ index ];
                 SpawnSavedMonster( monsterSaveData );
+            }
+
+            int npcCount = _loadedData.npcs.Count;
+
+            for ( int index = 0; index < npcCount; index++ )
+            {
+                CMapToolNpcSaveData npcSaveData = _loadedData.npcs[ index ];
+                SpawnSavedNpc( npcSaveData );
             }
 
             RefreshPortalPlacementInputFields();
@@ -1077,6 +1332,41 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 저장된 NPC 생성
+        ///</summary>
+        private void SpawnSavedNpc( CMapToolNpcSaveData _npcSaveData )
+        {
+            if ( _npcSaveData == null || string.IsNullOrEmpty( _npcSaveData.prefabName ) )
+            {
+                return;
+            }
+
+            GameObject npcPrefab = ResolveNpcPrefab( _npcSaveData.prefabName, _npcSaveData.resourcePath );
+
+            if ( npcPrefab == null )
+            {
+                return;
+            }
+
+            CMapToolTransformData transformData = _npcSaveData.transform;
+
+            if ( transformData == null )
+            {
+                transformData = BuildTransformData( npcPrefab.transform );
+            }
+
+            Vector3 spawnPosition = CreateVector3FromTransformData( transformData.position, Vector3.zero );
+            Vector3 spawnRotation = CreateVector3FromTransformData( transformData.rotation, Vector3.zero );
+            Vector3 spawnScale = CreateVector3FromTransformData( transformData.scale, npcPrefab.transform.localScale );
+            GameObject npcInstance = Instantiate( npcPrefab, spawnPosition, Quaternion.Euler( spawnRotation ) );
+            npcInstance.transform.localScale = spawnScale;
+            npcInstance.name = npcPrefab.name;
+            MapToolPlacedObject placedObject = EnsurePlacedObjectComponent( npcInstance );
+            placedObject.SetupNpc( _npcSaveData.prefabName, _npcSaveData.resourcePath );
+            placedObjects.Add( placedObject );
+        }
+
+        ///<summary>
         /// 맵 데이터 저장
         ///</summary>
         private void SaveMapData()
@@ -1096,6 +1386,43 @@ namespace TinyHero.Maps
 #if UNITY_EDITOR
             AssetDatabase.Refresh();
 #endif
+        }
+
+        ///<summary>
+        /// 현재 맵 데이터 저장 여부 확인
+        ///</summary>
+        private bool IsCurrentMapDataAlreadySaved()
+        {
+            string saveFilePath = GetSaveFilePath();
+            bool result = File.Exists( saveFilePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 저장 확인 팝업 표시
+        ///</summary>
+        private void ShowSaveConfirmPopup()
+        {
+            if ( saveConfirmPopupRoot == null )
+            {
+                return;
+            }
+
+            if ( saveConfirmMessageText != null )
+            {
+                string mapId = ResolveMapId();
+                saveConfirmMessageText.text = $"'{mapId}' 맵 데이터가 이미 존재합니다.\n덮어쓰시겠습니까?";
+            }
+
+            SetPanelVisible( saveConfirmPopupRoot, true );
+        }
+
+        ///<summary>
+        /// 저장 확인 팝업 숨김
+        ///</summary>
+        private void HideSaveConfirmPopup()
+        {
+            SetPanelVisible( saveConfirmPopupRoot, false );
         }
 
         ///<summary>
@@ -1128,6 +1455,13 @@ namespace TinyHero.Maps
                 {
                     CMapToolPortalSaveData portalSaveData = BuildPortalSaveData( placedObject );
                     saveData.portals.Add( portalSaveData );
+                    continue;
+                }
+
+                if ( placedObject.GetPlacedObjectType() == MapToolPlacedObject.eMapToolPlacedObjectType.NPC )
+                {
+                    CMapToolNpcSaveData npcSaveData = BuildNpcSaveData( placedObject );
+                    saveData.npcs.Add( npcSaveData );
                     continue;
                 }
 
@@ -1164,6 +1498,18 @@ namespace TinyHero.Maps
             monsterSaveData.transform = BuildTransformData( _placedObject.transform );
             monsterSaveData.transform.scale = null;
             return monsterSaveData;
+        }
+
+        ///<summary>
+        /// NPC 저장 데이터 구성
+        ///</summary>
+        private CMapToolNpcSaveData BuildNpcSaveData( MapToolPlacedObject _placedObject )
+        {
+            CMapToolNpcSaveData npcSaveData = new CMapToolNpcSaveData();
+            npcSaveData.prefabName = _placedObject.GetPrefabName();
+            npcSaveData.resourcePath = _placedObject.GetResourcePath();
+            npcSaveData.transform = BuildTransformData( _placedObject.transform );
+            return npcSaveData;
         }
 
         ///<summary>
@@ -1396,6 +1742,16 @@ namespace TinyHero.Maps
             CancelPlacementMode();
             StopPlacedObjectDrag();
             ToggleSinglePanel( monsterPanelRoot );
+        }
+
+        ///<summary>
+        /// NPC 모드 버튼 클릭 처리
+        ///</summary>
+        private void OnNpcModeButtonClicked()
+        {
+            CancelPlacementMode();
+            StopPlacedObjectDrag();
+            ToggleSinglePanel( npcPanelRoot );
         }
 
         ///<summary>
@@ -1926,6 +2282,26 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// NPC 배치 시작
+        ///</summary>
+        private void BeginNpcPlacement( string _prefabName, string _resourcePath )
+        {
+            StopPlacedObjectDrag();
+            selectedNpcPrefabName = _prefabName;
+            selectedNpcResourcePath = _resourcePath;
+            GameObject npcPrefab = ResolveNpcPrefab( _prefabName, _resourcePath );
+            selectedNpcFacingSignX = ResolveFacingSignFromPrefab( npcPrefab );
+            currentMode = eMapToolMode.PLACE_NPC;
+            SetPanelVisible( backgroundPanelRoot, false );
+            SetPanelVisible( monsterPanelRoot, false );
+            SetPanelVisible( npcPanelRoot, false );
+            SetPanelVisible( portalPanelRoot, false );
+            SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
+            RebuildPreviewInstance();
+        }
+
+        ///<summary>
         /// 포탈 배치 시작
         ///</summary>
         private void BeginPortalPlacement()
@@ -1934,6 +2310,7 @@ namespace TinyHero.Maps
             currentMode = eMapToolMode.PLACE_PORTAL;
             SetPanelVisible( backgroundPanelRoot, false );
             SetPanelVisible( monsterPanelRoot, false );
+            SetPanelVisible( npcPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( loadMapPanelRoot, false );
             SetPanelVisible( skillTestPanelRoot, false );
@@ -1962,6 +2339,9 @@ namespace TinyHero.Maps
             currentMode = eMapToolMode.NONE;
             selectedMonsterPrefabName = string.Empty;
             selectedMonsterResourcePath = string.Empty;
+            selectedNpcPrefabName = string.Empty;
+            selectedNpcResourcePath = string.Empty;
+            selectedNpcFacingSignX = 1.0f;
             DestroyPreviewInstance();
         }
 
@@ -2002,6 +2382,12 @@ namespace TinyHero.Maps
                 return monsterPrefab;
             }
 
+            if ( currentMode == eMapToolMode.PLACE_NPC )
+            {
+                GameObject npcPrefab = ResolveNpcPrefab( selectedNpcPrefabName, selectedNpcResourcePath );
+                return npcPrefab;
+            }
+
             return null;
         }
 
@@ -2026,6 +2412,17 @@ namespace TinyHero.Maps
                 }
             }
 
+            if ( currentMode == eMapToolMode.PLACE_NPC )
+            {
+                ApplyFacingSignToTransform( _targetPreviewInstance.transform, selectedNpcFacingSignX );
+                CNPCObject previewNpcObject = _targetPreviewInstance.GetComponent<CNPCObject>();
+
+                if ( previewNpcObject != null )
+                {
+                    previewNpcObject.enabled = false;
+                }
+            }
+
             ApplyPreviewVisual( _targetPreviewInstance.transform );
 
             Collider2D[] colliders = _targetPreviewInstance.GetComponentsInChildren<Collider2D>( true );
@@ -2045,6 +2442,38 @@ namespace TinyHero.Maps
                 Rigidbody2D rigidbodyComponent = rigidbodies[ index ];
                 rigidbodyComponent.simulated = false;
             }
+        }
+
+        ///<summary>
+        /// NPC 배치 방향 전환 입력 처리
+        ///</summary>
+        private void HandleNpcFlipInput()
+        {
+            if ( Input.GetKeyDown( NpcFlipKey ) == false )
+            {
+                return;
+            }
+
+            if ( isDraggingPlacedObject && draggedPlacedObject != null )
+            {
+                MapToolPlacedObject.eMapToolPlacedObjectType placedObjectType = draggedPlacedObject.GetPlacedObjectType();
+
+                if ( placedObjectType != MapToolPlacedObject.eMapToolPlacedObjectType.NPC )
+                {
+                    return;
+                }
+
+                ToggleFacingDirection( draggedPlacedObject.transform );
+                return;
+            }
+
+            if ( currentMode != eMapToolMode.PLACE_NPC || previewInstance == null )
+            {
+                return;
+            }
+
+            selectedNpcFacingSignX *= -1.0f;
+            ApplyFacingSignToTransform( previewInstance.transform, selectedNpcFacingSignX );
         }
 
         ///<summary>
@@ -2214,6 +2643,12 @@ namespace TinyHero.Maps
             if ( currentMode == eMapToolMode.PLACE_MONSTER )
             {
                 PlaceMonsterAtMousePosition();
+                return;
+            }
+
+            if ( currentMode == eMapToolMode.PLACE_NPC )
+            {
+                PlaceNpcAtMousePosition();
             }
         }
 
@@ -2303,6 +2738,27 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 마우스 위치 NPC 배치 처리
+        ///</summary>
+        private void PlaceNpcAtMousePosition()
+        {
+            GameObject npcPrefab = ResolveNpcPrefab( selectedNpcPrefabName, selectedNpcResourcePath );
+
+            if ( npcPrefab == null )
+            {
+                return;
+            }
+
+            Vector3 spawnPosition = GetMouseWorldPosition();
+            GameObject npcInstance = Instantiate( npcPrefab, spawnPosition, Quaternion.identity );
+            npcInstance.name = npcPrefab.name;
+            ApplyFacingSignToTransform( npcInstance.transform, selectedNpcFacingSignX );
+            MapToolPlacedObject placedObject = EnsurePlacedObjectComponent( npcInstance );
+            placedObject.SetupNpc( selectedNpcPrefabName, selectedNpcResourcePath );
+            placedObjects.Add( placedObject );
+        }
+
+        ///<summary>
         /// 포탈 연결 데이터 적용
         ///</summary>
         private void ApplyPortalLinkData(GameObject _portalInstance, string _portalId, string _targetMapId, string _targetPortalId)
@@ -2368,6 +2824,83 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// NPC 프리팹 결정
+        ///</summary>
+        private GameObject ResolveNpcPrefab( string _prefabName, string _resourcePath )
+        {
+            if ( string.IsNullOrEmpty( _prefabName ) == false && npcPrefabByName.TryGetValue( _prefabName, out GameObject cachedPrefab ) )
+            {
+                return cachedPrefab;
+            }
+
+            if ( string.IsNullOrEmpty( _resourcePath ) == false )
+            {
+                GameObject loadedPrefab = Resources.Load<GameObject>( _resourcePath );
+                return loadedPrefab;
+            }
+
+            return null;
+        }
+
+        ///<summary>
+        /// NPC 초기 방향 부호 결정
+        ///</summary>
+        private float ResolveFacingSignFromPrefab( GameObject _prefab )
+        {
+            if ( _prefab == null )
+            {
+                return 1.0f;
+            }
+
+            Vector3 localScale = _prefab.transform.localScale;
+
+            if ( localScale.x < 0.0f )
+            {
+                return -1.0f;
+            }
+
+            return 1.0f;
+        }
+
+        ///<summary>
+        /// NPC 방향 반전 적용
+        ///</summary>
+        private void ToggleFacingDirection( Transform _targetTransform )
+        {
+            if ( _targetTransform == null )
+            {
+                return;
+            }
+
+            Vector3 localScale = _targetTransform.localScale;
+            float nextFacingSignX = localScale.x < 0.0f ? 1.0f : -1.0f;
+            ApplyFacingSignToTransform( _targetTransform, nextFacingSignX );
+        }
+
+        ///<summary>
+        /// NPC 방향 부호 적용
+        ///</summary>
+        private void ApplyFacingSignToTransform( Transform _targetTransform, float _facingSignX )
+        {
+            if ( _targetTransform == null )
+            {
+                return;
+            }
+
+            Vector3 localScale = _targetTransform.localScale;
+            float resolvedSignX = _facingSignX < 0.0f ? -1.0f : 1.0f;
+            float scaleMagnitudeX = Mathf.Abs( localScale.x );
+
+            if ( scaleMagnitudeX <= 0.0f )
+            {
+                scaleMagnitudeX = 1.0f;
+            }
+
+            localScale.x = scaleMagnitudeX * resolvedSignX;
+            _targetTransform.localScale = localScale;
+        }
+
+        ///<summary>
         /// 배치 오브젝트 컴포넌트 보장
         ///</summary>
         private MapToolPlacedObject EnsurePlacedObjectComponent(GameObject _targetObject)
@@ -2406,13 +2939,14 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 몬스터 포탈 오브젝트 초기화
+        /// 몬스터 포탈 NPC 오브젝트 초기화
         ///</summary>
         private void ClearMonsterAndPortalObjects()
         {
             CancelPlacementMode();
             StopPlacedObjectDrag();
             SetPanelVisible( monsterPanelRoot, false );
+            SetPanelVisible( npcPanelRoot, false );
             SetPanelVisible( portalPanelRoot, false );
             SetPanelVisible( skillTestPanelRoot, false );
 
@@ -2429,7 +2963,7 @@ namespace TinyHero.Maps
                 }
 
                 MapToolPlacedObject.eMapToolPlacedObjectType placedObjectType = placedObject.GetPlacedObjectType();
-                bool isClearTarget = placedObjectType == MapToolPlacedObject.eMapToolPlacedObjectType.MONSTER || placedObjectType == MapToolPlacedObject.eMapToolPlacedObjectType.PORTAL;
+                bool isClearTarget = placedObjectType == MapToolPlacedObject.eMapToolPlacedObjectType.MONSTER || placedObjectType == MapToolPlacedObject.eMapToolPlacedObjectType.PORTAL || placedObjectType == MapToolPlacedObject.eMapToolPlacedObjectType.NPC;
 
                 if ( isClearTarget == false )
                 {

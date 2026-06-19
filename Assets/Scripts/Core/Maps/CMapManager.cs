@@ -20,13 +20,19 @@ namespace TinyHero.Maps
         private const string BackgroundSpriteResourceFolderPath = "RawImages/BG";
         private const string PortalPrefabResourcePath = "Prefabs/Portal/PortalObject";
         private const string MonsterPrefabResourceFolderPath = "Prefabs/Character/Monster";
+        private const string NpcPrefabResourceFolderPath = "Prefabs/Character/NPC";
+        private const string PlayerPrefabResourcePath = "Prefabs/Character/Player/PlayerObject";
+        private const string PlayerObjectName = "PlayerObject";
         private const float DefaultFadeDuration = 0.35f;
+        private const float MapTransitionBlackHoldSeconds = 0.1f;
         private const int FadeSortingOrder = 1000;
         private const string FadeCanvasObjectName = "MapFadeCanvas";
         private const string FadeImageObjectName = "FadeImage";
         private const string GameplaySceneName = "SceneMap";
         private const string MapTitleLogoUiPrefabResourcePath = "Prefabs/UI/Map/MapTitleLogoUI";
         private const string MapTitleLogoUiPoolObjectName = "MapTitleLogoUIPool";
+        private const string TempUiCanvasObjectName = "Canvas_TempUI";
+        private const string ItemInventoryUiObjectName = "ItemInventoryUI";
 
         private sealed class CMapMonsterRespawnContext
         {
@@ -50,8 +56,10 @@ namespace TinyHero.Maps
         private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, CObjectPool<MonsterObject>> monsterPoolByKey = new Dictionary<string, CObjectPool<MonsterObject>>();
         private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
+        private readonly Dictionary<string, GameObject> npcPrefabByName = new Dictionary<string, GameObject>();
         private Canvas fadeCanvas;
         private Image fadeImage;
+        private GraphicRaycaster fadeGraphicRaycaster;
         private RectTransform mapTitleLogoUiPoolRectTransform;
         private GameObject mapTitleLogoUiPrefab;
         private CObjectPool<MapTitleLogoUI> mapTitleLogoUiPool;
@@ -74,6 +82,7 @@ namespace TinyHero.Maps
 
             CacheResourceCatalog();
             EnsureFadeOverlayExists();
+            EnsureGameplayScenePlayerPrefabInstance();
             SceneManager.sceneLoaded += HandleSceneLoaded;
             TryLoadPendingMapForActiveScene();
         }
@@ -205,6 +214,8 @@ namespace TinyHero.Maps
             SetFadeAlpha( 0.0f );
             yield return IE_FadeAlpha( 0.0f, 1.0f );
             LoadMapImmediately( _mapId, _entryPortalId );
+            yield return null;
+            yield return new WaitForSeconds( MapTransitionBlackHoldSeconds );
             yield return IE_FadeAlpha( 1.0f, 0.0f );
             ShowCurrentMapTitleLogoUi();
             isTransitionInProgress = false;
@@ -224,11 +235,13 @@ namespace TinyHero.Maps
             Color fadeColor = fadeImage.color;
             fadeColor.a = _startAlpha;
             fadeImage.color = fadeColor;
+            UpdateFadeRaycastState( _startAlpha );
 
             if ( fadeDuration <= 0.0f )
             {
                 fadeColor.a = _endAlpha;
                 fadeImage.color = fadeColor;
+                UpdateFadeRaycastState( _endAlpha );
                 yield break;
             }
 
@@ -239,11 +252,13 @@ namespace TinyHero.Maps
                 float alpha = Mathf.Lerp( _startAlpha, _endAlpha, normalizedTime );
                 fadeColor.a = alpha;
                 fadeImage.color = fadeColor;
+                UpdateFadeRaycastState( alpha );
                 yield return null;
             }
 
             fadeColor.a = _endAlpha;
             fadeImage.color = fadeColor;
+            UpdateFadeRaycastState( _endAlpha );
         }
 
         ///<summary>
@@ -266,7 +281,45 @@ namespace TinyHero.Maps
         ///</summary>
         private void HandleSceneLoaded(Scene _scene, LoadSceneMode _loadSceneMode)
         {
+            EnsureGameplayScenePlayerPrefabInstance();
             TryLoadPendingMapForActiveScene();
+        }
+
+        ///<summary>
+        /// 게임플레이 씬 플레이어 프리팹 인스턴스 보장
+        ///</summary>
+        private void EnsureGameplayScenePlayerPrefabInstance()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            if ( activeScene.name != GameplaySceneName )
+            {
+                return;
+            }
+
+            PlayerController existingPlayerController = ResolveActivePlayerController();
+
+            if ( existingPlayerController != null )
+            {
+                return;
+            }
+
+            GameObject existingPlayerObject = GameObject.Find( PlayerObjectName );
+
+            if ( existingPlayerObject != null )
+            {
+                return;
+            }
+
+            GameObject playerPrefab = Resources.Load<GameObject>( PlayerPrefabResourcePath );
+
+            if ( playerPrefab == null )
+            {
+                return;
+            }
+
+            GameObject createdPlayerObject = Instantiate( playerPrefab, Vector3.zero, Quaternion.identity );
+            createdPlayerObject.name = PlayerObjectName;
         }
 
         ///<summary>
@@ -300,6 +353,7 @@ namespace TinyHero.Maps
         {
             CacheBackgroundSprites();
             CacheMonsterPrefabs();
+            CacheNpcPrefabs();
         }
 
         ///<summary>
@@ -347,6 +401,28 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// NPC 프리팹 목록 캐시
+        ///</summary>
+        private void CacheNpcPrefabs()
+        {
+            npcPrefabByName.Clear();
+            GameObject[] loadedNpcPrefabs = Resources.LoadAll<GameObject>( NpcPrefabResourceFolderPath );
+            int npcPrefabCount = loadedNpcPrefabs.Length;
+
+            for ( int index = 0; index < npcPrefabCount; index++ )
+            {
+                GameObject npcPrefab = loadedNpcPrefabs[ index ];
+
+                if ( npcPrefab == null )
+                {
+                    continue;
+                }
+
+                npcPrefabByName[ npcPrefab.name ] = npcPrefab;
+            }
+        }
+
+        ///<summary>
         /// 페이드 오버레이 존재 보장
         ///</summary>
         private void EnsureFadeOverlayExists()
@@ -362,8 +438,10 @@ namespace TinyHero.Maps
             {
                 Canvas existingCanvas = existingCanvasObject.GetComponent<Canvas>();
                 Image existingFadeImage = existingCanvasObject.GetComponentInChildren<Image>( true );
+                GraphicRaycaster existingGraphicRaycaster = existingCanvasObject.GetComponent<GraphicRaycaster>();
                 fadeCanvas = existingCanvas;
                 fadeImage = existingFadeImage;
+                fadeGraphicRaycaster = existingGraphicRaycaster;
 
                 if ( fadeImage != null )
                 {
@@ -372,11 +450,14 @@ namespace TinyHero.Maps
                     fadeImage.color = existingColor;
                 }
 
+                UpdateFadeRaycastState( 0.0f );
+
                 return;
             }
 
             GameObject fadeCanvasObject = new GameObject( FadeCanvasObjectName, typeof( RectTransform ), typeof( Canvas ), typeof( CanvasScaler ), typeof( GraphicRaycaster ) );
             Canvas createdCanvas = fadeCanvasObject.GetComponent<Canvas>();
+            GraphicRaycaster createdGraphicRaycaster = fadeCanvasObject.GetComponent<GraphicRaycaster>();
             createdCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
             createdCanvas.sortingOrder = FadeSortingOrder;
             CanvasScaler canvasScaler = fadeCanvasObject.GetComponent<CanvasScaler>();
@@ -392,9 +473,12 @@ namespace TinyHero.Maps
             fadeImageRectTransform.offsetMax = Vector2.zero;
             Image createdFadeImage = fadeImageObject.GetComponent<Image>();
             createdFadeImage.color = new Color( 0.0f, 0.0f, 0.0f, 0.0f );
+            createdFadeImage.raycastTarget = false;
 
             fadeCanvas = createdCanvas;
             fadeImage = createdFadeImage;
+            fadeGraphicRaycaster = createdGraphicRaycaster;
+            UpdateFadeRaycastState( 0.0f );
         }
 
         ///<summary>
@@ -441,6 +525,11 @@ namespace TinyHero.Maps
                 _loadedData.monsters = new List<CMapToolMonsterSaveData>();
             }
 
+            if ( _loadedData.npcs == null )
+            {
+                _loadedData.npcs = new List<CMapToolNpcSaveData>();
+            }
+
             ReleaseMapTransitionPooledObjects();
             currentMapId = string.IsNullOrWhiteSpace( _loadedData.mapId ) ? string.Empty : _loadedData.mapId.Trim();
             currentMapName = string.IsNullOrWhiteSpace( _loadedData.mapName ) ? currentMapId : _loadedData.mapName.Trim();
@@ -452,6 +541,7 @@ namespace TinyHero.Maps
             ApplyBackgroundSprite( _loadedData.backgroundSpriteName );
             SpawnPortals( _loadedData.portals );
             SpawnMonsters( _loadedData.monsters );
+            SpawnNpcs( _loadedData.npcs );
             MovePlayerToEntryPortal( _entryPortalId );
         }
 
@@ -582,6 +672,46 @@ namespace TinyHero.Maps
                     InitializeSpawnedMonster( monsterComponent, monsterPoolKey, monsterPrefab.name, monsterPrefab.name, spawnPosition, spawnRotation, spawnScale );
                     RegisterActivePooledMonster( monsterComponent );
                 }
+            }
+        }
+
+        ///<summary>
+        /// NPC 목록 생성
+        ///</summary>
+        private void SpawnNpcs( List<CMapToolNpcSaveData> _npcSaveDataList )
+        {
+            int npcCount = _npcSaveDataList.Count;
+
+            for ( int index = 0; index < npcCount; index++ )
+            {
+                CMapToolNpcSaveData npcSaveData = _npcSaveDataList[ index ];
+
+                if ( npcSaveData == null || string.IsNullOrWhiteSpace( npcSaveData.prefabName ) )
+                {
+                    continue;
+                }
+
+                GameObject npcPrefab = ResolveNpcPrefab( npcSaveData.prefabName, npcSaveData.resourcePath );
+
+                if ( npcPrefab == null )
+                {
+                    continue;
+                }
+
+                CMapToolTransformData transformData = npcSaveData.transform;
+
+                if ( transformData == null )
+                {
+                    transformData = BuildDefaultTransformData( npcPrefab.transform );
+                }
+
+                Vector3 spawnPosition = CreateVector3FromTransformData( transformData.position, Vector3.zero );
+                Vector3 spawnRotation = CreateVector3FromTransformData( transformData.rotation, Vector3.zero );
+                Vector3 spawnScale = CreateVector3FromTransformData( transformData.scale, npcPrefab.transform.localScale );
+                GameObject npcInstance = Instantiate( npcPrefab, spawnPosition, Quaternion.Euler( spawnRotation ) );
+                npcInstance.transform.localScale = spawnScale;
+                npcInstance.name = npcPrefab.name;
+                RegisterSpawnedRuntimeObject( npcInstance );
             }
         }
 
@@ -1040,7 +1170,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void MovePlayerToEntryPortal(string _entryPortalId)
         {
-            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+            PlayerController playerController = ResolveActivePlayerController();
 
             if ( playerController == null )
             {
@@ -1066,6 +1196,7 @@ namespace TinyHero.Maps
             }
 
             InitializePlayerStatusUi( playerController );
+            InitializeItemInventoryUi( playerController );
         }
 
         ///<summary>
@@ -1091,10 +1222,73 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 플레이어 인벤토리 UI 초기화 처리
+        ///</summary>
+        private void InitializeItemInventoryUi( PlayerController _playerController )
+        {
+            if ( _playerController == null )
+            {
+                return;
+            }
+
+            CPlayerInventoryManager inventoryManager = _playerController.GetInventoryManager();
+
+            if ( inventoryManager == null )
+            {
+                return;
+            }
+
+            GameObject itemInventoryUiObject = GameObject.Find( ItemInventoryUiObjectName );
+
+            if ( itemInventoryUiObject == null )
+            {
+                return;
+            }
+
+            CItemInventoryUIController itemInventoryUiController = itemInventoryUiObject.GetComponent<CItemInventoryUIController>();
+
+            if ( itemInventoryUiController == null )
+            {
+                itemInventoryUiController = itemInventoryUiObject.AddComponent<CItemInventoryUIController>();
+            }
+
+            itemInventoryUiController.BindInventoryManager( inventoryManager );
+        }
+
+        ///<summary>
         /// 포탈 ID 위치 결정
         ///</summary>
         private Vector3 ResolvePortalPositionById(string _portalId)
         {
+            int spawnedObjectCount = spawnedRuntimeObjects.Count;
+
+            for ( int index = 0; index < spawnedObjectCount; index++ )
+            {
+                MapRuntimeSpawnMarker spawnMarker = spawnedRuntimeObjects[ index ];
+
+                if ( spawnMarker == null )
+                {
+                    continue;
+                }
+
+                PortalObject portalObject = spawnMarker.GetComponent<PortalObject>();
+
+                if ( portalObject == null )
+                {
+                    continue;
+                }
+
+                string currentPortalId = portalObject.GetPortalId();
+
+                if ( string.Equals( currentPortalId, _portalId, System.StringComparison.Ordinal ) == false )
+                {
+                    continue;
+                }
+
+                Vector3 result = portalObject.transform.position;
+                return result;
+            }
+
             PortalObject[] portalObjects = FindObjectsByType<PortalObject>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
             int portalCount = portalObjects.Length;
 
@@ -1223,6 +1417,25 @@ namespace TinyHero.Maps
             Color fadeColor = fadeImage.color;
             fadeColor.a = _alpha;
             fadeImage.color = fadeColor;
+            UpdateFadeRaycastState( _alpha );
+        }
+
+        ///<summary>
+        /// 페이드 입력 차단 상태 갱신
+        ///</summary>
+        private void UpdateFadeRaycastState( float _alpha )
+        {
+            bool shouldBlockRaycast = _alpha > 0.001f;
+
+            if ( fadeImage != null )
+            {
+                fadeImage.raycastTarget = shouldBlockRaycast;
+            }
+
+            if ( fadeGraphicRaycaster != null )
+            {
+                fadeGraphicRaycaster.enabled = shouldBlockRaycast;
+            }
         }
 
         ///<summary>
@@ -1232,6 +1445,8 @@ namespace TinyHero.Maps
         {
             ReturnAllActiveMapTitleLogoUis();
             ReleaseAllPlacedSkillAreas();
+            ReleaseAllActiveProjectileSkillRuntimes();
+            ReleaseAllTransientSkillVfx();
             ReleaseAllActiveDamageFonts();
             ReleaseAllPlayerPooledEffects();
         }
@@ -1242,6 +1457,22 @@ namespace TinyHero.Maps
         private void ReleaseAllPlacedSkillAreas()
         {
             CPlacedSkillAreaRuntime.ReleaseAllActivePlacedSkillAreas();
+        }
+
+        ///<summary>
+        /// 활성 투사체 스킬 런타임 정리
+        ///</summary>
+        private void ReleaseAllActiveProjectileSkillRuntimes()
+        {
+            CProjectileSkillRuntime.ReleaseAllActiveProjectileSkillRuntimes();
+        }
+
+        ///<summary>
+        /// 비지속성 스킬 시각 효과 정리
+        ///</summary>
+        private void ReleaseAllTransientSkillVfx()
+        {
+            CSkillVfxPoolManager.ReleaseAllTransientActiveVfx();
         }
 
         ///<summary>
@@ -1299,24 +1530,17 @@ namespace TinyHero.Maps
                 return;
             }
 
-            EnsureFadeOverlayExists();
             mapTitleLogoUiPrefab = Resources.Load<GameObject>( MapTitleLogoUiPrefabResourcePath );
+            RectTransform parentCanvasRectTransform = ResolveMapTitleLogoUiParentRectTransform();
 
-            if ( mapTitleLogoUiPrefab == null || fadeCanvas == null )
-            {
-                return;
-            }
-
-            RectTransform fadeCanvasRectTransform = fadeCanvas.transform as RectTransform;
-
-            if ( fadeCanvasRectTransform == null )
+            if ( mapTitleLogoUiPrefab == null || parentCanvasRectTransform == null )
             {
                 return;
             }
 
             if ( mapTitleLogoUiPoolRectTransform == null )
             {
-                Transform existingPoolTransform = fadeCanvasRectTransform.Find( MapTitleLogoUiPoolObjectName );
+                Transform existingPoolTransform = parentCanvasRectTransform.Find( MapTitleLogoUiPoolObjectName );
 
                 if ( existingPoolTransform != null )
                 {
@@ -1328,7 +1552,7 @@ namespace TinyHero.Maps
             {
                 GameObject poolObject = new GameObject( MapTitleLogoUiPoolObjectName, typeof( RectTransform ) );
                 RectTransform poolRectTransform = poolObject.GetComponent<RectTransform>();
-                poolRectTransform.SetParent( fadeCanvasRectTransform, false );
+                poolRectTransform.SetParent( parentCanvasRectTransform, false );
                 poolRectTransform.anchorMin = Vector2.zero;
                 poolRectTransform.anchorMax = Vector2.one;
                 poolRectTransform.offsetMin = Vector2.zero;
@@ -1341,6 +1565,34 @@ namespace TinyHero.Maps
                 OnGetMapTitleLogoUi,
                 OnReleaseMapTitleLogoUi );
             mapTitleLogoUiPool = createdPool;
+        }
+
+        ///<summary>
+        /// 맵 제목 UI 부모 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveMapTitleLogoUiParentRectTransform()
+        {
+            GameObject tempUiCanvasObject = GameObject.Find( TempUiCanvasObjectName );
+
+            if ( tempUiCanvasObject != null )
+            {
+                RectTransform tempUiCanvasRectTransform = tempUiCanvasObject.transform as RectTransform;
+
+                if ( tempUiCanvasRectTransform != null )
+                {
+                    return tempUiCanvasRectTransform;
+                }
+            }
+
+            EnsureFadeOverlayExists();
+
+            if ( fadeCanvas == null )
+            {
+                return null;
+            }
+
+            RectTransform fallbackRectTransform = fadeCanvas.transform as RectTransform;
+            return fallbackRectTransform;
         }
 
         ///<summary>
@@ -1446,7 +1698,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void ReleaseAllPlayerPooledEffects()
         {
-            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+            PlayerController playerController = ResolveActivePlayerController();
 
             if ( playerController == null )
             {
@@ -1454,6 +1706,53 @@ namespace TinyHero.Maps
             }
 
             playerController.ReleaseAllPooledEffects();
+        }
+
+        ///<summary>
+        /// 활성 플레이어 제어 컴포넌트 결정
+        ///</summary>
+        private PlayerController ResolveActivePlayerController()
+        {
+            PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
+            int playerControllerCount = playerControllerArray.Length;
+
+            for ( int index = 0; index < playerControllerCount; index++ )
+            {
+                PlayerController playerController = playerControllerArray[ index ];
+
+                if ( playerController == null )
+                {
+                    continue;
+                }
+
+                if ( playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
+                {
+                    continue;
+                }
+
+                return playerController;
+            }
+
+            return null;
+        }
+
+        ///<summary>
+        /// NPC 프리팹 결정
+        ///</summary>
+        private GameObject ResolveNpcPrefab( string _prefabName, string _resourcePath )
+        {
+            if ( string.IsNullOrWhiteSpace( _prefabName ) == false && npcPrefabByName.TryGetValue( _prefabName, out GameObject cachedPrefab ) )
+            {
+                return cachedPrefab;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _resourcePath ) == false )
+            {
+                GameObject loadedPrefab = Resources.Load<GameObject>( _resourcePath );
+                return loadedPrefab;
+            }
+
+            return null;
         }
 
         ///<summary>
