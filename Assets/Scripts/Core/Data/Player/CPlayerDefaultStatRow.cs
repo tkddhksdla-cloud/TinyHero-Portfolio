@@ -17,6 +17,18 @@ namespace TinyHero.Core.Data
         [CExcelHeader( "MOV" )]
         private float mov = 4.5f;
 
+        [SerializeField]
+        [CExcelHeader( "CRT" )]
+        private float crt = 5.0f;
+
+        [SerializeField]
+        [CExcelHeader( "CRD" )]
+        private float crd = 50.0f;
+
+        [SerializeField]
+        [CExcelHeader( "ACC" )]
+        private float acc = 0.0f;
+
         ///<summary>
         /// 기본 공격 주기 반환
         ///</summary>
@@ -32,6 +44,33 @@ namespace TinyHero.Core.Data
         public float GetMov()
         {
             float result = mov;
+            return result;
+        }
+
+        ///<summary>
+        /// 기본 크리티컬 확률 반환
+        ///</summary>
+        public float GetCrt()
+        {
+            float result = crt;
+            return result;
+        }
+
+        ///<summary>
+        /// 기본 크리티컬 피해율 반환
+        ///</summary>
+        public float GetCrd()
+        {
+            float result = crd;
+            return result;
+        }
+
+        ///<summary>
+        /// 기본 정확도 반환
+        ///</summary>
+        public float GetAcc()
+        {
+            float result = acc;
             return result;
         }
     }

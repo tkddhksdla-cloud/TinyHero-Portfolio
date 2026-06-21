@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TinyHero.Core.Data;
 using TinyHero.Maps;
 using TinyHero.Player;
+using TinyHero.Quest;
 using TinyHero.UI;
 using UnityEngine;
 
@@ -458,6 +459,14 @@ public sealed class MonsterObject : MonoBehaviour
         if ( playerStatManager != null && expReward > 0 )
         {
             playerStatManager.AddExp( expReward );
+        }
+
+        CQuestManager questManager = _playerController.GetQuestManager();
+
+        if ( questManager != null )
+        {
+            string resolvedMonsterId = GetMonsterId();
+            questManager.NotifyMonsterKilled( resolvedMonsterId );
         }
 
         SpawnDropItems();
@@ -2193,6 +2202,18 @@ public sealed class MonsterObject : MonoBehaviour
         float randomOffsetY = Random.Range( 0.05f, 0.18f );
         Vector3 basePosition = transform.position;
         Vector3 dropPosition = new Vector3( basePosition.x + randomOffsetX, basePosition.y + randomOffsetY + ( _dropIndex * 0.05f ), basePosition.z );
+        bool hasMapManager = CMapManager.TryGetInstance( out CMapManager mapManager );
+
+        if ( hasMapManager && mapManager != null )
+        {
+            bool wasSpawnedFromPool = mapManager.TrySpawnWorldItemDrop( worldItemDropPrefab, _itemDefinition, _dropCount, dropPosition );
+
+            if ( wasSpawnedFromPool )
+            {
+                return;
+            }
+        }
+
         GameObject createdDropObject = Instantiate( worldItemDropPrefab, dropPosition, Quaternion.identity );
         CWorldItemDropObject worldItemDropObject = createdDropObject.GetComponent<CWorldItemDropObject>();
 
@@ -2201,6 +2222,7 @@ public sealed class MonsterObject : MonoBehaviour
             return;
         }
 
+        worldItemDropObject.SetMapRuntimePoolKey( string.Empty );
         worldItemDropObject.ConfigureDrop( _itemDefinition, _dropCount );
     }
 

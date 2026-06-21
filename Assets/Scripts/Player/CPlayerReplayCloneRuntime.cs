@@ -363,8 +363,8 @@ namespace TinyHero.Player
             }
 
             bool wasAliveBeforeHit = attackTarget.GetCurrentHp() > 0;
-            int attackDamage = ResolveReplayAttackDamage( attackTarget, _attackRecord.attackStatValue, _attackRecord.skillAttackPowerMultiplier );
-            attackTarget.TakeDamage( attackDamage );
+            int attackDamage = ResolveReplayAttackDamage( attackTarget, _attackRecord.attackStatValue, _attackRecord.skillAttackPowerMultiplier, out bool isCritical );
+            attackTarget.TakeDamage( attackDamage, isCritical );
             TryGrantMonsterReward( attackTarget, wasAliveBeforeHit );
         }
 
@@ -512,15 +512,19 @@ namespace TinyHero.Player
         ///<summary>
         /// 분신 공격 피해량 계산 처리
         ///</summary>
-        private int ResolveReplayAttackDamage( MonsterObject _monsterObject, float _attackStatValue, float _skillAttackPowerMultiplier )
+        private int ResolveReplayAttackDamage( MonsterObject _monsterObject, float _attackStatValue, float _skillAttackPowerMultiplier, out bool _isCritical )
         {
+            _isCritical = false;
+
             if ( _monsterObject == null )
             {
                 return 0;
             }
 
             float rawDamage = ( _attackStatValue * damageMultiplier ) * _skillAttackPowerMultiplier - _monsterObject.GetDef();
-            int result = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
+            float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( sourceStatManager, rawDamage, out bool isCritical );
+            _isCritical = isCritical;
+            int result = Mathf.Max( 0, Mathf.RoundToInt( resolvedDamage ) );
             return result;
         }
 

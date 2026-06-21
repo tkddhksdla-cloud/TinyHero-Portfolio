@@ -1,5 +1,6 @@
 ﻿using TinyHero.Core;
 using System.Collections;
+using TinyHero.Quest;
 using TinyHero.Skill;
 using System.Collections.Generic;
 using LayerLab.ArtMakerUnity;
@@ -13,6 +14,8 @@ namespace TinyHero.Player
     ///</summary>
     [RequireComponent( typeof( Rigidbody2D ) )]
     [RequireComponent( typeof( CPlayerStatManager ) )]
+    [RequireComponent( typeof( CPlayerEquipmentManager ) )]
+    [RequireComponent( typeof( CQuestManager ) )]
     public sealed class PlayerController : MonoBehaviour
     {
         ///<summary>
@@ -46,8 +49,10 @@ namespace TinyHero.Player
         [SerializeField] private AnimationEventReceiver animationEventReceiver;
         [SerializeField] private Rigidbody2D targetRigidbody;
         [SerializeField] private CPlayerStatManager targetStatManager;
+        [SerializeField] private CPlayerEquipmentManager targetEquipmentManager;
         [SerializeField] private CPlayerInventoryManager targetInventoryManager;
         [SerializeField] private CSkillManager targetSkillManager;
+        [SerializeField] private CQuestManager targetQuestManager;
         [SerializeField] private BoxCollider2D bodyCollider;
         [SerializeField] private Collider2D attackHitCollider;
         [SerializeField] private Transform groundCheckPoint;
@@ -158,6 +163,24 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 플레이어 장비 매니저 반환
+        ///</summary>
+        public CPlayerEquipmentManager GetEquipmentManager()
+        {
+            CPlayerEquipmentManager result = targetEquipmentManager;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 퀘스트 매니저 반환
+        ///</summary>
+        public CQuestManager GetQuestManager()
+        {
+            CQuestManager result = targetQuestManager;
+            return result;
+        }
+
+        ///<summary>
         /// 플레이어 애니메이터 반환
         ///</summary>
         public Animator GetTargetAnimator()
@@ -233,8 +256,10 @@ namespace TinyHero.Player
             }
 
             ResolveStatManager();
+            ResolveEquipmentManager();
             ResolveInventoryManager();
             ResolveSkillManager();
+            ResolveQuestManager();
 
             if ( bodyCollider == null )
             {
@@ -544,6 +569,26 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 플레이어 장비 매니저 결정
+        ///</summary>
+        private void ResolveEquipmentManager()
+        {
+            if ( targetEquipmentManager != null )
+            {
+                return;
+            }
+
+            CPlayerEquipmentManager resolvedEquipmentManager = GetComponent<CPlayerEquipmentManager>();
+
+            if ( resolvedEquipmentManager == null )
+            {
+                resolvedEquipmentManager = gameObject.AddComponent<CPlayerEquipmentManager>();
+            }
+
+            targetEquipmentManager = resolvedEquipmentManager;
+        }
+
+        ///<summary>
         /// 플레이어 인벤토리 매니저 결정
         ///</summary>
         private void ResolveInventoryManager()
@@ -561,6 +606,26 @@ namespace TinyHero.Player
             }
 
             targetInventoryManager = resolvedInventoryManager;
+        }
+
+        ///<summary>
+        /// 플레이어 퀘스트 매니저 결정
+        ///</summary>
+        private void ResolveQuestManager()
+        {
+            if ( targetQuestManager != null )
+            {
+                return;
+            }
+
+            CQuestManager resolvedQuestManager = GetComponent<CQuestManager>();
+
+            if ( resolvedQuestManager == null )
+            {
+                resolvedQuestManager = gameObject.AddComponent<CQuestManager>();
+            }
+
+            targetQuestManager = resolvedQuestManager;
         }
 
         ///<summary>
@@ -582,6 +647,20 @@ namespace TinyHero.Player
             CInputManager inputManager = CInputManager.Instance;
 
             if ( inputManager == null )
+            {
+                horizontalInput = 0.0f;
+                isJumpHeld = false;
+                isInteractionHeld = false;
+                isPendingJump = false;
+                isPendingAttack = false;
+                pendingSkillSlotIndex = InvalidSkillSlotIndex;
+                return;
+            }
+
+            bool capturedQuestJournalDown = inputManager.GetQuestJournalDown();
+            bool isQuestJournalConsumed = CQuestListUIController.TryProcessPlayerQuestJournalToggle( this, capturedQuestJournalDown );
+
+            if ( isQuestJournalConsumed )
             {
                 horizontalInput = 0.0f;
                 isJumpHeld = false;
@@ -1853,8 +1932,8 @@ namespace TinyHero.Player
             }
 
             bool wasAliveBeforeHit = attackTarget.GetCurrentHp() > 0;
-            int attackDamage = ResolveAttackDamage( attackTarget );
-            attackTarget.TakeDamage( attackDamage );
+            int attackDamage = ResolveAttackDamage( attackTarget, out bool isCritical );
+            attackTarget.TakeDamage( attackDamage, isCritical );
 
             if ( wasAliveBeforeHit && attackTarget.GetCurrentHp() <= 0 )
             {
@@ -2035,8 +2114,10 @@ namespace TinyHero.Player
         ///<summary>
         /// 플레이어 공격 피해량 계산
         ///</summary>
-        private int ResolveAttackDamage( MonsterObject _monsterObject )
+        private int ResolveAttackDamage( MonsterObject _monsterObject, out bool _isCritical )
         {
+            _isCritical = false;
+
             if ( _monsterObject == null )
             {
                 return 0;
@@ -2046,7 +2127,9 @@ namespace TinyHero.Player
             float skillAttackPowerMultiplier = GetSkillAttackPowerMultiplier();
             float monsterDef = _monsterObject.GetDef();
             float rawDamage = playerAtk * skillAttackPowerMultiplier - monsterDef;
-            int damage = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
+            float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( targetStatManager, rawDamage, out bool isCritical );
+            _isCritical = isCritical;
+            int damage = Mathf.Max( 0, Mathf.RoundToInt( resolvedDamage ) );
             return damage;
         }
 

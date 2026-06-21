@@ -110,7 +110,7 @@ namespace TinyHero.DataEditor
 
             if ( defaultRow != null )
             {
-                logBuilder.AppendLine( $"DEFAULT | ATS={defaultRow.GetAts()} | MOV={defaultRow.GetMov()}" );
+                logBuilder.AppendLine( $"DEFAULT | ATS={defaultRow.GetAts()} | MOV={defaultRow.GetMov()} | CRT={defaultRow.GetCrt()} | CRD={defaultRow.GetCrd()} | ACC={defaultRow.GetAcc()}" );
             }
 
             logBuilder.AppendLine( $"Imported level row count: {levelTableData.GetRowList().Count}" );

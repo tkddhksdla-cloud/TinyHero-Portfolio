@@ -17,6 +17,7 @@ namespace TinyHero.Player
         [SerializeField] private float def;
         [SerializeField] private float crt;
         [SerializeField] private float crd;
+        [SerializeField] private float acc;
         [SerializeField] private float ats;
         [SerializeField] private float move;
 
@@ -50,6 +51,9 @@ namespace TinyHero.Player
 
                 case ePlayerStatType.CRD:
                     return crd;
+
+                case ePlayerStatType.ACC:
+                    return acc;
 
                 case ePlayerStatType.ATS:
                     return ats;
@@ -100,6 +104,10 @@ namespace TinyHero.Player
                     crd = _value;
                     break;
 
+                case ePlayerStatType.ACC:
+                    acc = _value;
+                    break;
+
                 case ePlayerStatType.ATS:
                     ats = _value;
                     break;
@@ -121,6 +129,39 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 다른 스탯 데이터 누적
+        ///</summary>
+        public void AddFrom( CPlayerStatRuntimeData _sourceData )
+        {
+            if ( _sourceData == null )
+            {
+                return;
+            }
+
+            Array statTypeArray = Enum.GetValues( typeof( ePlayerStatType ) );
+
+            for ( int index = 0; index < statTypeArray.Length; index++ )
+            {
+                object statTypeObject = statTypeArray.GetValue( index );
+
+                if ( statTypeObject == null )
+                {
+                    continue;
+                }
+
+                ePlayerStatType statType = ( ePlayerStatType )statTypeObject;
+                float bonusValue = _sourceData.GetStatValue( statType );
+
+                if ( Mathf.Approximately( bonusValue, 0.0f ) )
+                {
+                    continue;
+                }
+
+                AddStatValue( statType, bonusValue );
+            }
+        }
+
+        ///<summary>
         /// 데이터 전체 복사
         ///</summary>
         public void CopyFrom( CPlayerStatRuntimeData _sourceData )
@@ -139,6 +180,7 @@ namespace TinyHero.Player
             def = _sourceData.def;
             crt = _sourceData.crt;
             crd = _sourceData.crd;
+            acc = _sourceData.acc;
             ats = _sourceData.ats;
             move = _sourceData.move;
         }
@@ -156,6 +198,7 @@ namespace TinyHero.Player
             def = 0.0f;
             crt = 0.0f;
             crd = 0.0f;
+            acc = 0.0f;
             ats = 0.0f;
             move = 0.0f;
         }

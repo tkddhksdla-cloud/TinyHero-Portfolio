@@ -15,8 +15,9 @@ namespace TinyHero.Player
         [SerializeField] private float mr = 0.0f;
         [SerializeField] private float atk = 3.0f;
         [SerializeField] private float def = 0.0f;
-        [SerializeField] private float crt = 0.05f;
-        [SerializeField] private float crd = 1.5f;
+        [SerializeField] private float crt = 5.0f;
+        [SerializeField] private float crd = 50.0f;
+        [SerializeField] private float acc = 0.0f;
         [SerializeField] private float ats = 1.0f;
         [SerializeField] private float move = 4.5f;
 
@@ -50,6 +51,9 @@ namespace TinyHero.Player
 
                 case ePlayerStatType.CRD:
                     return crd;
+
+                case ePlayerStatType.ACC:
+                    return acc;
 
                 case ePlayerStatType.ATS:
                     return ats;
@@ -98,6 +102,10 @@ namespace TinyHero.Player
 
                 case ePlayerStatType.CRD:
                     crd = _value;
+                    break;
+
+                case ePlayerStatType.ACC:
+                    acc = _value;
                     break;
 
                 case ePlayerStatType.ATS:

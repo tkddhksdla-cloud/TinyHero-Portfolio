@@ -13,6 +13,7 @@ namespace TinyHero.Player
         DEF,
         CRT,
         CRD,
+        ACC,
         ATS,
         MOVE
     }

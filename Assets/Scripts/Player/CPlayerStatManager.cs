@@ -779,7 +779,7 @@ namespace TinyHero.Player
         ///</summary>
         private bool TryGetTableBaseStatValue( ePlayerStatType _statType, out float _value )
         {
-            if ( _statType == ePlayerStatType.ATS || _statType == ePlayerStatType.MOVE )
+            if ( _statType == ePlayerStatType.ATS || _statType == ePlayerStatType.MOVE || _statType == ePlayerStatType.CRT || _statType == ePlayerStatType.CRD || _statType == ePlayerStatType.ACC )
             {
                 CPlayerDefaultStatTableData defaultStatTableData = ResolvePlayerDefaultStatTableData();
 
@@ -800,6 +800,30 @@ namespace TinyHero.Player
                 if ( _statType == ePlayerStatType.ATS )
                 {
                     _value = defaultRow.GetAts();
+                    return true;
+                }
+
+                if ( _statType == ePlayerStatType.MOVE )
+                {
+                    _value = defaultRow.GetMov();
+                    return true;
+                }
+
+                if ( _statType == ePlayerStatType.CRT )
+                {
+                    _value = defaultRow.GetCrt();
+                    return true;
+                }
+
+                if ( _statType == ePlayerStatType.CRD )
+                {
+                    _value = defaultRow.GetCrd();
+                    return true;
+                }
+
+                if ( _statType == ePlayerStatType.ACC )
+                {
+                    _value = defaultRow.GetAcc();
                     return true;
                 }
 

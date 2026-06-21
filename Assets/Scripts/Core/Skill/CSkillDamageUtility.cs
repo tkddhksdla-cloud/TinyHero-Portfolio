@@ -11,8 +11,10 @@ namespace TinyHero.Skill
         ///<summary>
         /// 플레이어 기반 스킬 피해량 계산
         ///</summary>
-        public static long ResolvePlayerSkillDamage( CSkillContext _skillContext, MonsterObject _monsterObject, float _damageMultiplier, int _flatDamageBonus )
+        public static long ResolvePlayerSkillDamage( CSkillContext _skillContext, MonsterObject _monsterObject, float _damageMultiplier, int _flatDamageBonus, out bool _isCritical )
         {
+            _isCritical = false;
+
             if ( _skillContext == null || _monsterObject == null )
             {
                 return 0;
@@ -31,7 +33,9 @@ namespace TinyHero.Skill
             float attackMultiplierOverride = _skillContext.GetSkillAttackPowerMultiplierOverride();
             float attackMultiplier = attackMultiplierOverride >= 0.0f ? attackMultiplierOverride : ( playerController != null ? playerController.GetSkillAttackPowerMultiplier() : 1.0f );
             float rawDamage = playerAtk * attackMultiplier * _damageMultiplier + _flatDamageBonus - _monsterObject.GetDef();
-            long damage = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
+            float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( playerStatManager, rawDamage, out bool isCritical );
+            _isCritical = isCritical;
+            long damage = Mathf.Max( 0, Mathf.RoundToInt( resolvedDamage ) );
             return damage;
         }
 

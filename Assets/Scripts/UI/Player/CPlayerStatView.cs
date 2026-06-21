@@ -24,6 +24,7 @@ namespace TinyHero.UI
         [SerializeField] private TextMeshProUGUI defText;
         [SerializeField] private TextMeshProUGUI crtText;
         [SerializeField] private TextMeshProUGUI crdText;
+        [SerializeField] private TextMeshProUGUI accText;
         [SerializeField] private TextMeshProUGUI atsText;
         [SerializeField] private TextMeshProUGUI moveText;
         [SerializeField] private TextMeshProUGUI hrText;
@@ -35,6 +36,7 @@ namespace TinyHero.UI
         ///</summary>
         private void Awake()
         {
+            ResolveReferences();
             ResolveTargetStatManager();
         }
 
@@ -43,6 +45,7 @@ namespace TinyHero.UI
         ///</summary>
         private void OnEnable()
         {
+            ResolveReferences();
             ResolveTargetStatManager();
             SubscribeEvents();
             RefreshView();
@@ -72,6 +75,8 @@ namespace TinyHero.UI
         ///</summary>
         public void RefreshView()
         {
+            ResolveReferences();
+
             if ( targetStatManager == null )
             {
                 return;
@@ -84,8 +89,9 @@ namespace TinyHero.UI
 
             ApplyValueText( atkText, targetStatManager.GetFinalStatValue( ePlayerStatType.ATK ) );
             ApplyValueText( defText, targetStatManager.GetFinalStatValue( ePlayerStatType.DEF ) );
-            ApplyPercentText( crtText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRT ) );
-            ApplyMultiplierText( crdText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRD ) );
+            ApplyFlatPercentText( crtText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRT ) );
+            ApplyCriticalDamagePercentText( crdText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRD ) );
+            ApplyValueText( accText, targetStatManager.GetFinalStatValue( ePlayerStatType.ACC ) );
             ApplyValueText( atsText, targetStatManager.GetFinalStatValue( ePlayerStatType.ATS ) );
             ApplyValueText( moveText, targetStatManager.GetFinalStatValue( ePlayerStatType.MOVE ) );
             ApplyValueText( hrText, targetStatManager.GetFinalStatValue( ePlayerStatType.HR ) );
@@ -104,7 +110,89 @@ namespace TinyHero.UI
             }
 
             CPlayerStatManager resolvedManager = GetComponentInParent<CPlayerStatManager>();
+
+            if ( resolvedManager == null )
+            {
+                resolvedManager = FindFirstObjectByType<CPlayerStatManager>();
+            }
+
             targetStatManager = resolvedManager;
+        }
+
+        ///<summary>
+        /// 하위 UI 참조 자동 결정
+        ///</summary>
+        private void ResolveReferences()
+        {
+            hpText = ResolveTextReference( hpText, "HpText" );
+            mpText = ResolveTextReference( mpText, "MpText" );
+            atkText = ResolveTextReference( atkText, "AtkText" );
+            defText = ResolveTextReference( defText, "DefText" );
+            crtText = ResolveTextReference( crtText, "CrtText" );
+            crdText = ResolveTextReference( crdText, "CrdText" );
+            accText = ResolveTextReference( accText, "AccText" );
+            atsText = ResolveTextReference( atsText, "AtsText" );
+            moveText = ResolveTextReference( moveText, "MoveText" );
+            hrText = ResolveTextReference( hrText, "HrText" );
+            mrText = ResolveTextReference( mrText, "MrText" );
+            statPointText = ResolveTextReference( statPointText, "StatPointText" );
+            hpFillImage = ResolveImageReference( hpFillImage, "HpFillImage" );
+            mpFillImage = ResolveImageReference( mpFillImage, "MpFillImage" );
+        }
+
+        ///<summary>
+        /// 텍스트 참조 결정
+        ///</summary>
+        private TextMeshProUGUI ResolveTextReference( TextMeshProUGUI _currentReference, string _targetName )
+        {
+            if ( _currentReference != null )
+            {
+                return _currentReference;
+            }
+
+            TMP_Text[] textComponents = GetComponentsInChildren<TMP_Text>( true );
+
+            for ( int index = 0; index < textComponents.Length; index++ )
+            {
+                TMP_Text textComponent = textComponents[ index ];
+
+                if ( textComponent == null || textComponent.name != _targetName )
+                {
+                    continue;
+                }
+
+                TextMeshProUGUI result = textComponent as TextMeshProUGUI;
+                return result;
+            }
+
+            return null;
+        }
+
+        ///<summary>
+        /// 이미지 참조 결정
+        ///</summary>
+        private Image ResolveImageReference( Image _currentReference, string _targetName )
+        {
+            if ( _currentReference != null )
+            {
+                return _currentReference;
+            }
+
+            Image[] imageComponents = GetComponentsInChildren<Image>( true );
+
+            for ( int index = 0; index < imageComponents.Length; index++ )
+            {
+                Image imageComponent = imageComponents[ index ];
+
+                if ( imageComponent == null || imageComponent.name != _targetName )
+                {
+                    continue;
+                }
+
+                return imageComponent;
+            }
+
+            return null;
         }
 
         ///<summary>
@@ -207,30 +295,30 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 확률 텍스트 반영
+        /// 정률 텍스트 반영
         ///</summary>
-        private void ApplyPercentText( TextMeshProUGUI _targetText, float _value )
+        private void ApplyFlatPercentText( TextMeshProUGUI _targetText, float _value )
         {
             if ( _targetText == null )
             {
                 return;
             }
 
-            float percentValue = _value * 100.0f;
-            _targetText.text = $"{percentValue:0.##}%";
+            _targetText.text = $"{_value:0.##}%";
         }
 
         ///<summary>
         /// 배율 텍스트 반영
         ///</summary>
-        private void ApplyMultiplierText( TextMeshProUGUI _targetText, float _value )
+        private void ApplyCriticalDamagePercentText( TextMeshProUGUI _targetText, float _value )
         {
             if ( _targetText == null )
             {
                 return;
             }
 
-            _targetText.text = $"{_value:0.##}x";
+            float totalPercent = 100.0f + Mathf.Max( 0.0f, _value );
+            _targetText.text = $"{totalPercent:0.##}%";
         }
 
         ///<summary>
@@ -247,7 +335,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 게이지 채움량 반영
+        /// 게이지 채움값 반영
         ///</summary>
         private void ApplyFillAmount( Image _targetImage, float _currentValue, float _maxValue )
         {

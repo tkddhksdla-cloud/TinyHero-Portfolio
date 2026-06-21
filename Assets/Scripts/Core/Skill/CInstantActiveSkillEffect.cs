@@ -231,8 +231,8 @@ namespace TinyHero.Skill
                 }
 
                 bool wasAliveBeforeHit = monsterObject.GetCurrentHp() > 0;
-                long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( _skillContext, monsterObject, damageMultiplier, flatDamageBonus );
-                monsterObject.TakeDamage( damage );
+                long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( _skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
+                monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( _skillContext, monsterObject.transform );
                 ApplyDebuffs( _skillContext, monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( _skillContext, monsterObject, wasAliveBeforeHit );
