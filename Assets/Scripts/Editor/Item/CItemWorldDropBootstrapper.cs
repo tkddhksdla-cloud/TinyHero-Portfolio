@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using TinyHero.Core.Data;
 using UnityEditor;
@@ -10,11 +11,18 @@ namespace TinyHero.Tools
     ///</summary>
     public static class CItemWorldDropBootstrapper
     {
+        private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
+        private const string ItemIconFolderPath = "Assets/Images/Icons";
+        private const string DefaultSampleIconAssetPath = "Assets/Images/Icons/Icon_Item_Sample.png";
         private const string PrefabFolderPath = "Assets/Resources/Prefabs/Item";
         private const string ItemDropPrefabFolderPath = "Assets/Resources/Prefabs/Item/Drops";
         private const string WorldDropPrefabPath = "Assets/Resources/Prefabs/Item/WorldItemDropObject.prefab";
         private const string SampleItemAssetPath = "Assets/Resources/Data/Item/Definitions/Item_Consumable_Apple.asset";
         private const string SampleMonsterPrefabPath = "Assets/Resources/Prefabs/Character/Monster/Monster_0001.prefab";
+        private const float WorldDropTargetMaxSize = 0.64f;
+        private const float WorldDropScaleMin = 0.05f;
+        private const float WorldDropScaleMax = 1.0f;
+        private const float WorldDropColliderWorldRadius = 0.35f;
 
         ///<summary>
         /// 샘플 월드 드랍 구성 메뉴 실행
@@ -64,7 +72,7 @@ namespace TinyHero.Tools
         public static string GenerateWorldDropPrefabsForAllItems()
         {
             EnsurePrefabFolderExists();
-            string[] assetGuidArray = AssetDatabase.FindAssets( "t:CItemDefinition", new string[] { "Assets/Resources/Data/Item/Definitions" } );
+            string[] assetGuidArray = AssetDatabase.FindAssets( "t:CItemDefinition", new string[] { ItemDefinitionFolderPath } );
 
             if ( assetGuidArray == null || assetGuidArray.Length == 0 )
             {
@@ -95,6 +103,49 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
+        /// 아이템 자동 할당 처리
+        ///</summary>
+        public static bool AutoAssignItemAssets( CItemDefinition _itemDefinition, out string _resultMessage )
+        {
+            _resultMessage = string.Empty;
+
+            if ( _itemDefinition == null )
+            {
+                _resultMessage = "Item definition was not provided.";
+                return false;
+            }
+
+            string itemId = NormalizeItemId( _itemDefinition.GetItemId() );
+
+            if ( string.IsNullOrWhiteSpace( itemId ) )
+            {
+                _resultMessage = "ItemId is required before auto assign.";
+                return false;
+            }
+
+            eItemType itemType = _itemDefinition.GetItemType();
+            bool hasResolvedIcon = TryResolveAutoAssignIconSprite( itemId, itemType, out Sprite resolvedIconSprite, out bool isFallbackIcon );
+
+            if ( hasResolvedIcon == false || resolvedIconSprite == null )
+            {
+                _resultMessage = $"Fallback sample icon was not found: {DefaultSampleIconAssetPath}";
+                return false;
+            }
+
+            if ( _itemDefinition.GetIconSprite() != resolvedIconSprite )
+            {
+                _itemDefinition.SetIconSprite( resolvedIconSprite );
+                EditorUtility.SetDirty( _itemDefinition );
+            }
+
+            string prefabResult = GenerateWorldDropPrefabForItem( _itemDefinition );
+            string iconAssetPath = AssetDatabase.GetAssetPath( resolvedIconSprite );
+            string iconResult = isFallbackIcon ? $"Fallback sample icon assigned: {iconAssetPath}" : $"Item icon assigned: {iconAssetPath}";
+            _resultMessage = $"{iconResult}\n{prefabResult}";
+            return true;
+        }
+
+        ///<summary>
         /// 아이템 전용 드랍 프리팹 생성
         ///</summary>
         public static string GenerateWorldDropPrefabForItem( CItemDefinition _itemDefinition )
@@ -106,8 +157,10 @@ namespace TinyHero.Tools
                 return "Item definition was not provided.";
             }
 
+            EnsureItemIconAssigned( _itemDefinition );
             string itemPrefabPath = GetItemWorldDropPrefabPath( _itemDefinition );
-            string prefabResult = CreateOrUpdateWorldDropPrefabAsset( itemPrefabPath, _itemDefinition, $"Drop_{_itemDefinition.name}" );
+            string dropPrefabName = ResolveDropPrefabName( _itemDefinition );
+            string prefabResult = CreateOrUpdateWorldDropPrefabAsset( itemPrefabPath, _itemDefinition, dropPrefabName );
             GameObject createdPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( itemPrefabPath );
 
             if ( createdPrefab != null && _itemDefinition.GetWorldDropPrefab() != createdPrefab )
@@ -166,7 +219,6 @@ namespace TinyHero.Tools
                 }
 
                 circleCollider.isTrigger = true;
-                circleCollider.radius = 0.35f;
                 CWorldItemDropObject worldItemDropObject = prefabRoot.GetComponent<CWorldItemDropObject>();
 
                 if ( worldItemDropObject == null )
@@ -190,6 +242,7 @@ namespace TinyHero.Tools
                 }
 
                 serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                ApplyWorldDropVisualScale( prefabRoot.transform, spriteRenderer, circleCollider );
 
                 if ( shouldUnloadPrefabContents )
                 {
@@ -208,7 +261,7 @@ namespace TinyHero.Tools
                 }
                 else
                 {
-                    Object.DestroyImmediate( prefabRoot );
+                    UnityEngine.Object.DestroyImmediate( prefabRoot );
                 }
             }
         }
@@ -218,8 +271,239 @@ namespace TinyHero.Tools
         ///</summary>
         private static string GetItemWorldDropPrefabPath( CItemDefinition _itemDefinition )
         {
-            string itemFileName = _itemDefinition.name;
-            string result = $"{ItemDropPrefabFolderPath}/Drop_{itemFileName}.prefab";
+            string dropPrefabName = ResolveDropPrefabName( _itemDefinition );
+            string result = $"{ItemDropPrefabFolderPath}/{dropPrefabName}.prefab";
+            return result;
+        }
+
+        ///<summary>
+        /// 드랍 프리팹 이름 결정
+        ///</summary>
+        private static string ResolveDropPrefabName( CItemDefinition _itemDefinition )
+        {
+            if ( _itemDefinition == null )
+            {
+                return "DROP_ITEM_UNKNOWN";
+            }
+
+            string normalizedItemId = NormalizeItemId( _itemDefinition.GetItemId() );
+            string itemKey = string.IsNullOrWhiteSpace( normalizedItemId ) ? _itemDefinition.name : normalizedItemId;
+            string result = $"DROP_{itemKey}";
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 타입 아이콘 폴더 경로 반환
+        ///</summary>
+        private static string GetItemTypeIconFolderPath( eItemType _itemType )
+        {
+            string result = $"{ItemIconFolderPath}/{_itemType}";
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 아이콘 자동 할당 보장
+        ///</summary>
+        private static void EnsureItemIconAssigned( CItemDefinition _itemDefinition )
+        {
+            if ( _itemDefinition == null )
+            {
+                return;
+            }
+
+            if ( _itemDefinition.GetIconSprite() != null )
+            {
+                return;
+            }
+
+            string itemId = NormalizeItemId( _itemDefinition.GetItemId() );
+            eItemType itemType = _itemDefinition.GetItemType();
+            bool hasResolvedIcon = TryResolveAutoAssignIconSprite( itemId, itemType, out Sprite resolvedIconSprite, out _ );
+
+            if ( hasResolvedIcon == false || resolvedIconSprite == null )
+            {
+                return;
+            }
+
+            _itemDefinition.SetIconSprite( resolvedIconSprite );
+            EditorUtility.SetDirty( _itemDefinition );
+        }
+
+        ///<summary>
+        /// 자동 할당 아이콘 탐색 시도
+        ///</summary>
+        private static bool TryResolveAutoAssignIconSprite( string _itemId, eItemType _itemType, out Sprite _resolvedIconSprite, out bool _isFallbackIcon )
+        {
+            _resolvedIconSprite = null;
+            _isFallbackIcon = false;
+            string normalizedItemId = NormalizeItemId( _itemId );
+            string itemTypeIconFolderPath = GetItemTypeIconFolderPath( _itemType );
+
+            if ( string.IsNullOrWhiteSpace( normalizedItemId ) == false )
+            {
+                _resolvedIconSprite = FindSpriteByItemId( normalizedItemId, itemTypeIconFolderPath );
+            }
+
+            if ( _resolvedIconSprite != null )
+            {
+                return true;
+            }
+
+            _resolvedIconSprite = AssetDatabase.LoadAssetAtPath<Sprite>( DefaultSampleIconAssetPath );
+            _isFallbackIcon = _resolvedIconSprite != null;
+            return _resolvedIconSprite != null;
+        }
+
+        ///<summary>
+        /// 아이템 ID 기반 스프라이트 탐색
+        ///</summary>
+        private static Sprite FindSpriteByItemId( string _itemId, string _iconFolderPath )
+        {
+            if ( string.IsNullOrWhiteSpace( _itemId ) || string.IsNullOrWhiteSpace( _iconFolderPath ) )
+            {
+                return null;
+            }
+
+            string[] assetGuidArray = AssetDatabase.FindAssets( _itemId, new string[] { _iconFolderPath } );
+            Sprite fallbackSprite = null;
+
+            for ( int index = 0; index < assetGuidArray.Length; index++ )
+            {
+                string assetGuid = assetGuidArray[ index ];
+                string assetPath = AssetDatabase.GUIDToAssetPath( assetGuid );
+                Sprite matchedSprite = LoadBestMatchedSpriteFromPath( assetPath, _itemId );
+
+                if ( matchedSprite == null )
+                {
+                    continue;
+                }
+
+                bool isExactMatched = string.Equals( matchedSprite.name, _itemId, StringComparison.OrdinalIgnoreCase );
+
+                if ( isExactMatched )
+                {
+                    return matchedSprite;
+                }
+
+                if ( fallbackSprite == null )
+                {
+                    fallbackSprite = matchedSprite;
+                }
+            }
+
+            return fallbackSprite;
+        }
+
+        ///<summary>
+        /// 경로 기준 최적 스프라이트 탐색
+        ///</summary>
+        private static Sprite LoadBestMatchedSpriteFromPath( string _assetPath, string _itemId )
+        {
+            if ( string.IsNullOrWhiteSpace( _assetPath ) || string.IsNullOrWhiteSpace( _itemId ) )
+            {
+                return null;
+            }
+
+            bool isExactFileName = string.Equals( Path.GetFileNameWithoutExtension( _assetPath ), _itemId, StringComparison.OrdinalIgnoreCase );
+            UnityEngine.Object[] assetArray = AssetDatabase.LoadAllAssetsAtPath( _assetPath );
+            Sprite bestMatchedSprite = null;
+            float bestMatchedArea = -1.0f;
+
+            for ( int index = 0; index < assetArray.Length; index++ )
+            {
+                Sprite sprite = assetArray[ index ] as Sprite;
+
+                if ( sprite == null )
+                {
+                    continue;
+                }
+
+                bool isExactSpriteName = string.Equals( sprite.name, _itemId, StringComparison.OrdinalIgnoreCase );
+
+                if ( isExactSpriteName )
+                {
+                    return sprite;
+                }
+
+                bool isPrefixMatched = sprite.name.StartsWith( _itemId, StringComparison.OrdinalIgnoreCase );
+
+                if ( isPrefixMatched == false && isExactFileName == false )
+                {
+                    continue;
+                }
+
+                float spriteArea = sprite.rect.width * sprite.rect.height;
+
+                if ( spriteArea <= bestMatchedArea )
+                {
+                    continue;
+                }
+
+                bestMatchedSprite = sprite;
+                bestMatchedArea = spriteArea;
+            }
+
+            if ( bestMatchedSprite != null )
+            {
+                return bestMatchedSprite;
+            }
+
+            if ( isExactFileName == false )
+            {
+                return null;
+            }
+
+            Sprite loadedSprite = AssetDatabase.LoadAssetAtPath<Sprite>( _assetPath );
+            return loadedSprite;
+        }
+
+        ///<summary>
+        /// 월드 드랍 비주얼 크기 보정
+        ///</summary>
+        private static void ApplyWorldDropVisualScale( Transform _rootTransform, SpriteRenderer _spriteRenderer, CircleCollider2D _circleCollider )
+        {
+            if ( _rootTransform == null )
+            {
+                return;
+            }
+
+            float resolvedScale = 1.0f;
+            Sprite sprite = _spriteRenderer != null ? _spriteRenderer.sprite : null;
+
+            if ( sprite != null )
+            {
+                Vector3 spriteSize = sprite.bounds.size;
+                float maxSize = Mathf.Max( spriteSize.x, spriteSize.y );
+
+                if ( maxSize > Mathf.Epsilon )
+                {
+                    resolvedScale = Mathf.Clamp( WorldDropTargetMaxSize / maxSize, WorldDropScaleMin, WorldDropScaleMax );
+                }
+            }
+
+            _rootTransform.localScale = new Vector3( resolvedScale, resolvedScale, 1.0f );
+
+            if ( _circleCollider == null )
+            {
+                return;
+            }
+
+            float colliderRadius = WorldDropColliderWorldRadius;
+
+            if ( resolvedScale > Mathf.Epsilon )
+            {
+                colliderRadius = WorldDropColliderWorldRadius / resolvedScale;
+            }
+
+            _circleCollider.radius = colliderRadius;
+        }
+
+        ///<summary>
+        /// 아이템 ID 정규화
+        ///</summary>
+        private static string NormalizeItemId( string _itemId )
+        {
+            string result = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
             return result;
         }
 

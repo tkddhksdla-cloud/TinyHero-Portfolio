@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using TinyHero.Core.Data;
+using TinyHero.Player;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,8 +14,14 @@ namespace TinyHero.Tools
     {
         private const string RootFolderPath = "Assets/Resources/Data/Item";
         private const string DefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
-        private const string IconFolderPath = "Assets/Resources/Data/Item/Icons";
-        private const int IconTextureSize = 64;
+        private const string IconFolderPath = "Assets/Images/Icons";
+        private const string EquipmentIconFolderPath = "Assets/Images/Icons/EQUIPMENT";
+        private const string ConsumableIconFolderPath = "Assets/Images/Icons/CONSUMABLE";
+        private const string CurrencyIconFolderPath = "Assets/Images/Icons/CURRENCY";
+        private const string MaterialIconFolderPath = "Assets/Images/Icons/MATERIAL";
+        private const string QuestItemIconFolderPath = "Assets/Images/Icons/QUEST_ITEM";
+        private const string FallbackIconAssetPath = "Assets/Images/Icons/Icon_Item_Sample.png";
+        private const int IconTextureSize = 128;
 
         ///<summary>
         /// 샘플 아이템 에셋 생성 실행
@@ -22,16 +29,19 @@ namespace TinyHero.Tools
         public static string GenerateSampleItemAssets()
         {
             EnsureFolderStructure();
-            Sprite equipmentIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Equipment.png", new Color32( 120, 176, 255, 255 ) );
-            Sprite consumableIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Consumable.png", new Color32( 118, 214, 124, 255 ) );
-            Sprite currencyIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Gold.png", new Color32( 255, 210, 90, 255 ) );
-            Sprite materialIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Material.png", new Color32( 172, 133, 98, 255 ) );
-            Sprite questItemIcon = CreateColorIcon( $"{IconFolderPath}/Icon_Item_Quest.png", new Color32( 235, 123, 123, 255 ) );
+            Sprite equipmentIcon = CreateColorIcon( $"{EquipmentIconFolderPath}/ITEM_EQUIPMENT_BRONZE_SWORD.png", new Color32( 120, 176, 255, 255 ) );
+            Sprite consumableIcon = CreateColorIcon( $"{ConsumableIconFolderPath}/ITEM_CONSUMABLE_APPLE.png", new Color32( 118, 214, 124, 255 ) );
+            Sprite currencyIcon = CreateColorIcon( $"{CurrencyIconFolderPath}/GOLD.png", new Color32( 255, 210, 90, 255 ) );
+            Sprite materialIcon = CreateColorIcon( $"{MaterialIconFolderPath}/ITEM_MATERIAL_SLIME_GEL.png", new Color32( 172, 133, 98, 255 ) );
+            Sprite questItemIcon = CreateColorIcon( $"{QuestItemIconFolderPath}/ITEM_QUEST_ANCIENT_SEAL.png", new Color32( 235, 123, 123, 255 ) );
+            CreateColorIcon( FallbackIconAssetPath, new Color32( 118, 214, 124, 255 ) );
 
             List<CItemDefinition> createdItemDefinitionList = new List<CItemDefinition>();
-            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Equipment_BronzeSword.asset", "ITEM_EQUIPMENT_BRONZE_SWORD", "Bronze Sword", eItemType.EQUIPMENT, "기본 장비 샘플 검.", equipmentIcon, false, 1 ) );
+            CPlayerStatRuntimeData bronzeSwordStatBonus = new CPlayerStatRuntimeData();
+            bronzeSwordStatBonus.SetStatValue( ePlayerStatType.ATK, 5.0f );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Equipment_BronzeSword.asset", "ITEM_EQUIPMENT_BRONZE_SWORD", "Bronze Sword", eItemType.EQUIPMENT, "기본 장비 샘플 검.", equipmentIcon, false, 1, eEquipmentType.WEAPON, bronzeSwordStatBonus ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Consumable_Apple.asset", "ITEM_CONSUMABLE_APPLE", "Apple", eItemType.CONSUMABLE, "기본 소모품 샘플.", consumableIcon, true, 99 ) );
-            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Currency_Gold.asset", "GOLD", "Gold", eItemType.CURRENCY, "기본 재화 샘플.", currencyIcon, true, 999999 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Currency_Gold.asset", "GOLD", "Gold", eItemType.CURRENCY, "기본 화폐 샘플.", currencyIcon, true, 999999 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Material_SlimeGel.asset", "ITEM_MATERIAL_SLIME_GEL", "Slime Gel", eItemType.MATERIAL, "기본 재료 샘플.", materialIcon, true, 999 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Quest_AncientSeal.asset", "ITEM_QUEST_ANCIENT_SEAL", "Ancient Seal", eItemType.QUEST_ITEM, "기본 퀘스트 아이템 샘플.", questItemIcon, true, 99 ) );
             AssetDatabase.SaveAssets();
@@ -56,11 +66,17 @@ namespace TinyHero.Tools
         ///</summary>
         private static void EnsureFolderStructure()
         {
+            EnsureFolder( "Assets", "Images" );
+            EnsureFolder( "Assets/Images", "Icons" );
+            EnsureFolder( IconFolderPath, "EQUIPMENT" );
+            EnsureFolder( IconFolderPath, "CONSUMABLE" );
+            EnsureFolder( IconFolderPath, "CURRENCY" );
+            EnsureFolder( IconFolderPath, "MATERIAL" );
+            EnsureFolder( IconFolderPath, "QUEST_ITEM" );
             EnsureFolder( "Assets", "Resources" );
             EnsureFolder( "Assets/Resources", "Data" );
             EnsureFolder( "Assets/Resources/Data", "Item" );
             EnsureFolder( RootFolderPath, "Definitions" );
-            EnsureFolder( RootFolderPath, "Icons" );
         }
 
         ///<summary>
@@ -84,6 +100,15 @@ namespace TinyHero.Tools
         ///</summary>
         private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
         {
+            CItemDefinition result = CreateOrUpdateItemDefinition( _assetPath, _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null );
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 정의 생성 또는 갱신
+        ///</summary>
+        private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus )
+        {
             CItemDefinition itemDefinition = AssetDatabase.LoadAssetAtPath<CItemDefinition>( _assetPath );
 
             if ( itemDefinition == null )
@@ -92,7 +117,7 @@ namespace TinyHero.Tools
                 AssetDatabase.CreateAsset( itemDefinition, _assetPath );
             }
 
-            itemDefinition.Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount );
+            itemDefinition.Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, _equipmentStatBonus );
             EditorUtility.SetDirty( itemDefinition );
             return itemDefinition;
         }
@@ -125,6 +150,7 @@ namespace TinyHero.Tools
                 textureImporter.filterMode = FilterMode.Point;
                 textureImporter.mipmapEnabled = false;
                 textureImporter.alphaIsTransparency = true;
+                textureImporter.spritePixelsPerUnit = IconTextureSize;
                 textureImporter.SaveAndReimport();
             }
 

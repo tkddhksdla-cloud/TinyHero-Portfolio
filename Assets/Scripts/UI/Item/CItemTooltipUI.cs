@@ -23,6 +23,9 @@ namespace TinyHero.UI
         private void Awake()
         {
             ResolveReferences();
+            SetTooltipContent( string.Empty, string.Empty );
+            DisableRaycastTargets();
+            SetVisible( false );
         }
 
         ///<summary>
@@ -48,6 +51,26 @@ namespace TinyHero.UI
             if ( itemDescText != null )
             {
                 itemDescText.text = itemDescription;
+            }
+        }
+
+        ///<summary>
+        /// 툴팁 문자열 내용 반영
+        ///</summary>
+        public void SetTooltipContent( string _titleText, string _descriptionText )
+        {
+            ResolveReferences();
+            string resolvedTitleText = string.IsNullOrWhiteSpace( _titleText ) ? string.Empty : _titleText;
+            string resolvedDescriptionText = string.IsNullOrWhiteSpace( _descriptionText ) ? string.Empty : _descriptionText;
+
+            if ( itemNameText != null )
+            {
+                itemNameText.text = resolvedTitleText;
+            }
+
+            if ( itemDescText != null )
+            {
+                itemDescText.text = resolvedDescriptionText;
             }
         }
 
@@ -144,6 +167,26 @@ namespace TinyHero.UI
             {
                 Transform itemDescTransform = transform.Find( "ItemDescText" );
                 itemDescText = itemDescTransform != null ? itemDescTransform.GetComponent<TMP_Text>() : null;
+            }
+        }
+
+        ///<summary>
+        /// 툴팁 레이캐스트 비활성화
+        ///</summary>
+        private void DisableRaycastTargets()
+        {
+            Graphic[] graphics = GetComponentsInChildren<Graphic>( true );
+
+            for ( int index = 0; index < graphics.Length; index++ )
+            {
+                Graphic graphic = graphics[ index ];
+
+                if ( graphic == null )
+                {
+                    continue;
+                }
+
+                graphic.raycastTarget = false;
             }
         }
     }

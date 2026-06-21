@@ -63,6 +63,7 @@ namespace TinyHero.Tools
         [SerializeField] private List<MonsterBehaviorPrefabInfo> monsterPrefabInfos = new List<MonsterBehaviorPrefabInfo>();
         [SerializeField] private int selectedPrefabIndex = -1;
         [SerializeField] private string searchText = string.Empty;
+        [SerializeField] private int selectedCopySourcePrefabIndex = -1;
         [SerializeField] private bool useItemDrop;
         [SerializeField] private List<MonsterBehaviorDropSetting> itemDropSettingList = new List<MonsterBehaviorDropSetting>();
 
@@ -74,15 +75,24 @@ namespace TinyHero.Tools
         private CMonsterBehaviorPatternData workingPatternData;
 
         ///<summary>
-        /// 행동 패턴 편집 창 표시
+        /// 행동 패턴 에디터 창 반환
         ///</summary>
-        [MenuItem("Tools/TinyHero/Monster Behavior Pattern Editor")]
-        private static void ShowWindow()
+        public static MonsterBehaviorPatternEditorWindow OpenWindow()
         {
             MonsterBehaviorPatternEditorWindow window = GetWindow<MonsterBehaviorPatternEditorWindow>();
-            window.titleContent = new GUIContent("Monster Behavior Editor");
-            window.minSize = new Vector2(1100.0f, 800.0f);
+            window.titleContent = new GUIContent( "Monster Behavior Editor" );
+            window.minSize = new Vector2( 1100.0f, 800.0f );
             window.Show();
+            return window;
+        }
+
+        ///<summary>
+        /// 행동 패턴 에디터 창 메뉴 진입점
+        ///</summary>
+        [MenuItem( "Tools/TinyHero/Monster Behavior Pattern Editor" )]
+        private static void ShowWindow()
+        {
+            OpenWindow();
         }
 
         ///<summary>
@@ -255,23 +265,67 @@ namespace TinyHero.Tools
         ///<summary>
         /// 패턴 편집 영역 렌더링
         ///</summary>
-        private void DrawPatternEditorSection(MonsterBehaviorPrefabInfo _selectedInfo)
-        {
-            if (workingPatternData == null)
-            {
-                EditorGUILayout.HelpBox("패턴 데이터를 준비하지 못했습니다.", MessageType.Warning);
-                return;
-            }
+///<summary>
+/// 패턴 편집 영역 렌더링
+///</summary>
+private void DrawPatternEditorSection( MonsterBehaviorPrefabInfo _selectedInfo )
+{
+    if ( workingPatternData == null )
+    {
+        EditorGUILayout.HelpBox( "패턴 데이터를 준비하지 못했습니다.", MessageType.Warning );
+        return;
+    }
 
-            EditorGUILayout.LabelField("Pattern Settings", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Monster Id", workingPatternData.GetMonsterId());
-            float updatedRespawnDelaySeconds = EditorGUILayout.FloatField("Respawn Delay Seconds", workingPatternData.GetRespawnDelaySeconds());
-            workingPatternData.SetRespawnDelaySeconds(updatedRespawnDelaySeconds);
-            EditorGUILayout.Space();
-            DrawPatternColumnsSection();
-            EditorGUILayout.Space();
-            DrawItemDropSection();
+    DrawPatternCopySection( _selectedInfo );
+    EditorGUILayout.Space();
+    EditorGUILayout.LabelField( "Pattern Settings", EditorStyles.boldLabel );
+    EditorGUILayout.LabelField( "Monster Id", workingPatternData.GetMonsterId() );
+    float updatedRespawnDelaySeconds = EditorGUILayout.FloatField( "Respawn Delay Seconds", workingPatternData.GetRespawnDelaySeconds() );
+    workingPatternData.SetRespawnDelaySeconds( updatedRespawnDelaySeconds );
+    EditorGUILayout.Space();
+    DrawPatternColumnsSection();
+    EditorGUILayout.Space();
+    DrawItemDropSection();
+}
+
+///<summary>
+/// 행동 패턴 복사 섹션 렌더링
+///</summary>
+private void DrawPatternCopySection( MonsterBehaviorPrefabInfo _selectedInfo )
+{
+    EditorGUILayout.BeginVertical( "box" );
+    EditorGUILayout.LabelField( "Copy Pattern", EditorStyles.boldLabel );
+    string[] copySourceOptionArray = BuildCopySourceOptionArray();
+    int popupIndex = ResolveCopySourcePopupIndex();
+    int updatedPopupIndex = EditorGUILayout.Popup( "Source Monster", popupIndex, copySourceOptionArray );
+    selectedCopySourcePrefabIndex = ResolveCopySourcePrefabIndex( updatedPopupIndex );
+    MonsterBehaviorPrefabInfo sourceInfo = GetCopySourcePrefabInfo();
+    bool canCopy = sourceInfo != null && _selectedInfo != null && string.Equals( sourceInfo.assetPath, _selectedInfo.assetPath, StringComparison.Ordinal ) == false;
+
+    if ( sourceInfo == null )
+    {
+        EditorGUILayout.HelpBox( "복사할 몬스터를 선택해 주세요.", MessageType.Info );
+    }
+    else if ( canCopy == false )
+    {
+        EditorGUILayout.HelpBox( "현재 선택된 몬스터 자신은 복사 원본으로 사용할 수 없습니다.", MessageType.Warning );
+    }
+    else
+    {
+        EditorGUILayout.HelpBox( $"원본 몬스터: {sourceInfo.prefabName}", MessageType.None );
+    }
+
+    using ( new EditorGUI.DisabledScope( canCopy == false ) )
+    {
+        if ( GUILayout.Button( "Copy Behavior Pattern", GUILayout.Height( 30.0f ) ) )
+        {
+            CopyPatternDataFromSource( _selectedInfo, sourceInfo );
         }
+    }
+
+    EditorGUILayout.EndVertical();
+}
+
 
         ///<summary>
         /// 아이템 드랍 설정 섹션 렌더링
@@ -494,43 +548,52 @@ namespace TinyHero.Tools
         ///<summary>
         /// 몬스터 프리팹 목록 갱신
         ///</summary>
-        private void RefreshMonsterPrefabInfos()
+///<summary>
+/// 몬스터 프리팹 목록 갱신
+///</summary>
+private void RefreshMonsterPrefabInfos()
+{
+    monsterPrefabInfos.Clear();
+
+    if ( AssetDatabase.IsValidFolder( MonsterPrefabFolderPath ) )
+    {
+        string[] assetGuids = AssetDatabase.FindAssets( "t:Prefab", new string[] { MonsterPrefabFolderPath } );
+        Array.Sort( assetGuids, CompareAssetGuid );
+
+        for ( int index = 0; index < assetGuids.Length; index++ )
         {
-            monsterPrefabInfos.Clear();
-
-            if (AssetDatabase.IsValidFolder(MonsterPrefabFolderPath))
-            {
-                string[] assetGuids = AssetDatabase.FindAssets("t:Prefab", new string[] { MonsterPrefabFolderPath });
-                Array.Sort(assetGuids, CompareAssetGuid);
-
-                for (int index = 0; index < assetGuids.Length; index++)
-                {
-                    string assetGuid = assetGuids[index];
-                    string assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                    string prefabName = Path.GetFileNameWithoutExtension(assetPath);
-                    MonsterBehaviorPrefabInfo prefabInfo = new MonsterBehaviorPrefabInfo();
-                    prefabInfo.prefabName = prefabName;
-                    prefabInfo.assetPath = assetPath;
-                    monsterPrefabInfos.Add(prefabInfo);
-                }
-            }
-
-            if (monsterPrefabInfos.Count == 0)
-            {
-                selectedPrefabIndex = -1;
-                DestroyWorkingPatternData();
-                SetStatus("몬스터 프리팹을 찾지 못했습니다.", MessageType.Warning);
-                return;
-            }
-
-            if (selectedPrefabIndex < 0 || selectedPrefabIndex >= monsterPrefabInfos.Count)
-            {
-                selectedPrefabIndex = 0;
-            }
-
-            LoadWorkingPatternDataForSelection();
-            SetStatus($"몬스터 프리팹 {monsterPrefabInfos.Count}개를 불러왔습니다.", MessageType.Info);
+            string assetGuid = assetGuids[ index ];
+            string assetPath = AssetDatabase.GUIDToAssetPath( assetGuid );
+            string prefabName = Path.GetFileNameWithoutExtension( assetPath );
+            MonsterBehaviorPrefabInfo prefabInfo = new MonsterBehaviorPrefabInfo();
+            prefabInfo.prefabName = prefabName;
+            prefabInfo.assetPath = assetPath;
+            monsterPrefabInfos.Add( prefabInfo );
         }
+    }
+
+    if ( monsterPrefabInfos.Count == 0 )
+    {
+        selectedPrefabIndex = -1;
+        selectedCopySourcePrefabIndex = -1;
+        DestroyWorkingPatternData();
+        SetStatus( "몬스터 프리팹을 찾지 못했습니다.", MessageType.Warning );
+        return;
+    }
+
+    if ( selectedPrefabIndex < 0 || selectedPrefabIndex >= monsterPrefabInfos.Count )
+    {
+        selectedPrefabIndex = 0;
+    }
+
+    if ( selectedCopySourcePrefabIndex < 0 || selectedCopySourcePrefabIndex >= monsterPrefabInfos.Count )
+    {
+        selectedCopySourcePrefabIndex = -1;
+    }
+
+    LoadWorkingPatternDataForSelection();
+    SetStatus( $"몬스터 프리팹 {monsterPrefabInfos.Count}개를 불러왔습니다.", MessageType.Info );
+}
 
         ///<summary>
         /// 에셋 GUID 비교
@@ -615,34 +678,152 @@ namespace TinyHero.Tools
         ///<summary>
         /// 선택 프리팹 패턴 데이터 불러오기
         ///</summary>
-        private void LoadWorkingPatternDataForSelection()
-        {
-            DestroyWorkingPatternData();
-            MonsterBehaviorPrefabInfo selectedInfo = GetSelectedMonsterPrefabInfo();
+///<summary>
+/// 선택 프리팹 작업용 행동 패턴 로드
+///</summary>
+private void LoadWorkingPatternDataForSelection()
+{
+    DestroyWorkingPatternData();
+    MonsterBehaviorPrefabInfo selectedInfo = GetSelectedMonsterPrefabInfo();
 
-            if (selectedInfo == null)
-            {
-                return;
-            }
+    if ( selectedInfo == null )
+    {
+        return;
+    }
 
-            string assetPath = GetBehaviorPatternAssetPath(selectedInfo.prefabName);
-            CMonsterBehaviorPatternData savedPatternData = AssetDatabase.LoadAssetAtPath<CMonsterBehaviorPatternData>(assetPath);
-            workingPatternData = ScriptableObject.CreateInstance<CMonsterBehaviorPatternData>();
-            workingPatternData.hideFlags = HideFlags.HideAndDontSave;
+    workingPatternData = CreatePatternDataFromPrefabInfo( selectedInfo );
+    LoadDropSettingsFromPrefab( selectedInfo.assetPath );
+}
 
-            if (savedPatternData != null)
-            {
-                string serializedJson = EditorJsonUtility.ToJson(savedPatternData);
-                EditorJsonUtility.FromJsonOverwrite(serializedJson, workingPatternData);
-            }
-            else
-            {
-                InitializeDefaultPatternData(workingPatternData, selectedInfo.prefabName);
-            }
+///<summary>
+/// 복사 원본 프리팹 정보 반환
+///</summary>
+private MonsterBehaviorPrefabInfo GetCopySourcePrefabInfo()
+{
+    if ( selectedCopySourcePrefabIndex < 0 || selectedCopySourcePrefabIndex >= monsterPrefabInfos.Count )
+    {
+        return null;
+    }
 
-            workingPatternData.SetMonsterId(selectedInfo.prefabName);
-            LoadDropSettingsFromPrefab(selectedInfo.assetPath);
-        }
+    MonsterBehaviorPrefabInfo result = monsterPrefabInfos[ selectedCopySourcePrefabIndex ];
+    return result;
+}
+
+///<summary>
+/// 복사 원본 선택 옵션 배열 구성
+///</summary>
+private string[] BuildCopySourceOptionArray()
+{
+    string[] optionArray = new string[ monsterPrefabInfos.Count + 1 ];
+    optionArray[ 0 ] = "Select Monster";
+
+    for ( int index = 0; index < monsterPrefabInfos.Count; index++ )
+    {
+        MonsterBehaviorPrefabInfo prefabInfo = monsterPrefabInfos[ index ];
+        optionArray[ index + 1 ] = prefabInfo != null ? prefabInfo.prefabName : string.Empty;
+    }
+
+    return optionArray;
+}
+
+///<summary>
+/// 복사 원본 팝업 인덱스 결정
+///</summary>
+private int ResolveCopySourcePopupIndex()
+{
+    if ( selectedCopySourcePrefabIndex < 0 || selectedCopySourcePrefabIndex >= monsterPrefabInfos.Count )
+    {
+        return 0;
+    }
+
+    int result = selectedCopySourcePrefabIndex + 1;
+    return result;
+}
+
+///<summary>
+/// 복사 원본 프리팹 인덱스 결정
+///</summary>
+private int ResolveCopySourcePrefabIndex( int _popupIndex )
+{
+    if ( _popupIndex <= 0 )
+    {
+        return -1;
+    }
+
+    int prefabIndex = _popupIndex - 1;
+
+    if ( prefabIndex < 0 || prefabIndex >= monsterPrefabInfos.Count )
+    {
+        return -1;
+    }
+
+    return prefabIndex;
+}
+
+///<summary>
+/// 프리팹 기준 작업용 행동 패턴 데이터 생성
+///</summary>
+private CMonsterBehaviorPatternData CreatePatternDataFromPrefabInfo( MonsterBehaviorPrefabInfo _prefabInfo )
+{
+    if ( _prefabInfo == null )
+    {
+        return null;
+    }
+
+    string assetPath = GetBehaviorPatternAssetPath( _prefabInfo.prefabName );
+    CMonsterBehaviorPatternData savedPatternData = AssetDatabase.LoadAssetAtPath<CMonsterBehaviorPatternData>( assetPath );
+    CMonsterBehaviorPatternData createdPatternData = ScriptableObject.CreateInstance<CMonsterBehaviorPatternData>();
+    createdPatternData.hideFlags = HideFlags.HideAndDontSave;
+
+    if ( savedPatternData != null )
+    {
+        string serializedJson = EditorJsonUtility.ToJson( savedPatternData );
+        EditorJsonUtility.FromJsonOverwrite( serializedJson, createdPatternData );
+    }
+    else
+    {
+        InitializeDefaultPatternData( createdPatternData, _prefabInfo.prefabName );
+    }
+
+    createdPatternData.SetMonsterId( _prefabInfo.prefabName );
+    return createdPatternData;
+}
+
+///<summary>
+/// 원본 몬스터 행동 패턴 복사
+///</summary>
+private void CopyPatternDataFromSource( MonsterBehaviorPrefabInfo _targetInfo, MonsterBehaviorPrefabInfo _sourceInfo )
+{
+    if ( _targetInfo == null || _sourceInfo == null || workingPatternData == null )
+    {
+        SetStatus( "복사할 행동 패턴 데이터가 없습니다.", MessageType.Warning );
+        return;
+    }
+
+    bool isSamePrefab = string.Equals( _targetInfo.assetPath, _sourceInfo.assetPath, StringComparison.Ordinal );
+
+    if ( isSamePrefab )
+    {
+        SetStatus( "현재 선택된 몬스터 자신은 복사 원본으로 사용할 수 없습니다.", MessageType.Warning );
+        return;
+    }
+
+    CMonsterBehaviorPatternData sourcePatternData = CreatePatternDataFromPrefabInfo( _sourceInfo );
+
+    if ( sourcePatternData == null )
+    {
+        SetStatus( "복사 원본 행동 패턴을 불러오지 못했습니다.", MessageType.Warning );
+        return;
+    }
+
+    string serializedJson = EditorJsonUtility.ToJson( sourcePatternData );
+    EditorJsonUtility.FromJsonOverwrite( serializedJson, workingPatternData );
+    workingPatternData.SetMonsterId( _targetInfo.prefabName );
+    DestroyImmediate( sourcePatternData );
+    LoadDropSettingsFromPrefab( _sourceInfo.assetPath );
+    SetStatus( $"행동 패턴을 {_sourceInfo.prefabName} 에서 복사했습니다.", MessageType.Info );
+}
+
 
         ///<summary>
         /// 임시 패턴 데이터 정리

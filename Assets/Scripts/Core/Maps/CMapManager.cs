@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using TinyHero.Core;
+using TinyHero.Core.Data;
 using TinyHero.Player;
 using TinyHero.Skill;
 using TinyHero.Tools;
@@ -52,9 +53,11 @@ namespace TinyHero.Maps
         private static string pendingEntryPortalId = string.Empty;
         private readonly List<MapRuntimeSpawnMarker> spawnedRuntimeObjects = new List<MapRuntimeSpawnMarker>();
         private readonly List<MonsterObject> activePooledMonsterObjects = new List<MonsterObject>();
+        private readonly List<CWorldItemDropObject> activePooledWorldItemDropObjects = new List<CWorldItemDropObject>();
         private readonly List<MapTitleLogoUI> activeMapTitleLogoUiList = new List<MapTitleLogoUI>();
         private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, CObjectPool<MonsterObject>> monsterPoolByKey = new Dictionary<string, CObjectPool<MonsterObject>>();
+        private readonly Dictionary<string, CObjectPool<CWorldItemDropObject>> worldItemDropPoolByKey = new Dictionary<string, CObjectPool<CWorldItemDropObject>>();
         private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
         private readonly Dictionary<string, GameObject> npcPrefabByName = new Dictionary<string, GameObject>();
         private Canvas fadeCanvas;
@@ -536,6 +539,7 @@ namespace TinyHero.Maps
             currentMapRuntimeVersion++;
             HashSet<string> requiredMonsterPoolKeySet = CollectRequiredMonsterPoolKeys( _loadedData.monsters );
             ReturnAllActivePooledMonsters();
+            ReturnAllActivePooledWorldItemDrops();
             ClearSpawnedRuntimeObjects();
             PrepareMonsterPools( requiredMonsterPoolKeySet );
             ApplyBackgroundSprite( _loadedData.backgroundSpriteName );
@@ -957,6 +961,56 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 월드 드랍 오브젝트 풀 생성 시도
+        ///</summary>
+        public bool TrySpawnWorldItemDrop( GameObject _worldItemDropPrefab, CItemDefinition _itemDefinition, int _itemCount, Vector3 _dropPosition )
+        {
+            if ( _worldItemDropPrefab == null || _itemDefinition == null || _itemCount <= 0 )
+            {
+                return false;
+            }
+
+            string worldItemDropPoolKey = ResolveWorldItemDropPoolKey( _worldItemDropPrefab );
+
+            if ( string.IsNullOrWhiteSpace( worldItemDropPoolKey ) )
+            {
+                return false;
+            }
+
+            CWorldItemDropObject worldItemDropObject = AcquirePooledWorldItemDrop( worldItemDropPoolKey, _worldItemDropPrefab );
+
+            if ( worldItemDropObject == null )
+            {
+                return false;
+            }
+
+            InitializeSpawnedWorldItemDrop( worldItemDropObject, worldItemDropPoolKey, _itemDefinition, _itemCount, _dropPosition );
+            RegisterActivePooledWorldItemDrop( worldItemDropObject );
+            return true;
+        }
+
+        ///<summary>
+        /// 월드 드랍 오브젝트 풀 반환
+        ///</summary>
+        public bool ReleasePooledWorldItemDrop( CWorldItemDropObject _worldItemDropObject, string _worldItemDropPoolKey )
+        {
+            if ( _worldItemDropObject == null || string.IsNullOrWhiteSpace( _worldItemDropPoolKey ) )
+            {
+                return false;
+            }
+
+            if ( worldItemDropPoolByKey.TryGetValue( _worldItemDropPoolKey, out CObjectPool<CWorldItemDropObject> worldItemDropPool ) == false || worldItemDropPool == null )
+            {
+                return false;
+            }
+
+            activePooledWorldItemDropObjects.Remove( _worldItemDropObject );
+            _worldItemDropObject.SetMapRuntimePoolKey( string.Empty );
+            worldItemDropPool.Release( _worldItemDropObject );
+            return true;
+        }
+
+        ///<summary>
         /// 풀 몬스터 반환 공통 처리
         ///</summary>
         private bool ReleasePooledMonsterInternal( MonsterObject _monsterObject, string _monsterPoolKey, bool _shouldScheduleRespawn )
@@ -988,6 +1042,195 @@ namespace TinyHero.Maps
             }
 
             return true;
+        }
+
+        ///<summary>
+        /// 활성 월드 드랍 오브젝트 일괄 반환
+        ///</summary>
+        private void ReturnAllActivePooledWorldItemDrops()
+        {
+            List<CWorldItemDropObject> activeWorldItemDropList = new List<CWorldItemDropObject>( activePooledWorldItemDropObjects );
+
+            for ( int index = 0; index < activeWorldItemDropList.Count; index++ )
+            {
+                CWorldItemDropObject worldItemDropObject = activeWorldItemDropList[ index ];
+
+                if ( worldItemDropObject == null )
+                {
+                    continue;
+                }
+
+                ReleasePooledWorldItemDrop( worldItemDropObject, worldItemDropObject.GetMapRuntimePoolKey() );
+            }
+
+            activePooledWorldItemDropObjects.Clear();
+        }
+
+        ///<summary>
+        /// 월드 드랍 풀 키 결정
+        ///</summary>
+        private string ResolveWorldItemDropPoolKey( GameObject _worldItemDropPrefab )
+        {
+            if ( _worldItemDropPrefab == null )
+            {
+                return string.Empty;
+            }
+
+            int prefabInstanceId = _worldItemDropPrefab.GetInstanceID();
+            string result = prefabInstanceId.ToString();
+            return result;
+        }
+
+        ///<summary>
+        /// 월드 드랍 풀 획득 또는 생성
+        ///</summary>
+        private CObjectPool<CWorldItemDropObject> GetOrCreateWorldItemDropPool( string _worldItemDropPoolKey, GameObject _worldItemDropPrefab )
+        {
+            if ( string.IsNullOrWhiteSpace( _worldItemDropPoolKey ) || _worldItemDropPrefab == null )
+            {
+                return null;
+            }
+
+            if ( worldItemDropPoolByKey.TryGetValue( _worldItemDropPoolKey, out CObjectPool<CWorldItemDropObject> existingPool ) )
+            {
+                return existingPool;
+            }
+
+            CObjectPool<CWorldItemDropObject> createdPool = new CObjectPool<CWorldItemDropObject>(
+                () => CreatePooledWorldItemDropInstance( _worldItemDropPoolKey, _worldItemDropPrefab ),
+                OnGetPooledWorldItemDropInstance,
+                OnReleasePooledWorldItemDropInstance,
+                OnDestroyPooledWorldItemDropInstance );
+            worldItemDropPoolByKey[ _worldItemDropPoolKey ] = createdPool;
+            return createdPool;
+        }
+
+        ///<summary>
+        /// 월드 드랍 오브젝트 대여
+        ///</summary>
+        private CWorldItemDropObject AcquirePooledWorldItemDrop( string _worldItemDropPoolKey, GameObject _worldItemDropPrefab )
+        {
+            CObjectPool<CWorldItemDropObject> worldItemDropPool = GetOrCreateWorldItemDropPool( _worldItemDropPoolKey, _worldItemDropPrefab );
+
+            if ( worldItemDropPool == null )
+            {
+                return null;
+            }
+
+            CWorldItemDropObject worldItemDropObject = worldItemDropPool.Get();
+
+            if ( worldItemDropObject == null )
+            {
+                return null;
+            }
+
+            worldItemDropObject.SetMapRuntimePoolKey( _worldItemDropPoolKey );
+            worldItemDropObject.gameObject.name = _worldItemDropPrefab.name;
+            return worldItemDropObject;
+        }
+
+        ///<summary>
+        /// 활성 월드 드랍 오브젝트 등록
+        ///</summary>
+        private void RegisterActivePooledWorldItemDrop( CWorldItemDropObject _worldItemDropObject )
+        {
+            if ( _worldItemDropObject == null )
+            {
+                return;
+            }
+
+            bool isAlreadyRegistered = activePooledWorldItemDropObjects.Contains( _worldItemDropObject );
+
+            if ( isAlreadyRegistered )
+            {
+                return;
+            }
+
+            activePooledWorldItemDropObjects.Add( _worldItemDropObject );
+        }
+
+        ///<summary>
+        /// 월드 드랍 오브젝트 초기화
+        ///</summary>
+        private void InitializeSpawnedWorldItemDrop( CWorldItemDropObject _worldItemDropObject, string _worldItemDropPoolKey, CItemDefinition _itemDefinition, int _itemCount, Vector3 _dropPosition )
+        {
+            if ( _worldItemDropObject == null || _itemDefinition == null || _itemCount <= 0 )
+            {
+                return;
+            }
+
+            GameObject worldItemDropGameObject = _worldItemDropObject.gameObject;
+            worldItemDropGameObject.transform.SetPositionAndRotation( _dropPosition, Quaternion.identity );
+            worldItemDropGameObject.SetActive( true );
+            _worldItemDropObject.SetMapRuntimePoolKey( _worldItemDropPoolKey );
+            _worldItemDropObject.ConfigureDrop( _itemDefinition, _itemCount );
+            _worldItemDropObject.SetPickupTriggerEnabled( true );
+        }
+
+        ///<summary>
+        /// 월드 드랍 인스턴스 생성
+        ///</summary>
+        private CWorldItemDropObject CreatePooledWorldItemDropInstance( string _worldItemDropPoolKey, GameObject _worldItemDropPrefab )
+        {
+            if ( _worldItemDropPrefab == null )
+            {
+                return null;
+            }
+
+            GameObject createdWorldItemDropObject = Instantiate( _worldItemDropPrefab );
+            createdWorldItemDropObject.name = _worldItemDropPrefab.name;
+            createdWorldItemDropObject.SetActive( false );
+            CWorldItemDropObject worldItemDropObject = createdWorldItemDropObject.GetComponent<CWorldItemDropObject>();
+
+            if ( worldItemDropObject == null )
+            {
+                Destroy( createdWorldItemDropObject );
+                return null;
+            }
+
+            worldItemDropObject.SetMapRuntimePoolKey( _worldItemDropPoolKey );
+            worldItemDropObject.PrepareForRelease();
+            return worldItemDropObject;
+        }
+
+        ///<summary>
+        /// 월드 드랍 대여 후처리
+        ///</summary>
+        private void OnGetPooledWorldItemDropInstance( CWorldItemDropObject _worldItemDropObject )
+        {
+            if ( _worldItemDropObject == null )
+            {
+                return;
+            }
+
+            _worldItemDropObject.gameObject.SetActive( false );
+        }
+
+        ///<summary>
+        /// 월드 드랍 반환 후처리
+        ///</summary>
+        private void OnReleasePooledWorldItemDropInstance( CWorldItemDropObject _worldItemDropObject )
+        {
+            if ( _worldItemDropObject == null )
+            {
+                return;
+            }
+
+            _worldItemDropObject.PrepareForRelease();
+            _worldItemDropObject.gameObject.SetActive( false );
+        }
+
+        ///<summary>
+        /// 월드 드랍 파기 처리
+        ///</summary>
+        private void OnDestroyPooledWorldItemDropInstance( CWorldItemDropObject _worldItemDropObject )
+        {
+            if ( _worldItemDropObject == null )
+            {
+                return;
+            }
+
+            Destroy( _worldItemDropObject.gameObject );
         }
 
         ///<summary>
@@ -1779,12 +2022,37 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 모든 월드 드랍 풀 정리
+        ///</summary>
+        private void ClearAllWorldItemDropPools()
+        {
+            ReturnAllActivePooledWorldItemDrops();
+
+            foreach ( KeyValuePair<string, CObjectPool<CWorldItemDropObject>> pairData in worldItemDropPoolByKey )
+            {
+                CObjectPool<CWorldItemDropObject> worldItemDropPool = pairData.Value;
+
+                if ( worldItemDropPool == null )
+                {
+                    continue;
+                }
+
+                worldItemDropPool.Clear();
+            }
+
+            worldItemDropPoolByKey.Clear();
+            activePooledWorldItemDropObjects.Clear();
+        }
+
+        ///<summary>
         /// 인스턴스 참조 정리
         ///</summary>
         protected override void OnDestroy()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            ReturnAllActivePooledWorldItemDrops();
             ReturnAllActivePooledMonsters();
+            ClearAllWorldItemDropPools();
             ClearAllMonsterPools();
             base.OnDestroy();
         }

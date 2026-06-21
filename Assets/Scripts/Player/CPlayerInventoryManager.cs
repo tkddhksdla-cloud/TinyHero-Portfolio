@@ -177,6 +177,42 @@ namespace TinyHero.Player
         ///<summary>
         /// 아이템 제거 시도
         ///</summary>
+        ///<summary>
+        /// 슬롯 아이템 직접 교체 처리
+        ///</summary>
+        public bool TryReplaceSlotItem( int _slotIndex, CInventoryItemEntryData _itemEntryData )
+        {
+            EnsureSlotCapacity();
+
+            if ( IsValidSlotIndex( _slotIndex ) == false )
+            {
+                return false;
+            }
+
+            CInventoryItemEntryData targetEntryData = itemEntryList[ _slotIndex ];
+
+            if ( targetEntryData == null )
+            {
+                targetEntryData = new CInventoryItemEntryData();
+                itemEntryList[ _slotIndex ] = targetEntryData;
+            }
+
+            if ( _itemEntryData == null || _itemEntryData.IsEmpty() )
+            {
+                targetEntryData.Clear();
+            }
+            else
+            {
+                targetEntryData.CopyFrom( _itemEntryData );
+            }
+
+            RaiseInventoryChanged();
+            return true;
+        }
+
+        ///<summary>
+        /// ?꾩씠???쒓굅 ?쒕룄
+        ///</summary>
         public bool TryRemoveItem( string _itemId, int _count )
         {
             EnsureSlotCapacity();

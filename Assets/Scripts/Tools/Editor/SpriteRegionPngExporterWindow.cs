@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -6,12 +6,10 @@ using UnityEngine;
 namespace TinyHero.Tools
 {
     ///<summary>
-    /// 스프라이트 영역 PNG 내보내기 에디터 창
+    /// 스프라이트 리사이즈 저장 에디터 창
     ///</summary>
     public sealed class SpriteRegionPngExporterWindow : EditorWindow
     {
-        private const string DefaultOutputFolder = "Assets/ResizedSprites";
-        private const string DefaultFileName = "ResizedSprite";
         private const float DefaultResizeScalePercent = 50.0f;
         private const int DefaultMaxResizeWidth = 128;
         private const int DefaultMaxResizeHeight = 128;
@@ -22,9 +20,7 @@ namespace TinyHero.Tools
             VALUE
         }
 
-        [SerializeField] private Texture2D sourceTexture;
-        [SerializeField] private string outputFolder = DefaultOutputFolder;
-        [SerializeField] private string fileName = string.Empty;
+        [SerializeField] private Sprite sourceSprite;
         [SerializeField] private eResizeMode resizeMode = eResizeMode.PERCENT;
         [SerializeField] private float resizeScalePercent = DefaultResizeScalePercent;
         [SerializeField] private int maxResizeWidth = DefaultMaxResizeWidth;
@@ -32,10 +28,8 @@ namespace TinyHero.Tools
         [SerializeField] private bool allowUpscale;
 
         private Vector2 scrollPosition;
-        private string statusMessage = "?뚯뒪 ?대?吏瑜?吏?뺥븳 ????μ쓣 ?ㅽ뻾?섏꽭??";
+        private string statusMessage = "원본 스프라이트를 지정한 뒤 리사이즈 저장을 실행하세요.";
         private MessageType statusMessageType = MessageType.Info;
-        private bool useAutoFileName = true;
-        private string lastSuggestedFileName = string.Empty;
 
         ///<summary>
         /// 에디터 창 표시
@@ -45,16 +39,8 @@ namespace TinyHero.Tools
         {
             SpriteRegionPngExporterWindow window = GetWindow<SpriteRegionPngExporterWindow>();
             window.titleContent = new GUIContent( "Sprite Resize Exporter" );
-            window.minSize = new Vector2( 420.0f, 340.0f );
+            window.minSize = new Vector2( 460.0f, 360.0f );
             window.Show();
-        }
-
-        ///<summary>
-        /// 활성화 처리
-        ///</summary>
-        private void OnEnable()
-        {
-            RefreshSuggestedFileName( true );
         }
 
         ///<summary>
@@ -63,8 +49,8 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "Sprite Resize PNG Exporter", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "?먮낯 ?ㅽ봽?쇱씠?몃? 鍮꾩쑉 ?좎? 由ъ궗?댁쫰 ??PNG濡???ν빀?덈떎.", MessageType.None );
+            EditorGUILayout.LabelField( "Sprite Resize Exporter", EditorStyles.boldLabel );
+            EditorGUILayout.HelpBox( "원본 스프라이트를 선택하면 현재 파일은 같은 폴더에 '_Origin' 백업으로 보관하고, 리사이즈된 PNG는 원본 경로에 다시 저장합니다.", MessageType.None );
             EditorGUILayout.Space();
 
             scrollPosition = EditorGUILayout.BeginScrollView( scrollPosition );
@@ -86,22 +72,18 @@ namespace TinyHero.Tools
         private void DrawSourceSection()
         {
             EditorGUILayout.LabelField( "Source", EditorStyles.boldLabel );
-            sourceTexture = ( Texture2D )EditorGUILayout.ObjectField( "Texture", sourceTexture, typeof( Texture2D ), false );
-            string newOutputFolder = EditorGUILayout.TextField( "Output Folder", outputFolder );
+            sourceSprite = ( Sprite )EditorGUILayout.ObjectField( "Sprite", sourceSprite, typeof( Sprite ), false );
 
-            if ( string.Equals( newOutputFolder, outputFolder, StringComparison.Ordinal ) == false )
+            if ( sourceSprite == null )
             {
-                outputFolder = newOutputFolder;
-                bool shouldApplySuggestedName = useAutoFileName || string.IsNullOrWhiteSpace( fileName ) || string.Equals( fileName, lastSuggestedFileName, StringComparison.Ordinal );
-                RefreshSuggestedFileName( shouldApplySuggestedName );
+                EditorGUILayout.HelpBox( "리사이즈할 원본 스프라이트를 지정하세요.", MessageType.Info );
+                return;
             }
 
-            string newFileName = EditorGUILayout.TextField( "File Name", fileName );
-
-            if ( string.Equals( newFileName, fileName, StringComparison.Ordinal ) == false )
-            {
-                HandleFileNameChanged( newFileName );
-            }
+            string sourceAssetPath = AssetDatabase.GetAssetPath( sourceSprite );
+            string originAssetPath = GetOriginAssetPath( sourceAssetPath );
+            EditorGUILayout.LabelField( "Asset Path", sourceAssetPath );
+            EditorGUILayout.LabelField( "Backup Path", originAssetPath );
         }
 
         ///<summary>
@@ -133,14 +115,20 @@ namespace TinyHero.Tools
         {
             EditorGUILayout.LabelField( "Preview", EditorStyles.boldLabel );
 
-            if ( sourceTexture == null )
+            if ( sourceSprite == null )
             {
-                EditorGUILayout.HelpBox( "?뚯뒪 ?띿뒪泥섎? 吏?뺥븯?몄슂.", MessageType.None );
+                EditorGUILayout.HelpBox( "원본 스프라이트를 지정하면 리사이즈 결과를 미리 확인할 수 있습니다.", MessageType.None );
                 return;
             }
 
-            int sourceWidth = sourceTexture.width;
-            int sourceHeight = sourceTexture.height;
+            if ( IsSingleSpriteAsset( sourceSprite ) == false )
+            {
+                EditorGUILayout.HelpBox( "스프라이트 시트의 일부 영역은 현재 원본 덮어쓰기를 지원하지 않습니다. 단일 스프라이트 파일을 사용하세요.", MessageType.Warning );
+                return;
+            }
+
+            int sourceWidth = Mathf.RoundToInt( sourceSprite.rect.width );
+            int sourceHeight = Mathf.RoundToInt( sourceSprite.rect.height );
             Vector2Int targetSize = CalculateResizeTargetSize( sourceWidth, sourceHeight );
             EditorGUILayout.LabelField( $"Source Size: {sourceWidth} x {sourceHeight}" );
             EditorGUILayout.LabelField( $"Target Size: {targetSize.x} x {targetSize.y}" );
@@ -153,7 +141,7 @@ namespace TinyHero.Tools
         {
             EditorGUILayout.LabelField( "Actions", EditorStyles.boldLabel );
 
-            if ( GUILayout.Button( "Save Resized PNG" ) )
+            if ( GUILayout.Button( "리사이즈 저장" ) )
             {
                 SaveResizedTexture();
             }
@@ -166,35 +154,43 @@ namespace TinyHero.Tools
         ///</summary>
         private string ValidateInputs()
         {
-            if ( sourceTexture == null )
+            if ( sourceSprite == null )
             {
-                string result = "?뚯뒪 ?띿뒪泥섎? 癒쇱? 吏?뺥븯?몄슂.";
+                string result = "원본 스프라이트를 먼저 지정하세요.";
                 return result;
             }
 
-            if ( string.IsNullOrWhiteSpace( outputFolder ) )
+            string sourceAssetPath = AssetDatabase.GetAssetPath( sourceSprite );
+
+            if ( string.IsNullOrWhiteSpace( sourceAssetPath ) )
             {
-                string result = "異쒕젰 ?대뜑瑜??낅젰?섏꽭??";
+                string result = "원본 스프라이트의 에셋 경로를 찾을 수 없습니다.";
                 return result;
             }
 
-            bool isAssetsFolder = outputFolder.StartsWith( "Assets", StringComparison.Ordinal );
+            bool isAssetsFolder = sourceAssetPath.StartsWith( "Assets", StringComparison.Ordinal );
 
             if ( isAssetsFolder == false )
             {
-                string result = "異쒕젰 ?대뜑??Assets ?섏쐞 寃쎈줈?ъ빞 ?⑸땲??";
+                string result = "원본 스프라이트는 Assets 하위 경로에 있어야 합니다.";
+                return result;
+            }
+
+            if ( IsSingleSpriteAsset( sourceSprite ) == false )
+            {
+                string result = "스프라이트 시트의 일부 영역은 현재 덮어쓰기를 지원하지 않습니다.";
                 return result;
             }
 
             if ( resizeMode == eResizeMode.PERCENT && resizeScalePercent <= 0.0f )
             {
-                string result = "Scale Percent??0蹂대떎 而ㅼ빞 ?⑸땲??";
+                string result = "Scale Percent는 0보다 커야 합니다.";
                 return result;
             }
 
             if ( resizeMode == eResizeMode.VALUE && ( maxResizeWidth < 1 || maxResizeHeight < 1 ) )
             {
-                string result = "Max Width? Max Height??1 ?댁긽?댁뼱???⑸땲??";
+                string result = "Max Width와 Max Height는 1 이상이어야 합니다.";
                 return result;
             }
 
@@ -215,11 +211,11 @@ namespace TinyHero.Tools
                 return;
             }
 
-            Texture2D readableTexture = CreateReadableTexture( sourceTexture );
+            Texture2D readableTexture = CreateReadableTexture( sourceSprite );
 
             if ( readableTexture == null )
             {
-                SetStatus( "?띿뒪泥섎? ?쎌쓣 ???놁뒿?덈떎.", MessageType.Error );
+                SetStatus( "원본 스프라이트를 읽을 수 없습니다.", MessageType.Error );
                 return;
             }
 
@@ -229,15 +225,14 @@ namespace TinyHero.Tools
             {
                 resizedTexture = CreateResizedTextureIfNeeded( readableTexture );
                 Texture2D exportTexture = resizedTexture != null ? resizedTexture : readableTexture;
-                EnsureOutputFolderExists();
-
+                string sourceAssetPath = AssetDatabase.GetAssetPath( sourceSprite );
+                HandleOriginTextureBackup( sourceAssetPath );
                 byte[] pngBytes = exportTexture.EncodeToPNG();
-                string safeFileName = SanitizeFileName( fileName );
-                string assetPath = Path.Combine( outputFolder, $"{safeFileName}.png" );
-                File.WriteAllBytes( assetPath, pngBytes );
+                string fullSourcePath = GetFullAssetPath( sourceAssetPath );
+                File.WriteAllBytes( fullSourcePath, pngBytes );
+                AssetDatabase.ImportAsset( sourceAssetPath, ImportAssetOptions.ForceUpdate );
                 AssetDatabase.Refresh();
-                SetStatus( $"PNG ????꾨즺: {assetPath}", MessageType.Info );
-                RefreshSuggestedFileName( useAutoFileName );
+                SetStatus( $"리사이즈 스프라이트 저장 완료: {sourceAssetPath}", MessageType.Info );
             }
             finally
             {
@@ -251,9 +246,41 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 읽기 가능 텍스처 생성
+        /// 스프라이트 기준 읽기 가능 텍스처 생성
         ///</summary>
-        private Texture2D CreateReadableTexture(Texture2D _texture)
+        private Texture2D CreateReadableTexture( Sprite _sourceSprite )
+        {
+            if ( _sourceSprite == null )
+            {
+                return null;
+            }
+
+            Texture2D sourceTexture = _sourceSprite.texture;
+            Texture2D readableSourceTexture = CreateReadableTextureFromTexture( sourceTexture );
+
+            if ( readableSourceTexture == null )
+            {
+                return null;
+            }
+
+            Texture2D croppedTexture = null;
+
+            try
+            {
+                croppedTexture = ExtractSpriteTexture( readableSourceTexture, _sourceSprite );
+            }
+            finally
+            {
+                DestroyImmediate( readableSourceTexture );
+            }
+
+            return croppedTexture;
+        }
+
+        ///<summary>
+        /// 텍스처 기준 읽기 가능 텍스처 생성
+        ///</summary>
+        private Texture2D CreateReadableTextureFromTexture( Texture2D _texture )
         {
             if ( _texture == null )
             {
@@ -285,9 +312,31 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 리사이즈 텍스처 조건부 필요 생성
+        /// 스프라이트 영역 텍스처 추출
         ///</summary>
-        private Texture2D CreateResizedTextureIfNeeded(Texture2D _sourceTextureToResize)
+        private Texture2D ExtractSpriteTexture( Texture2D _readableSourceTexture, Sprite _sourceSprite )
+        {
+            if ( _readableSourceTexture == null || _sourceSprite == null )
+            {
+                return null;
+            }
+
+            Rect textureRect = _sourceSprite.textureRect;
+            int sourceX = Mathf.RoundToInt( textureRect.x );
+            int sourceY = Mathf.RoundToInt( textureRect.y );
+            int sourceWidth = Mathf.RoundToInt( textureRect.width );
+            int sourceHeight = Mathf.RoundToInt( textureRect.height );
+            Color[] sourcePixelArray = _readableSourceTexture.GetPixels( sourceX, sourceY, sourceWidth, sourceHeight );
+            Texture2D extractedTexture = new Texture2D( sourceWidth, sourceHeight, TextureFormat.RGBA32, false );
+            extractedTexture.SetPixels( sourcePixelArray );
+            extractedTexture.Apply();
+            return extractedTexture;
+        }
+
+        ///<summary>
+        /// 리사이즈 텍스처 조건부 생성
+        ///</summary>
+        private Texture2D CreateResizedTextureIfNeeded( Texture2D _sourceTextureToResize )
         {
             if ( _sourceTextureToResize == null )
             {
@@ -308,7 +357,7 @@ namespace TinyHero.Tools
         ///<summary>
         /// 리사이즈 대상 크기 계산
         ///</summary>
-        private Vector2Int CalculateResizeTargetSize(int _sourceWidth, int _sourceHeight)
+        private Vector2Int CalculateResizeTargetSize( int _sourceWidth, int _sourceHeight )
         {
             if ( resizeMode == eResizeMode.PERCENT )
             {
@@ -343,7 +392,7 @@ namespace TinyHero.Tools
         ///<summary>
         /// 리사이즈 텍스처 처리
         ///</summary>
-        private Texture2D ResizeTexture(Texture2D _sourceTextureToResize, int _targetWidth, int _targetHeight)
+        private Texture2D ResizeTexture( Texture2D _sourceTextureToResize, int _targetWidth, int _targetHeight )
         {
             Texture2D resizedTexture = new Texture2D( _targetWidth, _targetHeight, TextureFormat.RGBA32, false );
             Color[] resizedPixels = new Color[ _targetWidth * _targetHeight ];
@@ -371,113 +420,75 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 출력 폴더 존재 보장
+        /// 원본 백업 PNG 생성
         ///</summary>
-        private void EnsureOutputFolderExists()
+        private void HandleOriginTextureBackup( string _sourceAssetPath )
         {
-            string fullPath = Path.GetFullPath( outputFolder );
-
-            if ( Directory.Exists( fullPath ) )
+            if ( string.IsNullOrWhiteSpace( _sourceAssetPath ) )
             {
                 return;
             }
 
-            Directory.CreateDirectory( fullPath );
-        }
+            string originAssetPath = GetOriginAssetPath( _sourceAssetPath );
+            string fullOriginPath = GetFullAssetPath( originAssetPath );
 
-        ///<summary>
-        /// 파일 이름 변경 처리
-        ///</summary>
-        private void HandleFileNameChanged(string _newFileName)
-        {
-            if ( string.IsNullOrWhiteSpace( _newFileName ) )
+            if ( File.Exists( fullOriginPath ) )
             {
-                useAutoFileName = true;
-                RefreshSuggestedFileName( true );
                 return;
             }
 
-            string sanitizedFileName = SanitizeFileName( _newFileName );
-            string currentSuggestedFileName = BuildSuggestedFileName();
-            bool isSuggestedFileName = string.Equals( sanitizedFileName, currentSuggestedFileName, StringComparison.Ordinal );
-
-            useAutoFileName = isSuggestedFileName;
-            fileName = sanitizedFileName;
-            lastSuggestedFileName = currentSuggestedFileName;
-
-            if ( useAutoFileName )
-            {
-                RefreshSuggestedFileName( true );
-            }
+            string fullSourcePath = GetFullAssetPath( _sourceAssetPath );
+            File.Copy( fullSourcePath, fullOriginPath );
+            AssetDatabase.ImportAsset( originAssetPath, ImportAssetOptions.ForceUpdate );
         }
 
         ///<summary>
-        /// 권장 파일 이름 갱신
+        /// 원본 백업 경로 구성
         ///</summary>
-        private void RefreshSuggestedFileName(bool _applyToField)
+        private string GetOriginAssetPath( string _sourceAssetPath )
         {
-            string suggestedFileName = BuildSuggestedFileName();
-            lastSuggestedFileName = suggestedFileName;
-
-            if ( _applyToField )
-            {
-                fileName = suggestedFileName;
-            }
+            string directoryPath = Path.GetDirectoryName( _sourceAssetPath );
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension( _sourceAssetPath );
+            string extension = Path.GetExtension( _sourceAssetPath );
+            string originFileName = $"{fileNameWithoutExtension}_Origin{extension}";
+            string result = string.IsNullOrWhiteSpace( directoryPath ) ? originFileName : Path.Combine( directoryPath, originFileName );
+            return result.Replace( '\\', '/' );
         }
 
         ///<summary>
-        /// 권장 파일 이름 구성
+        /// 에셋 절대 경로 구성
         ///</summary>
-        private string BuildSuggestedFileName()
+        private string GetFullAssetPath( string _assetPath )
         {
-            string fullPath = Path.GetFullPath( outputFolder );
-            int nextIndex = 1;
-
-            if ( Directory.Exists( fullPath ) )
-            {
-                string[] existingFiles = Directory.GetFiles( fullPath );
-                int fileCount = existingFiles.Length;
-                nextIndex = fileCount + 1;
-            }
-
-            string suggestedFileName = $"{DefaultFileName}_{nextIndex:D3}";
-            return suggestedFileName;
+            string result = Path.GetFullPath( _assetPath );
+            return result;
         }
 
         ///<summary>
-        /// 파일 이름 정리 처리
+        /// 단일 스프라이트 에셋 여부 판정
         ///</summary>
-        private string SanitizeFileName(string _rawName)
+        private bool IsSingleSpriteAsset( Sprite _sourceSprite )
         {
-            string candidate = string.IsNullOrWhiteSpace( _rawName ) ? DefaultFileName : _rawName.Trim();
-            char[] invalidCharacters = Path.GetInvalidFileNameChars();
-
-            foreach ( char invalidCharacter in invalidCharacters )
+            if ( _sourceSprite == null || _sourceSprite.texture == null )
             {
-                candidate = candidate.Replace( invalidCharacter.ToString(), string.Empty );
+                return false;
             }
 
-            bool isEmpty = string.IsNullOrWhiteSpace( candidate );
-
-            if ( isEmpty )
-            {
-                string fallbackName = DefaultFileName;
-                return fallbackName;
-            }
-
-            string result = candidate;
+            int spriteWidth = Mathf.RoundToInt( _sourceSprite.rect.width );
+            int spriteHeight = Mathf.RoundToInt( _sourceSprite.rect.height );
+            bool isFullWidth = spriteWidth == _sourceSprite.texture.width;
+            bool isFullHeight = spriteHeight == _sourceSprite.texture.height;
+            bool result = isFullWidth && isFullHeight;
             return result;
         }
 
         ///<summary>
         /// 상태 메시지 설정
         ///</summary>
-        private void SetStatus(string _message, MessageType _messageType)
+        private void SetStatus( string _message, MessageType _messageType )
         {
             statusMessage = _message;
             statusMessageType = _messageType;
         }
     }
 }
-
-

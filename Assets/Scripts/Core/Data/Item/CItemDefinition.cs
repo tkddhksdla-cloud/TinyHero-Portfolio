@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TinyHero.Player;
 using UnityEngine;
 
 namespace TinyHero.Core.Data
@@ -14,6 +15,18 @@ namespace TinyHero.Core.Data
         CURRENCY,
         MATERIAL,
         QUEST_ITEM
+    }
+
+    ///<summary>
+    /// 장비 슬롯 타입
+    ///</summary>
+    public enum eEquipmentType
+    {
+        NONE,
+        WEAPON,
+        HELMET,
+        ARMOR,
+        SHIELD
     }
 
     ///<summary>
@@ -227,6 +240,8 @@ namespace TinyHero.Core.Data
         [SerializeField] private GameObject worldDropPrefab;
         [SerializeField] private bool isStackable = true;
         [SerializeField] private int maxStackCount = 99;
+        [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
+        [SerializeField] private CPlayerStatRuntimeData equipmentStatBonus = new CPlayerStatRuntimeData();
 
         ///<summary>
         /// 아이템 ID 반환
@@ -274,6 +289,14 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 아이콘 스프라이트 설정
+        ///</summary>
+        public void SetIconSprite( Sprite _iconSprite )
+        {
+            iconSprite = _iconSprite;
+        }
+
+        ///<summary>
         /// 월드 드랍 프리팹 반환
         ///</summary>
         public GameObject GetWorldDropPrefab()
@@ -301,6 +324,47 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 장비 아이템 여부 반환
+        ///</summary>
+        public bool IsEquipmentItem()
+        {
+            bool result = itemType == eItemType.EQUIPMENT;
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 슬롯 타입 반환
+        ///</summary>
+        public eEquipmentType GetEquipmentType()
+        {
+            eEquipmentType result = IsEquipmentItem() ? equipmentType : eEquipmentType.NONE;
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 슬롯 타입 일치 여부 반환
+        ///</summary>
+        public bool IsEquipmentTypeMatched( eEquipmentType _equipmentType )
+        {
+            if ( IsEquipmentItem() == false )
+            {
+                return false;
+            }
+
+            bool result = equipmentType == _equipmentType;
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 스탯 보너스 반환
+        ///</summary>
+        public CPlayerStatRuntimeData GetEquipmentStatBonus()
+        {
+            CPlayerStatRuntimeData result = equipmentStatBonus;
+            return result;
+        }
+
+        ///<summary>
         /// 월드 드랍 프리팹 설정
         ///</summary>
         public void SetWorldDropPrefab( GameObject _worldDropPrefab )
@@ -313,13 +377,36 @@ namespace TinyHero.Core.Data
         ///</summary>
         public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
         {
+            Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null );
+        }
+
+        ///<summary>
+        /// 아이템 정의 구성
+        ///</summary>
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus )
+        {
             itemId = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
             itemName = string.IsNullOrWhiteSpace( _itemName ) ? itemId : _itemName.Trim();
             itemType = _itemType;
             description = string.IsNullOrWhiteSpace( _description ) ? string.Empty : _description.Trim();
             iconSprite = _iconSprite;
-            isStackable = _isStackable;
-            maxStackCount = _isStackable ? Mathf.Max( 1, _maxStackCount ) : 1;
+            bool isEquipmentItem = _itemType == eItemType.EQUIPMENT;
+            equipmentType = isEquipmentItem ? _equipmentType : eEquipmentType.NONE;
+            isStackable = isEquipmentItem == false && _isStackable;
+            maxStackCount = isStackable ? Mathf.Max( 1, _maxStackCount ) : 1;
+
+            if ( equipmentStatBonus == null )
+            {
+                equipmentStatBonus = new CPlayerStatRuntimeData();
+            }
+
+            if ( isEquipmentItem && _equipmentStatBonus != null )
+            {
+                equipmentStatBonus.CopyFrom( _equipmentStatBonus );
+                return;
+            }
+
+            equipmentStatBonus.Clear();
         }
     }
 }

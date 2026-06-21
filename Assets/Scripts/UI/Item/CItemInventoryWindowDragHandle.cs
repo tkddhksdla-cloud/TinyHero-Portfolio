@@ -6,7 +6,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 인벤토리 창 드래그 핸들
     ///</summary>
-    public sealed class CItemInventoryWindowDragHandle : MonoBehaviour, IBeginDragHandler, IDragHandler
+    public sealed class CItemInventoryWindowDragHandle : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IDragHandler
     {
         [SerializeField] private RectTransform targetWindowRectTransform;
         [SerializeField] private Canvas targetCanvas;
@@ -23,10 +23,20 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 창 전면 정렬 처리
+        ///</summary>
+        public void OnPointerDown( PointerEventData _eventData )
+        {
+            BringWindowToFront();
+        }
+
+        ///<summary>
         /// 창 드래그 시작 처리
         ///</summary>
         public void OnBeginDrag( PointerEventData _eventData )
         {
+            BringWindowToFront();
+
             RectTransform canvasRectTransform = ResolveCanvasRectTransform();
 
             if ( canvasRectTransform == null || targetWindowRectTransform == null )
@@ -66,6 +76,19 @@ namespace TinyHero.UI
             }
 
             targetWindowRectTransform.anchoredPosition = localPointerPosition + dragOffset;
+        }
+
+        ///<summary>
+        /// 대상 창 최상단 정렬
+        ///</summary>
+        private void BringWindowToFront()
+        {
+            if ( targetWindowRectTransform == null )
+            {
+                return;
+            }
+
+            targetWindowRectTransform.SetAsLastSibling();
         }
 
         ///<summary>

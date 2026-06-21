@@ -3,8 +3,8 @@ using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace TinyHero.UI
 {
@@ -18,16 +18,17 @@ namespace TinyHero.UI
         private const string ContentPathFallback = "Inventory/BG/Scroll View/Viewport/Content";
         private const string LegacyContentPathPrimary = "BG/Content";
         private const string LegacyContentPathFallback = "BG/Scroll View/Viewport/Content";
-        private const string BgPath = "Inventory/BG";
-        private const string LegacyBgPath = "BG";
         private const string CloseButtonPath = "Inventory/ButtonClose";
         private const string LegacyCloseButtonPath = "ButtonClose";
+        private const string EquipmentPanelObjectName = "EquipmentStatusPanel";
         private const string SlotPrefabResourcePath = "Prefabs/UI/Inventory/ItemSlot";
         private const string TooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const float DragGhostAlpha = 0.55f;
 
         [SerializeField] private RectTransform windowRootRectTransform;
+        [SerializeField] private RectTransform windowDragHandleRectTransform;
         [SerializeField] private RectTransform contentRootRectTransform;
+        [SerializeField] private RectTransform equipmentStatusPanelRectTransform;
         [SerializeField] private CButtonEx closeButton;
         [SerializeField] private Canvas targetCanvas;
         [SerializeField] private CanvasGroup targetCanvasGroup;
@@ -35,9 +36,12 @@ namespace TinyHero.UI
         private readonly List<CItemSlot> itemSlotList = new List<CItemSlot>();
 
         private CPlayerInventoryManager targetInventoryManager;
+        private CPlayerEquipmentManager targetEquipmentManager;
+        private CPlayerStatManager targetStatManager;
+        private PlayerController targetPlayerController;
+        private CPlayerEquipmentStatusPanelUI equipmentStatusPanelUi;
         private CItemSlot slotPrefab;
         private GameObject tooltipUiPrefabObject;
-        private CItemTooltipUI tooltipUiPrefab;
         private CItemTooltipUI runtimeTooltipUi;
         private RectTransform dragGhostRectTransform;
         private Image dragGhostImage;
@@ -45,13 +49,12 @@ namespace TinyHero.UI
         private bool isInventoryVisible;
 
         ///<summary>
-        /// 인벤토리 UI 초기화
+        /// 인벤토리 UI 초기화 처리
         ///</summary>
         private void Awake()
         {
             ResolveReferences();
             EnsurePrefabReferences();
-            EnsureTooltipUi();
             EnsureWindowDragHandle();
             EnsureSlotObjects();
             SetInventoryVisible( false );
@@ -63,6 +66,8 @@ namespace TinyHero.UI
         private void OnEnable()
         {
             ResolveReferences();
+            EnsureWindowDragHandle();
+            RefreshEquipmentStatusPanelBinding();
 
             if ( closeButton != null )
             {
@@ -92,6 +97,10 @@ namespace TinyHero.UI
         private void Update()
         {
             TryResolveInventoryManager();
+            TryResolveEquipmentManager();
+            TryResolveTargetStatManager();
+            TryResolvePlayerController();
+            RefreshEquipmentStatusPanelBinding();
             HandleToggleInput();
 
             if ( isInventoryVisible == false )
@@ -117,6 +126,7 @@ namespace TinyHero.UI
             if ( targetInventoryManager == _targetInventoryManager )
             {
                 RefreshSlotViews();
+                RefreshEquipmentStatusPanelBinding();
                 return;
             }
 
@@ -130,6 +140,7 @@ namespace TinyHero.UI
             }
 
             RefreshSlotViews();
+            RefreshEquipmentStatusPanelBinding();
         }
 
         ///<summary>
@@ -157,9 +168,59 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 문자열 툴팁 표시 요청
+        ///</summary>
+        public void ShowTextTooltip( string _titleText, string _descriptionText )
+        {
+            EnsureTooltipUi();
+
+            if ( runtimeTooltipUi == null )
+            {
+                return;
+            }
+
+            runtimeTooltipUi.SetTooltipContent( _titleText, _descriptionText );
+            runtimeTooltipUi.transform.SetAsLastSibling();
+            runtimeTooltipUi.SetVisible( true );
+            UpdateTooltipPosition();
+        }
+
+        ///<summary>
+        /// 아이템 정의 툴팁 표시 요청
+        ///</summary>
+        public void ShowItemDefinitionTooltip( CItemDefinition _itemDefinition )
+        {
+            if ( _itemDefinition == null )
+            {
+                HideTooltipInternal();
+                return;
+            }
+
+            EnsureTooltipUi();
+
+            if ( runtimeTooltipUi == null )
+            {
+                return;
+            }
+
+            runtimeTooltipUi.SetTooltipContent( _itemDefinition );
+            runtimeTooltipUi.transform.SetAsLastSibling();
+            runtimeTooltipUi.SetVisible( true );
+            UpdateTooltipPosition();
+        }
+
+        ///<summary>
         /// 인벤토리 툴팁 숨김 요청
         ///</summary>
         public void HideTooltip( CItemSlot _itemSlot )
+        {
+            HideTooltipInternal();
+        }
+
+        ///<summary>
+        /// 공용 툴팁 숨김 요청
+        ///</summary>
+        public void HideSharedTooltip()
         {
             HideTooltipInternal();
         }
@@ -212,6 +273,41 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 슬롯 우클릭 처리
+        ///</summary>
+        public void HandleSlotPointerClick( CItemSlot _itemSlot, PointerEventData _eventData )
+        {
+            if ( _itemSlot == null || _eventData == null )
+            {
+                return;
+            }
+
+            if ( _eventData.button != PointerEventData.InputButton.Right )
+            {
+                return;
+            }
+
+            TryResolveEquipmentManager();
+
+            if ( targetInventoryManager == null || targetEquipmentManager == null )
+            {
+                return;
+            }
+
+            int slotIndex = _itemSlot.GetSlotIndex();
+            bool didEquipItem = targetEquipmentManager.TryEquipFromInventorySlot( targetInventoryManager, slotIndex );
+
+            if ( didEquipItem == false )
+            {
+                return;
+            }
+
+            HideTooltipInternal();
+            EndSlotDragInternal();
+            RefreshEquipmentStatusPanelBinding();
+        }
+
+        ///<summary>
         /// 슬롯 드롭 처리
         ///</summary>
         public void HandleSlotDrop( CItemSlot _targetSlot )
@@ -224,6 +320,37 @@ namespace TinyHero.UI
             int fromSlotIndex = draggedSlot.GetSlotIndex();
             int toSlotIndex = _targetSlot.GetSlotIndex();
             targetInventoryManager.TrySwapSlotItems( fromSlotIndex, toSlotIndex );
+        }
+
+        ///<summary>
+        /// 장비 슬롯 드롭 착용 처리
+        ///</summary>
+        public bool TryEquipDraggedSlotToEquipmentType( eEquipmentType _equipmentType )
+        {
+            if ( draggedSlot == null )
+            {
+                return false;
+            }
+
+            TryResolveEquipmentManager();
+
+            if ( targetInventoryManager == null || targetEquipmentManager == null )
+            {
+                return false;
+            }
+
+            int slotIndex = draggedSlot.GetSlotIndex();
+            bool didEquipItem = targetEquipmentManager.TryEquipFromInventorySlot( targetInventoryManager, slotIndex, _equipmentType );
+
+            if ( didEquipItem == false )
+            {
+                return false;
+            }
+
+            HideTooltipInternal();
+            EndSlotDragInternal();
+            RefreshEquipmentStatusPanelBinding();
+            return true;
         }
 
         ///<summary>
@@ -247,6 +374,7 @@ namespace TinyHero.UI
                     itemSlot.RefreshSlot( null, 0 );
                 }
 
+                RefreshEquipmentStatusPanelBinding();
                 return;
             }
 
@@ -272,6 +400,8 @@ namespace TinyHero.UI
                 int quantity = itemEntryData != null ? itemEntryData.GetQuantity() : 0;
                 itemSlot.RefreshSlot( itemDefinition, quantity );
             }
+
+            RefreshEquipmentStatusPanelBinding();
         }
 
         ///<summary>
@@ -290,6 +420,7 @@ namespace TinyHero.UI
             else
             {
                 RefreshSlotViews();
+                RefreshEquipmentStatusPanelBinding();
             }
         }
 
@@ -320,6 +451,56 @@ namespace TinyHero.UI
             }
 
             BindInventoryManager( resolvedInventoryManager );
+        }
+
+        ///<summary>
+        /// 장비 매니저 자동 결정 시도
+        ///</summary>
+        private void TryResolveEquipmentManager()
+        {
+            if ( targetEquipmentManager != null )
+            {
+                return;
+            }
+
+            targetEquipmentManager = FindFirstObjectByType<CPlayerEquipmentManager>();
+        }
+
+        ///<summary>
+        /// 플레이어 스탯 매니저 자동 결정 시도
+        ///</summary>
+        private void TryResolveTargetStatManager()
+        {
+            if ( targetStatManager != null )
+            {
+                return;
+            }
+
+            if ( targetEquipmentManager != null )
+            {
+                CPlayerStatManager resolvedFromEquipment = targetEquipmentManager.GetComponent<CPlayerStatManager>();
+
+                if ( resolvedFromEquipment != null )
+                {
+                    targetStatManager = resolvedFromEquipment;
+                    return;
+                }
+            }
+
+            targetStatManager = FindFirstObjectByType<CPlayerStatManager>();
+        }
+
+        ///<summary>
+        /// 플레이어 컨트롤러 자동 결정 시도
+        ///</summary>
+        private void TryResolvePlayerController()
+        {
+            if ( targetPlayerController != null )
+            {
+                return;
+            }
+
+            targetPlayerController = FindFirstObjectByType<PlayerController>();
         }
 
         ///<summary>
@@ -373,6 +554,19 @@ namespace TinyHero.UI
         private void HandleCloseButtonClicked()
         {
             SetInventoryVisible( false );
+        }
+
+        ///<summary>
+        /// 통합 장비 패널 바인딩 반영
+        ///</summary>
+        private void RefreshEquipmentStatusPanelBinding()
+        {
+            if ( equipmentStatusPanelUi == null )
+            {
+                return;
+            }
+
+            equipmentStatusPanelUi.Bind( targetInventoryManager, targetEquipmentManager, targetStatManager, targetPlayerController );
         }
 
         ///<summary>
@@ -471,7 +665,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 슬롯 프리팹 및 툴팁 프리팹 결정
+        /// 슬롯 프리팹과 툴팁 프리팹 결정
         ///</summary>
         private void EnsurePrefabReferences()
         {
@@ -481,11 +675,9 @@ namespace TinyHero.UI
                 slotPrefab = slotPrefabObject != null ? slotPrefabObject.GetComponent<CItemSlot>() : null;
             }
 
-            if ( tooltipUiPrefab == null )
+            if ( tooltipUiPrefabObject == null )
             {
-                GameObject tooltipPrefabObject = Resources.Load<GameObject>( TooltipPrefabResourcePath );
-                tooltipUiPrefabObject = tooltipPrefabObject;
-                tooltipUiPrefab = tooltipPrefabObject != null ? tooltipPrefabObject.GetComponent<CItemTooltipUI>() : null;
+                tooltipUiPrefabObject = Resources.Load<GameObject>( TooltipPrefabResourcePath );
             }
         }
 
@@ -519,23 +711,16 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureWindowDragHandle()
         {
-            Transform bgTransform = transform.Find( BgPath );
-
-            if ( bgTransform == null )
-            {
-                bgTransform = transform.Find( LegacyBgPath );
-            }
-
-            if ( bgTransform == null )
+            if ( windowDragHandleRectTransform == null )
             {
                 return;
             }
 
-            CItemInventoryWindowDragHandle dragHandle = bgTransform.GetComponent<CItemInventoryWindowDragHandle>();
+            CItemInventoryWindowDragHandle dragHandle = windowDragHandleRectTransform.GetComponent<CItemInventoryWindowDragHandle>();
 
             if ( dragHandle == null )
             {
-                dragHandle = bgTransform.gameObject.AddComponent<CItemInventoryWindowDragHandle>();
+                dragHandle = windowDragHandleRectTransform.gameObject.AddComponent<CItemInventoryWindowDragHandle>();
             }
 
             dragHandle.Configure( windowRootRectTransform, targetCanvas );
@@ -670,6 +855,17 @@ namespace TinyHero.UI
                 }
 
                 closeButton = closeButtonTransform != null ? closeButtonTransform.GetComponent<CButtonEx>() : null;
+            }
+
+            if ( equipmentStatusPanelRectTransform == null && windowRootRectTransform != null )
+            {
+                Transform equipmentPanelTransform = windowRootRectTransform.Find( EquipmentPanelObjectName );
+                equipmentStatusPanelRectTransform = equipmentPanelTransform as RectTransform;
+            }
+
+            if ( equipmentStatusPanelUi == null && equipmentStatusPanelRectTransform != null )
+            {
+                equipmentStatusPanelUi = equipmentStatusPanelRectTransform.GetComponent<CPlayerEquipmentStatusPanelUI>();
             }
 
             if ( targetCanvas == null )

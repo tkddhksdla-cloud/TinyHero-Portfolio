@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using TinyHero.Core.Data;
@@ -61,6 +61,14 @@ namespace TinyHero.Tools
             window.titleContent = new GUIContent( "Item Definition Editor" );
             window.minSize = new Vector2( 1180.0f, 760.0f );
             window.Show();
+        }
+
+        ///<summary>
+        /// 아이템 정의 에디터 창 열기
+        ///</summary>
+        public static void OpenWindow()
+        {
+            ShowWindow();
         }
 
         ///<summary>

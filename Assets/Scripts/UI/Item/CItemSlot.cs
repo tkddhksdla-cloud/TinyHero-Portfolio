@@ -8,7 +8,7 @@ using UnityEngine.UI;
 ///<summary>
 /// 인벤토리 아이템 슬롯 컴포넌트
 ///</summary>
-public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     [SerializeField] private Image itemImage;
     [SerializeField] private TMP_Text itemCountText;
@@ -27,7 +27,7 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     }
 
     ///<summary>
-    /// 슬롯 초기 설정
+    /// 슬롯 초기화 설정
     ///</summary>
     public void Initialize( CItemInventoryUIController _ownerInventoryUiController, int _slotIndex )
     {
@@ -122,6 +122,19 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
         }
 
         ownerInventoryUiController.HideTooltip( this );
+    }
+
+    ///<summary>
+    /// 슬롯 클릭 처리
+    ///</summary>
+    public void OnPointerClick( PointerEventData _eventData )
+    {
+        if ( ownerInventoryUiController == null )
+        {
+            return;
+        }
+
+        ownerInventoryUiController.HandleSlotPointerClick( this, _eventData );
     }
 
     ///<summary>

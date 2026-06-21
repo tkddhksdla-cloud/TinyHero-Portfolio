@@ -1,4 +1,5 @@
 using TinyHero.Core.Data;
+using TinyHero.Maps;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -14,6 +15,8 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     [SerializeField] private Collider2D pickupTriggerCollider;
 
     private CItemDefinition cachedItemDefinition;
+    private string mapRuntimePoolKey = string.Empty;
+    private bool isPickupInProgress;
 
     ///<summary>
     /// 드랍 오브젝트 초기화
@@ -30,6 +33,7 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     ///</summary>
     public void ConfigureDrop( CItemDefinition _itemDefinition, int _itemCount )
     {
+        PrepareForSpawn();
         cachedItemDefinition = _itemDefinition;
         itemId = _itemDefinition != null ? _itemDefinition.GetItemId() : string.Empty;
         itemCount = Mathf.Max( 1, _itemCount );
@@ -37,10 +41,43 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     }
 
     ///<summary>
+    /// 드랍 오브젝트 스폰 준비
+    ///</summary>
+    public void PrepareForSpawn()
+    {
+        isPickupInProgress = false;
+        ResolveReferences();
+        ConfigureCollider();
+    }
+
+    ///<summary>
+    /// 맵 런타임 풀 키 설정
+    ///</summary>
+    public void SetMapRuntimePoolKey( string _poolKey )
+    {
+        string resolvedPoolKey = string.IsNullOrWhiteSpace( _poolKey ) ? string.Empty : _poolKey.Trim();
+        mapRuntimePoolKey = resolvedPoolKey;
+    }
+
+    ///<summary>
+    /// 맵 런타임 풀 키 반환
+    ///</summary>
+    public string GetMapRuntimePoolKey()
+    {
+        string result = mapRuntimePoolKey;
+        return result;
+    }
+
+    ///<summary>
     /// 충돌 기반 아이템 획득 처리
     ///</summary>
     private void OnTriggerEnter2D( Collider2D _other )
     {
+        if ( isPickupInProgress )
+        {
+            return;
+        }
+
         if ( _other == null )
         {
             return;
@@ -72,14 +109,28 @@ public sealed class CWorldItemDropObject : MonoBehaviour
             return;
         }
 
+        isPickupInProgress = true;
+
+        if ( pickupTriggerCollider != null )
+        {
+            pickupTriggerCollider.enabled = false;
+        }
+
         bool wasAdded = inventoryManager.TryAddItem( itemDefinition, itemCount );
 
         if ( wasAdded == false )
         {
+            isPickupInProgress = false;
+
+            if ( pickupTriggerCollider != null )
+            {
+                pickupTriggerCollider.enabled = true;
+            }
+
             return;
         }
 
-        Destroy( gameObject );
+        ReleaseToPoolOrDeactivate();
     }
 
     ///<summary>
@@ -152,5 +203,48 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         }
 
         pickupTriggerCollider.isTrigger = true;
+    }
+
+    ///<summary>
+    /// 드랍 충돌 활성 상태 설정
+    ///</summary>
+    public void SetPickupTriggerEnabled( bool _isEnabled )
+    {
+        ResolveReferences();
+
+        if ( pickupTriggerCollider == null )
+        {
+            return;
+        }
+
+        pickupTriggerCollider.enabled = _isEnabled;
+    }
+
+    ///<summary>
+    /// 드랍 오브젝트 반환 상태 정리
+    ///</summary>
+    public void PrepareForRelease()
+    {
+        SetPickupTriggerEnabled( false );
+    }
+
+    ///<summary>
+    /// 드랍 오브젝트 풀 반환 또는 비활성화
+    ///</summary>
+    private void ReleaseToPoolOrDeactivate()
+    {
+        bool hasMapManager = CMapManager.TryGetInstance( out CMapManager mapManager );
+
+        if ( hasMapManager && mapManager != null )
+        {
+            bool wasReleased = mapManager.ReleasePooledWorldItemDrop( this, mapRuntimePoolKey );
+
+            if ( wasReleased )
+            {
+                return;
+            }
+        }
+
+        gameObject.SetActive( false );
     }
 }
