@@ -141,7 +141,7 @@ namespace TinyHero.Core.Data
     }
 
     ///<summary>
-    /// NPC 상호작용 데이터 자산
+    /// NPC 상호작용 데이터 에셋
     ///</summary>
     [CreateAssetMenu( fileName = "NPCInteractionData", menuName = "TinyHero/Data/NPC Interaction Data" )]
     public sealed class CNPCInteractionData : ScriptableObject

@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
+using TinyHero.Quest;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -32,11 +34,17 @@ namespace TinyHero.UI
         private CNPCInteractionData activeInteractionData;
         private CNPCInteractionActionEntry activeActionEntry;
         private CNPCDialoguePreset activeDialoguePreset;
+        private Action<bool> pendingQuestInteractionCompleted;
+        private PlayerController pendingQuestPlayerController;
         private Coroutine revealDialogueRoutine;
         private string currentFullDialogueLine = string.Empty;
+        private string pendingQuestInteractionQuestId = string.Empty;
         private int currentActionEntryIndex = -1;
         private int currentDialogueLineIndex = -1;
         private bool isDialogueLineFullyRevealed;
+        private bool isPendingQuestInteractionExecution;
+        private bool hasShownPendingQuestInteractionDialogue;
+        private bool pendingQuestInteractionShouldProcessQuest = true;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -118,12 +126,12 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( _interactionRange.IsPlayerInRange() )
-            {
-                return;
-            }
+            bool isNpcUnavailable = rangeNpcObject == null || rangeNpcObject.gameObject.activeInHierarchy == false;
 
-            EndInteraction();
+            if ( isNpcUnavailable )
+            {
+                EndInteraction();
+            }
         }
 
         ///<summary>
@@ -144,6 +152,11 @@ namespace TinyHero.UI
                 return true;
             }
 
+            if ( CQuestListUIController.IsAnyUiBlockingNpcInteraction() )
+            {
+                return true;
+            }
+
             CNPCObject nearestNpcObject = ResolveNearestInteractableNpcObject();
 
             if ( nearestNpcObject == null )
@@ -153,6 +166,58 @@ namespace TinyHero.UI
 
             BeginInteraction( nearestNpcObject );
             return true;
+        }
+
+        ///<summary>
+        /// 퀘스트 UI 전용 상호작용 처리 시작
+        ///</summary>
+        public void ProcessQuestUiInteraction( CNPCObject _npcObject, PlayerController _playerController, string _questId, Action<bool> _completedHandler )
+        {
+            if ( _npcObject == null || _playerController == null || string.IsNullOrWhiteSpace( _questId ) )
+            {
+                if ( _completedHandler != null )
+                {
+                    _completedHandler( false );
+                }
+
+                return;
+            }
+
+            EndInteraction();
+            activeNpcObject = _npcObject;
+            pendingQuestInteractionCompleted = _completedHandler;
+            pendingQuestPlayerController = _playerController;
+            pendingQuestInteractionQuestId = _questId.Trim();
+            isPendingQuestInteractionExecution = true;
+            hasShownPendingQuestInteractionDialogue = false;
+            pendingQuestInteractionShouldProcessQuest = true;
+            ExecutePendingQuestInteraction();
+        }
+
+        ///<summary>
+        /// 퀘스트 선택 대화 출력 처리 시작
+        ///</summary>
+        public void ShowQuestSelectionDialogue( CNPCObject _npcObject, PlayerController _playerController, string _questId, Action<bool> _completedHandler )
+        {
+            if ( _npcObject == null || _playerController == null || string.IsNullOrWhiteSpace( _questId ) )
+            {
+                if ( _completedHandler != null )
+                {
+                    _completedHandler( false );
+                }
+
+                return;
+            }
+
+            EndInteraction();
+            activeNpcObject = _npcObject;
+            pendingQuestInteractionCompleted = _completedHandler;
+            pendingQuestPlayerController = _playerController;
+            pendingQuestInteractionQuestId = _questId.Trim();
+            isPendingQuestInteractionExecution = true;
+            hasShownPendingQuestInteractionDialogue = false;
+            pendingQuestInteractionShouldProcessQuest = false;
+            ExecutePendingQuestInteraction();
         }
 
         ///<summary>
@@ -346,6 +411,29 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 지정 대화 프리셋 시퀀스 시작
+        ///</summary>
+        private void BeginDialoguePresetSequence( CNPCDialoguePreset _dialoguePreset )
+        {
+            if ( _dialoguePreset == null || activeNpcObject == null )
+            {
+                ExecuteActionAfterDialogue();
+                return;
+            }
+
+            activeDialoguePreset = _dialoguePreset;
+
+            if ( npcNameText != null )
+            {
+                npcNameText.text = activeNpcObject.GetDisplayName();
+            }
+
+            currentDialogueLineIndex = 0;
+            SetDialogueVisible( true );
+            ShowCurrentDialogueLine();
+        }
+
+        ///<summary>
         /// 현재 대화 라인 표시
         ///</summary>
         private void ShowCurrentDialogueLine()
@@ -417,6 +505,12 @@ namespace TinyHero.UI
         ///</summary>
         private void ExecuteActionAfterDialogue()
         {
+            if ( isPendingQuestInteractionExecution )
+            {
+                ExecutePendingQuestInteraction();
+                return;
+            }
+
             if ( activeActionEntry == null )
             {
                 AdvanceToNextActionEntry();
@@ -450,10 +544,18 @@ namespace TinyHero.UI
         ///</summary>
         private void HandleQuestAction()
         {
-            if ( activeNpcObject != null && activeActionEntry != null )
+            if ( activeNpcObject == null )
             {
-                string questId = activeActionEntry.GetLinkedQuestId();
-                Debug.Log( $"NPC quest action placeholder. NPC: {activeNpcObject.GetDisplayName()}, QuestId: {questId}" );
+                EndInteraction();
+                return;
+            }
+
+            PlayerController playerController = ResolvePlayerControllerForNpc( activeNpcObject );
+            CQuestListUIController questListUiController = ResolveQuestListUiController();
+
+            if ( playerController != null && questListUiController != null )
+            {
+                questListUiController.ShowQuestListUi( activeNpcObject, playerController );
             }
 
             EndInteraction();
@@ -493,10 +595,16 @@ namespace TinyHero.UI
             activeInteractionData = null;
             activeActionEntry = null;
             activeDialoguePreset = null;
+            pendingQuestInteractionCompleted = null;
+            pendingQuestPlayerController = null;
             currentActionEntryIndex = -1;
             currentDialogueLineIndex = -1;
             currentFullDialogueLine = string.Empty;
+            pendingQuestInteractionQuestId = string.Empty;
             isDialogueLineFullyRevealed = true;
+            isPendingQuestInteractionExecution = false;
+            hasShownPendingQuestInteractionDialogue = false;
+            pendingQuestInteractionShouldProcessQuest = true;
 
             if ( dialogueText != null )
             {
@@ -504,6 +612,96 @@ namespace TinyHero.UI
             }
 
             SetDialogueVisible( false );
+        }
+
+        ///<summary>
+        /// 퀘스트 UI 전용 상호작용 실행
+        ///</summary>
+        private void ExecutePendingQuestInteraction()
+        {
+            if ( isPendingQuestInteractionExecution == false || activeNpcObject == null || pendingQuestPlayerController == null || string.IsNullOrWhiteSpace( pendingQuestInteractionQuestId ) )
+            {
+                NotifyPendingQuestInteractionCompleted( false );
+                EndInteraction();
+                return;
+            }
+
+            CQuestManager questManager = pendingQuestPlayerController.GetQuestManager();
+
+            if ( questManager == null )
+            {
+                NotifyPendingQuestInteractionCompleted( false );
+                EndInteraction();
+                return;
+            }
+
+            if ( hasShownPendingQuestInteractionDialogue == false )
+            {
+                bool hasQuestDialogue = questManager.TryGetQuestDialoguePreset( activeNpcObject, pendingQuestInteractionQuestId, out CNPCDialoguePreset dialoguePreset, out eQuestNpcInteractionType interactionType );
+                hasShownPendingQuestInteractionDialogue = true;
+
+                if ( hasQuestDialogue )
+                {
+                    BeginDialoguePresetSequence( dialoguePreset );
+                    return;
+                }
+            }
+
+            if ( pendingQuestInteractionShouldProcessQuest == false )
+            {
+                NotifyPendingQuestInteractionCompleted( true );
+                EndInteraction();
+                return;
+            }
+
+            bool processResult = questManager.ProcessNpcQuestInteraction( activeNpcObject, pendingQuestInteractionQuestId );
+            NotifyPendingQuestInteractionCompleted( processResult );
+            EndInteraction();
+        }
+
+        ///<summary>
+        /// 퀘스트 UI 컨트롤러 결정
+        ///</summary>
+        private CQuestListUIController ResolveQuestListUiController()
+        {
+            GameObject rootCanvasObject = GameObject.Find( "Canvas" );
+
+            if ( rootCanvasObject == null )
+            {
+                return null;
+            }
+
+            Transform interactionCanvasTransform = rootCanvasObject.transform.Find( "Canvas_InteractionUI" );
+
+            if ( interactionCanvasTransform == null )
+            {
+                return null;
+            }
+
+            Transform questListUiTransform = interactionCanvasTransform.Find( "QuestListUI" );
+
+            if ( questListUiTransform == null )
+            {
+                return null;
+            }
+
+            CQuestListUIController questListUiController = questListUiTransform.GetComponent<CQuestListUIController>();
+            return questListUiController;
+        }
+
+        ///<summary>
+        /// 퀘스트 UI 상호작용 완료 콜백 호출
+        ///</summary>
+        private void NotifyPendingQuestInteractionCompleted( bool _result )
+        {
+            Action<bool> completedHandler = pendingQuestInteractionCompleted;
+
+            if ( completedHandler == null )
+            {
+                return;
+            }
+
+            completedHandler( _result );
         }
 
         ///<summary>

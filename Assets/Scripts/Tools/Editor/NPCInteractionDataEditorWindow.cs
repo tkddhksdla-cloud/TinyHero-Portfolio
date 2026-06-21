@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using TinyHero.Core.Data;
@@ -56,6 +56,14 @@ namespace TinyHero.Tools
             window.titleContent = new GUIContent( "NPC Interaction Editor" );
             window.minSize = new Vector2( 1120.0f, 780.0f );
             window.Show();
+        }
+
+        ///<summary>
+        /// NPC 상호작용 데이터 편집 창 열기
+        ///</summary>
+        public static void OpenWindow()
+        {
+            ShowWindow();
         }
 
         ///<summary>

@@ -17,6 +17,7 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode alternateAttackKey = KeyCode.None;
         [SerializeField] private KeyCode interactionKey = KeyCode.Space;
         [SerializeField] private KeyCode inventoryKey = KeyCode.I;
+        [SerializeField] private KeyCode questJournalKey = KeyCode.J;
         [SerializeField] private KeyCode portalKey = KeyCode.UpArrow;
         [SerializeField] private KeyCode skillSlot1Key = KeyCode.Q;
         [SerializeField] private KeyCode skillSlot2Key = KeyCode.W;
@@ -97,6 +98,15 @@ namespace TinyHero.Core
         {
             bool isInventoryDown = Input.GetKeyDown( inventoryKey );
             return isInventoryDown;
+        }
+
+        ///<summary>
+        /// 퀘스트 창 다운 입력 반환
+        ///</summary>
+        public bool GetQuestJournalDown()
+        {
+            bool isQuestJournalDown = Input.GetKeyDown( questJournalKey );
+            return isQuestJournalDown;
         }
 
         ///<summary>
