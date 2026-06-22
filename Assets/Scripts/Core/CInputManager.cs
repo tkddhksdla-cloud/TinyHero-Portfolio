@@ -18,6 +18,7 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode interactionKey = KeyCode.Space;
         [SerializeField] private KeyCode inventoryKey = KeyCode.I;
         [SerializeField] private KeyCode questJournalKey = KeyCode.J;
+        [SerializeField] private KeyCode cheatWindowKey = KeyCode.F1;
         [SerializeField] private KeyCode portalKey = KeyCode.UpArrow;
         [SerializeField] private KeyCode skillSlot1Key = KeyCode.Q;
         [SerializeField] private KeyCode skillSlot2Key = KeyCode.W;
@@ -29,10 +30,23 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode skillSlot8Key = KeyCode.F;
 
         ///<summary>
+        /// 치트 창 토글 입력 처리
+        ///</summary>
+        private void Update()
+        {
+            HandleCheatWindowToggleInput();
+        }
+
+        ///<summary>
         /// 수평 입력 반환
         ///</summary>
         public float GetHorizontalInput()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return 0.0f;
+            }
+
             bool isLeftPressed = Input.GetKey( leftKey ) || Input.GetKey( alternateLeftKey );
             bool isRightPressed = Input.GetKey( rightKey ) || Input.GetKey( alternateRightKey );
             float horizontalInput = 0.0f;
@@ -51,6 +65,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetJumpDown()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isJumpDown = Input.GetKeyDown( jumpKey );
             return isJumpDown;
         }
@@ -60,6 +79,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetJumpHeld()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isJumpHeld = Input.GetKey( jumpKey );
             return isJumpHeld;
         }
@@ -69,6 +93,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetAttackDown()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isAttackDown = Input.GetKeyDown( attackKey ) || Input.GetKeyDown( alternateAttackKey );
             return isAttackDown;
         }
@@ -78,6 +107,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetInteractionDown()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isInteractionDown = Input.GetKeyDown( interactionKey );
             return isInteractionDown;
         }
@@ -87,6 +121,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetInteractionHeld()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isInteractionHeld = Input.GetKey( interactionKey );
             return isInteractionHeld;
         }
@@ -96,6 +135,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetInventoryDown()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isInventoryDown = Input.GetKeyDown( inventoryKey );
             return isInventoryDown;
         }
@@ -105,6 +149,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetQuestJournalDown()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isQuestJournalDown = Input.GetKeyDown( questJournalKey );
             return isQuestJournalDown;
         }
@@ -114,6 +163,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetPortalDown()
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             bool isPortalDown = Input.GetKeyDown( portalKey );
             return isPortalDown;
         }
@@ -123,6 +177,11 @@ namespace TinyHero.Core
         ///</summary>
         public bool GetSkillSlotDown( int _slotIndex )
         {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
             KeyCode resolvedKeyCode = GetSkillSlotKeyCode( _slotIndex );
 
             if ( resolvedKeyCode == KeyCode.None )
@@ -167,6 +226,37 @@ namespace TinyHero.Core
             }
 
             return KeyCode.None;
+        }
+
+        ///<summary>
+        /// 치트 창 토글 처리
+        ///</summary>
+        private void HandleCheatWindowToggleInput()
+        {
+            bool isCheatWindowDown = Input.GetKeyDown( cheatWindowKey );
+
+            if ( isCheatWindowDown == false )
+            {
+                return;
+            }
+
+            CCheatCommandUI cheatCommandUi = CCheatCommandUI.GetOrCreate();
+
+            if ( cheatCommandUi == null )
+            {
+                return;
+            }
+
+            cheatCommandUi.ToggleVisible();
+        }
+
+        ///<summary>
+        /// 치트 UI 입력 점유 상태 반환
+        ///</summary>
+        private bool IsCheatUiBlockingInput()
+        {
+            bool result = CCheatCommandUI.IsAnyVisible();
+            return result;
         }
     }
 }

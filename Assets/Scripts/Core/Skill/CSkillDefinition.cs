@@ -18,6 +18,12 @@ namespace TinyHero.Skill
         [SerializeField] private int quickSlotIndex;
         [SerializeField] private float cooldownSeconds = 1.0f;
         [SerializeField] private float mpCost;
+        [SerializeField] private int learnSpCost = 1;
+        [SerializeField] private int levelUpSpCost = 1;
+        [SerializeField] private int maxSkillLevel = 5;
+        [SerializeField] private float cooldownReductionPerLevel;
+        [SerializeField] private float damageMultiplierBonusPerLevel = 0.1f;
+        [SerializeField] private int flatDamageBonusPerLevel;
         [SerializeField] private float castLockDurationSeconds = 0.15f;
         [SerializeField] private ePlayerSkillCastAnimation castAnimation = ePlayerSkillCastAnimation.ATTACK;
         [SerializeField] private string castAnimationName = "Attack";
@@ -82,7 +88,7 @@ namespace TinyHero.Skill
         ///</summary>
         public eActiveSkillType GetActiveSkillType()
         {
-            eActiveSkillType result = activeSkillType;
+            eActiveSkillType result = ResolveActiveSkillType();
             return result;
         }
 
@@ -114,11 +120,72 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 스킬 레벨 기반 쿨타임 반환
+        ///</summary>
+        public float GetCooldownSeconds( int _skillLevel )
+        {
+            int normalizedSkillLevel = Mathf.Max( 1, _skillLevel );
+            float reducedCooldown = cooldownSeconds - cooldownReductionPerLevel * ( normalizedSkillLevel - 1 );
+            float result = Mathf.Max( 0.0f, reducedCooldown );
+            return result;
+        }
+
+        ///<summary>
         /// MP 소모량 반환
         ///</summary>
         public float GetMpCost()
         {
             float result = Mathf.Max( 0.0f, mpCost );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 학습 SP 비용 반환
+        ///</summary>
+        public int GetLearnSpCost()
+        {
+            int result = Mathf.Max( 0, learnSpCost );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨업 SP 비용 반환
+        ///</summary>
+        public int GetLevelUpSpCost()
+        {
+            int result = Mathf.Max( 0, levelUpSpCost );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 최대 레벨 반환
+        ///</summary>
+        public int GetMaxSkillLevel()
+        {
+            int result = Mathf.Max( 1, maxSkillLevel );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨 기반 데미지 배율 반환
+        ///</summary>
+        public float ResolveDamageMultiplier( float _baseDamageMultiplier, int _skillLevel )
+        {
+            int normalizedSkillLevel = Mathf.Max( 1, _skillLevel );
+            float bonusDamageMultiplier = damageMultiplierBonusPerLevel * ( normalizedSkillLevel - 1 );
+            float resolvedDamageMultiplier = _baseDamageMultiplier + bonusDamageMultiplier;
+            float result = Mathf.Max( 0.0f, resolvedDamageMultiplier );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨 기반 고정 데미지 반환
+        ///</summary>
+        public int ResolveFlatDamageBonus( int _baseFlatDamageBonus, int _skillLevel )
+        {
+            int normalizedSkillLevel = Mathf.Max( 1, _skillLevel );
+            int resolvedFlatDamageBonus = _baseFlatDamageBonus + flatDamageBonusPerLevel * ( normalizedSkillLevel - 1 );
+            int result = resolvedFlatDamageBonus;
             return result;
         }
 
@@ -173,6 +240,15 @@ namespace TinyHero.Skill
         public string GetDescription()
         {
             string result = description;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨 기반 설명 문자열 반환
+        ///</summary>
+        public string GetFormattedDescription( int _skillLevel )
+        {
+            string result = CSkillDescriptionFormatter.Format( this, _skillLevel );
             return result;
         }
 
@@ -382,6 +458,9 @@ namespace TinyHero.Skill
             quickSlotIndex = Mathf.Max( 0, _quickSlotIndex );
             cooldownSeconds = Mathf.Max( 0.0f, _cooldownSeconds );
             mpCost = Mathf.Max( 0.0f, _mpCost );
+            learnSpCost = Mathf.Max( 0, learnSpCost );
+            levelUpSpCost = Mathf.Max( 0, levelUpSpCost );
+            maxSkillLevel = Mathf.Max( 1, maxSkillLevel );
             castLockDurationSeconds = 0.15f;
             castAnimation = ePlayerSkillCastAnimation.ATTACK;
             castAnimationName = "Attack";
@@ -406,6 +485,9 @@ namespace TinyHero.Skill
             quickSlotIndex = -1;
             cooldownSeconds = 0.0f;
             mpCost = 0.0f;
+            learnSpCost = Mathf.Max( 0, learnSpCost );
+            levelUpSpCost = Mathf.Max( 0, levelUpSpCost );
+            maxSkillLevel = Mathf.Max( 1, maxSkillLevel );
             castLockDurationSeconds = 0.0f;
             castAnimation = ePlayerSkillCastAnimation.ATTACK;
             castAnimationName = "Attack";
@@ -454,6 +536,25 @@ namespace TinyHero.Skill
                 default:
                     return string.IsNullOrWhiteSpace( _castAnimationName ) ? "Attack" : _castAnimationName.Trim();
             }
+        }
+
+        ///<summary>
+        /// 현재 설정 기준 액티브 스킬 타입 결정
+        ///</summary>
+        private eActiveSkillType ResolveActiveSkillType()
+        {
+            if ( skillType != eSkillType.ACTIVE )
+            {
+                return eActiveSkillType.NONE;
+            }
+
+            if ( activeSkillEffect != null )
+            {
+                return activeSkillEffect.GetActiveSkillType();
+            }
+
+            eActiveSkillType result = activeSkillType;
+            return result;
         }
 
         ///<summary>

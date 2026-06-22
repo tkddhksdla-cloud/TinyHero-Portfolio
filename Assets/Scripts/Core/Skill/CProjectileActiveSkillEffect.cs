@@ -35,11 +35,29 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 기본 데미지 배율 반환
+        ///</summary>
+        public float GetDamageMultiplier()
+        {
+            float result = Mathf.Max( 0.0f, damageMultiplier );
+            return result;
+        }
+
+        ///<summary>
         /// 발사체 적 디버프 목록 설정
         ///</summary>
         public void SetDebuffEffects( List<CEnemyDebuffEffectBase> _debuffEffectList )
         {
             debuffEffectList = _debuffEffectList != null ? _debuffEffectList : new List<CEnemyDebuffEffectBase>();
+        }
+
+        ///<summary>
+        /// 디버프 효과 목록 반환
+        ///</summary>
+        public List<CEnemyDebuffEffectBase> GetDebuffEffects()
+        {
+            List<CEnemyDebuffEffectBase> result = debuffEffectList;
+            return result;
         }
 
         ///<summary>
@@ -51,11 +69,20 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 관통 투사체 여부 반환
+        ///</summary>
+        public bool IsPiercingProjectile()
+        {
+            bool result = destroyOnFirstHit == false;
+            return result;
+        }
+
+        ///<summary>
         /// 활성 스킬 세부 분류 반환
         ///</summary>
         public override eActiveSkillType GetActiveSkillType()
         {
-            eActiveSkillType result = eActiveSkillType.PROJECTILE;
+            eActiveSkillType result = IsPiercingProjectile() ? eActiveSkillType.PROJECTILE_PIERCING : eActiveSkillType.PROJECTILE;
             return result;
         }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using LayerLab.ArtMakerUnity;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using UnityEditor;
@@ -39,7 +40,7 @@ namespace TinyHero.Tools
             List<CItemDefinition> createdItemDefinitionList = new List<CItemDefinition>();
             CPlayerStatRuntimeData bronzeSwordStatBonus = new CPlayerStatRuntimeData();
             bronzeSwordStatBonus.SetStatValue( ePlayerStatType.ATK, 5.0f );
-            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Equipment_BronzeSword.asset", "ITEM_EQUIPMENT_BRONZE_SWORD", "Bronze Sword", eItemType.EQUIPMENT, "기본 장비 샘플 검.", equipmentIcon, false, 1, eEquipmentType.WEAPON, bronzeSwordStatBonus ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Equipment_BronzeSword.asset", "ITEM_EQUIPMENT_BRONZE_SWORD", "Bronze Sword", eItemType.EQUIPMENT, "기본 장비 샘플 검.", equipmentIcon, false, 1, eEquipmentType.WEAPON, bronzeSwordStatBonus, PartsType.Sword, 0 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Consumable_Apple.asset", "ITEM_CONSUMABLE_APPLE", "Apple", eItemType.CONSUMABLE, "기본 소모품 샘플.", consumableIcon, true, 99 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Currency_Gold.asset", "GOLD", "Gold", eItemType.CURRENCY, "기본 화폐 샘플.", currencyIcon, true, 999999 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Material_SlimeGel.asset", "ITEM_MATERIAL_SLIME_GEL", "Slime Gel", eItemType.MATERIAL, "기본 재료 샘플.", materialIcon, true, 999 ) );
@@ -100,14 +101,14 @@ namespace TinyHero.Tools
         ///</summary>
         private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
         {
-            CItemDefinition result = CreateOrUpdateItemDefinition( _assetPath, _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null );
+            CItemDefinition result = CreateOrUpdateItemDefinition( _assetPath, _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null, PartsType.Chest, -1 );
             return result;
         }
 
         ///<summary>
         /// 아이템 정의 생성 또는 갱신
         ///</summary>
-        private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus )
+        private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
         {
             CItemDefinition itemDefinition = AssetDatabase.LoadAssetAtPath<CItemDefinition>( _assetPath );
 
@@ -117,7 +118,7 @@ namespace TinyHero.Tools
                 AssetDatabase.CreateAsset( itemDefinition, _assetPath );
             }
 
-            itemDefinition.Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, _equipmentStatBonus );
+            itemDefinition.Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, _equipmentStatBonus, _equipmentPartsType, _equipmentPartsIndex );
             EditorUtility.SetDirty( itemDefinition );
             return itemDefinition;
         }

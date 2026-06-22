@@ -22,6 +22,15 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 버프 효과 목록 반환
+        ///</summary>
+        public List<CPlayerBuffEffectBase> GetBuffEffects()
+        {
+            List<CPlayerBuffEffectBase> result = playerBuffEffectList;
+            return result;
+        }
+
+        ///<summary>
         /// 액티브 스킬 세부 분류 반환
         ///</summary>
         public override eActiveSkillType GetActiveSkillType()

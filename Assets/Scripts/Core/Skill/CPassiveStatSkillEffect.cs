@@ -22,6 +22,24 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 대상 스탯 종류 반환
+        ///</summary>
+        public ePlayerStatType GetTargetStatType()
+        {
+            ePlayerStatType result = targetStatType;
+            return result;
+        }
+
+        ///<summary>
+        /// 기본 스탯 보너스 반환
+        ///</summary>
+        public float GetBonusValue()
+        {
+            float result = bonusValue;
+            return result;
+        }
+
+        ///<summary>
         /// 패시브 효과를 스탯 보너스에 반영
         ///</summary>
         public override void ApplyPassiveEffect( CPlayerStatRuntimeData _targetStatBonusData )

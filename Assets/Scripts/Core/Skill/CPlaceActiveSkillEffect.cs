@@ -34,11 +34,47 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 기본 데미지 배율 반환
+        ///</summary>
+        public float GetDamageMultiplier()
+        {
+            float result = Mathf.Max( 0.0f, damageMultiplier );
+            return result;
+        }
+
+        ///<summary>
+        /// 장판 지속 시간 반환
+        ///</summary>
+        public float GetDurationSeconds()
+        {
+            float result = Mathf.Max( 0.0f, durationSeconds );
+            return result;
+        }
+
+        ///<summary>
+        /// 장판 틱 간격 반환
+        ///</summary>
+        public float GetTickIntervalSeconds()
+        {
+            float result = Mathf.Max( 0.01f, tickIntervalSeconds );
+            return result;
+        }
+
+        ///<summary>
         /// 디버프 효과 목록 설정
         ///</summary>
         public void SetDebuffEffects( List<CEnemyDebuffEffectBase> _debuffEffectList )
         {
             debuffEffectList = _debuffEffectList != null ? _debuffEffectList : new List<CEnemyDebuffEffectBase>();
+        }
+
+        ///<summary>
+        /// 디버프 효과 목록 반환
+        ///</summary>
+        public List<CEnemyDebuffEffectBase> GetDebuffEffects()
+        {
+            List<CEnemyDebuffEffectBase> result = debuffEffectList;
+            return result;
         }
 
         ///<summary>

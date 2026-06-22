@@ -48,6 +48,12 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty quickSlotIndexProperty;
         private SerializedProperty cooldownSecondsProperty;
         private SerializedProperty mpCostProperty;
+        private SerializedProperty learnSpCostProperty;
+        private SerializedProperty levelUpSpCostProperty;
+        private SerializedProperty maxSkillLevelProperty;
+        private SerializedProperty cooldownReductionPerLevelProperty;
+        private SerializedProperty damageMultiplierBonusPerLevelProperty;
+        private SerializedProperty flatDamageBonusPerLevelProperty;
         private SerializedProperty castLockDurationSecondsProperty;
         private SerializedProperty castAnimationProperty;
         private SerializedProperty castAnimationNameProperty;
@@ -234,6 +240,7 @@ namespace TinyHero.Skill.Editor
             selectedSkillSerializedObject.Update();
             DrawHeaderCard();
             DrawSummaryPropertySection();
+            DrawProgressionPropertySection();
             DrawExecutionPropertySection();
             DrawPassivePropertySection();
             DrawVfxPropertySection();
@@ -281,7 +288,8 @@ namespace TinyHero.Skill.Editor
             Sprite skillIcon = selectedSkillDefinition != null ? selectedSkillDefinition.GetSkillIcon() : null;
             string skillName = selectedSkillDefinition != null ? selectedSkillDefinition.GetSkillName() : "Skill";
             string skillId = selectedSkillDefinition != null ? selectedSkillDefinition.GetSkillId() : string.Empty;
-            string typeLabel = CSkillEditorPreviewUtility.BuildTypeSummaryText( skillTypeProperty, activeSkillTypeProperty );
+            eActiveSkillType activeSkillType = selectedSkillDefinition != null ? selectedSkillDefinition.GetActiveSkillType() : eActiveSkillType.NONE;
+            string typeLabel = CSkillEditorPreviewUtility.BuildTypeSummaryText( skillTypeProperty, activeSkillType );
             Rect iconRect;
             Rect titleRect;
             Rect subTitleRect;
@@ -338,7 +346,8 @@ namespace TinyHero.Skill.Editor
 
             using ( new EditorGUI.DisabledScope( true ) )
             {
-                EditorGUILayout.PropertyField( activeSkillTypeProperty );
+                eActiveSkillType activeSkillType = selectedSkillDefinition != null ? selectedSkillDefinition.GetActiveSkillType() : eActiveSkillType.NONE;
+                EditorGUILayout.EnumPopup( "Active Skill Type", activeSkillType );
             }
 
             EditorGUILayout.PropertyField( descriptionProperty );
@@ -363,6 +372,31 @@ namespace TinyHero.Skill.Editor
             DrawCastPropertyBlock();
             EditorGUILayout.PropertyField( activeSkillEffectProperty );
             EditorGUILayout.PropertyField( activeActionProperty );
+            EditorGUILayout.EndVertical();
+        }
+
+        ///<summary>
+        /// 강화 설정 속성 섹션 렌더링
+        ///</summary>
+        private void DrawProgressionPropertySection()
+        {
+            bool isActiveSkill = CSkillEditorPreviewUtility.IsActiveSkill( skillTypeProperty );
+
+            EditorGUILayout.BeginVertical( EditorStyles.helpBox );
+            EditorGUILayout.LabelField( "강화 설정", EditorStyles.boldLabel );
+            EditorGUILayout.PropertyField( learnSpCostProperty );
+            EditorGUILayout.PropertyField( levelUpSpCostProperty );
+            EditorGUILayout.PropertyField( maxSkillLevelProperty );
+
+            if ( isActiveSkill )
+            {
+                EditorGUILayout.Space( 2.0f );
+                EditorGUILayout.LabelField( "레벨별 증감", EditorStyles.boldLabel );
+                EditorGUILayout.PropertyField( cooldownReductionPerLevelProperty );
+                EditorGUILayout.PropertyField( damageMultiplierBonusPerLevelProperty );
+                EditorGUILayout.PropertyField( flatDamageBonusPerLevelProperty );
+            }
+
             EditorGUILayout.EndVertical();
         }
 
@@ -482,6 +516,12 @@ namespace TinyHero.Skill.Editor
         private void DrawPreviewSummaryPanel()
         {
             string summaryText = BuildPreviewSummaryText();
+            string dynamicDescriptionPreviewText = BuildDynamicDescriptionPreviewText();
+
+            if ( string.IsNullOrWhiteSpace( dynamicDescriptionPreviewText ) == false )
+            {
+                summaryText += "\n" + dynamicDescriptionPreviewText;
+            }
 
             EditorGUILayout.BeginVertical( EditorStyles.helpBox );
             EditorGUILayout.LabelField( "요약", EditorStyles.boldLabel );
@@ -496,7 +536,8 @@ namespace TinyHero.Skill.Editor
         {
             string skillName = selectedSkillDefinition != null ? selectedSkillDefinition.GetSkillName() : "Unknown";
             string skillId = selectedSkillDefinition != null ? selectedSkillDefinition.GetSkillId() : string.Empty;
-            string typeSummary = CSkillEditorPreviewUtility.BuildTypeSummaryText( skillTypeProperty, activeSkillTypeProperty );
+            eActiveSkillType activeSkillType = selectedSkillDefinition != null ? selectedSkillDefinition.GetActiveSkillType() : eActiveSkillType.NONE;
+            string typeSummary = CSkillEditorPreviewUtility.BuildTypeSummaryText( skillTypeProperty, activeSkillType );
             string description = descriptionProperty != null ? descriptionProperty.stringValue : string.Empty;
             string result = $"이름: {skillName}\nID: {skillId}\n{typeSummary}\n설명: {description}";
             return result;
@@ -556,6 +597,12 @@ namespace TinyHero.Skill.Editor
             quickSlotIndexProperty = selectedSkillSerializedObject.FindProperty( "quickSlotIndex" );
             cooldownSecondsProperty = selectedSkillSerializedObject.FindProperty( "cooldownSeconds" );
             mpCostProperty = selectedSkillSerializedObject.FindProperty( "mpCost" );
+            learnSpCostProperty = selectedSkillSerializedObject.FindProperty( "learnSpCost" );
+            levelUpSpCostProperty = selectedSkillSerializedObject.FindProperty( "levelUpSpCost" );
+            maxSkillLevelProperty = selectedSkillSerializedObject.FindProperty( "maxSkillLevel" );
+            cooldownReductionPerLevelProperty = selectedSkillSerializedObject.FindProperty( "cooldownReductionPerLevel" );
+            damageMultiplierBonusPerLevelProperty = selectedSkillSerializedObject.FindProperty( "damageMultiplierBonusPerLevel" );
+            flatDamageBonusPerLevelProperty = selectedSkillSerializedObject.FindProperty( "flatDamageBonusPerLevel" );
             castLockDurationSecondsProperty = selectedSkillSerializedObject.FindProperty( "castLockDurationSeconds" );
             castAnimationProperty = selectedSkillSerializedObject.FindProperty( "castAnimation" );
             castAnimationNameProperty = selectedSkillSerializedObject.FindProperty( "castAnimationName" );
@@ -875,6 +922,35 @@ namespace TinyHero.Skill.Editor
         ///<summary>
         /// 캐시된 에디터 정리 처리
         ///</summary>
+        ///<summary>
+        /// 동적 설명 미리보기 문자열 반환
+        ///</summary>
+        private string BuildDynamicDescriptionPreviewText()
+        {
+            if ( selectedSkillDefinition == null )
+            {
+                return string.Empty;
+            }
+
+            string descriptionTemplate = descriptionProperty != null ? descriptionProperty.stringValue : string.Empty;
+            int maxSkillLevel = selectedSkillDefinition.GetMaxSkillLevel();
+            string levelOneDescription = selectedSkillDefinition.GetFormattedDescription( 1 );
+            string maxLevelDescription = selectedSkillDefinition.GetFormattedDescription( maxSkillLevel );
+            string supportedTokenText = BuildSupportedTokenText();
+            string result = $"Template: {descriptionTemplate}\nLevel 1: {levelOneDescription}\nMax Level: {maxLevelDescription}\nTokens: {supportedTokenText}";
+            return result;
+        }
+
+        ///<summary>
+        /// 지원 토큰 문자열 반환
+        ///</summary>
+        private string BuildSupportedTokenText()
+        {
+            System.Collections.Generic.IReadOnlyList<string> supportedTokenList = CSkillDescriptionFormatter.GetSupportedTokenList();
+            string result = string.Join( ", ", supportedTokenList );
+            return result;
+        }
+
         private void ReleaseCachedEditors()
         {
             if ( cachedActiveEffectEditor != null )

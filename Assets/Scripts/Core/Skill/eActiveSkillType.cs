@@ -10,6 +10,7 @@ namespace TinyHero.Skill
         PROJECTILE,
         PLACE,
         BUFF,
-        CLONE
+        CLONE,
+        PROJECTILE_PIERCING
     }
 }

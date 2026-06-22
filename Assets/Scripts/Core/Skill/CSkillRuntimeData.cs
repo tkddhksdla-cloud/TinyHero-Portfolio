@@ -12,6 +12,7 @@ namespace TinyHero.Skill
         [SerializeField] private CSkillDefinition skillDefinition;
         [SerializeField] private bool isUnlocked;
         [SerializeField] private int skillLevel = 1;
+        [SerializeField] private int assignedQuickSlotIndex = -1;
         [SerializeField] private float lastUsedTime = -9999.0f;
 
         ///<summary>
@@ -38,6 +39,15 @@ namespace TinyHero.Skill
         public int GetSkillLevel()
         {
             int result = skillLevel;
+            return result;
+        }
+
+        ///<summary>
+        /// 배정된 퀵슬롯 인덱스 반환
+        ///</summary>
+        public int GetAssignedQuickSlotIndex()
+        {
+            int result = assignedQuickSlotIndex;
             return result;
         }
 
@@ -71,8 +81,16 @@ namespace TinyHero.Skill
         ///</summary>
         public void SetSkillLevel( int _skillLevel )
         {
-            int resolvedSkillLevel = Mathf.Max( 1, _skillLevel );
+            int resolvedSkillLevel = Mathf.Max( 0, _skillLevel );
             skillLevel = resolvedSkillLevel;
+        }
+
+        ///<summary>
+        /// 배정된 퀵슬롯 인덱스 설정
+        ///</summary>
+        public void SetAssignedQuickSlotIndex( int _assignedQuickSlotIndex )
+        {
+            assignedQuickSlotIndex = _assignedQuickSlotIndex;
         }
 
         ///<summary>
@@ -93,7 +111,7 @@ namespace TinyHero.Skill
                 return 0.0f;
             }
 
-            float cooldownSeconds = skillDefinition.GetCooldownSeconds();
+            float cooldownSeconds = skillDefinition.GetCooldownSeconds( skillLevel );
             float elapsedTime = _currentTime - lastUsedTime;
             float remainingCooldown = cooldownSeconds - elapsedTime;
             float result = Mathf.Max( 0.0f, remainingCooldown );

@@ -24,6 +24,12 @@ namespace TinyHero.Skill
         [SerializeField] private List<CSkillRuntimeData> skillRuntimeDataList = new List<CSkillRuntimeData>();
         [SerializeField] private bool useDefaultSampleSkills = true;
 
+        [Header( "Skill Progression" )]
+        [SerializeField] private int currentSkillPoint;
+        [SerializeField] private int initialSkillPoint;
+        [SerializeField] private int skillPointPerLevelUp = 1;
+        [SerializeField] private int lastGrantedPlayerLevel = 1;
+
         private readonly Dictionary<string, CSkillRuntimeData> skillRuntimeDataById = new Dictionary<string, CSkillRuntimeData>();
         private readonly CPlayerStatRuntimeData aggregatedPassiveStatBonus = new CPlayerStatRuntimeData();
         private readonly List<ScriptableObject> runtimeGeneratedScriptableObjectList = new List<ScriptableObject>();
@@ -41,7 +47,9 @@ namespace TinyHero.Skill
             ResolveReferences();
             EnsureDefaultSampleSkills();
             RebuildRuntimeData();
-            RefreshUnlockState();
+            InitializeSkillProgression();
+            RebuildPassiveStatBonus();
+            RaiseSkillStateChanged();
         }
 
         ///<summary>
@@ -50,8 +58,10 @@ namespace TinyHero.Skill
         private void OnEnable()
         {
             ResolveReferences();
+            EnsureRuntimeDataIntegrity();
             SubscribeRuntimeEvents();
-            RefreshUnlockState();
+            RebuildPassiveStatBonus();
+            RaiseSkillStateChanged();
         }
 
         ///<summary>
@@ -75,6 +85,7 @@ namespace TinyHero.Skill
         ///</summary>
         public int GetSkillCount()
         {
+            EnsureRuntimeDataIntegrity();
             int result = skillRuntimeDataList.Count;
             return result;
         }
@@ -84,6 +95,8 @@ namespace TinyHero.Skill
         ///</summary>
         public CSkillRuntimeData GetSkillRuntimeData( int _index )
         {
+            EnsureRuntimeDataIntegrity();
+
             if ( _index < 0 || _index >= skillRuntimeDataList.Count )
             {
                 return null;
@@ -98,6 +111,8 @@ namespace TinyHero.Skill
         ///</summary>
         public CSkillRuntimeData GetSkillRuntimeData( string _skillId )
         {
+            EnsureRuntimeDataIntegrity();
+
             if ( string.IsNullOrWhiteSpace( _skillId ) )
             {
                 return null;
@@ -150,7 +165,7 @@ namespace TinyHero.Skill
                     continue;
                 }
 
-                if ( skillDefinition.GetQuickSlotIndex() != _quickSlotIndex )
+                if ( runtimeData.GetAssignedQuickSlotIndex() != _quickSlotIndex )
                 {
                     continue;
                 }
@@ -192,6 +207,216 @@ namespace TinyHero.Skill
 
             bool result = runtimeData.IsUnlocked();
             return result;
+        }
+
+        ///<summary>
+        /// 현재 스킬 포인트 반환
+        ///</summary>
+        public int GetCurrentSkillPoint()
+        {
+            int result = Mathf.Max( 0, currentSkillPoint );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨 반환
+        ///</summary>
+        public int GetSkillLevel( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+
+            if ( runtimeData == null )
+            {
+                return 0;
+            }
+
+            int result = runtimeData.GetSkillLevel();
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 배정 퀵슬롯 인덱스 반환
+        ///</summary>
+        public int GetAssignedQuickSlotIndex( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+
+            if ( runtimeData == null )
+            {
+                return -1;
+            }
+
+            int result = runtimeData.GetAssignedQuickSlotIndex();
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 동적 설명 문자열 반환
+        ///</summary>
+        public string GetFormattedSkillDescription( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+
+            if ( runtimeData == null )
+            {
+                return string.Empty;
+            }
+
+            CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
+
+            if ( skillDefinition == null )
+            {
+                return string.Empty;
+            }
+
+            int skillLevel = runtimeData.IsUnlocked() ? Mathf.Max( 1, runtimeData.GetSkillLevel() ) : 1;
+            string result = skillDefinition.GetFormattedDescription( skillLevel );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 학습 가능 여부 반환
+        ///</summary>
+        public bool CanLearnSkill( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+            bool result = CanLearnSkill( runtimeData );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨업 가능 여부 반환
+        ///</summary>
+        public bool CanLevelUpSkill( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+            bool result = CanLevelUpSkill( runtimeData );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 학습 처리
+        ///</summary>
+        public bool TryLearnSkill( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+            bool result = TryLearnSkill( runtimeData, false );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 강제 학습 처리
+        ///</summary>
+        public bool TryForceLearnSkill( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+            bool result = TryLearnSkill( runtimeData, true );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨업 처리
+        ///</summary>
+        public bool TryLevelUpSkill( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+            bool result = TryLevelUpSkill( runtimeData );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 퀵슬롯 배정 가능 여부 반환
+        ///</summary>
+        public bool CanAssignSkillToQuickSlot( string _skillId, int _quickSlotIndex )
+        {
+            if ( _quickSlotIndex < 0 )
+            {
+                return false;
+            }
+
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+
+            if ( runtimeData == null || runtimeData.IsUnlocked() == false )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
+
+            if ( skillDefinition == null || skillDefinition.GetSkillType() != eSkillType.ACTIVE )
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        ///<summary>
+        /// 스킬 퀵슬롯 배정 처리
+        ///</summary>
+        public bool TryAssignSkillToQuickSlot( string _skillId, int _quickSlotIndex )
+        {
+            if ( CanAssignSkillToQuickSlot( _skillId, _quickSlotIndex ) == false )
+            {
+                return false;
+            }
+
+            CSkillRuntimeData sourceRuntimeData = GetSkillRuntimeData( _skillId );
+
+            if ( sourceRuntimeData == null )
+            {
+                return false;
+            }
+
+            CSkillRuntimeData occupiedRuntimeData = GetSkillRuntimeDataByQuickSlotIndex( _quickSlotIndex );
+
+            if ( occupiedRuntimeData == sourceRuntimeData )
+            {
+                return true;
+            }
+
+            int previousQuickSlotIndex = sourceRuntimeData.GetAssignedQuickSlotIndex();
+
+            if ( occupiedRuntimeData != null )
+            {
+                occupiedRuntimeData.SetAssignedQuickSlotIndex( previousQuickSlotIndex );
+            }
+
+            sourceRuntimeData.SetAssignedQuickSlotIndex( _quickSlotIndex );
+            RaiseSkillStateChanged();
+            return true;
+        }
+
+        ///<summary>
+        /// 퀵슬롯 간 스킬 배치 교체 처리
+        ///</summary>
+        public bool TrySwapQuickSlotAssignments( int _fromQuickSlotIndex, int _toQuickSlotIndex )
+        {
+            if ( _fromQuickSlotIndex < 0 || _toQuickSlotIndex < 0 || _fromQuickSlotIndex == _toQuickSlotIndex )
+            {
+                return false;
+            }
+
+            CSkillRuntimeData fromRuntimeData = GetSkillRuntimeDataByQuickSlotIndex( _fromQuickSlotIndex );
+            CSkillRuntimeData toRuntimeData = GetSkillRuntimeDataByQuickSlotIndex( _toQuickSlotIndex );
+
+            if ( fromRuntimeData == null && toRuntimeData == null )
+            {
+                return false;
+            }
+
+            if ( fromRuntimeData != null )
+            {
+                fromRuntimeData.SetAssignedQuickSlotIndex( _toQuickSlotIndex );
+            }
+
+            if ( toRuntimeData != null )
+            {
+                toRuntimeData.SetAssignedQuickSlotIndex( _fromQuickSlotIndex );
+            }
+
+            RaiseSkillStateChanged();
+            return true;
         }
 
         ///<summary>
@@ -248,12 +473,8 @@ namespace TinyHero.Skill
         {
             skillDefinitionList = _skillDefinitionList != null ? _skillDefinitionList : new List<CSkillDefinition>();
             RebuildRuntimeData();
-            RefreshUnlockState();
-
-            if ( OnSkillStateChanged != null )
-            {
-                OnSkillStateChanged();
-            }
+            RebuildPassiveStatBonus();
+            RaiseSkillStateChanged();
         }
 
         ///<summary>
@@ -316,7 +537,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 기본 인스턴트 샘플 스킬 정의 생성
         ///</summary>
-        private CSkillDefinition CreateDefaultInstantSampleSkillDefinition()
+private CSkillDefinition CreateDefaultInstantSampleSkillDefinition()
         {
             string skillId = "sample_flame_slash";
             string skillName = "Flame Slash";
@@ -338,7 +559,7 @@ namespace TinyHero.Skill
             runtimeGeneratedScriptableObjectList.Add( defReductionDebuffEffect );
 
             Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 234, 107, 56, 255 ) );
-            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 0, 1, 2.0f, 10.0f, "전방 단발 공격 및 방어력 감소 부여", instantActiveSkillEffect );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 0, 1, 2.0f, 10.0f, "전방을 베어 {damage}%의 피해를 주고, 방어력을 {defReduction}% 감소시킨다. 디버프는 {debuffDuration}초 동안 유지된다.", instantActiveSkillEffect );
             skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 1 ) );
             return skillDefinition;
         }
@@ -346,7 +567,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 기본 설치형 샘플 스킬 정의 생성
         ///</summary>
-        private CSkillDefinition CreateDefaultPlaceSampleSkillDefinition()
+private CSkillDefinition CreateDefaultPlaceSampleSkillDefinition()
         {
             string skillId = "sample_frost_field";
             string skillName = "Frost Field";
@@ -368,7 +589,7 @@ namespace TinyHero.Skill
             runtimeGeneratedScriptableObjectList.Add( atkReductionDebuffEffect );
 
             Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 79, 176, 255, 255 ) );
-            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 1, 2, 5.0f, 18.0f, "설치 후 주기 피해 및 공격력 감소 부여", placeActiveSkillEffect );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 1, 2, 5.0f, 18.0f, "냉기 지대를 생성해 {duration}초 동안 유지한다. {tickInterval}초마다 {damage}%의 피해를 주고, 공격력을 {atkReduction} 감소시킨다. 디버프는 {debuffDuration}초 동안 유지된다.", placeActiveSkillEffect );
             skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 2 ) );
             return skillDefinition;
         }
@@ -376,7 +597,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 기본 발사체 샘플 스킬 정의 생성
         ///</summary>
-        private CSkillDefinition CreateDefaultProjectileSampleSkillDefinition()
+private CSkillDefinition CreateDefaultProjectileSampleSkillDefinition()
         {
             string skillId = "sample_arc_bolt";
             string skillName = "Arc Bolt";
@@ -390,7 +611,7 @@ namespace TinyHero.Skill
             runtimeGeneratedScriptableObjectList.Add( projectileActiveSkillEffect );
 
             Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 104, 255, 181, 255 ) );
-            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 2, 3, 3.0f, 12.0f, "Projectile skill that travels forward and damages the first target hit.", projectileActiveSkillEffect );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 2, 3, 3.0f, 12.0f, "전방으로 번개 구체를 발사해 처음 맞은 적에게 {damage}%의 피해를 준다.", projectileActiveSkillEffect );
             skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 3 ) );
             return skillDefinition;
         }
@@ -398,7 +619,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 기본 분신 샘플 스킬 정의 생성
         ///</summary>
-        private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
+private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
         {
             string skillId = "sample_echo_clone";
             string skillName = "Echo Clone";
@@ -412,7 +633,7 @@ namespace TinyHero.Skill
             runtimeGeneratedScriptableObjectList.Add( cloneReplayActiveSkillEffect );
 
             Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 173, 139, 255, 255 ) );
-            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 3, 4, 12.0f, 24.0f, "Summons a delayed replay clone that mimics movement, attacks, and skills.", cloneReplayActiveSkillEffect );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 3, 4, 12.0f, 24.0f, "잔상을 소환해 {duration}초 동안 유지한다. 잔상은 플레이어의 이동과 공격을 재현하며, 공격 시 {damage}%의 피해를 준다.", cloneReplayActiveSkillEffect );
             skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 4 ) );
             return skillDefinition;
         }
@@ -484,7 +705,8 @@ namespace TinyHero.Skill
         ///</summary>
         private void HandleLevelExpChanged( int _level, float _currentExp, float _maxExp )
         {
-            RefreshUnlockState();
+            GrantSkillPointsForLevelProgress( _level );
+            RaiseSkillStateChanged();
         }
 
         ///<summary>
@@ -492,7 +714,7 @@ namespace TinyHero.Skill
         ///</summary>
         private void HandleQuestStateChanged()
         {
-            RefreshUnlockState();
+            RaiseSkillStateChanged();
         }
 
         ///<summary>
@@ -500,20 +722,40 @@ namespace TinyHero.Skill
         ///</summary>
         private void RebuildRuntimeData()
         {
-            skillRuntimeDataById.Clear();
+            skillRuntimeDataList = BuildRuntimeDataListPreserveState( null );
+            RebuildRuntimeDataDictionary();
+        }
 
-            if ( skillRuntimeDataList == null )
+        ///<summary>
+        /// 런타임 스킬 데이터 무결성 보정
+        ///</summary>
+        private void EnsureRuntimeDataIntegrity()
+        {
+            int skillDefinitionCount = skillDefinitionList != null ? skillDefinitionList.Count : 0;
+            int runtimeDataCount = skillRuntimeDataList != null ? skillRuntimeDataList.Count : 0;
+            bool needsRebuild = skillDefinitionCount != runtimeDataCount || skillRuntimeDataById.Count != runtimeDataCount;
+
+            if ( needsRebuild == false )
             {
-                skillRuntimeDataList = new List<CSkillRuntimeData>();
+                return;
             }
-            else
-            {
-                skillRuntimeDataList.Clear();
-            }
+
+            List<CSkillRuntimeData> previousRuntimeDataList = skillRuntimeDataList;
+            skillRuntimeDataList = BuildRuntimeDataListPreserveState( previousRuntimeDataList );
+            RebuildRuntimeDataDictionary();
+        }
+
+        ///<summary>
+        /// 스킬 정의 기반 런타임 데이터 목록 구성
+        ///</summary>
+        private List<CSkillRuntimeData> BuildRuntimeDataListPreserveState( List<CSkillRuntimeData> _previousRuntimeDataList )
+        {
+            Dictionary<string, CSkillRuntimeData> previousRuntimeDataById = BuildRuntimeDataDictionary( _previousRuntimeDataList );
+            List<CSkillRuntimeData> rebuiltRuntimeDataList = new List<CSkillRuntimeData>();
 
             if ( skillDefinitionList == null )
             {
-                return;
+                return rebuiltRuntimeDataList;
             }
 
             for ( int index = 0; index < skillDefinitionList.Count; index++ )
@@ -532,32 +774,58 @@ namespace TinyHero.Skill
                     continue;
                 }
 
-                if ( skillRuntimeDataById.ContainsKey( skillId ) )
+                if ( ContainsRuntimeDataForSkill( rebuiltRuntimeDataList, skillId ) )
                 {
                     Debug.LogWarning( $"Duplicated skill id was ignored: {skillId}", this );
                     continue;
                 }
 
-                CSkillRuntimeData runtimeData = new CSkillRuntimeData();
-                runtimeData.SetSkillDefinition( skillDefinition );
-                runtimeData.SetSkillLevel( 1 );
-                skillRuntimeDataList.Add( runtimeData );
-                skillRuntimeDataById.Add( skillId, runtimeData );
+                bool hasPreviousRuntimeData = previousRuntimeDataById.TryGetValue( skillId, out CSkillRuntimeData runtimeData );
+
+                if ( hasPreviousRuntimeData == false || runtimeData == null )
+                {
+                    runtimeData = CreateSkillRuntimeData( skillDefinition );
+                }
+                else
+                {
+                    runtimeData.SetSkillDefinition( skillDefinition );
+                }
+
+                rebuiltRuntimeDataList.Add( runtimeData );
+            }
+
+            return rebuiltRuntimeDataList;
+        }
+
+        ///<summary>
+        /// 런타임 스킬 데이터 사전 재구성
+        ///</summary>
+        private void RebuildRuntimeDataDictionary()
+        {
+            Dictionary<string, CSkillRuntimeData> rebuiltRuntimeDataById = BuildRuntimeDataDictionary( skillRuntimeDataList );
+            skillRuntimeDataById.Clear();
+
+            foreach ( KeyValuePair<string, CSkillRuntimeData> pair in rebuiltRuntimeDataById )
+            {
+                skillRuntimeDataById.Add( pair.Key, pair.Value );
             }
         }
 
         ///<summary>
-        /// 해금 상태 갱신
+        /// 런타임 스킬 데이터 사전 구성
         ///</summary>
-        private void RefreshUnlockState()
+        private Dictionary<string, CSkillRuntimeData> BuildRuntimeDataDictionary( List<CSkillRuntimeData> _runtimeDataList )
         {
-            int currentLevel = targetStatManager != null ? targetStatManager.GetCurrentLevel() : 1;
-            bool didUnlockAnySkill = false;
-            bool hasPassiveStateChanged = false;
+            Dictionary<string, CSkillRuntimeData> runtimeDataById = new Dictionary<string, CSkillRuntimeData>();
 
-            for ( int index = 0; index < skillRuntimeDataList.Count; index++ )
+            if ( _runtimeDataList == null )
             {
-                CSkillRuntimeData runtimeData = skillRuntimeDataList[ index ];
+                return runtimeDataById;
+            }
+
+            for ( int index = 0; index < _runtimeDataList.Count; index++ )
+            {
+                CSkillRuntimeData runtimeData = _runtimeDataList[ index ];
 
                 if ( runtimeData == null )
                 {
@@ -571,37 +839,223 @@ namespace TinyHero.Skill
                     continue;
                 }
 
-                bool canUnlock = skillDefinition.AreUnlockConditionsSatisfied( this, currentLevel, targetQuestStateProvider );
-                bool isAlreadyUnlocked = runtimeData.IsUnlocked();
+                string skillId = skillDefinition.GetSkillId();
 
-                if ( canUnlock == false || isAlreadyUnlocked )
+                if ( string.IsNullOrWhiteSpace( skillId ) || runtimeDataById.ContainsKey( skillId ) )
                 {
                     continue;
                 }
 
-                runtimeData.SetUnlocked( true );
-                didUnlockAnySkill = true;
+                runtimeDataById.Add( skillId, runtimeData );
+            }
 
-                if ( skillDefinition.GetSkillType() == eSkillType.PASSIVE )
+            return runtimeDataById;
+        }
+
+        ///<summary>
+        /// 신규 런타임 스킬 데이터 생성
+        ///</summary>
+        private CSkillRuntimeData CreateSkillRuntimeData( CSkillDefinition _skillDefinition )
+        {
+            CSkillRuntimeData runtimeData = new CSkillRuntimeData();
+            runtimeData.SetSkillDefinition( _skillDefinition );
+            runtimeData.SetUnlocked( false );
+            runtimeData.SetSkillLevel( 0 );
+            runtimeData.SetAssignedQuickSlotIndex( ResolveInitialQuickSlotIndex( _skillDefinition ) );
+            return runtimeData;
+        }
+
+        ///<summary>
+        /// 목록 내 스킬 아이디 중복 여부 확인
+        ///</summary>
+        private bool ContainsRuntimeDataForSkill( List<CSkillRuntimeData> _runtimeDataList, string _skillId )
+        {
+            if ( _runtimeDataList == null || string.IsNullOrWhiteSpace( _skillId ) )
+            {
+                return false;
+            }
+
+            for ( int index = 0; index < _runtimeDataList.Count; index++ )
+            {
+                CSkillRuntimeData runtimeData = _runtimeDataList[ index ];
+
+                if ( runtimeData == null || runtimeData.GetSkillDefinition() == null )
                 {
-                    hasPassiveStateChanged = true;
+                    continue;
                 }
 
-                if ( OnSkillUnlocked != null )
+                string currentSkillId = runtimeData.GetSkillDefinition().GetSkillId();
+
+                if ( string.Equals( currentSkillId, _skillId, StringComparison.Ordinal ) )
                 {
-                    OnSkillUnlocked( skillDefinition );
+                    return true;
                 }
             }
 
-            if ( hasPassiveStateChanged )
+            return false;
+        }
+
+        ///<summary>
+        /// 해금 상태 갱신
+        ///</summary>
+        private void InitializeSkillProgression()
+        {
+            currentSkillPoint = Mathf.Max( currentSkillPoint, initialSkillPoint );
+            int currentLevel = targetStatManager != null ? targetStatManager.GetCurrentLevel() : 1;
+
+            if ( lastGrantedPlayerLevel <= 0 )
+            {
+                lastGrantedPlayerLevel = 1;
+            }
+
+            GrantSkillPointsForLevelProgress( currentLevel );
+        }
+
+        ///<summary>
+        /// 레벨 증가 기반 스킬 포인트 지급
+        ///</summary>
+        private void GrantSkillPointsForLevelProgress( int _currentLevel )
+        {
+            int normalizedLevel = Mathf.Max( 1, _currentLevel );
+            int normalizedGrantedLevel = Mathf.Max( 1, lastGrantedPlayerLevel );
+
+            if ( normalizedLevel <= normalizedGrantedLevel )
+            {
+                lastGrantedPlayerLevel = normalizedGrantedLevel;
+                return;
+            }
+
+            int grantedLevelCount = normalizedLevel - normalizedGrantedLevel;
+            int grantedSkillPoint = grantedLevelCount * Mathf.Max( 0, skillPointPerLevelUp );
+            currentSkillPoint = Mathf.Max( 0, currentSkillPoint + grantedSkillPoint );
+            lastGrantedPlayerLevel = normalizedLevel;
+        }
+
+        ///<summary>
+        /// 스킬 학습 가능 상태 판정
+        ///</summary>
+        private bool CanLearnSkill( CSkillRuntimeData _runtimeData )
+        {
+            if ( _runtimeData == null || _runtimeData.IsUnlocked() )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
+
+            if ( skillDefinition == null )
+            {
+                return false;
+            }
+
+            int currentLevel = targetStatManager != null ? targetStatManager.GetCurrentLevel() : 1;
+            bool isConditionSatisfied = skillDefinition.AreUnlockConditionsSatisfied( this, currentLevel, targetQuestStateProvider );
+
+            if ( isConditionSatisfied == false )
+            {
+                return false;
+            }
+
+            bool result = currentSkillPoint >= skillDefinition.GetLearnSpCost();
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 레벨업 가능 상태 판정
+        ///</summary>
+        private bool CanLevelUpSkill( CSkillRuntimeData _runtimeData )
+        {
+            if ( _runtimeData == null || _runtimeData.IsUnlocked() == false )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
+
+            if ( skillDefinition == null )
+            {
+                return false;
+            }
+
+            int currentSkillLevel = _runtimeData.GetSkillLevel();
+
+            if ( currentSkillLevel >= skillDefinition.GetMaxSkillLevel() )
+            {
+                return false;
+            }
+
+            bool result = currentSkillPoint >= skillDefinition.GetLevelUpSpCost();
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 학습 처리
+        ///</summary>
+        private bool TryLearnSkill( CSkillRuntimeData _runtimeData, bool _ignoreConditionAndCost )
+        {
+            if ( _runtimeData == null || _runtimeData.IsUnlocked() )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
+
+            if ( skillDefinition == null )
+            {
+                return false;
+            }
+
+            if ( _ignoreConditionAndCost == false && CanLearnSkill( _runtimeData ) == false )
+            {
+                return false;
+            }
+
+            if ( _ignoreConditionAndCost == false )
+            {
+                int nextSkillPoint = currentSkillPoint - skillDefinition.GetLearnSpCost();
+                currentSkillPoint = Mathf.Max( 0, nextSkillPoint );
+            }
+
+            _runtimeData.SetUnlocked( true );
+            _runtimeData.SetSkillLevel( 1 );
+
+            if ( skillDefinition.GetSkillType() == eSkillType.PASSIVE )
             {
                 RebuildPassiveStatBonus();
             }
 
-            if ( didUnlockAnySkill && OnSkillStateChanged != null )
+            if ( OnSkillUnlocked != null )
             {
-                OnSkillStateChanged();
+                OnSkillUnlocked( skillDefinition );
             }
+
+            RaiseSkillStateChanged();
+            return true;
+        }
+
+        ///<summary>
+        /// 스킬 레벨업 처리
+        ///</summary>
+        private bool TryLevelUpSkill( CSkillRuntimeData _runtimeData )
+        {
+            if ( CanLevelUpSkill( _runtimeData ) == false )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
+            int nextSkillPoint = currentSkillPoint - skillDefinition.GetLevelUpSpCost();
+            int nextSkillLevel = _runtimeData.GetSkillLevel() + 1;
+            currentSkillPoint = Mathf.Max( 0, nextSkillPoint );
+            _runtimeData.SetSkillLevel( nextSkillLevel );
+
+            if ( skillDefinition.GetSkillType() == eSkillType.PASSIVE )
+            {
+                RebuildPassiveStatBonus();
+            }
+
+            RaiseSkillStateChanged();
+            return true;
         }
 
         ///<summary>
@@ -627,9 +1081,10 @@ namespace TinyHero.Skill
                     continue;
                 }
 
+                int skillLevel = Mathf.Max( 1, runtimeData.GetSkillLevel() );
                 CPlayerStatRuntimeData passiveStatBonus = skillDefinition.GetPassiveStatBonus();
-                AddPassiveStatBonus( passiveStatBonus );
-                AddPassiveSkillEffects( skillDefinition.GetPassiveSkillEffectList() );
+                AddPassiveStatBonus( passiveStatBonus, skillLevel );
+                AddPassiveSkillEffects( skillDefinition.GetPassiveSkillEffectList(), skillLevel );
             }
 
             if ( targetStatManager == null )
@@ -643,7 +1098,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 레거시 패시브 스탯 보너스 누적
         ///</summary>
-        private void AddPassiveStatBonus( CPlayerStatRuntimeData _passiveStatBonus )
+        private void AddPassiveStatBonus( CPlayerStatRuntimeData _passiveStatBonus, int _skillLevel )
         {
             if ( _passiveStatBonus == null )
             {
@@ -655,7 +1110,7 @@ namespace TinyHero.Skill
             for ( int index = 0; index < statTypeArray.Length; index++ )
             {
                 ePlayerStatType statType = ( ePlayerStatType ) statTypeArray.GetValue( index );
-                float statValue = _passiveStatBonus.GetStatValue( statType );
+                float statValue = _passiveStatBonus.GetStatValue( statType ) * Mathf.Max( 1, _skillLevel );
 
                 if ( Mathf.Approximately( statValue, 0.0f ) )
                 {
@@ -669,7 +1124,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 패시브 효과 목록 일괄 반영
         ///</summary>
-        private void AddPassiveSkillEffects( List<CPassiveSkillEffectBase> _passiveSkillEffectList )
+        private void AddPassiveSkillEffects( List<CPassiveSkillEffectBase> _passiveSkillEffectList, int _skillLevel )
         {
             if ( _passiveSkillEffectList == null )
             {
@@ -682,6 +1137,14 @@ namespace TinyHero.Skill
 
                 if ( passiveSkillEffect == null )
                 {
+                    continue;
+                }
+
+                if ( passiveSkillEffect is CPassiveStatSkillEffect passiveStatSkillEffect )
+                {
+                    ePlayerStatType targetStatType = passiveStatSkillEffect.GetTargetStatType();
+                    float scaledBonusValue = passiveStatSkillEffect.GetBonusValue() * Mathf.Max( 1, _skillLevel );
+                    aggregatedPassiveStatBonus.AddStatValue( targetStatType, scaledBonusValue );
                     continue;
                 }
 
@@ -879,6 +1342,31 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 퀵슬롯 인덱스 기반 런타임 데이터 반환
+        ///</summary>
+        private CSkillRuntimeData GetSkillRuntimeDataByQuickSlotIndex( int _quickSlotIndex )
+        {
+            for ( int index = 0; index < skillRuntimeDataList.Count; index++ )
+            {
+                CSkillRuntimeData runtimeData = skillRuntimeDataList[ index ];
+
+                if ( runtimeData == null )
+                {
+                    continue;
+                }
+
+                if ( runtimeData.GetAssignedQuickSlotIndex() != _quickSlotIndex )
+                {
+                    continue;
+                }
+
+                return runtimeData;
+            }
+
+            return null;
+        }
+
+        ///<summary>
         /// 스킬 사용 이벤트 통지
         ///</summary>
         private void NotifySkillUse( CSkillDefinition _skillDefinition )
@@ -888,10 +1376,7 @@ namespace TinyHero.Skill
                 OnSkillUsed( _skillDefinition );
             }
 
-            if ( OnSkillStateChanged != null )
-            {
-                OnSkillStateChanged();
-            }
+            RaiseSkillStateChanged();
         }
 
         ///<summary>
@@ -909,6 +1394,17 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 스킬 상태 변경 이벤트 전파
+        ///</summary>
+        private void RaiseSkillStateChanged()
+        {
+            if ( OnSkillStateChanged != null )
+            {
+                OnSkillStateChanged();
+            }
+        }
+
+        ///<summary>
         /// 스킬 실행 문맥 생성
         ///</summary>
         private CSkillContext CreateSkillContext( CSkillDefinition _skillDefinition, CSkillRuntimeData _runtimeData )
@@ -916,6 +1412,14 @@ namespace TinyHero.Skill
             Transform ownerTransform = transform;
             CSkillContext skillContext = new CSkillContext( this, targetPlayerController, targetStatManager, _skillDefinition, _runtimeData, ownerTransform );
             return skillContext;
+        }
+
+        ///<summary>
+        /// 초기 퀵슬롯 인덱스 결정
+        ///</summary>
+        private int ResolveInitialQuickSlotIndex( CSkillDefinition _skillDefinition )
+        {
+            return -1;
         }
 
         ///<summary>

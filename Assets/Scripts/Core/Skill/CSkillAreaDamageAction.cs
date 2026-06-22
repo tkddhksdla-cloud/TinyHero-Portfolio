@@ -33,6 +33,15 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 기본 데미지 배율 반환
+        ///</summary>
+        public float GetDamageMultiplier()
+        {
+            float result = Mathf.Max( 0.0f, damageMultiplier );
+            return result;
+        }
+
+        ///<summary>
         /// 스킬 실행 가능 여부 판정
         ///</summary>
         public override bool CanExecute( CSkillContext _skillContext )

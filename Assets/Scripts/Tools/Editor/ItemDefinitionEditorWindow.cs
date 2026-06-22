@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using LayerLab.ArtMakerUnity;
 using TinyHero.Core.Data;
 using UnityEditor;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace TinyHero.Tools
     public sealed class ItemDefinitionEditorWindow : EditorWindow
     {
         private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
+        private const string PlayerPrefabAssetPath = "Assets/Resources/Prefabs/Character/Player/Player.prefab";
         private const float ListViewHeight = 480.0f;
         private const float ListItemHeight = 42.0f;
         private const float ListItemSpacing = 4.0f;
@@ -40,6 +42,7 @@ namespace TinyHero.Tools
         private string statusMessage = "아이템 정의 목록을 불러오세요.";
         private MessageType statusMessageType = MessageType.Info;
         private bool isPendingFocusToSelection;
+        private bool hasPendingAssetChanges;
 
         private static readonly string[] ItemTypeFilterOptionArray =
         {
@@ -271,6 +274,12 @@ namespace TinyHero.Tools
             SerializedProperty worldDropPrefabProperty = serializedObject.FindProperty( "worldDropPrefab" );
             SerializedProperty isStackableProperty = serializedObject.FindProperty( "isStackable" );
             SerializedProperty maxStackCountProperty = serializedObject.FindProperty( "maxStackCount" );
+            SerializedProperty equipmentTypeProperty = serializedObject.FindProperty( "equipmentType" );
+            SerializedProperty consumableTypeProperty = serializedObject.FindProperty( "consumableType" );
+            SerializedProperty linkedSkillIdProperty = serializedObject.FindProperty( "linkedSkillId" );
+            SerializedProperty equipmentStatBonusProperty = serializedObject.FindProperty( "equipmentStatBonus" );
+            SerializedProperty equipmentPartsTypeProperty = serializedObject.FindProperty( "equipmentPartsType" );
+            SerializedProperty equipmentPartsIndexProperty = serializedObject.FindProperty( "equipmentPartsIndex" );
 
             EditorGUILayout.LabelField( "Item Settings", EditorStyles.boldLabel );
 
@@ -324,14 +333,96 @@ namespace TinyHero.Tools
                 }
             }
 
+            bool isEquipmentItem = itemTypeProperty != null && itemTypeProperty.enumValueIndex == ( int )eItemType.EQUIPMENT;
+            bool isConsumableItem = itemTypeProperty != null && itemTypeProperty.enumValueIndex == ( int )eItemType.CONSUMABLE;
+
+            if ( isConsumableItem )
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField( "Consumable Settings", EditorStyles.boldLabel );
+
+                if ( consumableTypeProperty != null )
+                {
+                    EditorGUILayout.PropertyField( consumableTypeProperty );
+                }
+
+                bool isSkillBook = consumableTypeProperty != null && consumableTypeProperty.enumValueIndex == ( int )eConsumableType.SKILL_BOOK;
+
+                if ( linkedSkillIdProperty != null )
+                {
+                    using ( new EditorGUI.DisabledScope( isSkillBook == false ) )
+                    {
+                        EditorGUILayout.PropertyField( linkedSkillIdProperty );
+                    }
+
+                    if ( isSkillBook == false )
+                    {
+                        linkedSkillIdProperty.stringValue = string.Empty;
+                    }
+                }
+            }
+
+            if ( isEquipmentItem )
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField( "Equipment Settings", EditorStyles.boldLabel );
+
+                if ( equipmentTypeProperty != null )
+                {
+                    EditorGUILayout.PropertyField( equipmentTypeProperty );
+                }
+
+                if ( equipmentStatBonusProperty != null )
+                {
+                    EditorGUILayout.PropertyField( equipmentStatBonusProperty, true );
+                }
+
+                if ( equipmentPartsTypeProperty != null )
+                {
+                    EditorGUILayout.PropertyField( equipmentPartsTypeProperty );
+                }
+
+                if ( equipmentPartsIndexProperty != null )
+                {
+                    EditorGUILayout.PropertyField( equipmentPartsIndexProperty );
+                }
+
+                DrawEquipmentPartsAutoAssignSection( serializedObject, iconSpriteProperty, equipmentPartsTypeProperty, equipmentPartsIndexProperty );
+            }
+
             bool hasModifiedProperties = serializedObject.ApplyModifiedProperties();
 
             if ( hasModifiedProperties )
             {
                 EditorUtility.SetDirty( _itemDefinition );
-                AssetDatabase.SaveAssets();
-                RefreshItemDefinitionInfos();
+                hasPendingAssetChanges = true;
             }
+        }
+
+        ///<summary>
+        /// 장비 외형 자동 할당 영역 렌더링
+        ///</summary>
+        private void DrawEquipmentPartsAutoAssignSection( SerializedObject _serializedObject, SerializedProperty _iconSpriteProperty, SerializedProperty _equipmentPartsTypeProperty, SerializedProperty _equipmentPartsIndexProperty )
+        {
+            if ( _serializedObject == null || _iconSpriteProperty == null || _equipmentPartsTypeProperty == null || _equipmentPartsIndexProperty == null )
+            {
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+
+            if ( GUILayout.Button( "Auto Assign Parts", GUILayout.Height( 26.0f ) ) )
+            {
+                bool didAssign = TryAutoAssignEquipmentParts( _serializedObject, _iconSpriteProperty, _equipmentPartsTypeProperty, _equipmentPartsIndexProperty, out string resultMessage );
+                SetStatus( resultMessage, didAssign ? MessageType.Info : MessageType.Warning );
+
+                if ( didAssign )
+                {
+                    hasPendingAssetChanges = true;
+                }
+            }
+
+            EditorGUILayout.EndHorizontal();
         }
 
         ///<summary>
@@ -341,6 +432,14 @@ namespace TinyHero.Tools
         {
             EditorGUILayout.LabelField( "Actions", EditorStyles.boldLabel );
             EditorGUILayout.BeginHorizontal();
+
+            using ( new EditorGUI.DisabledScope( hasPendingAssetChanges == false ) )
+            {
+                if ( GUILayout.Button( "Save", GUILayout.Height( 32.0f ) ) )
+                {
+                    SaveItemDefinition( _itemDefinition );
+                }
+            }
 
             if ( GUILayout.Button( "Duplicate", GUILayout.Height( 32.0f ) ) )
             {
@@ -458,6 +557,7 @@ namespace TinyHero.Tools
             RefreshItemDefinitionInfos();
             SelectItemByAssetPath( nextAssetPath );
             Selection.activeObject = createdItemDefinition;
+            hasPendingAssetChanges = false;
             SetStatus( $"아이템 정의를 생성했습니다: {nextAssetPath}", MessageType.Info );
         }
 
@@ -468,7 +568,27 @@ namespace TinyHero.Tools
         {
             string result = CItemAssetBootstrapper.GenerateSampleItemAssets();
             RefreshItemDefinitionInfos();
+            hasPendingAssetChanges = false;
             SetStatus( result, MessageType.Info );
+        }
+
+        ///<summary>
+        /// 아이템 정의 저장 처리
+        ///</summary>
+        private void SaveItemDefinition( CItemDefinition _itemDefinition )
+        {
+            if ( _itemDefinition == null )
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty( _itemDefinition );
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            RefreshItemDefinitionInfos();
+            hasPendingAssetChanges = false;
+            string assetPath = AssetDatabase.GetAssetPath( _itemDefinition );
+            SetStatus( $"아이템 정의를 저장했습니다: {assetPath}", MessageType.Info );
         }
 
         ///<summary>
@@ -500,11 +620,12 @@ namespace TinyHero.Tools
             if ( duplicatedItemDefinition != null )
             {
                 string duplicatedName = Path.GetFileNameWithoutExtension( duplicatedAssetPath );
-                duplicatedItemDefinition.Configure( $"{duplicatedName.ToUpperInvariant()}_COPY", $"{duplicatedItemDefinition.GetItemName()} Copy", duplicatedItemDefinition.GetItemType(), duplicatedItemDefinition.GetDescription(), duplicatedItemDefinition.GetIconSprite(), duplicatedItemDefinition.IsStackable(), duplicatedItemDefinition.GetMaxStackCount() );
+                duplicatedItemDefinition.Configure( $"{duplicatedName.ToUpperInvariant()}_COPY", $"{duplicatedItemDefinition.GetItemName()} Copy", duplicatedItemDefinition.GetItemType(), duplicatedItemDefinition.GetDescription(), duplicatedItemDefinition.GetIconSprite(), duplicatedItemDefinition.IsStackable(), duplicatedItemDefinition.GetMaxStackCount(), duplicatedItemDefinition.GetEquipmentType(), duplicatedItemDefinition.GetConsumableType(), duplicatedItemDefinition.GetLinkedSkillId(), duplicatedItemDefinition.GetEquipmentStatBonus(), duplicatedItemDefinition.GetEquipmentPartsType(), duplicatedItemDefinition.GetEquipmentPartsIndex() );
                 EditorUtility.SetDirty( duplicatedItemDefinition );
                 AssetDatabase.SaveAssets();
             }
 
+            hasPendingAssetChanges = false;
             SetStatus( $"아이템 정의를 복제했습니다: {duplicatedAssetPath}", MessageType.Info );
         }
 
@@ -537,7 +658,141 @@ namespace TinyHero.Tools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             RefreshItemDefinitionInfos();
+            hasPendingAssetChanges = false;
             SetStatus( $"아이템 정의를 삭제했습니다: {assetPath}", MessageType.Info );
+        }
+
+        ///<summary>
+        /// 아이콘 이름 기반 장비 외형 자동 할당
+        ///</summary>
+        private bool TryAutoAssignEquipmentParts( SerializedObject _serializedObject, SerializedProperty _iconSpriteProperty, SerializedProperty _equipmentPartsTypeProperty, SerializedProperty _equipmentPartsIndexProperty, out string _resultMessage )
+        {
+            _resultMessage = "아이콘 스프라이트가 비어 있습니다.";
+
+            if ( _serializedObject == null || _iconSpriteProperty == null || _equipmentPartsTypeProperty == null || _equipmentPartsIndexProperty == null )
+            {
+                _resultMessage = "자동 할당에 필요한 프로퍼티를 찾지 못했습니다.";
+                return false;
+            }
+
+            Sprite iconSprite = _iconSpriteProperty.objectReferenceValue as Sprite;
+
+            if ( iconSprite == null )
+            {
+                return false;
+            }
+
+            bool isMatched = TryFindEquipmentPartsBySpriteName( iconSprite.name, out PartsType partsType, out int partsIndex );
+
+            if ( isMatched == false )
+            {
+                _resultMessage = $"'{iconSprite.name}' 과 일치하는 파츠를 찾지 못했습니다.";
+                return false;
+            }
+
+            _equipmentPartsTypeProperty.enumValueIndex = ( int )partsType;
+            _equipmentPartsIndexProperty.intValue = partsIndex;
+            _serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty( _serializedObject.targetObject );
+            _resultMessage = $"자동 할당 완료: {partsType} / {partsIndex}";
+            return true;
+        }
+
+        ///<summary>
+        /// 스프라이트 이름 기반 파츠 데이터 탐색
+        ///</summary>
+        private bool TryFindEquipmentPartsBySpriteName( string _spriteName, out PartsType _partsType, out int _partsIndex )
+        {
+            _partsType = PartsType.Chest;
+            _partsIndex = -1;
+
+            if ( string.IsNullOrWhiteSpace( _spriteName ) )
+            {
+                return false;
+            }
+
+            GameObject playerPrefabRoot = PrefabUtility.LoadPrefabContents( PlayerPrefabAssetPath );
+
+            if ( playerPrefabRoot == null )
+            {
+                return false;
+            }
+
+            try
+            {
+                PartsManager partsManager = playerPrefabRoot.GetComponent<PartsManager>();
+
+                if ( partsManager == null )
+                {
+                    return false;
+                }
+
+                SerializedObject serializedObject = new SerializedObject( partsManager );
+                SerializedProperty categoriesProperty = serializedObject.FindProperty( "categories" );
+
+                if ( categoriesProperty == null || categoriesProperty.isArray == false )
+                {
+                    return false;
+                }
+
+                for ( int categoryIndex = 0; categoryIndex < categoriesProperty.arraySize; categoryIndex++ )
+                {
+                    SerializedProperty categoryProperty = categoriesProperty.GetArrayElementAtIndex( categoryIndex );
+
+                    if ( categoryProperty == null )
+                    {
+                        continue;
+                    }
+
+                    SerializedProperty partsTypeProperty = categoryProperty.FindPropertyRelative( "type" );
+                    SerializedProperty renderersProperty = categoryProperty.FindPropertyRelative( "renderers" );
+
+                    if ( partsTypeProperty == null || renderersProperty == null || renderersProperty.isArray == false || renderersProperty.arraySize <= 0 )
+                    {
+                        continue;
+                    }
+
+                    SerializedProperty firstRendererProperty = renderersProperty.GetArrayElementAtIndex( 0 );
+
+                    if ( firstRendererProperty == null )
+                    {
+                        continue;
+                    }
+
+                    SerializedProperty spritesProperty = firstRendererProperty.FindPropertyRelative( "sprites" );
+
+                    if ( spritesProperty == null || spritesProperty.isArray == false )
+                    {
+                        continue;
+                    }
+
+                    for ( int spriteIndex = 0; spriteIndex < spritesProperty.arraySize; spriteIndex++ )
+                    {
+                        SerializedProperty spriteProperty = spritesProperty.GetArrayElementAtIndex( spriteIndex );
+                        Sprite currentSprite = spriteProperty != null ? spriteProperty.objectReferenceValue as Sprite : null;
+
+                        if ( currentSprite == null )
+                        {
+                            continue;
+                        }
+
+                        if ( string.Equals( currentSprite.name, _spriteName, StringComparison.Ordinal ) == false )
+                        {
+                            continue;
+                        }
+
+                        _partsType = ( PartsType )partsTypeProperty.enumValueIndex;
+                        _partsIndex = spriteIndex;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents( playerPrefabRoot );
+            }
         }
 
         ///<summary>

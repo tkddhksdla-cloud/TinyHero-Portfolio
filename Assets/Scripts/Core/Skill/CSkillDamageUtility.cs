@@ -27,12 +27,18 @@ namespace TinyHero.Skill
                 return 0;
             }
 
+            CSkillDefinition skillDefinition = _skillContext.GetSkillDefinition();
+            CSkillRuntimeData runtimeData = _skillContext.GetSkillRuntimeData();
+            int skillLevel = runtimeData != null ? Mathf.Max( 1, runtimeData.GetSkillLevel() ) : 1;
+            float resolvedDamageMultiplier = skillDefinition != null ? skillDefinition.ResolveDamageMultiplier( _damageMultiplier, skillLevel ) : Mathf.Max( 0.0f, _damageMultiplier );
+            int resolvedFlatDamageBonus = skillDefinition != null ? skillDefinition.ResolveFlatDamageBonus( _flatDamageBonus, skillLevel ) : _flatDamageBonus;
+
             float attackStatOverride = _skillContext.GetAttackStatOverride();
             float playerAtk = attackStatOverride >= 0.0f ? attackStatOverride : playerStatManager.GetFinalStatValue( ePlayerStatType.ATK );
             PlayerController playerController = _skillContext.GetPlayerController();
             float attackMultiplierOverride = _skillContext.GetSkillAttackPowerMultiplierOverride();
             float attackMultiplier = attackMultiplierOverride >= 0.0f ? attackMultiplierOverride : ( playerController != null ? playerController.GetSkillAttackPowerMultiplier() : 1.0f );
-            float rawDamage = playerAtk * attackMultiplier * _damageMultiplier + _flatDamageBonus - _monsterObject.GetDef();
+            float rawDamage = playerAtk * attackMultiplier * resolvedDamageMultiplier + resolvedFlatDamageBonus - _monsterObject.GetDef();
             float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( playerStatManager, rawDamage, out bool isCritical );
             _isCritical = isCritical;
             long damage = Mathf.Max( 0, Mathf.RoundToInt( resolvedDamage ) );

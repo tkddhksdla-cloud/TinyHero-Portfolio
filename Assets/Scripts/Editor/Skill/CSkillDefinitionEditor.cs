@@ -20,6 +20,12 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty quickSlotIndexProperty;
         private SerializedProperty cooldownSecondsProperty;
         private SerializedProperty mpCostProperty;
+        private SerializedProperty learnSpCostProperty;
+        private SerializedProperty levelUpSpCostProperty;
+        private SerializedProperty maxSkillLevelProperty;
+        private SerializedProperty cooldownReductionPerLevelProperty;
+        private SerializedProperty damageMultiplierBonusPerLevelProperty;
+        private SerializedProperty flatDamageBonusPerLevelProperty;
         private SerializedProperty castLockDurationSecondsProperty;
         private SerializedProperty castAnimationProperty;
         private SerializedProperty castAnimationNameProperty;
@@ -45,6 +51,7 @@ namespace TinyHero.Skill.Editor
 
         private bool isSummaryFoldoutOpen = true;
         private bool isExecutionFoldoutOpen = true;
+        private bool isProgressionFoldoutOpen = true;
         private bool isRangePreviewFoldoutOpen = true;
         private bool isVfxFoldoutOpen;
         private bool isPassiveFoldoutOpen = true;
@@ -66,6 +73,12 @@ namespace TinyHero.Skill.Editor
             quickSlotIndexProperty = serializedObject.FindProperty( "quickSlotIndex" );
             cooldownSecondsProperty = serializedObject.FindProperty( "cooldownSeconds" );
             mpCostProperty = serializedObject.FindProperty( "mpCost" );
+            learnSpCostProperty = serializedObject.FindProperty( "learnSpCost" );
+            levelUpSpCostProperty = serializedObject.FindProperty( "levelUpSpCost" );
+            maxSkillLevelProperty = serializedObject.FindProperty( "maxSkillLevel" );
+            cooldownReductionPerLevelProperty = serializedObject.FindProperty( "cooldownReductionPerLevel" );
+            damageMultiplierBonusPerLevelProperty = serializedObject.FindProperty( "damageMultiplierBonusPerLevel" );
+            flatDamageBonusPerLevelProperty = serializedObject.FindProperty( "flatDamageBonusPerLevel" );
             castLockDurationSecondsProperty = serializedObject.FindProperty( "castLockDurationSeconds" );
             castAnimationProperty = serializedObject.FindProperty( "castAnimation" );
             castAnimationNameProperty = serializedObject.FindProperty( "castAnimationName" );
@@ -111,6 +124,7 @@ namespace TinyHero.Skill.Editor
 
             DrawHeaderSection();
             DrawSummarySection();
+            DrawProgressionSection();
             DrawExecutionSection();
             DrawRangePreviewSection();
             DrawPassiveSection();
@@ -131,7 +145,8 @@ namespace TinyHero.Skill.Editor
             Sprite skillIcon = skillDefinition != null ? skillDefinition.GetSkillIcon() : null;
             string skillName = skillDefinition != null ? skillDefinition.GetSkillName() : "Skill";
             string skillId = skillDefinition != null ? skillDefinition.GetSkillId() : string.Empty;
-            string typeLabel = CSkillEditorPreviewUtility.BuildTypeSummaryText( skillTypeProperty, activeSkillTypeProperty );
+            eActiveSkillType activeSkillType = skillDefinition != null ? skillDefinition.GetActiveSkillType() : eActiveSkillType.NONE;
+            string typeLabel = CSkillEditorPreviewUtility.BuildTypeSummaryText( skillTypeProperty, activeSkillType );
             Rect iconRect;
             Rect titleRect;
             Rect subTitleRect;
@@ -190,10 +205,38 @@ namespace TinyHero.Skill.Editor
 
                 using ( new EditorGUI.DisabledScope( true ) )
                 {
-                    EditorGUILayout.PropertyField( activeSkillTypeProperty );
+                    CSkillDefinition skillDefinition = target as CSkillDefinition;
+                    eActiveSkillType activeSkillType = skillDefinition != null ? skillDefinition.GetActiveSkillType() : eActiveSkillType.NONE;
+                    EditorGUILayout.EnumPopup( "Active Skill Type", activeSkillType );
                 }
 
                 EditorGUILayout.PropertyField( descriptionProperty );
+                DrawDescriptionPreviewBlock();
+            }
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        ///<summary>
+        /// 강화 설정 섹션 렌더링
+        ///</summary>
+        private void DrawProgressionSection()
+        {
+            bool isActiveSkill = CSkillEditorPreviewUtility.IsActiveSkill( skillTypeProperty );
+            isProgressionFoldoutOpen = EditorGUILayout.BeginFoldoutHeaderGroup( isProgressionFoldoutOpen, "강화 설정" );
+
+            if ( isProgressionFoldoutOpen )
+            {
+                EditorGUILayout.PropertyField( learnSpCostProperty );
+                EditorGUILayout.PropertyField( levelUpSpCostProperty );
+                EditorGUILayout.PropertyField( maxSkillLevelProperty );
+
+                if ( isActiveSkill )
+                {
+                    EditorGUILayout.PropertyField( cooldownReductionPerLevelProperty );
+                    EditorGUILayout.PropertyField( damageMultiplierBonusPerLevelProperty );
+                    EditorGUILayout.PropertyField( flatDamageBonusPerLevelProperty );
+                }
             }
 
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -418,6 +461,26 @@ namespace TinyHero.Skill.Editor
             EditorGUILayout.PropertyField( _offsetProperty );
             EditorGUILayout.PropertyField( _returnDelayProperty );
             EditorGUILayout.EndVertical();
+        }
+
+        ///<summary>
+        /// 동적 설명 미리보기 블록 렌더링
+        ///</summary>
+        private void DrawDescriptionPreviewBlock()
+        {
+            CSkillDefinition skillDefinition = target as CSkillDefinition;
+
+            if ( skillDefinition == null )
+            {
+                return;
+            }
+
+            int maxSkillLevel = skillDefinition.GetMaxSkillLevel();
+            string supportedTokenText = string.Join( ", ", CSkillDescriptionFormatter.GetSupportedTokenList() );
+            string levelOneDescription = skillDefinition.GetFormattedDescription( 1 );
+            string maxLevelDescription = skillDefinition.GetFormattedDescription( maxSkillLevel );
+            string previewText = $"Level 1: {levelOneDescription}\nMax Level: {maxLevelDescription}\nTokens: {supportedTokenText}";
+            EditorGUILayout.HelpBox( previewText, MessageType.None );
         }
     }
 }

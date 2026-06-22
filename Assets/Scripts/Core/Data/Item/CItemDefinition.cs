@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LayerLab.ArtMakerUnity;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -27,6 +28,16 @@ namespace TinyHero.Core.Data
         HELMET,
         ARMOR,
         SHIELD
+    }
+
+    ///<summary>
+    /// 소모품 상세 타입
+    ///</summary>
+    public enum eConsumableType
+    {
+        NONE,
+        GENERAL,
+        SKILL_BOOK
     }
 
     ///<summary>
@@ -241,7 +252,11 @@ namespace TinyHero.Core.Data
         [SerializeField] private bool isStackable = true;
         [SerializeField] private int maxStackCount = 99;
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
+        [SerializeField] private eConsumableType consumableType = eConsumableType.NONE;
+        [SerializeField] private string linkedSkillId = string.Empty;
         [SerializeField] private CPlayerStatRuntimeData equipmentStatBonus = new CPlayerStatRuntimeData();
+        [SerializeField] private PartsType equipmentPartsType = PartsType.Chest;
+        [SerializeField] private int equipmentPartsIndex = -1;
 
         ///<summary>
         /// 아이템 ID 반환
@@ -342,6 +357,33 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 소모품 상세 타입 반환
+        ///</summary>
+        public eConsumableType GetConsumableType()
+        {
+            eConsumableType result = itemType == eItemType.CONSUMABLE ? consumableType : eConsumableType.NONE;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 북 여부 반환
+        ///</summary>
+        public bool IsSkillBook()
+        {
+            bool result = itemType == eItemType.CONSUMABLE && consumableType == eConsumableType.SKILL_BOOK;
+            return result;
+        }
+
+        ///<summary>
+        /// 연결 스킬 ID 반환
+        ///</summary>
+        public string GetLinkedSkillId()
+        {
+            string result = IsSkillBook() ? linkedSkillId : string.Empty;
+            return result;
+        }
+
+        ///<summary>
         /// 장비 슬롯 타입 일치 여부 반환
         ///</summary>
         public bool IsEquipmentTypeMatched( eEquipmentType _equipmentType )
@@ -365,6 +407,33 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 장비 외형 파츠 타입 반환
+        ///</summary>
+        public PartsType GetEquipmentPartsType()
+        {
+            PartsType result = equipmentPartsType;
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 외형 파츠 인덱스 반환
+        ///</summary>
+        public int GetEquipmentPartsIndex()
+        {
+            int result = IsEquipmentItem() ? equipmentPartsIndex : -1;
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 외형 데이터 보유 여부 반환
+        ///</summary>
+        public bool HasEquipmentPartsVisual()
+        {
+            bool result = IsEquipmentItem() && equipmentPartsIndex >= 0;
+            return result;
+        }
+
+        ///<summary>
         /// 월드 드랍 프리팹 설정
         ///</summary>
         public void SetWorldDropPrefab( GameObject _worldDropPrefab )
@@ -377,7 +446,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
         {
-            Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null );
+            Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null, PartsType.Chest, -1 );
         }
 
         ///<summary>
@@ -385,13 +454,35 @@ namespace TinyHero.Core.Data
         ///</summary>
         public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus )
         {
+            PartsType defaultEquipmentPartsType = ResolveDefaultEquipmentPartsType( _equipmentType );
+            Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, eConsumableType.NONE, string.Empty, _equipmentStatBonus, defaultEquipmentPartsType, -1 );
+        }
+
+        ///<summary>
+        /// 아이템 정의 구성
+        ///</summary>
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
+        {
+            Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, eConsumableType.NONE, string.Empty, _equipmentStatBonus, _equipmentPartsType, _equipmentPartsIndex );
+        }
+
+        ///<summary>
+        /// 아이템 정의 구성
+        ///</summary>
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, eConsumableType _consumableType, string _linkedSkillId, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
+        {
             itemId = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
             itemName = string.IsNullOrWhiteSpace( _itemName ) ? itemId : _itemName.Trim();
             itemType = _itemType;
             description = string.IsNullOrWhiteSpace( _description ) ? string.Empty : _description.Trim();
             iconSprite = _iconSprite;
             bool isEquipmentItem = _itemType == eItemType.EQUIPMENT;
+            bool isConsumableItem = _itemType == eItemType.CONSUMABLE;
             equipmentType = isEquipmentItem ? _equipmentType : eEquipmentType.NONE;
+            consumableType = isConsumableItem ? _consumableType : eConsumableType.NONE;
+            linkedSkillId = isConsumableItem ? ( string.IsNullOrWhiteSpace( _linkedSkillId ) ? string.Empty : _linkedSkillId.Trim() ) : string.Empty;
+            equipmentPartsType = isEquipmentItem ? _equipmentPartsType : PartsType.Chest;
+            equipmentPartsIndex = isEquipmentItem ? Mathf.Max( -1, _equipmentPartsIndex ) : -1;
             isStackable = isEquipmentItem == false && _isStackable;
             maxStackCount = isStackable ? Mathf.Max( 1, _maxStackCount ) : 1;
 
@@ -407,6 +498,30 @@ namespace TinyHero.Core.Data
             }
 
             equipmentStatBonus.Clear();
+        }
+
+        ///<summary>
+        /// 장비 기본 파츠 타입 결정
+        ///</summary>
+        private static PartsType ResolveDefaultEquipmentPartsType( eEquipmentType _equipmentType )
+        {
+            switch ( _equipmentType )
+            {
+                case eEquipmentType.WEAPON:
+                    return PartsType.Sword;
+
+                case eEquipmentType.HELMET:
+                    return PartsType.Helmet;
+
+                case eEquipmentType.ARMOR:
+                    return PartsType.Chest;
+
+                case eEquipmentType.SHIELD:
+                    return PartsType.Shield;
+            }
+
+            PartsType result = PartsType.Chest;
+            return result;
         }
     }
 }

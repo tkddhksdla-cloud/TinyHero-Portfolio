@@ -29,6 +29,24 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 분신 데미지 배율 반환
+        ///</summary>
+        public float GetCloneDamageMultiplier()
+        {
+            float result = Mathf.Max( 0.0f, cloneDamageMultiplier );
+            return result;
+        }
+
+        ///<summary>
+        /// 분신 유지 시간 반환
+        ///</summary>
+        public float GetDurationSeconds()
+        {
+            float result = Mathf.Max( 0.0f, durationSeconds );
+            return result;
+        }
+
+        ///<summary>
         /// 액티브 스킬 타입 분류 반환
         ///</summary>
         public override eActiveSkillType GetActiveSkillType()

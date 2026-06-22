@@ -75,7 +75,19 @@ namespace TinyHero.Skill.Editor
         public static string BuildTypeSummaryText( SerializedProperty _skillTypeProperty, SerializedProperty _activeSkillTypeProperty )
         {
             string skillTypeLabel = _skillTypeProperty.enumDisplayNames[ _skillTypeProperty.enumValueIndex ];
-            string activeTypeLabel = _activeSkillTypeProperty.enumDisplayNames[ _activeSkillTypeProperty.enumValueIndex ];
+            eActiveSkillType activeSkillType = ( eActiveSkillType ) _activeSkillTypeProperty.enumValueIndex;
+            string activeTypeLabel = ResolveActiveSkillTypeLabel( activeSkillType );
+            string result = $"Type: {skillTypeLabel} / Active: {activeTypeLabel}";
+            return result;
+        }
+
+        ///<summary>
+        /// 계산된 액티브 스킬 타입 기준 요약 문자 생성
+        ///</summary>
+        public static string BuildTypeSummaryText( SerializedProperty _skillTypeProperty, eActiveSkillType _activeSkillType )
+        {
+            string skillTypeLabel = _skillTypeProperty.enumDisplayNames[ _skillTypeProperty.enumValueIndex ];
+            string activeTypeLabel = ResolveActiveSkillTypeLabel( _activeSkillType );
             string result = $"Type: {skillTypeLabel} / Active: {activeTypeLabel}";
             return result;
         }
@@ -553,6 +565,7 @@ namespace TinyHero.Skill.Editor
             SerializedProperty collisionRadiusProperty = _activeEffectSerializedObject.FindProperty( "collisionRadius" );
             SerializedProperty travelDistanceProperty = _activeEffectSerializedObject.FindProperty( "travelDistance" );
             SerializedProperty travelSpeedProperty = _activeEffectSerializedObject.FindProperty( "travelSpeed" );
+            SerializedProperty destroyOnFirstHitProperty = _activeEffectSerializedObject.FindProperty( "destroyOnFirstHit" );
 
             if ( spawnOffsetProperty == null || collisionRadiusProperty == null || travelDistanceProperty == null )
             {
@@ -563,14 +576,25 @@ namespace TinyHero.Skill.Editor
             float collisionRadius = Mathf.Max( 0.0f, collisionRadiusProperty.floatValue );
             float travelDistance = Mathf.Max( 0.0f, travelDistanceProperty.floatValue );
             float travelSpeed = travelSpeedProperty != null ? Mathf.Max( 0.0f, travelSpeedProperty.floatValue ) : 0.0f;
+            bool destroyOnFirstHit = destroyOnFirstHitProperty == null || destroyOnFirstHitProperty.boolValue;
             Vector2 impactOffset = spawnOffset + new Vector2( travelDistance, 0.0f );
             previewData.isValid = true;
             previewData.shapeType = eSkillRangePreviewShape.CIRCLE;
             previewData.offset = impactOffset;
             previewData.radius = collisionRadius;
-            previewData.title = "Projectile Impact";
-            previewData.detail = $"Spawn {spawnOffset}, Travel {travelDistance:0.##}, Radius {collisionRadius:0.##}, Speed {travelSpeed:0.##}";
+            previewData.title = destroyOnFirstHit ? "Projectile Impact" : "Piercing Projectile Impact";
+            previewData.detail = $"Spawn {spawnOffset}, Travel {travelDistance:0.##}, Radius {collisionRadius:0.##}, Speed {travelSpeed:0.##}, Mode {( destroyOnFirstHit ? "Stop On Hit" : "Piercing" )}";
             return previewData;
+        }
+
+        ///<summary>
+        /// 액티브 스킬 타입 라벨 문자열 반환
+        ///</summary>
+        private static string ResolveActiveSkillTypeLabel( eActiveSkillType _activeSkillType )
+        {
+            string sourceText = _activeSkillType.ToString();
+            string result = ObjectNames.NicifyVariableName( sourceText );
+            return result;
         }
 
         ///<summary>

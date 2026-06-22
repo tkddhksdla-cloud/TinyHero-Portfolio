@@ -20,6 +20,15 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 무적 유지 시간 반환
+        ///</summary>
+        public float GetDurationSeconds()
+        {
+            float result = Mathf.Max( 0.0f, durationSeconds );
+            return result;
+        }
+
+        ///<summary>
         /// 버프 적용 처리
         ///</summary>
         public override bool ApplyBuff( CSkillContext _skillContext )

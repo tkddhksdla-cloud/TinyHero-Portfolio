@@ -22,6 +22,24 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 공격력 감소 지속시간 반환
+        ///</summary>
+        public float GetDurationSeconds()
+        {
+            float result = Mathf.Max( 0.0f, durationSeconds );
+            return result;
+        }
+
+        ///<summary>
+        /// 공격력 감소 수치 반환
+        ///</summary>
+        public long GetReductionAmount()
+        {
+            long result = reductionAmount > 0 ? reductionAmount : 0;
+            return result;
+        }
+
+        ///<summary>
         /// 디버프 적용 처리
         ///</summary>
         protected override bool ApplyDebuff( CSkillContext _skillContext, MonsterObject _monsterObject )
