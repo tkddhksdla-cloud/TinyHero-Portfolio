@@ -2,6 +2,7 @@ using TinyHero.Core;
 using TinyHero.Skill;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace TinyHero.UI
@@ -9,7 +10,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 스킬 퀵슬롯 단일 슬롯 뷰
     ///</summary>
-    public sealed class CSkillQuickSlotItemView : MonoBehaviour
+    public sealed class CSkillQuickSlotItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         private static readonly string[] FixedQuickKeyLabelArray = { "Q", "W", "E", "R", "A", "S", "D", "F" };
 
@@ -19,6 +20,7 @@ namespace TinyHero.UI
         [SerializeField] private TMP_Text skillCooltimeValue;
         [SerializeField] private TMP_Text skillQuickKeyText;
 
+        private CSkillQuickSlotUI ownerSkillQuickSlotUi;
         private CSkillManager targetSkillManager;
 
         ///<summary>
@@ -32,12 +34,43 @@ namespace TinyHero.UI
         ///<summary>
         /// 스킬 매니저 및 슬롯 인덱스 바인딩
         ///</summary>
-        public void Bind( CSkillManager _skillManager, int _quickSlotIndex )
+        public void Bind( CSkillQuickSlotUI _ownerSkillQuickSlotUi, CSkillManager _skillManager, int _quickSlotIndex )
         {
             ResolveReferences();
+            ownerSkillQuickSlotUi = _ownerSkillQuickSlotUi;
             targetSkillManager = _skillManager;
             quickSlotIndex = _quickSlotIndex;
             ApplyFixedQuickKeyLabel();
+        }
+
+        ///<summary>
+        /// 퀵슬롯 인덱스 반환
+        ///</summary>
+        public int GetQuickSlotIndex()
+        {
+            int result = quickSlotIndex;
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 배정 스킬 식별자 반환
+        ///</summary>
+        public string GetAssignedSkillId()
+        {
+            if ( targetSkillManager == null )
+            {
+                return string.Empty;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinitionByQuickSlotIndex( quickSlotIndex );
+
+            if ( skillDefinition == null )
+            {
+                return string.Empty;
+            }
+
+            string result = skillDefinition.GetSkillId();
+            return result;
         }
 
         ///<summary>
@@ -81,11 +114,68 @@ namespace TinyHero.UI
             {
                 skillIcon.sprite = skillDefinition.GetSkillIcon();
                 skillIcon.enabled = skillDefinition.GetSkillIcon() != null;
+                bool isUnlocked = targetSkillManager.IsSkillUnlocked( skillDefinition.GetSkillId() );
+                Color iconColor = skillIcon.color;
+                iconColor.a = isUnlocked ? 1.0f : 0.35f;
+                skillIcon.color = iconColor;
             }
 
             float remainingCooldown = targetSkillManager.GetSkillCooldownRemaining( skillDefinition.GetSkillId() );
-            float cooldownSeconds = skillDefinition.GetCooldownSeconds();
+            int skillLevel = targetSkillManager.GetSkillLevel( skillDefinition.GetSkillId() );
+            float cooldownSeconds = skillDefinition.GetCooldownSeconds( skillLevel );
             ApplyCooldownState( remainingCooldown, cooldownSeconds );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 드래그 시작 처리
+        ///</summary>
+        public void OnBeginDrag( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.TryBeginDragFromQuickSlot( quickSlotIndex, _eventData );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 드래그 진행 처리
+        ///</summary>
+        public void OnDrag( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.UpdateSkillDrag( _eventData );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 드래그 종료 처리
+        ///</summary>
+        public void OnEndDrag( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.EndSkillDrag( _eventData );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 드롭 처리
+        ///</summary>
+        public void OnDrop( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.HandleSlotDrop( quickSlotIndex );
         }
 
         ///<summary>

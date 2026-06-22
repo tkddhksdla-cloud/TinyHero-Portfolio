@@ -1,5 +1,7 @@
 using TinyHero.Core.Data;
 using TinyHero.Player;
+using LayerLab.ArtMakerUnity;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -16,6 +18,21 @@ namespace TinyHero.UI
         private const float PreviewTextureWidth = 300.0f;
         private const float PreviewTextureHeight = 250.0f;
         private static readonly Vector3 PreviewWorldPosition = new Vector3( 10000.0f, 10000.0f, 0.0f );
+        private static readonly PartsType[] PreviewManagedPartsTypeArray =
+        {
+            PartsType.Sword,
+            PartsType.Axe,
+            PartsType.Bow,
+            PartsType.Wand,
+            PartsType.Staff,
+            PartsType.Spear,
+            PartsType.Blunt,
+            PartsType.Crossbow,
+            PartsType.Shield,
+            PartsType.SubItem,
+            PartsType.Helmet,
+            PartsType.Chest
+        };
 
         [SerializeField] private RectTransform rootRectTransform;
         [SerializeField] private RectTransform previewFrameRectTransform;
@@ -39,6 +56,9 @@ namespace TinyHero.UI
         private RenderTexture previewRenderTexture;
         private GameObject previewRootObject;
         private GameObject previewInstanceObject;
+        private PresetData.PresetItem previewDefaultPresetItem;
+        private readonly Dictionary<PartsType, int> previewDefaultPartsIndexDictionary = new Dictionary<PartsType, int>();
+        private readonly Dictionary<PartsType, bool> previewDefaultPartsVisibilityDictionary = new Dictionary<PartsType, bool>();
         private bool isShowingPanelOwnedTooltip;
 
         ///<summary>
@@ -343,6 +363,7 @@ namespace TinyHero.UI
         {
             HideTooltip();
             RefreshEquipmentSlots();
+            RefreshPreviewCharacter();
         }
 
         ///<summary>
@@ -616,6 +637,9 @@ namespace TinyHero.UI
             previewInstanceObject.transform.localPosition = Vector3.zero;
             previewInstanceObject.transform.localRotation = Quaternion.identity;
             previewInstanceObject.transform.localScale = Vector3.one;
+            CachePreviewDefaultPresetItem();
+            RemovePreviewPresetComponent();
+            ApplyPreviewPartsState();
             ConfigurePreviewCamera();
         }
 
@@ -624,19 +648,280 @@ namespace TinyHero.UI
         ///</summary>
         private GameObject ResolvePreviewSourceObject()
         {
-            if ( targetPlayerController != null && targetPlayerController.transform.childCount > 0 )
-            {
-                Transform visualTransform = targetPlayerController.transform.GetChild( 0 );
-
-                if ( visualTransform != null )
-                {
-                    GameObject result = visualTransform.gameObject;
-                    return result;
-                }
-            }
-
             GameObject loadedPrefabObject = Resources.Load<GameObject>( PlayerVisualPrefabResourcePath );
             return loadedPrefabObject;
+        }
+
+        ///<summary>
+        /// 프리뷰 카메라 구도 결정
+        ///</summary>
+        ///<summary>
+        /// 프리뷰 파츠 상태 동기화
+        ///</summary>
+        private void ApplyPreviewPartsState()
+        {
+            PartsManager previewPartsManager = ResolvePreviewPartsManager();
+
+            if ( previewPartsManager == null )
+            {
+                return;
+            }
+
+            previewPartsManager.Init();
+            ApplyPreviewDefaultPresetState( previewPartsManager );
+            CachePreviewDefaultPartsState( previewPartsManager );
+            PartsManager sourcePartsManager = ResolveLivePlayerPartsManager();
+
+            if ( sourcePartsManager != null )
+            {
+                previewPartsManager.CopyFrom( sourcePartsManager );
+            }
+
+            ApplyEquipmentStateToPreviewPartsManager( previewPartsManager );
+        }
+
+        ///<summary>
+        /// 프리뷰 기본 프리셋 캐시
+        ///</summary>
+        private void CachePreviewDefaultPresetItem()
+        {
+            previewDefaultPresetItem = null;
+
+            if ( previewInstanceObject == null )
+            {
+                return;
+            }
+
+            CharacterPrefabData previewCharacterPrefabData = previewInstanceObject.GetComponent<CharacterPrefabData>();
+
+            if ( previewCharacterPrefabData == null )
+            {
+                return;
+            }
+
+            previewDefaultPresetItem = previewCharacterPrefabData.CreatePresetItem();
+        }
+
+        ///<summary>
+        /// 프리뷰 기본 프리셋 상태 적용
+        ///</summary>
+        private void ApplyPreviewDefaultPresetState( PartsManager _previewPartsManager )
+        {
+            if ( _previewPartsManager == null || previewDefaultPresetItem == null || previewDefaultPresetItem.isEmpty )
+            {
+                return;
+            }
+
+            _previewPartsManager.ApplyPresetItem( previewDefaultPresetItem );
+        }
+
+        ///<summary>
+        /// 프리뷰 기본 파츠 상태 캐시
+        ///</summary>
+        private void CachePreviewDefaultPartsState( PartsManager _previewPartsManager )
+        {
+            if ( _previewPartsManager == null )
+            {
+                return;
+            }
+
+            previewDefaultPartsIndexDictionary.Clear();
+            previewDefaultPartsVisibilityDictionary.Clear();
+
+            for ( int index = 0; index < PreviewManagedPartsTypeArray.Length; index++ )
+            {
+                PartsType managedPartsType = PreviewManagedPartsTypeArray[ index ];
+                int defaultPartsIndex = _previewPartsManager.GetActiveIndex( managedPartsType );
+                bool defaultPartsVisibility = _previewPartsManager.IsPartsVisible( managedPartsType );
+                previewDefaultPartsIndexDictionary[ managedPartsType ] = defaultPartsIndex;
+                previewDefaultPartsVisibilityDictionary[ managedPartsType ] = defaultPartsVisibility;
+            }
+        }
+
+        ///<summary>
+        /// 프리뷰 프리셋 초기화 컴포넌트 제거
+        ///</summary>
+        private void RemovePreviewPresetComponent()
+        {
+            if ( previewInstanceObject == null )
+            {
+                return;
+            }
+
+            CharacterPrefabData previewCharacterPrefabData = previewInstanceObject.GetComponent<CharacterPrefabData>();
+
+            if ( previewCharacterPrefabData == null )
+            {
+                return;
+            }
+
+            Destroy( previewCharacterPrefabData );
+        }
+
+        ///<summary>
+        /// 프리뷰 파츠 매니저 결정
+        ///</summary>
+        private PartsManager ResolvePreviewPartsManager()
+        {
+            if ( previewInstanceObject == null )
+            {
+                return null;
+            }
+
+            PartsManager result = previewInstanceObject.GetComponentInChildren<PartsManager>( true );
+            return result;
+        }
+
+        ///<summary>
+        /// 실플레이어 파츠 매니저 결정
+        ///</summary>
+        private PartsManager ResolveLivePlayerPartsManager()
+        {
+            if ( targetPlayerController == null )
+            {
+                return null;
+            }
+
+            PartsManager result = targetPlayerController.GetComponentInChildren<PartsManager>( true );
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 데이터 기반 프리뷰 파츠 반영
+        ///</summary>
+        private void ApplyEquipmentStateToPreviewPartsManager( PartsManager _previewPartsManager )
+        {
+            if ( _previewPartsManager == null )
+            {
+                return;
+            }
+
+            ApplyEquipmentVisualToPreviewPartsManager( _previewPartsManager, eEquipmentType.WEAPON );
+            ApplyEquipmentVisualToPreviewPartsManager( _previewPartsManager, eEquipmentType.HELMET );
+            ApplyEquipmentVisualToPreviewPartsManager( _previewPartsManager, eEquipmentType.ARMOR );
+            ApplyEquipmentVisualToPreviewPartsManager( _previewPartsManager, eEquipmentType.SHIELD );
+        }
+
+        ///<summary>
+        /// 단일 장비 파츠 반영
+        ///</summary>
+        private void ApplyEquipmentVisualToPreviewPartsManager( PartsManager _previewPartsManager, eEquipmentType _equipmentType )
+        {
+            if ( _previewPartsManager == null || targetEquipmentManager == null )
+            {
+                return;
+            }
+
+            CItemDefinition equippedItemDefinition = targetEquipmentManager.GetEquippedItemDefinition( _equipmentType );
+            PartsType[] managedPartsTypeArray = ResolveManagedPartsTypeArray( _equipmentType );
+
+            for ( int index = 0; index < managedPartsTypeArray.Length; index++ )
+            {
+                PartsType managedPartsType = managedPartsTypeArray[ index ];
+                RestorePreviewDefaultPartsState( _previewPartsManager, managedPartsType );
+            }
+
+            if ( equippedItemDefinition == null || equippedItemDefinition.HasEquipmentPartsVisual() == false )
+            {
+                return;
+            }
+
+            PartsType equipmentPartsType = equippedItemDefinition.GetEquipmentPartsType();
+            int equipmentPartsIndex = equippedItemDefinition.GetEquipmentPartsIndex();
+
+            if ( IsCompatiblePartsType( _equipmentType, equipmentPartsType ) == false || equipmentPartsIndex < 0 )
+            {
+                return;
+            }
+
+            _previewPartsManager.EquipParts( equipmentPartsType, equipmentPartsIndex );
+        }
+
+        ///<summary>
+        /// 프리뷰 기본 파츠 상태 복원
+        ///</summary>
+        private void RestorePreviewDefaultPartsState( PartsManager _previewPartsManager, PartsType _partsType )
+        {
+            if ( _previewPartsManager == null )
+            {
+                return;
+            }
+
+            bool hasDefaultIndex = previewDefaultPartsIndexDictionary.TryGetValue( _partsType, out int defaultPartsIndex );
+            bool hasDefaultVisibility = previewDefaultPartsVisibilityDictionary.TryGetValue( _partsType, out bool defaultPartsVisibility );
+
+            if ( hasDefaultIndex == false || hasDefaultVisibility == false || defaultPartsVisibility == false || defaultPartsIndex < 0 )
+            {
+                _previewPartsManager.UnequipParts( _partsType );
+                return;
+            }
+
+            _previewPartsManager.EquipParts( _partsType, defaultPartsIndex );
+        }
+
+        ///<summary>
+        /// 장비 타입별 관리 파츠 배열 반환
+        ///</summary>
+        private PartsType[] ResolveManagedPartsTypeArray( eEquipmentType _equipmentType )
+        {
+            switch ( _equipmentType )
+            {
+                case eEquipmentType.WEAPON:
+                    return new PartsType[]
+                    {
+                        PartsType.Sword,
+                        PartsType.Axe,
+                        PartsType.Bow,
+                        PartsType.Wand,
+                        PartsType.Staff,
+                        PartsType.Spear,
+                        PartsType.Blunt,
+                        PartsType.Crossbow
+                    };
+
+                case eEquipmentType.HELMET:
+                    return new PartsType[]
+                    {
+                        PartsType.Helmet
+                    };
+
+                case eEquipmentType.ARMOR:
+                    return new PartsType[]
+                    {
+                        PartsType.Chest
+                    };
+
+                case eEquipmentType.SHIELD:
+                    return new PartsType[]
+                    {
+                        PartsType.Shield,
+                        PartsType.SubItem
+                    };
+            }
+
+            return new PartsType[ 0 ];
+        }
+
+        ///<summary>
+        /// 장비 타입과 파츠 타입 호환 여부 판단
+        ///</summary>
+        private bool IsCompatiblePartsType( eEquipmentType _equipmentType, PartsType _partsType )
+        {
+            PartsType[] compatiblePartsTypeArray = ResolveManagedPartsTypeArray( _equipmentType );
+
+            for ( int index = 0; index < compatiblePartsTypeArray.Length; index++ )
+            {
+                PartsType compatiblePartsType = compatiblePartsTypeArray[ index ];
+
+                if ( compatiblePartsType != _partsType )
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         ///<summary>

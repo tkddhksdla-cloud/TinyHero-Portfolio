@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
+using TinyHero.Skill;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -37,6 +38,7 @@ namespace TinyHero.UI
 
         private CPlayerInventoryManager targetInventoryManager;
         private CPlayerEquipmentManager targetEquipmentManager;
+        private CSkillManager targetSkillManager;
         private CPlayerStatManager targetStatManager;
         private PlayerController targetPlayerController;
         private CPlayerEquipmentStatusPanelUI equipmentStatusPanelUi;
@@ -56,6 +58,7 @@ namespace TinyHero.UI
             ResolveReferences();
             EnsurePrefabReferences();
             EnsureWindowDragHandle();
+            EnsureWindowFocusHandlers();
             EnsureSlotObjects();
             SetInventoryVisible( false );
         }
@@ -67,7 +70,9 @@ namespace TinyHero.UI
         {
             ResolveReferences();
             EnsureWindowDragHandle();
+            EnsureWindowFocusHandlers();
             RefreshEquipmentStatusPanelBinding();
+            BringWindowToFront();
 
             if ( closeButton != null )
             {
@@ -98,6 +103,7 @@ namespace TinyHero.UI
         {
             TryResolveInventoryManager();
             TryResolveEquipmentManager();
+            TryResolveSkillManager();
             TryResolveTargetStatManager();
             TryResolvePlayerController();
             RefreshEquipmentStatusPanelBinding();
@@ -248,6 +254,11 @@ namespace TinyHero.UI
                 dragGhostImage.enabled = dragGhostImage.sprite != null;
             }
 
+            if ( dragGhostRectTransform != null )
+            {
+                dragGhostRectTransform.SetAsLastSibling();
+            }
+
             UpdateDragGhostPosition();
         }
 
@@ -288,16 +299,27 @@ namespace TinyHero.UI
             }
 
             TryResolveEquipmentManager();
+            TryResolveSkillManager();
 
-            if ( targetInventoryManager == null || targetEquipmentManager == null )
+            if ( targetInventoryManager == null )
             {
                 return;
             }
 
             int slotIndex = _itemSlot.GetSlotIndex();
-            bool didEquipItem = targetEquipmentManager.TryEquipFromInventorySlot( targetInventoryManager, slotIndex );
+            bool didEquipItem = targetEquipmentManager != null && targetEquipmentManager.TryEquipFromInventorySlot( targetInventoryManager, slotIndex );
 
-            if ( didEquipItem == false )
+            if ( didEquipItem )
+            {
+                HideTooltipInternal();
+                EndSlotDragInternal();
+                RefreshEquipmentStatusPanelBinding();
+                return;
+            }
+
+            bool didUseItem = TryUseConsumableItemFromSlot( slotIndex );
+
+            if ( didUseItem == false )
             {
                 return;
             }
@@ -419,6 +441,7 @@ namespace TinyHero.UI
             }
             else
             {
+                BringWindowToFront();
                 RefreshSlotViews();
                 RefreshEquipmentStatusPanelBinding();
             }
@@ -467,6 +490,30 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 스킬 매니저 자동 결정 시도
+        ///</summary>
+        private void TryResolveSkillManager()
+        {
+            if ( targetSkillManager != null )
+            {
+                return;
+            }
+
+            if ( targetPlayerController != null )
+            {
+                CSkillManager resolvedFromPlayer = targetPlayerController.GetComponent<CSkillManager>();
+
+                if ( resolvedFromPlayer != null )
+                {
+                    targetSkillManager = resolvedFromPlayer;
+                    return;
+                }
+            }
+
+            targetSkillManager = FindFirstObjectByType<CSkillManager>();
+        }
+
+        ///<summary>
         /// 플레이어 스탯 매니저 자동 결정 시도
         ///</summary>
         private void TryResolveTargetStatManager()
@@ -488,6 +535,45 @@ namespace TinyHero.UI
             }
 
             targetStatManager = FindFirstObjectByType<CPlayerStatManager>();
+        }
+
+        ///<summary>
+        /// 소모품 사용 처리
+        ///</summary>
+        private bool TryUseConsumableItemFromSlot( int _slotIndex )
+        {
+            if ( targetInventoryManager == null )
+            {
+                return false;
+            }
+
+            CItemDefinition itemDefinition = targetInventoryManager.GetItemDefinitionAtSlot( _slotIndex );
+
+            if ( itemDefinition == null || itemDefinition.GetItemType() != eItemType.CONSUMABLE )
+            {
+                return false;
+            }
+
+            if ( itemDefinition.IsSkillBook() == false )
+            {
+                return false;
+            }
+
+            if ( targetSkillManager == null )
+            {
+                return false;
+            }
+
+            string skillId = itemDefinition.GetLinkedSkillId();
+            bool didLearnSkill = targetSkillManager.TryForceLearnSkill( skillId );
+
+            if ( didLearnSkill == false )
+            {
+                return false;
+            }
+
+            bool didRemoveItem = targetInventoryManager.TryRemoveItem( itemDefinition.GetItemId(), 1 );
+            return didRemoveItem;
         }
 
         ///<summary>
@@ -660,6 +746,7 @@ namespace TinyHero.UI
             Image image = dragGhostObject.GetComponent<Image>();
             image.raycastTarget = false;
             image.enabled = false;
+            rectTransform.SetAsLastSibling();
             dragGhostRectTransform = rectTransform;
             dragGhostImage = image;
         }
@@ -724,6 +811,40 @@ namespace TinyHero.UI
             }
 
             dragHandle.Configure( windowRootRectTransform, targetCanvas );
+        }
+
+        ///<summary>
+        /// 창 클릭 최상단 정렬 핸들러 구성
+        ///</summary>
+        private void EnsureWindowFocusHandlers()
+        {
+            RectTransform siblingTargetRectTransform = transform as RectTransform;
+
+            if ( windowRootRectTransform == null || siblingTargetRectTransform == null )
+            {
+                return;
+            }
+
+            Graphic[] graphicArray = windowRootRectTransform.GetComponentsInChildren<Graphic>( true );
+
+            for ( int index = 0; index < graphicArray.Length; index++ )
+            {
+                Graphic graphic = graphicArray[ index ];
+
+                if ( graphic == null || graphic.raycastTarget == false )
+                {
+                    continue;
+                }
+
+                CWindowDragHandle focusHandler = graphic.GetComponent<CWindowDragHandle>();
+
+                if ( focusHandler == null )
+                {
+                    focusHandler = graphic.gameObject.AddComponent<CWindowDragHandle>();
+                }
+
+                focusHandler.Configure( siblingTargetRectTransform );
+            }
         }
 
         ///<summary>
@@ -808,6 +929,21 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 인벤토리 창 최상단 정렬
+        ///</summary>
+        private void BringWindowToFront()
+        {
+            RectTransform siblingTargetRectTransform = transform as RectTransform;
+
+            if ( siblingTargetRectTransform == null )
+            {
+                return;
+            }
+
+            siblingTargetRectTransform.SetAsLastSibling();
+        }
+
+        ///<summary>
         /// UI 참조 결정
         ///</summary>
         private void ResolveReferences()
@@ -872,6 +1008,47 @@ namespace TinyHero.UI
             {
                 targetCanvas = GetComponentInParent<Canvas>();
             }
+        }
+
+        ///<summary>
+        /// 창 최상위 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveTopLevelWindowRectTransform()
+        {
+            if ( windowRootRectTransform == null )
+            {
+                return null;
+            }
+
+            RectTransform canvasRectTransform = targetCanvas != null ? targetCanvas.transform as RectTransform : null;
+            RectTransform currentRectTransform = windowRootRectTransform;
+
+            while ( currentRectTransform != null )
+            {
+                RectTransform parentRectTransform = currentRectTransform.parent as RectTransform;
+
+                if ( parentRectTransform == null )
+                {
+                    break;
+                }
+
+                if ( parentRectTransform == canvasRectTransform )
+                {
+                    break;
+                }
+
+                Transform grandParentTransform = parentRectTransform.parent;
+
+                if ( grandParentTransform == canvasRectTransform )
+                {
+                    break;
+                }
+
+                currentRectTransform = parentRectTransform;
+            }
+
+            RectTransform result = currentRectTransform;
+            return result;
         }
     }
 }

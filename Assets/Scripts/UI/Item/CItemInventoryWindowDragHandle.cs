@@ -83,12 +83,14 @@ namespace TinyHero.UI
         ///</summary>
         private void BringWindowToFront()
         {
-            if ( targetWindowRectTransform == null )
+            RectTransform siblingTargetRectTransform = ResolveSiblingTargetRectTransform();
+
+            if ( siblingTargetRectTransform == null )
             {
                 return;
             }
 
-            targetWindowRectTransform.SetAsLastSibling();
+            siblingTargetRectTransform.SetAsLastSibling();
         }
 
         ///<summary>
@@ -102,6 +104,40 @@ namespace TinyHero.UI
             }
 
             RectTransform result = targetCanvas.transform as RectTransform;
+            return result;
+        }
+
+        ///<summary>
+        /// 창 최상위 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveSiblingTargetRectTransform()
+        {
+            if ( targetWindowRectTransform == null )
+            {
+                return null;
+            }
+
+            RectTransform canvasRectTransform = ResolveCanvasRectTransform();
+            RectTransform currentRectTransform = targetWindowRectTransform;
+
+            while ( currentRectTransform != null )
+            {
+                RectTransform parentRectTransform = currentRectTransform.parent as RectTransform;
+
+                if ( parentRectTransform == null )
+                {
+                    break;
+                }
+
+                if ( parentRectTransform.parent == canvasRectTransform )
+                {
+                    break;
+                }
+
+                currentRectTransform = parentRectTransform;
+            }
+
+            RectTransform result = currentRectTransform;
             return result;
         }
     }

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using TinyHero.Player;
 using TinyHero.Skill;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace TinyHero.UI
 {
@@ -10,8 +12,15 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CSkillQuickSlotUI : MonoBehaviour
     {
+        private const float DragGhostAlpha = 0.55f;
         [SerializeField] private CSkillManager targetSkillManager;
+        [SerializeField] private Canvas targetCanvas;
         [SerializeField] private List<CSkillQuickSlotItemView> slotViewList = new List<CSkillQuickSlotItemView>();
+
+        private RectTransform dragGhostRectTransform;
+        private Image dragGhostImage;
+        private string draggedSkillId = string.Empty;
+        private int draggedFromQuickSlotIndex = -1;
 
         ///<summary>
         /// 퀵슬롯 UI 초기화
@@ -19,6 +28,7 @@ namespace TinyHero.UI
         private void Awake()
         {
             EnsureSkillManagerBinding();
+            ResolveCanvas();
             CollectSlotViews();
             BindSlotViews();
         }
@@ -29,6 +39,7 @@ namespace TinyHero.UI
         private void OnEnable()
         {
             EnsureSkillManagerBinding();
+            ResolveCanvas();
             CollectSlotViews();
             BindSlotViews();
             RefreshView();
@@ -40,6 +51,7 @@ namespace TinyHero.UI
         private void OnDisable()
         {
             UnsubscribeEvents();
+            EndSkillDragInternal();
         }
 
         ///<summary>
@@ -48,8 +60,115 @@ namespace TinyHero.UI
         private void Update()
         {
             EnsureSkillManagerBinding();
+            ResolveCanvas();
             ProcessSlotInput();
             RefreshView();
+            UpdateDragGhostPosition();
+        }
+
+        ///<summary>
+        /// 스킬 목록 기반 드래그 시작 처리
+        ///</summary>
+        public void TryBeginDragFromSkillList( string _skillId, PointerEventData _eventData )
+        {
+            if ( targetSkillManager == null || string.IsNullOrWhiteSpace( _skillId ) )
+            {
+                return;
+            }
+
+            bool canAssignSkill = targetSkillManager.CanAssignSkillToQuickSlot( _skillId, 0 );
+
+            if ( canAssignSkill == false )
+            {
+                return;
+            }
+
+            BeginSkillDragInternal( _skillId, -1 );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 기반 드래그 시작 처리
+        ///</summary>
+        public void TryBeginDragFromQuickSlot( int _quickSlotIndex, PointerEventData _eventData )
+        {
+            if ( targetSkillManager == null || _quickSlotIndex < 0 )
+            {
+                return;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinitionByQuickSlotIndex( _quickSlotIndex );
+
+            if ( skillDefinition == null )
+            {
+                return;
+            }
+
+            string skillId = skillDefinition.GetSkillId();
+            bool isUnlocked = targetSkillManager.IsSkillUnlocked( skillId );
+
+            if ( isUnlocked == false )
+            {
+                return;
+            }
+
+            BeginSkillDragInternal( skillId, _quickSlotIndex );
+        }
+
+        ///<summary>
+        /// 스킬 드래그 진행 처리
+        ///</summary>
+        public void UpdateSkillDrag( PointerEventData _eventData )
+        {
+            if ( string.IsNullOrWhiteSpace( draggedSkillId ) )
+            {
+                return;
+            }
+
+            UpdateDragGhostPosition();
+        }
+
+        ///<summary>
+        /// 스킬 드래그 종료 처리
+        ///</summary>
+        public void EndSkillDrag( PointerEventData _eventData )
+        {
+            EndSkillDragInternal();
+        }
+
+        ///<summary>
+        /// 퀵슬롯 드롭 처리
+        ///</summary>
+        public void HandleSlotDrop( int _quickSlotIndex )
+        {
+            if ( targetSkillManager == null || string.IsNullOrWhiteSpace( draggedSkillId ) || _quickSlotIndex < 0 )
+            {
+                return;
+            }
+
+            bool didProcess = false;
+
+            if ( draggedFromQuickSlotIndex >= 0 )
+            {
+                if ( draggedFromQuickSlotIndex == _quickSlotIndex )
+                {
+                    didProcess = true;
+                }
+                else
+                {
+                    didProcess = targetSkillManager.TrySwapQuickSlotAssignments( draggedFromQuickSlotIndex, _quickSlotIndex );
+                }
+            }
+            else
+            {
+                didProcess = targetSkillManager.TryAssignSkillToQuickSlot( draggedSkillId, _quickSlotIndex );
+            }
+
+            if ( didProcess )
+            {
+                RefreshView();
+            }
+
+            EndSkillDragInternal();
         }
 
         ///<summary>
@@ -129,11 +248,6 @@ namespace TinyHero.UI
         ///</summary>
         private void BindSlotViews()
         {
-            if ( targetSkillManager == null )
-            {
-                return;
-            }
-
             for ( int index = 0; index < slotViewList.Count; index++ )
             {
                 CSkillQuickSlotItemView slotView = slotViewList[ index ];
@@ -143,7 +257,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                slotView.Bind( targetSkillManager, index );
+                slotView.Bind( this, targetSkillManager, index );
             }
         }
 
@@ -175,6 +289,20 @@ namespace TinyHero.UI
 
                 slotViewList.Add( slotView );
             }
+        }
+
+        ///<summary>
+        /// 퀵슬롯 캔버스 참조 결정
+        ///</summary>
+        private void ResolveCanvas()
+        {
+            if ( targetCanvas != null )
+            {
+                return;
+            }
+
+            Canvas resolvedCanvas = GetComponentInParent<Canvas>();
+            targetCanvas = resolvedCanvas;
         }
 
         ///<summary>
@@ -260,5 +388,120 @@ namespace TinyHero.UI
                 slotView.RefreshView();
             }
         }
+
+        ///<summary>
+        /// 스킬 드래그 내부 시작 처리
+        ///</summary>
+        private void BeginSkillDragInternal( string _skillId, int _fromQuickSlotIndex )
+        {
+            if ( string.IsNullOrWhiteSpace( _skillId ) || targetSkillManager == null )
+            {
+                return;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinition( _skillId );
+
+            if ( skillDefinition == null || skillDefinition.GetSkillType() != eSkillType.ACTIVE )
+            {
+                return;
+            }
+
+            EnsureDragGhost();
+            draggedSkillId = _skillId.Trim();
+            draggedFromQuickSlotIndex = _fromQuickSlotIndex;
+
+            if ( dragGhostImage != null )
+            {
+                Sprite skillIconSprite = skillDefinition.GetSkillIcon();
+                dragGhostImage.sprite = skillIconSprite;
+                Color ghostColor = dragGhostImage.color;
+                ghostColor.a = DragGhostAlpha;
+                dragGhostImage.color = ghostColor;
+                dragGhostImage.enabled = skillIconSprite != null;
+            }
+
+            if ( dragGhostRectTransform != null )
+            {
+                dragGhostRectTransform.SetAsLastSibling();
+            }
+
+            UpdateDragGhostPosition();
+        }
+
+        ///<summary>
+        /// 스킬 드래그 내부 종료 처리
+        ///</summary>
+        private void EndSkillDragInternal()
+        {
+            draggedSkillId = string.Empty;
+            draggedFromQuickSlotIndex = -1;
+
+            if ( dragGhostImage != null )
+            {
+                dragGhostImage.enabled = false;
+            }
+        }
+
+        ///<summary>
+        /// 스킬 드래그 고스트 생성 보장
+        ///</summary>
+        private void EnsureDragGhost()
+        {
+            if ( dragGhostRectTransform != null && dragGhostImage != null )
+            {
+                return;
+            }
+
+            ResolveCanvas();
+
+            if ( targetCanvas == null )
+            {
+                return;
+            }
+
+            GameObject dragGhostObject = new GameObject( "SkillDragGhost", typeof( RectTransform ), typeof( CanvasRenderer ), typeof( Image ) );
+            RectTransform rectTransform = dragGhostObject.GetComponent<RectTransform>();
+            rectTransform.SetParent( targetCanvas.transform, false );
+            rectTransform.sizeDelta = new Vector2( 72.0f, 72.0f );
+            Image image = dragGhostObject.GetComponent<Image>();
+            image.raycastTarget = false;
+            image.enabled = false;
+            rectTransform.SetAsLastSibling();
+            dragGhostRectTransform = rectTransform;
+            dragGhostImage = image;
+        }
+
+        ///<summary>
+        /// 스킬 드래그 고스트 위치 갱신
+        ///</summary>
+        private void UpdateDragGhostPosition()
+        {
+            if ( dragGhostRectTransform == null || string.IsNullOrWhiteSpace( draggedSkillId ) || targetCanvas == null )
+            {
+                return;
+            }
+
+            RectTransform canvasRectTransform = targetCanvas.transform as RectTransform;
+
+            if ( canvasRectTransform == null )
+            {
+                return;
+            }
+
+            Vector2 mousePosition = Input.mousePosition;
+            Vector2 localPoint;
+            bool isConverted = RectTransformUtility.ScreenPointToLocalPointInRectangle( canvasRectTransform, mousePosition, null, out localPoint );
+
+            if ( isConverted == false )
+            {
+                return;
+            }
+
+            dragGhostRectTransform.anchoredPosition = localPoint;
+        }
+
+        ///<summary>
+        /// 스킬 드래그 전용 캔버스 결정
+        ///</summary>
     }
 }

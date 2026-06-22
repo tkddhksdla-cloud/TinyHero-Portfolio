@@ -768,6 +768,11 @@ namespace TinyHero.UI
             }
 
             dialogueObject.SetActive( _isVisible );
+
+            if ( _isVisible )
+            {
+                BringDialogueToFront();
+            }
         }
 
         ///<summary>
@@ -931,6 +936,64 @@ namespace TinyHero.UI
             }
 
             return nearestPlayerController;
+        }
+
+        ///<summary>
+        /// NPC 대화창 최상단 정렬
+        ///</summary>
+        private void BringDialogueToFront()
+        {
+            RectTransform topLevelWindowRectTransform = ResolveTopLevelDialogueRectTransform();
+
+            if ( topLevelWindowRectTransform == null )
+            {
+                return;
+            }
+
+            topLevelWindowRectTransform.SetAsLastSibling();
+        }
+
+        ///<summary>
+        /// 대화창 최상위 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveTopLevelDialogueRectTransform()
+        {
+            RectTransform dialogueRectTransform = dialogueObject != null ? dialogueObject.transform as RectTransform : null;
+
+            if ( dialogueRectTransform == null )
+            {
+                return null;
+            }
+
+            RectTransform canvasRectTransform = npcInteractionCanvas != null ? npcInteractionCanvas.transform as RectTransform : null;
+            RectTransform currentRectTransform = dialogueRectTransform;
+
+            while ( currentRectTransform != null )
+            {
+                RectTransform parentRectTransform = currentRectTransform.parent as RectTransform;
+
+                if ( parentRectTransform == null )
+                {
+                    break;
+                }
+
+                if ( parentRectTransform == canvasRectTransform )
+                {
+                    break;
+                }
+
+                Transform grandParentTransform = parentRectTransform.parent;
+
+                if ( grandParentTransform == canvasRectTransform )
+                {
+                    break;
+                }
+
+                currentRectTransform = parentRectTransform;
+            }
+
+            RectTransform result = currentRectTransform;
+            return result;
         }
 
         protected override void OnDestroy()

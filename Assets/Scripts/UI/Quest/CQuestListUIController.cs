@@ -94,6 +94,7 @@ namespace TinyHero.UI
         {
             ResolveReferences();
             EnsureWindowDragHandle();
+            EnsureWindowFocusHandlers();
             EnsureQuestSlotViewComponentList();
             EnsureQuestSlotViewList();
             EnsureRewardSlotViewList();
@@ -113,6 +114,8 @@ namespace TinyHero.UI
 
             ResolveReferences();
             EnsureWindowDragHandle();
+            EnsureWindowFocusHandlers();
+            BringWindowToFront();
 
             if ( closeButton != null )
             {
@@ -822,6 +825,11 @@ namespace TinyHero.UI
 
             GameObject windowRootObject = windowRootRectTransform.gameObject;
             windowRootObject.SetActive( _isVisible );
+
+            if ( _isVisible )
+            {
+                BringWindowToFront();
+            }
         }
 
         ///<summary>
@@ -1264,6 +1272,40 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 창 클릭 최상단 정렬 핸들러 구성
+        ///</summary>
+        private void EnsureWindowFocusHandlers()
+        {
+            RectTransform siblingTargetRectTransform = transform as RectTransform;
+
+            if ( windowRootRectTransform == null || siblingTargetRectTransform == null )
+            {
+                return;
+            }
+
+            Graphic[] graphicArray = windowRootRectTransform.GetComponentsInChildren<Graphic>( true );
+
+            for ( int index = 0; index < graphicArray.Length; index++ )
+            {
+                Graphic graphic = graphicArray[ index ];
+
+                if ( graphic == null || graphic.raycastTarget == false )
+                {
+                    continue;
+                }
+
+                CWindowDragHandle focusHandler = graphic.GetComponent<CWindowDragHandle>();
+
+                if ( focusHandler == null )
+                {
+                    focusHandler = graphic.gameObject.AddComponent<CWindowDragHandle>();
+                }
+
+                focusHandler.Configure( siblingTargetRectTransform );
+            }
+        }
+
+        ///<summary>
         /// 툴팁 위치 갱신
         ///</summary>
         private void UpdateTooltipPosition()
@@ -1395,6 +1437,62 @@ namespace TinyHero.UI
             {
                 targetCanvas = GetComponentInParent<Canvas>();
             }
+        }
+
+        ///<summary>
+        /// 퀘스트 창 최상단 정렬
+        ///</summary>
+        private void BringWindowToFront()
+        {
+            RectTransform siblingTargetRectTransform = transform as RectTransform;
+
+            if ( siblingTargetRectTransform == null )
+            {
+                return;
+            }
+
+            siblingTargetRectTransform.SetAsLastSibling();
+        }
+
+        ///<summary>
+        /// 창 최상위 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveTopLevelWindowRectTransform()
+        {
+            if ( windowRootRectTransform == null )
+            {
+                return null;
+            }
+
+            RectTransform canvasRectTransform = targetCanvas != null ? targetCanvas.transform as RectTransform : null;
+            RectTransform currentRectTransform = windowRootRectTransform;
+
+            while ( currentRectTransform != null )
+            {
+                RectTransform parentRectTransform = currentRectTransform.parent as RectTransform;
+
+                if ( parentRectTransform == null )
+                {
+                    break;
+                }
+
+                if ( parentRectTransform == canvasRectTransform )
+                {
+                    break;
+                }
+
+                Transform grandParentTransform = parentRectTransform.parent;
+
+                if ( grandParentTransform == canvasRectTransform )
+                {
+                    break;
+                }
+
+                currentRectTransform = parentRectTransform;
+            }
+
+            RectTransform result = currentRectTransform;
+            return result;
         }
     }
 }

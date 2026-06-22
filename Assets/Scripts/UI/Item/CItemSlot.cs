@@ -8,7 +8,7 @@ using UnityEngine.UI;
 ///<summary>
 /// 인벤토리 아이템 슬롯 컴포넌트
 ///</summary>
-public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     [SerializeField] private Image itemImage;
     [SerializeField] private TMP_Text itemCountText;
@@ -126,6 +126,22 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     ///<summary>
     /// 슬롯 클릭 처리
+    ///</summary>
+    ///<summary>
+    /// 슬롯 마우스 다운 처리
+    ///</summary>
+    public void OnPointerDown( PointerEventData _eventData )
+    {
+        if ( ownerInventoryUiController == null )
+        {
+            return;
+        }
+
+        ownerInventoryUiController.HideTooltip( this );
+    }
+
+    ///<summary>
+    /// ?щ’ ?대┃ 泥섎━
     ///</summary>
     public void OnPointerClick( PointerEventData _eventData )
     {
