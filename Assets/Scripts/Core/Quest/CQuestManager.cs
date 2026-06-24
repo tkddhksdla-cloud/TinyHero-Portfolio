@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using TinyHero.Skill;
+using TinyHero.UI;
 using UnityEngine;
 
 namespace TinyHero.Quest
@@ -16,6 +17,9 @@ namespace TinyHero.Quest
     public sealed class CQuestManager : MonoBehaviour
     {
         private const string MonsterStatTableResourcePath = "Data/Monster/MonsterStatTableData";
+        private const string QuestAcceptedToastMessagePrefix = "퀘스트 수락";
+        private const string QuestAbandonedToastMessagePrefix = "퀘스트 포기";
+        private const string QuestToastMessageFormat = "{0}: {1}";
 
         [SerializeField] private PlayerController targetPlayerController;
         [SerializeField] private CPlayerStatManager targetPlayerStatManager;
@@ -316,8 +320,36 @@ namespace TinyHero.Quest
             InitializeConditionProgressList( questDefinition, runtimeEntryData );
             RefreshConditionProgressForDefinition( questDefinition, runtimeEntryData );
             EvaluateQuestCompletionState( questDefinition, runtimeEntryData );
+            string toastMessage = BuildQuestToastMessage( questDefinition, QuestAcceptedToastMessagePrefix );
+            CToastMessageSystem.Show( toastMessage );
             NotifyQuestUpdated( _questId );
             return true;
+        }
+
+        ///<summary>
+        /// 퀘스트 토스트 메시지 구성
+        ///</summary>
+        private string BuildQuestToastMessage( CQuestDefinition _questDefinition, string _prefix )
+        {
+            if ( string.IsNullOrWhiteSpace( _prefix ) )
+            {
+                return string.Empty;
+            }
+
+            if ( _questDefinition == null )
+            {
+                return _prefix;
+            }
+
+            string questName = _questDefinition.GetQuestName();
+
+            if ( string.IsNullOrWhiteSpace( questName ) )
+            {
+                return _prefix;
+            }
+
+            string result = string.Format( QuestToastMessageFormat, _prefix, questName );
+            return result;
         }
 
         ///<summary>
@@ -490,9 +522,12 @@ namespace TinyHero.Quest
                 return false;
             }
 
+            bool hasDefinition = CQuestDefinitionDatabase.TryGetQuestDefinition( _questId, out CQuestDefinition questDefinition );
             runtimeEntryData.SetQuestStatus( eQuestStatus.ACCEPTABLE );
             runtimeEntryData.SetAcceptedNpcId( string.Empty );
             ResetConditionProgressList( runtimeEntryData );
+            string toastMessage = BuildQuestToastMessage( questDefinition, QuestAbandonedToastMessagePrefix );
+            CToastMessageSystem.Show( toastMessage );
             NotifyQuestUpdated( _questId );
             return true;
         }

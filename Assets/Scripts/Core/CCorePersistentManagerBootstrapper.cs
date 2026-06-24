@@ -25,6 +25,7 @@ namespace TinyHero.Core
             CQuestUiManager questUiManager = CQuestUiManager.Instance;
             CSaveManager saveManager = CSaveManager.Instance;
             CPopupCommonNoticeManager popupCommonNoticeManager = CPopupCommonNoticeManager.Instance;
+            CToastMessageSystem toastMessageSystem = CToastMessageSystem.EnsureInstance();
             CMapManager mapManager = CMapManager.Instance;
             CNPCInteractionManager npcInteractionManager = CNPCInteractionManager.Instance;
             CMonsterInfoManager monsterInfoManager = CMonsterInfoManager.Instance;
