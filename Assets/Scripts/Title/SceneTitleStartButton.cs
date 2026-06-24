@@ -1,5 +1,6 @@
 using TinyHero.Maps;
 using TinyHero.UI;
+using TinyHero.Core;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,12 +18,16 @@ namespace TinyHero.Title
         private const string StarterMapId = "MAP_STARTER_000_VILLAGE";
         private const string FadeImageObjectName = "TitleFadeImage";
         private const float DefaultFadeDuration = 0.35f;
+        private const string LoadSaveDescriptionText = "저장된 정보를 불러오시겠습니까?";
+        private const string PositiveButtonText = "예";
+        private const string NegativeButtonText = "아니오";
 
         [SerializeField] private CButtonEx startButton;
         [SerializeField] private Image fadeImage;
         [SerializeField] private float fadeDuration = DefaultFadeDuration;
 
         private bool isStarting;
+        private bool shouldLoadSavedData;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -74,6 +79,42 @@ namespace TinyHero.Title
                 return;
             }
 
+            Debug.Log( "[ SaveDebug ] SceneTitle start button clicked.", this );
+            CSaveManager saveManager = CSaveManager.Instance;
+            bool hasSaveData = saveManager != null && saveManager.HasSaveData();
+            Debug.Log( $"[ SaveDebug ] SceneTitle detected save data. HasSaveData: {hasSaveData}", this );
+
+            if ( hasSaveData )
+            {
+                CPopupCommonNoticeManager popupManager = CPopupCommonNoticeManager.Instance;
+                bool isPopupShown = popupManager != null && popupManager.ShowNotice( LoadSaveDescriptionText, PositiveButtonText, HandlePositiveLoadSelected, NegativeButtonText, HandleNegativeLoadSelected );
+
+                if ( isPopupShown )
+                {
+                    return;
+                }
+            }
+
+            HandleNegativeLoadSelected();
+        }
+
+        ///<summary>
+        /// 저장 데이터 불러오기 선택 처리
+        ///</summary>
+        private void HandlePositiveLoadSelected()
+        {
+            Debug.Log( "[ SaveDebug ] SceneTitle selected positive load option.", this );
+            shouldLoadSavedData = true;
+            StartCoroutine( IE_StartGame() );
+        }
+
+        ///<summary>
+        /// 새 게임 시작 선택 처리
+        ///</summary>
+        private void HandleNegativeLoadSelected()
+        {
+            Debug.Log( "[ SaveDebug ] SceneTitle selected negative load option.", this );
+            shouldLoadSavedData = false;
             StartCoroutine( IE_StartGame() );
         }
 
@@ -91,7 +132,7 @@ namespace TinyHero.Title
 
             EnsureFadeImage();
             yield return IE_FadeAlpha( 0.0f, 1.0f );
-            CMapManager.SetPendingMapLoad( StarterMapId );
+            PreparePendingGameStart();
             CMapManager mapManager = CMapManager.Instance;
 
             if ( mapManager == null )
@@ -100,6 +141,34 @@ namespace TinyHero.Title
             }
 
             SceneManager.LoadScene( GameplaySceneName );
+        }
+
+        ///<summary>
+        /// 시작 직전 로드 대상 구성
+        ///</summary>
+        private void PreparePendingGameStart()
+        {
+            Debug.Log( $"[ SaveDebug ] PreparePendingGameStart invoked. ShouldLoadSavedData: {shouldLoadSavedData}", this );
+            if ( shouldLoadSavedData )
+            {
+                CSaveManager saveManager = CSaveManager.Instance;
+                bool isPrepared = saveManager != null && saveManager.TryPreparePendingLoad();
+                Debug.Log( $"[ SaveDebug ] Pending load preparation result: {isPrepared}", this );
+
+                if ( isPrepared )
+                {
+                    return;
+                }
+            }
+
+            CSaveManager fallbackSaveManager = CSaveManager.Instance;
+
+            if ( fallbackSaveManager != null )
+            {
+                fallbackSaveManager.ClearPendingLoadRequest();
+            }
+
+            CMapManager.SetPendingMapLoad( StarterMapId );
         }
 
         ///<summary>
