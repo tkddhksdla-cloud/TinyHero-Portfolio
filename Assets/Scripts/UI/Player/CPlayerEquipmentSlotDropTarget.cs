@@ -11,7 +11,7 @@ namespace TinyHero.UI
     public sealed class CPlayerEquipmentSlotDropTarget : MonoBehaviour, IDropHandler
     {
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
-        [SerializeField] private CItemInventoryUIController targetInventoryUiController;
+        [SerializeField] private PopupItemInventory targetInventoryUiController;
         [SerializeField] private CPlayerEquipmentManager targetEquipmentManager;
 
         ///<summary>
@@ -33,7 +33,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 드롭 대상 구성
         ///</summary>
-        public void Configure( eEquipmentType _equipmentType, CItemInventoryUIController _targetInventoryUiController, CPlayerEquipmentManager _targetEquipmentManager )
+        public void Configure( eEquipmentType _equipmentType, PopupItemInventory _targetInventoryUiController, CPlayerEquipmentManager _targetEquipmentManager )
         {
             equipmentType = _equipmentType;
             targetInventoryUiController = _targetInventoryUiController;
@@ -67,7 +67,7 @@ namespace TinyHero.UI
         {
             if ( targetInventoryUiController == null )
             {
-                CItemInventoryUIController resolvedInventoryUiController = FindFirstObjectByType<CItemInventoryUIController>();
+                PopupItemInventory resolvedInventoryUiController = FindFirstObjectByType<PopupItemInventory>();
                 targetInventoryUiController = resolvedInventoryUiController;
             }
 

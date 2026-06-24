@@ -36,7 +36,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 퀘스트 목록 UI 제어 컴포넌트
     ///</summary>
-    public sealed class CQuestListUIController : MonoBehaviour
+    public sealed class PopupQuestList : CUIPopup
     {
         private const string TooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const string NormalQuestTypeLabel = "[ 일반 ]";
@@ -54,7 +54,7 @@ namespace TinyHero.UI
         private const string RewardButtonColorHex = "#2CCF32";
         private const string CompleteButtonColorHex = "#919191";
         private const string QuestSlotCloneNamePrefix = "QuestSlot";
-        private static readonly List<CQuestListUIController> ActiveControllerList = new List<CQuestListUIController>();
+        private static readonly List<PopupQuestList> ActiveControllerList = new List<PopupQuestList>();
 
         [SerializeField] private eQuestListUiMode uiMode = eQuestListUiMode.NPC_AVAILABLE;
         [SerializeField] private GameObject questUiRootObject;
@@ -115,7 +115,7 @@ namespace TinyHero.UI
             ResolveReferences();
             EnsureWindowDragHandle();
             EnsureWindowFocusHandlers();
-            BringWindowToFront();
+            BringLayerToFront();
 
             if ( closeButton != null )
             {
@@ -157,12 +157,6 @@ namespace TinyHero.UI
         {
             if ( isQuestListVisible == false )
             {
-                return;
-            }
-
-            if ( Input.GetKeyDown( KeyCode.Escape ) )
-            {
-                CloseQuestListUi();
                 return;
             }
 
@@ -231,7 +225,7 @@ namespace TinyHero.UI
         {
             for ( int index = 0; index < ActiveControllerList.Count; index++ )
             {
-                CQuestListUIController controller = ActiveControllerList[ index ];
+                PopupQuestList controller = ActiveControllerList[ index ];
 
                 if ( controller == null )
                 {
@@ -265,7 +259,7 @@ namespace TinyHero.UI
         {
             for ( int index = 0; index < ActiveControllerList.Count; index++ )
             {
-                CQuestListUIController controller = ActiveControllerList[ index ];
+                PopupQuestList controller = ActiveControllerList[ index ];
 
                 if ( controller == null )
                 {
@@ -293,13 +287,13 @@ namespace TinyHero.UI
                 return false;
             }
 
-            CQuestListUIController visiblePlayerController = null;
-            CQuestListUIController hiddenPlayerController = null;
+            PopupQuestList visiblePlayerController = null;
+            PopupQuestList hiddenPlayerController = null;
             bool hasVisibleQuestUi = IsAnyQuestUiVisible();
 
             for ( int index = 0; index < ActiveControllerList.Count; index++ )
             {
-                CQuestListUIController controller = ActiveControllerList[ index ];
+                PopupQuestList controller = ActiveControllerList[ index ];
 
                 if ( controller == null || controller.uiMode != eQuestListUiMode.PLAYER_ACTIVE )
                 {
@@ -828,8 +822,40 @@ namespace TinyHero.UI
 
             if ( _isVisible )
             {
-                BringWindowToFront();
+                CUINavigationController navigationController = CUINavigationController.Instance;
+
+                if ( navigationController != null )
+                {
+                    navigationController.RegisterPopup( this );
+                }
+
+                BringLayerToFront();
             }
+        }
+
+        ///<summary>
+        /// 네비게이션 레이어 표시 상태 반영
+        ///</summary>
+        public override void SetLayerVisible( bool _isVisible )
+        {
+            SetQuestListVisible( _isVisible );
+        }
+
+        ///<summary>
+        /// 네비게이션 표시 상태 반환
+        ///</summary>
+        public override bool IsNavigationVisible()
+        {
+            bool result = isQuestListVisible;
+            return result;
+        }
+
+        ///<summary>
+        /// 네비게이션 레이어 닫기 처리
+        ///</summary>
+        public override void CloseNavigationLayer()
+        {
+            CloseQuestListUi();
         }
 
         ///<summary>
@@ -1442,7 +1468,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 퀘스트 창 최상단 정렬
         ///</summary>
-        private void BringWindowToFront()
+        public override void BringLayerToFront()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
 

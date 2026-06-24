@@ -5,18 +5,16 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UnityEngine.UI;
 
 namespace TinyHero.UI
 {
     ///<summary>
     /// 스킬 목록 UI 제어 컴포넌트
     ///</summary>
-    public sealed class CSkillListUIController : MonoBehaviour
+    public sealed class PopupSkillList : CUIPopup
     {
         private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
         private const string SkillSlotCloneNamePrefix = "SkillSlot";
-        private const KeyCode ToggleKeyCode = KeyCode.K;
 
         [SerializeField] private CSkillManager targetSkillManager;
         [SerializeField] private RectTransform skillWindowRootRectTransform;
@@ -63,7 +61,7 @@ namespace TinyHero.UI
             EnsureWindowDragHandle();
             EnsureWindowFocusHandlers();
             EnsureSkillManagerBinding();
-            BringWindowToFront();
+            BringLayerToFront();
 
             if ( closeButton != null )
             {
@@ -93,19 +91,8 @@ namespace TinyHero.UI
         {
             EnsureSkillManagerBinding();
 
-            if ( Input.GetKeyDown( ToggleKeyCode ) )
-            {
-                ToggleSkillWindow();
-            }
-
             if ( isSkillWindowVisible == false )
             {
-                return;
-            }
-
-            if ( Input.GetKeyDown( KeyCode.Escape ) )
-            {
-                CloseSkillWindow();
                 return;
             }
 
@@ -174,6 +161,33 @@ namespace TinyHero.UI
             }
 
             runtimeTooltipUi.SetVisible( false );
+        }
+
+        ///<summary>
+        /// 스킬 매니저 바인딩
+        ///</summary>
+        public void BindSkillManager( CSkillManager _targetSkillManager )
+        {
+            if ( targetSkillManager == _targetSkillManager )
+            {
+                RefreshSkillList();
+                return;
+            }
+
+            if ( targetSkillManager != null )
+            {
+                targetSkillManager.OnSkillStateChanged -= HandleSkillStateChanged;
+            }
+
+            targetSkillManager = _targetSkillManager;
+
+            if ( targetSkillManager != null )
+            {
+                targetSkillManager.OnSkillStateChanged -= HandleSkillStateChanged;
+                targetSkillManager.OnSkillStateChanged += HandleSkillStateChanged;
+            }
+
+            RefreshSkillList();
         }
 
         ///<summary>
@@ -297,11 +311,17 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
     List<string> summaryLineList = new List<string>();
     string damageText = ResolveTokenText( _skillDefinition, _skillLevel, "damage" );
     string cooldownText = ResolveTokenText( _skillDefinition, _skillLevel, "cooldown" );
+    string mpCostText = ResolveTokenText( _skillDefinition, _skillLevel, "mpCost" );
     string durationText = ResolveTokenText( _skillDefinition, _skillLevel, "duration" );
     string tickIntervalText = ResolveTokenText( _skillDefinition, _skillLevel, "tickInterval" );
     string attackReductionText = ResolveTokenText( _skillDefinition, _skillLevel, "atkReduction" );
     string defenseReductionText = ResolveTokenText( _skillDefinition, _skillLevel, "defReduction" );
     string debuffDurationText = ResolveTokenText( _skillDefinition, _skillLevel, "debuffDuration" );
+    string crowdControlTypeText = ResolveTokenText( _skillDefinition, _skillLevel, "ccType" );
+    string crowdControlChanceText = ResolveTokenText( _skillDefinition, _skillLevel, "ccChance" );
+    string crowdControlDurationText = ResolveTokenText( _skillDefinition, _skillLevel, "ccDuration" );
+    string knockbackDistanceText = ResolveTokenText( _skillDefinition, _skillLevel, "knockbackDistance" );
+    string airborneHeightText = ResolveTokenText( _skillDefinition, _skillLevel, "airborneHeight" );
 
     if ( string.IsNullOrWhiteSpace( damageText ) == false )
     {
@@ -311,6 +331,11 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
     if ( string.IsNullOrWhiteSpace( cooldownText ) == false )
     {
         summaryLineList.Add( $"쿨타임 {cooldownText}초" );
+    }
+
+    if ( string.IsNullOrWhiteSpace( mpCostText ) == false )
+    {
+        summaryLineList.Add( $"MP {mpCostText}" );
     }
 
     if ( string.IsNullOrWhiteSpace( durationText ) == false )
@@ -336,6 +361,23 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
     if ( string.IsNullOrWhiteSpace( debuffDurationText ) == false )
     {
         summaryLineList.Add( $"디버프 {debuffDurationText}초" );
+    }
+
+    if ( string.IsNullOrWhiteSpace( crowdControlTypeText ) == false )
+    {
+        string crowdControlSummaryText = $"{crowdControlTypeText} {crowdControlChanceText}% {crowdControlDurationText}초";
+
+        if ( string.IsNullOrWhiteSpace( knockbackDistanceText ) == false )
+        {
+            crowdControlSummaryText += $" {knockbackDistanceText}m";
+        }
+
+        if ( string.IsNullOrWhiteSpace( airborneHeightText ) == false )
+        {
+            crowdControlSummaryText += $" 높이 {airborneHeightText}m";
+        }
+
+        summaryLineList.Add( crowdControlSummaryText );
     }
 
     if ( summaryLineList.Count == 0 )
@@ -392,7 +434,7 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         ///<summary>
         /// 스킬 창 토글 처리
         ///</summary>
-        private void ToggleSkillWindow()
+        public void ToggleSkillWindow()
         {
             bool nextVisible = isSkillWindowVisible == false;
             SetSkillWindowVisible( nextVisible );
@@ -431,9 +473,41 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
 
             if ( _isVisible )
             {
-                BringWindowToFront();
+                CUINavigationController navigationController = CUINavigationController.Instance;
+
+                if ( navigationController != null )
+                {
+                    navigationController.RegisterPopup( this );
+                }
+
+                BringLayerToFront();
                 ResetScrollPosition();
             }
+        }
+
+        ///<summary>
+        /// 네비게이션 레이어 표시 상태 반영
+        ///</summary>
+        public override void SetLayerVisible( bool _isVisible )
+        {
+            SetSkillWindowVisible( _isVisible );
+        }
+
+        ///<summary>
+        /// 네비게이션 표시 상태 반환
+        ///</summary>
+        public override bool IsNavigationVisible()
+        {
+            bool result = isSkillWindowVisible;
+            return result;
+        }
+
+        ///<summary>
+        /// 네비게이션 레이어 닫기 처리
+        ///</summary>
+        public override void CloseNavigationLayer()
+        {
+            CloseSkillWindow();
         }
 
         ///<summary>
@@ -851,7 +925,11 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         private string BuildTooltipInfoText( CSkillDefinition _skillDefinition, int _currentLevel, bool _isUnlocked )
         {
             int displayLevel = _isUnlocked ? _currentLevel : 0;
+            int mpLevel = _isUnlocked ? Mathf.Max( 1, _currentLevel ) : 1;
+            string mpCostText = ResolveTokenText( _skillDefinition, mpLevel, "mpCost" );
+            string mpInfoPrefixText = $"MP {mpCostText}  |  ";
             string result = $"레벨 Lv.{displayLevel}/{_skillDefinition.GetMaxSkillLevel()}  |  필요 레벨 Lv.{_skillDefinition.GetRequiredLevel()}\n습득 SP {_skillDefinition.GetLearnSpCost()}  |  강화 SP {_skillDefinition.GetLevelUpSpCost()}";
+            result = result.Replace( "\n", $"\n{mpInfoPrefixText}" );
             return result;
         }
 
@@ -948,7 +1026,7 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         ///<summary>
         /// 스킬 창 최상단 정렬
         ///</summary>
-        private void BringWindowToFront()
+        public override void BringLayerToFront()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
 

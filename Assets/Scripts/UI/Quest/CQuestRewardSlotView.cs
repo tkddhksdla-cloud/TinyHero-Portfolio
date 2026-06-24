@@ -15,7 +15,7 @@ namespace TinyHero.UI
         [SerializeField] private TMP_Text itemCountText;
 
         private CItemDefinition currentItemDefinition;
-        private CQuestListUIController ownerQuestListUiController;
+        private PopupQuestList ownerQuestListUiController;
 
         ///<summary>
         /// 보상 슬롯 참조 초기화
@@ -28,7 +28,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 보상 슬롯 소유자 설정
         ///</summary>
-        public void Configure( CQuestListUIController _ownerQuestListUiController )
+        public void Configure( PopupQuestList _ownerQuestListUiController )
         {
             ownerQuestListUiController = _ownerQuestListUiController;
             ResolveReferences();

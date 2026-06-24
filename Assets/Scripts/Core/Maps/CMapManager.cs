@@ -30,10 +30,10 @@ namespace TinyHero.Maps
         private const string FadeCanvasObjectName = "MapFadeCanvas";
         private const string FadeImageObjectName = "FadeImage";
         private const string GameplaySceneName = "SceneMap";
+        private const string DefaultGameplayMapId = "MAP_STARTER_000_VILLAGE";
         private const string MapTitleLogoUiPrefabResourcePath = "Prefabs/UI/Map/MapTitleLogoUI";
         private const string MapTitleLogoUiPoolObjectName = "MapTitleLogoUIPool";
         private const string TempUiCanvasObjectName = "Canvas_TempUI";
-        private const string ItemInventoryUiObjectName = "ItemInventoryUI";
 
         private sealed class CMapMonsterRespawnContext
         {
@@ -330,15 +330,20 @@ namespace TinyHero.Maps
         ///</summary>
         private void TryLoadPendingMapForActiveScene()
         {
-            if ( string.IsNullOrWhiteSpace( pendingMapId ) )
-            {
-                return;
-            }
-
             Scene activeScene = SceneManager.GetActiveScene();
 
             if ( activeScene.name != GameplaySceneName )
             {
+                return;
+            }
+
+            if ( string.IsNullOrWhiteSpace( pendingMapId ) )
+            {
+                if ( string.IsNullOrWhiteSpace( currentMapId ) )
+                {
+                    StartCoroutine( IE_LoadPendingMap( DefaultGameplayMapId, string.Empty ) );
+                }
+
                 return;
             }
 
@@ -1440,6 +1445,8 @@ namespace TinyHero.Maps
 
             InitializePlayerStatusUi( playerController );
             InitializeItemInventoryUi( playerController );
+            InitializeSkillUi( playerController );
+            InitializeQuestUi( playerController );
         }
 
         ///<summary>
@@ -1481,21 +1488,61 @@ namespace TinyHero.Maps
                 return;
             }
 
-            GameObject itemInventoryUiObject = GameObject.Find( ItemInventoryUiObjectName );
+            CItemInventoryUiManager itemInventoryUiManager = CItemInventoryUiManager.Instance;
 
-            if ( itemInventoryUiObject == null )
+            if ( itemInventoryUiManager == null )
             {
                 return;
             }
 
-            CItemInventoryUIController itemInventoryUiController = itemInventoryUiObject.GetComponent<CItemInventoryUIController>();
+            itemInventoryUiManager.BindInventoryManager( inventoryManager );
+        }
 
-            if ( itemInventoryUiController == null )
+        ///<summary>
+        /// 플레이어 스킬 UI 초기화 처리
+        ///</summary>
+        private void InitializeSkillUi( PlayerController _playerController )
+        {
+            if ( _playerController == null )
             {
-                itemInventoryUiController = itemInventoryUiObject.AddComponent<CItemInventoryUIController>();
+                return;
             }
 
-            itemInventoryUiController.BindInventoryManager( inventoryManager );
+            CSkillManager skillManager = _playerController.GetComponent<CSkillManager>();
+
+            if ( skillManager == null )
+            {
+                return;
+            }
+
+            CSkillUiManager skillUiManager = CSkillUiManager.Instance;
+
+            if ( skillUiManager == null )
+            {
+                return;
+            }
+
+            skillUiManager.BindSkillManager( skillManager );
+        }
+
+        ///<summary>
+        /// 플레이어 퀘스트 UI 초기화 처리
+        ///</summary>
+        private void InitializeQuestUi( PlayerController _playerController )
+        {
+            if ( _playerController == null )
+            {
+                return;
+            }
+
+            CQuestUiManager questUiManager = CQuestUiManager.Instance;
+
+            if ( questUiManager == null )
+            {
+                return;
+            }
+
+            questUiManager.BindPlayerController( _playerController );
         }
 
         ///<summary>

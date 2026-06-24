@@ -43,6 +43,7 @@ namespace TinyHero.Player
         private const float DefaultAttackSlashFxLifetime = 0.5f;
         private const int InvalidSkillSlotIndex = -1;
         private const int MaxSkillSlotCount = 8;
+        private const string DoubleJumpSkillId = "skill_double_jump";
 
         [Header( "References" )]
         [SerializeField] private Animator targetAnimator;
@@ -116,6 +117,7 @@ namespace TinyHero.Player
         private bool isInvincible;
         private bool isJumpHeld;
         private bool isInteractionHeld;
+        private bool isPhaseStrikeActive;
         private bool isPendingJump;
         private bool isPendingAttack;
         private bool wasGrounded;
@@ -330,6 +332,9 @@ namespace TinyHero.Player
             UnsubscribeAnimationEventReceiver();
             SetAttackHitColliderActive( false );
             ClearSkillBuffState();
+            isPhaseStrikeActive = false;
+            SetSpriteRendererVisible( true );
+            RestoreSpriteColors();
         }
 
         ///<summary>
@@ -343,6 +348,14 @@ namespace TinyHero.Player
             }
 
             TickSkillBuffState();
+
+            if ( isPhaseStrikeActive )
+            {
+                ApplyPhaseStrikeControlLock();
+                ClearOneShotInputs();
+                return;
+            }
+
             CaptureInput();
             UpdateGroundState();
             ApplyNpcInteractionControlLock();
@@ -362,6 +375,12 @@ namespace TinyHero.Player
                 return;
             }
 
+            if ( isPhaseStrikeActive )
+            {
+                ApplyPhaseStrikeControlLock();
+                return;
+            }
+
             ApplyFacingDirection();
             ApplyHorizontalMovement();
             ApplyJumpGravity();
@@ -376,6 +395,7 @@ namespace TinyHero.Player
             RestoreAnimatorSpeed();
             SetAttackHitColliderActive( false );
             ReleaseAllPooledEffects();
+            SetSpriteRendererVisible( true );
             RestoreSpriteColors();
         }
 
@@ -457,6 +477,32 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 페이즈 스트라이크 상태 시작
+        ///</summary>
+        public void BeginPhaseStrikeState()
+        {
+            isPhaseStrikeActive = true;
+            CacheSpriteRenderers();
+            CacheDefaultSpriteColors();
+            RestoreSpriteColors();
+            SetSpriteRendererVisible( false );
+            ApplyPhaseStrikeControlLock();
+        }
+
+        ///<summary>
+        /// 페이즈 스트라이크 상태 종료
+        ///</summary>
+        public void EndPhaseStrikeState( Vector3 _returnWorldPosition )
+        {
+            transform.position = _returnWorldPosition;
+            isPhaseStrikeActive = false;
+            RestoreSpriteColors();
+            SetSpriteRendererVisible( true );
+            ApplyPhaseStrikeControlLock();
+            EvaluateMonsterContactOverlap();
+        }
+
+        ///<summary>
         /// 접촉 피격 처리
         ///</summary>
         public bool TryReceiveContactHit()
@@ -524,7 +570,8 @@ namespace TinyHero.Player
         ///</summary>
         public float GetSkillAttackPowerMultiplier()
         {
-            float result = 1.0f + Mathf.Max( 0.0f, skillFinalAttackPercentBonus );
+            float equipmentFinalAttackPercentBonus = targetStatManager != null ? targetStatManager.GetEquipmentFinalAttackPercentBonus() : 0.0f;
+            float result = 1.0f + Mathf.Max( 0.0f, skillFinalAttackPercentBonus ) + Mathf.Max( 0.0f, equipmentFinalAttackPercentBonus );
             return result;
         }
 
@@ -647,20 +694,6 @@ namespace TinyHero.Player
             CInputManager inputManager = CInputManager.Instance;
 
             if ( inputManager == null )
-            {
-                horizontalInput = 0.0f;
-                isJumpHeld = false;
-                isInteractionHeld = false;
-                isPendingJump = false;
-                isPendingAttack = false;
-                pendingSkillSlotIndex = InvalidSkillSlotIndex;
-                return;
-            }
-
-            bool capturedQuestJournalDown = inputManager.GetQuestJournalDown();
-            bool isQuestJournalConsumed = CQuestListUIController.TryProcessPlayerQuestJournalToggle( this, capturedQuestJournalDown );
-
-            if ( isQuestJournalConsumed )
             {
                 horizontalInput = 0.0f;
                 isJumpHeld = false;
@@ -1185,6 +1218,11 @@ namespace TinyHero.Player
         ///</summary>
         private bool CanJump()
         {
+            if ( currentJumpCount == 1 && CanUseDoubleJumpSkill() == false )
+            {
+                return false;
+            }
+
             bool canJump = currentJumpCount < maxJumpCount;
             return canJump;
         }
@@ -1199,6 +1237,15 @@ namespace TinyHero.Player
 
             if ( isDoubleJump )
             {
+                bool didConsumeDoubleJumpMp = TryConsumeDoubleJumpMp();
+
+                if ( didConsumeDoubleJumpMp == false )
+                {
+                    return false;
+                }
+
+                PlayDoubleJumpCastVfx();
+
                 currentVelocity.y = 0.0f;
                 targetRigidbody.linearVelocity = currentVelocity;
 
@@ -1214,6 +1261,82 @@ namespace TinyHero.Player
             currentJumpCount++;
             isGrounded = false;
             return true;
+        }
+
+        ///<summary>
+        /// 더블 점프 스킬 사용 가능 여부 반환
+        ///</summary>
+        private bool CanUseDoubleJumpSkill()
+        {
+            if ( targetSkillManager == null || targetStatManager == null )
+            {
+                return false;
+            }
+
+            bool isUnlocked = targetSkillManager.IsSkillUnlocked( DoubleJumpSkillId );
+
+            if ( isUnlocked == false )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinition( DoubleJumpSkillId );
+
+            if ( skillDefinition == null )
+            {
+                return false;
+            }
+
+            int skillLevel = Mathf.Max( 1, targetSkillManager.GetSkillLevel( DoubleJumpSkillId ) );
+            float mpCost = skillDefinition.GetMpCost( skillLevel );
+            float currentMp = targetStatManager.GetCurrentMp();
+            bool result = currentMp >= mpCost;
+            return result;
+        }
+
+        ///<summary>
+        /// 더블 점프 MP 소모 처리
+        ///</summary>
+        private bool TryConsumeDoubleJumpMp()
+        {
+            if ( targetSkillManager == null || targetStatManager == null )
+            {
+                return false;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinition( DoubleJumpSkillId );
+
+            if ( skillDefinition == null )
+            {
+                return false;
+            }
+
+            int skillLevel = Mathf.Max( 1, targetSkillManager.GetSkillLevel( DoubleJumpSkillId ) );
+            float mpCost = skillDefinition.GetMpCost( skillLevel );
+            bool result = targetStatManager.TryConsumeMp( mpCost );
+            return result;
+        }
+
+        ///<summary>
+        /// 더블 점프 캐스트 VFX 재생
+        ///</summary>
+        private void PlayDoubleJumpCastVfx()
+        {
+            if ( targetSkillManager == null || targetStatManager == null )
+            {
+                return;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinition( DoubleJumpSkillId );
+
+            if ( skillDefinition == null )
+            {
+                return;
+            }
+
+            CSkillRuntimeData skillRuntimeData = targetSkillManager.GetSkillRuntimeData( DoubleJumpSkillId );
+            CSkillContext skillContext = new CSkillContext( targetSkillManager, this, targetStatManager, skillDefinition, skillRuntimeData, transform );
+            CSkillVfxUtility.PlayCastVfx( skillContext );
         }
 
         ///<summary>
@@ -1594,8 +1717,27 @@ namespace TinyHero.Player
         ///</summary>
         private bool IsAnyInvincibleStateActive()
         {
-            bool result = isInvincible || skillInvincibilityRemaining > 0.0f;
+            bool result = isInvincible || skillInvincibilityRemaining > 0.0f || isPhaseStrikeActive;
             return result;
+        }
+
+        ///<summary>
+        /// 페이즈 스트라이크 제어 잠금 적용
+        ///</summary>
+        private void ApplyPhaseStrikeControlLock()
+        {
+            horizontalInput = 0.0f;
+            isJumpHeld = false;
+            isInteractionHeld = false;
+            isPendingJump = false;
+            isPendingAttack = false;
+            pendingSkillSlotIndex = InvalidSkillSlotIndex;
+            SetAttackHitColliderActive( false );
+
+            if ( targetRigidbody != null )
+            {
+                targetRigidbody.linearVelocity = Vector2.zero;
+            }
         }
 
         ///<summary>
@@ -1877,6 +2019,29 @@ namespace TinyHero.Player
                 }
 
                 spriteRenderer.color = defaultSpriteColors[ index ];
+            }
+        }
+
+        ///<summary>
+        /// 스프라이트 렌더러 표시 상태 설정
+        ///</summary>
+        private void SetSpriteRendererVisible( bool _isVisible )
+        {
+            if ( targetSpriteRenderers == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
+
+                if ( spriteRenderer == null )
+                {
+                    continue;
+                }
+
+                spriteRenderer.enabled = _isVisible;
             }
         }
 

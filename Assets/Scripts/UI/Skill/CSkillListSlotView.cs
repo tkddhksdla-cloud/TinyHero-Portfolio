@@ -23,7 +23,7 @@ namespace TinyHero.UI
         [SerializeField] private CButtonEx actionButton;
         [SerializeField] private TMP_Text actionButtonText;
 
-        private CSkillListUIController ownerSkillListUiController;
+        private PopupSkillList ownerSkillListUiController;
         private CSkillManager targetSkillManager;
         private string currentSkillId = string.Empty;
 
@@ -102,7 +102,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 슬롯 데이터 바인딩
         ///</summary>
-        public void Bind( CSkillListUIController _ownerSkillListUiController, CSkillManager _skillManager, string _skillId )
+        public void Bind( PopupSkillList _ownerSkillListUiController, CSkillManager _skillManager, string _skillId )
         {
             AutoAssignReferences();
             ownerSkillListUiController = _ownerSkillListUiController;

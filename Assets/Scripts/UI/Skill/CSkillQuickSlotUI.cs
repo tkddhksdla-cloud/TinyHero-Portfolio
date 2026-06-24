@@ -453,19 +453,22 @@ namespace TinyHero.UI
             }
 
             ResolveCanvas();
+            RectTransform dragGhostParentRectTransform = ResolveDragGhostParentRectTransform();
 
-            if ( targetCanvas == null )
+            if ( dragGhostParentRectTransform == null )
             {
                 return;
             }
 
-            GameObject dragGhostObject = new GameObject( "SkillDragGhost", typeof( RectTransform ), typeof( CanvasRenderer ), typeof( Image ) );
+            GameObject dragGhostObject = new GameObject( "SkillDragGhost", typeof( RectTransform ), typeof( CanvasRenderer ), typeof( Image ), typeof( LayoutElement ) );
             RectTransform rectTransform = dragGhostObject.GetComponent<RectTransform>();
-            rectTransform.SetParent( targetCanvas.transform, false );
+            rectTransform.SetParent( dragGhostParentRectTransform, false );
             rectTransform.sizeDelta = new Vector2( 72.0f, 72.0f );
             Image image = dragGhostObject.GetComponent<Image>();
             image.raycastTarget = false;
             image.enabled = false;
+            LayoutElement layoutElement = dragGhostObject.GetComponent<LayoutElement>();
+            layoutElement.ignoreLayout = true;
             rectTransform.SetAsLastSibling();
             dragGhostRectTransform = rectTransform;
             dragGhostImage = image;
@@ -481,7 +484,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            RectTransform canvasRectTransform = targetCanvas.transform as RectTransform;
+            RectTransform canvasRectTransform = ResolveDragGhostParentRectTransform();
 
             if ( canvasRectTransform == null )
             {
@@ -490,7 +493,8 @@ namespace TinyHero.UI
 
             Vector2 mousePosition = Input.mousePosition;
             Vector2 localPoint;
-            bool isConverted = RectTransformUtility.ScreenPointToLocalPointInRectangle( canvasRectTransform, mousePosition, null, out localPoint );
+            Camera eventCamera = ResolveDragEventCamera( canvasRectTransform );
+            bool isConverted = RectTransformUtility.ScreenPointToLocalPointInRectangle( canvasRectTransform, mousePosition, eventCamera, out localPoint );
 
             if ( isConverted == false )
             {
@@ -498,10 +502,67 @@ namespace TinyHero.UI
             }
 
             dragGhostRectTransform.anchoredPosition = localPoint;
+            dragGhostRectTransform.SetAsLastSibling();
         }
 
         ///<summary>
         /// 스킬 드래그 전용 캔버스 결정
         ///</summary>
+        ///<summary>
+        /// 드래그 고스트 부모 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveDragGhostParentRectTransform()
+        {
+            ResolveCanvas();
+
+            if ( targetCanvas == null )
+            {
+                return null;
+            }
+
+            Transform rootTransform = targetCanvas.transform.root;
+            Transform interactionCanvasTransform = rootTransform.Find( "Canvas_InteractionUI" );
+
+            if ( interactionCanvasTransform == null )
+            {
+                interactionCanvasTransform = rootTransform.Find( "Canvas/Canvas_InteractionUI" );
+            }
+
+            RectTransform interactionCanvasRectTransform = interactionCanvasTransform as RectTransform;
+
+            if ( interactionCanvasRectTransform != null )
+            {
+                return interactionCanvasRectTransform;
+            }
+
+            RectTransform fallbackRectTransform = targetCanvas.transform as RectTransform;
+            return fallbackRectTransform;
+        }
+
+        ///<summary>
+        /// 드래그 좌표 변환 카메라 결정
+        ///</summary>
+        private Camera ResolveDragEventCamera( RectTransform _dragGhostParentRectTransform )
+        {
+            if ( _dragGhostParentRectTransform == null )
+            {
+                return null;
+            }
+
+            Canvas parentCanvas = _dragGhostParentRectTransform.GetComponent<Canvas>();
+
+            if ( parentCanvas == null )
+            {
+                parentCanvas = targetCanvas;
+            }
+
+            if ( parentCanvas == null || parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay )
+            {
+                return null;
+            }
+
+            Camera result = parentCanvas.worldCamera;
+            return result;
+        }
     }
 }

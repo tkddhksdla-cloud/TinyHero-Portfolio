@@ -16,7 +16,7 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private int slotIndex = -1;
     private int currentQuantity;
     private CItemDefinition currentItemDefinition;
-    private CItemInventoryUIController ownerInventoryUiController;
+    private PopupItemInventory ownerInventoryUiController;
 
     ///<summary>
     /// 슬롯 참조 초기화
@@ -29,7 +29,7 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     ///<summary>
     /// 슬롯 초기화 설정
     ///</summary>
-    public void Initialize( CItemInventoryUIController _ownerInventoryUiController, int _slotIndex )
+    public void Initialize( PopupItemInventory _ownerInventoryUiController, int _slotIndex )
     {
         ResolveReferences();
         ownerInventoryUiController = _ownerInventoryUiController;

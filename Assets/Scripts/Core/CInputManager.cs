@@ -1,6 +1,8 @@
 ﻿using TinyHero.Core;
 using UnityEngine;
 
+using TinyHero.UI;
+
 namespace TinyHero.Core
 {
     ///<summary>
@@ -18,6 +20,7 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode interactionKey = KeyCode.Space;
         [SerializeField] private KeyCode inventoryKey = KeyCode.I;
         [SerializeField] private KeyCode questJournalKey = KeyCode.J;
+        [SerializeField] private KeyCode skillWindowKey = KeyCode.K;
         [SerializeField] private KeyCode cheatWindowKey = KeyCode.F1;
         [SerializeField] private KeyCode portalKey = KeyCode.UpArrow;
         [SerializeField] private KeyCode skillSlot1Key = KeyCode.Q;
@@ -34,6 +37,9 @@ namespace TinyHero.Core
         ///</summary>
         private void Update()
         {
+            HandleInventoryToggleInput();
+            HandleSkillWindowToggleInput();
+            HandleQuestJournalToggleInput();
             HandleCheatWindowToggleInput();
         }
 
@@ -159,6 +165,20 @@ namespace TinyHero.Core
         }
 
         ///<summary>
+        /// 스킬 창 다운 입력 반환
+        ///</summary>
+        public bool GetSkillWindowDown()
+        {
+            if ( IsCheatUiBlockingInput() )
+            {
+                return false;
+            }
+
+            bool isSkillWindowDown = Input.GetKeyDown( skillWindowKey );
+            return isSkillWindowDown;
+        }
+
+        ///<summary>
         /// 포탈 다운 입력 반환
         ///</summary>
         public bool GetPortalDown()
@@ -248,6 +268,72 @@ namespace TinyHero.Core
             }
 
             cheatCommandUi.ToggleVisible();
+        }
+
+        ///<summary>
+        /// 인벤토리 토글 입력 처리
+        ///</summary>
+        private void HandleInventoryToggleInput()
+        {
+            bool isInventoryDown = GetInventoryDown();
+
+            if ( isInventoryDown == false )
+            {
+                return;
+            }
+
+            CItemInventoryUiManager itemInventoryUiManager = CItemInventoryUiManager.Instance;
+
+            if ( itemInventoryUiManager == null )
+            {
+                return;
+            }
+
+            itemInventoryUiManager.ToggleInventoryUi();
+        }
+
+        ///<summary>
+        /// 스킬 창 토글 입력 처리
+        ///</summary>
+        private void HandleSkillWindowToggleInput()
+        {
+            bool isSkillWindowDown = GetSkillWindowDown();
+
+            if ( isSkillWindowDown == false )
+            {
+                return;
+            }
+
+            CSkillUiManager skillUiManager = CSkillUiManager.Instance;
+
+            if ( skillUiManager == null )
+            {
+                return;
+            }
+
+            skillUiManager.ToggleSkillUi();
+        }
+
+        ///<summary>
+        /// 퀘스트 저널 토글 입력 처리
+        ///</summary>
+        private void HandleQuestJournalToggleInput()
+        {
+            bool isQuestJournalDown = GetQuestJournalDown();
+
+            if ( isQuestJournalDown == false )
+            {
+                return;
+            }
+
+            CQuestUiManager questUiManager = CQuestUiManager.Instance;
+
+            if ( questUiManager == null )
+            {
+                return;
+            }
+
+            questUiManager.TogglePlayerQuestListUi();
         }
 
         ///<summary>

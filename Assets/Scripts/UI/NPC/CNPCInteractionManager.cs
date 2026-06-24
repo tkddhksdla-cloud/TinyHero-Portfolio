@@ -152,7 +152,7 @@ namespace TinyHero.UI
                 return true;
             }
 
-            if ( CQuestListUIController.IsAnyUiBlockingNpcInteraction() )
+            if ( PopupQuestList.IsAnyUiBlockingNpcInteraction() )
             {
                 return true;
             }
@@ -551,11 +551,11 @@ namespace TinyHero.UI
             }
 
             PlayerController playerController = ResolvePlayerControllerForNpc( activeNpcObject );
-            CQuestListUIController questListUiController = ResolveQuestListUiController();
+            CQuestUiManager questUiManager = CQuestUiManager.Instance;
 
-            if ( playerController != null && questListUiController != null )
+            if ( playerController != null && questUiManager != null )
             {
-                questListUiController.ShowQuestListUi( activeNpcObject, playerController );
+                questUiManager.ShowNpcQuestListUi( activeNpcObject, playerController );
             }
 
             EndInteraction();
@@ -659,37 +659,6 @@ namespace TinyHero.UI
             EndInteraction();
         }
 
-        ///<summary>
-        /// 퀘스트 UI 컨트롤러 결정
-        ///</summary>
-        private CQuestListUIController ResolveQuestListUiController()
-        {
-            GameObject rootCanvasObject = GameObject.Find( "Canvas" );
-
-            if ( rootCanvasObject == null )
-            {
-                return null;
-            }
-
-            Transform interactionCanvasTransform = rootCanvasObject.transform.Find( "Canvas_InteractionUI" );
-
-            if ( interactionCanvasTransform == null )
-            {
-                return null;
-            }
-
-            Transform questListUiTransform = interactionCanvasTransform.Find( "QuestListUI" );
-
-            if ( questListUiTransform == null )
-            {
-                return null;
-            }
-
-            CQuestListUIController questListUiController = questListUiTransform.GetComponent<CQuestListUIController>();
-            return questListUiController;
-        }
-
-        ///<summary>
         /// 퀘스트 UI 상호작용 완료 콜백 호출
         ///</summary>
         private void NotifyPendingQuestInteractionCompleted( bool _result )

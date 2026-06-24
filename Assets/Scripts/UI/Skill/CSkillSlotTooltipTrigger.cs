@@ -8,13 +8,13 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CSkillSlotTooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
     {
-        [SerializeField] private CSkillListUIController ownerSkillListUiController;
+        [SerializeField] private PopupSkillList ownerSkillListUiController;
         [SerializeField] private string targetSkillId = string.Empty;
 
         ///<summary>
         /// 툴팁 트리거 대상 구성
         ///</summary>
-        public void Configure( CSkillListUIController _ownerSkillListUiController, string _targetSkillId )
+        public void Configure( PopupSkillList _ownerSkillListUiController, string _targetSkillId )
         {
             ownerSkillListUiController = _ownerSkillListUiController;
             targetSkillId = string.IsNullOrWhiteSpace( _targetSkillId ) ? string.Empty : _targetSkillId.Trim();

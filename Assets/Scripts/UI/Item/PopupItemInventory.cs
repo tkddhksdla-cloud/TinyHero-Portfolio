@@ -12,7 +12,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 인벤토리 UI 제어 컴포넌트
     ///</summary>
-    public sealed class CItemInventoryUIController : MonoBehaviour
+    public sealed class PopupItemInventory : CUIPopup
     {
         private const string InventoryRootPath = "Inventory";
         private const string ContentPathPrimary = "Inventory/BG/Content";
@@ -72,7 +72,7 @@ namespace TinyHero.UI
             EnsureWindowDragHandle();
             EnsureWindowFocusHandlers();
             RefreshEquipmentStatusPanelBinding();
-            BringWindowToFront();
+            BringLayerToFront();
 
             if ( closeButton != null )
             {
@@ -107,16 +107,9 @@ namespace TinyHero.UI
             TryResolveTargetStatManager();
             TryResolvePlayerController();
             RefreshEquipmentStatusPanelBinding();
-            HandleToggleInput();
 
             if ( isInventoryVisible == false )
             {
-                return;
-            }
-
-            if ( Input.GetKeyDown( KeyCode.Escape ) )
-            {
-                SetInventoryVisible( false );
                 return;
             }
 
@@ -167,7 +160,9 @@ namespace TinyHero.UI
                 return;
             }
 
-            runtimeTooltipUi.SetTooltipContent( _itemSlot.GetCurrentItemDefinition() );
+            CInventoryItemEntryData itemEntryData = targetInventoryManager != null ? targetInventoryManager.GetItemEntryData( _itemSlot.GetSlotIndex() ) : null;
+            CEquipmentPotentialData equipmentPotentialData = itemEntryData != null ? itemEntryData.GetEquipmentPotentialData() : null;
+            runtimeTooltipUi.SetTooltipContent( _itemSlot.GetCurrentItemDefinition(), equipmentPotentialData );
             runtimeTooltipUi.transform.SetAsLastSibling();
             runtimeTooltipUi.SetVisible( true );
             UpdateTooltipPosition();
@@ -196,6 +191,14 @@ namespace TinyHero.UI
         ///</summary>
         public void ShowItemDefinitionTooltip( CItemDefinition _itemDefinition )
         {
+            ShowItemDefinitionTooltip( _itemDefinition, null );
+        }
+
+        ///<summary>
+        /// 아이템 정의와 잠재 툴팁 표시 요청
+        ///</summary>
+        public void ShowItemDefinitionTooltip( CItemDefinition _itemDefinition, CEquipmentPotentialData _equipmentPotentialData )
+        {
             if ( _itemDefinition == null )
             {
                 HideTooltipInternal();
@@ -209,7 +212,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            runtimeTooltipUi.SetTooltipContent( _itemDefinition );
+            runtimeTooltipUi.SetTooltipContent( _itemDefinition, _equipmentPotentialData );
             runtimeTooltipUi.transform.SetAsLastSibling();
             runtimeTooltipUi.SetVisible( true );
             UpdateTooltipPosition();
@@ -243,6 +246,7 @@ namespace TinyHero.UI
 
             EnsureDragGhost();
             draggedSlot = _itemSlot;
+            CInventoryUiDragState.BeginDrag( _itemSlot.GetSlotIndex() );
             HideTooltipInternal();
 
             if ( dragGhostImage != null )
@@ -441,10 +445,42 @@ namespace TinyHero.UI
             }
             else
             {
-                BringWindowToFront();
+                CUINavigationController navigationController = CUINavigationController.Instance;
+
+                if ( navigationController != null )
+                {
+                    navigationController.RegisterPopup( this );
+                }
+
+                BringLayerToFront();
                 RefreshSlotViews();
                 RefreshEquipmentStatusPanelBinding();
             }
+        }
+
+        ///<summary>
+        /// 네비게이션 레이어 표시 상태 반영
+        ///</summary>
+        public override void SetLayerVisible( bool _isVisible )
+        {
+            SetInventoryVisible( _isVisible );
+        }
+
+        ///<summary>
+        /// 네비게이션 표시 상태 반환
+        ///</summary>
+        public override bool IsNavigationVisible()
+        {
+            bool result = isInventoryVisible;
+            return result;
+        }
+
+        ///<summary>
+        /// 네비게이션 레이어 닫기 처리
+        ///</summary>
+        public override void CloseNavigationLayer()
+        {
+            SetInventoryVisible( false );
         }
 
         ///<summary>
@@ -556,7 +592,20 @@ namespace TinyHero.UI
 
             if ( itemDefinition.IsSkillBook() == false )
             {
-                return false;
+                if ( itemDefinition.IsCube() == false )
+                {
+                    return false;
+                }
+
+                CCubeUiManager cubeUiManager = CCubeUiManager.Instance;
+
+                if ( cubeUiManager == null || targetEquipmentManager == null )
+                {
+                    return false;
+                }
+
+                bool didOpenCubeUi = cubeUiManager.OpenCubeUi( targetInventoryManager, targetEquipmentManager, _slotIndex );
+                return didOpenCubeUi;
             }
 
             if ( targetSkillManager == null )
@@ -589,7 +638,6 @@ namespace TinyHero.UI
             targetPlayerController = FindFirstObjectByType<PlayerController>();
         }
 
-        ///<summary>
         /// 인벤토리 매니저 바인딩 해제
         ///</summary>
         private void UnbindInventoryManager()
@@ -611,30 +659,6 @@ namespace TinyHero.UI
             RefreshSlotViews();
         }
 
-        ///<summary>
-        /// 인벤토리 토글 입력 처리
-        ///</summary>
-        private void HandleToggleInput()
-        {
-            CInputManager inputManager = CInputManager.Instance;
-
-            if ( inputManager == null )
-            {
-                return;
-            }
-
-            bool isInventoryDown = inputManager.GetInventoryDown();
-
-            if ( isInventoryDown == false )
-            {
-                return;
-            }
-
-            bool nextVisibleState = isInventoryVisible == false;
-            SetInventoryVisible( nextVisibleState );
-        }
-
-        ///<summary>
         /// 닫기 버튼 클릭 처리
         ///</summary>
         private void HandleCloseButtonClicked()
@@ -679,7 +703,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            RectTransform canvasRectTransform = targetCanvas.transform as RectTransform;
+            RectTransform canvasRectTransform = ResolveDragGhostParentRectTransform();
 
             if ( canvasRectTransform == null )
             {
@@ -688,7 +712,8 @@ namespace TinyHero.UI
 
             Vector2 mousePosition = Input.mousePosition;
             Vector2 localPoint;
-            bool isConverted = RectTransformUtility.ScreenPointToLocalPointInRectangle( canvasRectTransform, mousePosition, null, out localPoint );
+            Camera eventCamera = ResolveDragEventCamera( canvasRectTransform );
+            bool isConverted = RectTransformUtility.ScreenPointToLocalPointInRectangle( canvasRectTransform, mousePosition, eventCamera, out localPoint );
 
             if ( isConverted == false )
             {
@@ -696,6 +721,7 @@ namespace TinyHero.UI
             }
 
             dragGhostRectTransform.anchoredPosition = localPoint;
+            dragGhostRectTransform.SetAsLastSibling();
         }
 
         ///<summary>
@@ -717,6 +743,7 @@ namespace TinyHero.UI
         private void EndSlotDragInternal()
         {
             draggedSlot = null;
+            CInventoryUiDragState.EndDrag();
 
             if ( dragGhostImage != null )
             {
@@ -734,18 +761,22 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( targetCanvas == null )
+            RectTransform dragGhostParentRectTransform = ResolveDragGhostParentRectTransform();
+
+            if ( dragGhostParentRectTransform == null )
             {
                 return;
             }
 
-            GameObject dragGhostObject = new GameObject( "ItemDragGhost", typeof( RectTransform ), typeof( CanvasRenderer ), typeof( Image ) );
+            GameObject dragGhostObject = new GameObject( "ItemDragGhost", typeof( RectTransform ), typeof( CanvasRenderer ), typeof( Image ), typeof( LayoutElement ) );
             RectTransform rectTransform = dragGhostObject.GetComponent<RectTransform>();
-            rectTransform.SetParent( targetCanvas.transform, false );
+            rectTransform.SetParent( dragGhostParentRectTransform, false );
             rectTransform.sizeDelta = new Vector2( 72.0f, 72.0f );
             Image image = dragGhostObject.GetComponent<Image>();
             image.raycastTarget = false;
             image.enabled = false;
+            LayoutElement layoutElement = dragGhostObject.GetComponent<LayoutElement>();
+            layoutElement.ignoreLayout = true;
             rectTransform.SetAsLastSibling();
             dragGhostRectTransform = rectTransform;
             dragGhostImage = image;
@@ -931,7 +962,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 인벤토리 창 최상단 정렬
         ///</summary>
-        private void BringWindowToFront()
+        public override void BringLayerToFront()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
 
@@ -1048,6 +1079,60 @@ namespace TinyHero.UI
             }
 
             RectTransform result = currentRectTransform;
+            return result;
+        }
+        ///<summary>
+        /// 드래그 고스트 부모 RectTransform 결정
+        ///</summary>
+        private RectTransform ResolveDragGhostParentRectTransform()
+        {
+            if ( targetCanvas == null )
+            {
+                return null;
+            }
+
+            Transform rootTransform = targetCanvas.transform.root;
+            Transform interactionCanvasTransform = rootTransform.Find( "Canvas_InteractionUI" );
+
+            if ( interactionCanvasTransform == null )
+            {
+                interactionCanvasTransform = rootTransform.Find( "Canvas/Canvas_InteractionUI" );
+            }
+
+            RectTransform interactionCanvasRectTransform = interactionCanvasTransform as RectTransform;
+
+            if ( interactionCanvasRectTransform != null )
+            {
+                return interactionCanvasRectTransform;
+            }
+
+            RectTransform fallbackRectTransform = targetCanvas.transform as RectTransform;
+            return fallbackRectTransform;
+        }
+
+        ///<summary>
+        /// 드래그 좌표 변환 카메라 결정
+        ///</summary>
+        private Camera ResolveDragEventCamera( RectTransform _dragGhostParentRectTransform )
+        {
+            if ( _dragGhostParentRectTransform == null )
+            {
+                return null;
+            }
+
+            Canvas parentCanvas = _dragGhostParentRectTransform.GetComponent<Canvas>();
+
+            if ( parentCanvas == null )
+            {
+                parentCanvas = targetCanvas;
+            }
+
+            if ( parentCanvas == null || parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay )
+            {
+                return null;
+            }
+
+            Camera result = parentCanvas.worldCamera;
             return result;
         }
     }
