@@ -96,6 +96,7 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         }
 
         CPlayerInventoryManager inventoryManager = playerController.GetInventoryManager();
+        CPlayerStatManager statManager = playerController.GetPlayerStatManager();
 
         if ( inventoryManager == null )
         {
@@ -116,7 +117,8 @@ public sealed class CWorldItemDropObject : MonoBehaviour
             pickupTriggerCollider.enabled = false;
         }
 
-        bool wasAdded = inventoryManager.TryAddItem( itemDefinition, itemCount );
+        int resolvedItemCount = ResolvePickupItemCount( itemDefinition, statManager );
+        bool wasAdded = inventoryManager.TryAddItem( itemDefinition, resolvedItemCount );
 
         if ( wasAdded == false )
         {
@@ -246,5 +248,27 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         }
 
         gameObject.SetActive( false );
+    }
+
+    ///<summary>
+    /// 획득 수량 보정 처리
+    ///</summary>
+    private int ResolvePickupItemCount( CItemDefinition _itemDefinition, CPlayerStatManager _playerStatManager )
+    {
+        int resolvedItemCount = Mathf.Max( 1, itemCount );
+
+        if ( _itemDefinition == null || _playerStatManager == null )
+        {
+            return resolvedItemCount;
+        }
+
+        if ( _itemDefinition.GetItemType() != eItemType.CURRENCY )
+        {
+            return resolvedItemCount;
+        }
+
+        float goldGainMultiplier = _playerStatManager.GetGoldGainMultiplier();
+        int scaledItemCount = Mathf.Max( 1, Mathf.RoundToInt( resolvedItemCount * goldGainMultiplier ) );
+        return scaledItemCount;
     }
 }

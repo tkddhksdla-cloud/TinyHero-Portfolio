@@ -15,6 +15,7 @@ namespace TinyHero.Skill
 
         private CSkillContext skillContext;
         private List<CEnemyDebuffEffectBase> debuffEffectList = new List<CEnemyDebuffEffectBase>();
+        private List<CEnemyCrowdControlEffectBase> crowdControlEffectList = new List<CEnemyCrowdControlEffectBase>();
         private float durationSeconds;
         private float damageStartDelaySeconds;
         private float tickIntervalSeconds;
@@ -50,7 +51,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 설치형 스킬 효과 데이터 초기화
         ///</summary>
-        public void Initialize( CSkillContext _skillContext, float _durationSeconds, float _damageStartDelaySeconds, float _tickIntervalSeconds, float _areaRadius, float _damageMultiplier, int _flatDamageBonus, int _maxTargetCount, List<CEnemyDebuffEffectBase> _debuffEffectList )
+        public void Initialize( CSkillContext _skillContext, float _durationSeconds, float _damageStartDelaySeconds, float _tickIntervalSeconds, float _areaRadius, float _damageMultiplier, int _flatDamageBonus, int _maxTargetCount, List<CEnemyDebuffEffectBase> _debuffEffectList, List<CEnemyCrowdControlEffectBase> _crowdControlEffectList )
         {
             skillContext = _skillContext;
             durationSeconds = Mathf.Max( 0.01f, _durationSeconds );
@@ -61,6 +62,7 @@ namespace TinyHero.Skill
             flatDamageBonus = _flatDamageBonus;
             maxTargetCount = Mathf.Max( 1, _maxTargetCount );
             debuffEffectList = _debuffEffectList != null ? _debuffEffectList : new List<CEnemyDebuffEffectBase>();
+            crowdControlEffectList = _crowdControlEffectList != null ? _crowdControlEffectList : new List<CEnemyCrowdControlEffectBase>();
             elapsedTime = 0.0f;
             tickElapsedTime = -damageStartDelaySeconds;
             loopVfxHandle = CSkillVfxUtility.PlayLoopVfx( skillContext, transform, durationSeconds );
@@ -167,6 +169,7 @@ namespace TinyHero.Skill
                 monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( skillContext, monsterObject.transform );
                 ApplyDebuffs( monsterObject );
+                ApplyCrowdControls( monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( skillContext, monsterObject, wasAliveBeforeHit );
                 processedTargetCount++;
             }
@@ -201,6 +204,24 @@ namespace TinyHero.Skill
                 }
 
                 debuffEffect.TryApply( skillContext, _monsterObject );
+            }
+        }
+
+        ///<summary>
+        /// 군중제어 효과 적용
+        ///</summary>
+        private void ApplyCrowdControls( MonsterObject _monsterObject )
+        {
+            for ( int index = 0; index < crowdControlEffectList.Count; index++ )
+            {
+                CEnemyCrowdControlEffectBase crowdControlEffect = crowdControlEffectList[ index ];
+
+                if ( crowdControlEffect == null )
+                {
+                    continue;
+                }
+
+                crowdControlEffect.TryApply( skillContext, _monsterObject );
             }
         }
 

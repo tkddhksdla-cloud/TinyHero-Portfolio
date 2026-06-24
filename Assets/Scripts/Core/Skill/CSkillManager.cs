@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -343,7 +344,7 @@ namespace TinyHero.Skill
 
             CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
 
-            if ( skillDefinition == null || skillDefinition.GetSkillType() != eSkillType.ACTIVE )
+            if ( skillDefinition == null || skillDefinition.GetSkillType() != eSkillType.ACTIVE || skillDefinition.IsAssignableToQuickSlot() == false )
             {
                 return false;
             }
@@ -478,6 +479,109 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 플레이어 스킬 저장 데이터 생성
+        ///</summary>
+        public CSkillSnapshotData CreateSnapshotData()
+        {
+            EnsureRuntimeDataIntegrity();
+            CSkillSnapshotData snapshotData = new CSkillSnapshotData();
+            snapshotData.currentSkillPoint = currentSkillPoint;
+            snapshotData.lastGrantedPlayerLevel = lastGrantedPlayerLevel;
+            int runtimeDataCount = skillRuntimeDataList.Count;
+
+            for ( int index = 0; index < runtimeDataCount; index++ )
+            {
+                CSkillRuntimeData runtimeData = skillRuntimeDataList[ index ];
+
+                if ( runtimeData == null )
+                {
+                    continue;
+                }
+
+                CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
+
+                if ( skillDefinition == null )
+                {
+                    continue;
+                }
+
+                CSkillRuntimeSnapshotEntryData snapshotEntryData = new CSkillRuntimeSnapshotEntryData();
+                snapshotEntryData.skillId = skillDefinition.GetSkillId();
+                snapshotEntryData.isUnlocked = runtimeData.IsUnlocked();
+                snapshotEntryData.skillLevel = runtimeData.GetSkillLevel();
+                snapshotEntryData.assignedQuickSlotIndex = runtimeData.GetAssignedQuickSlotIndex();
+                snapshotData.skillRuntimeEntryList.Add( snapshotEntryData );
+            }
+
+            return snapshotData;
+        }
+
+        ///<summary>
+        /// 플레이어 스킬 저장 데이터 로드
+        ///</summary>
+        public void LoadSnapshotData( CSkillSnapshotData _snapshotData )
+        {
+            EnsureRuntimeDataIntegrity();
+            currentSkillPoint = _snapshotData != null ? Mathf.Max( 0, _snapshotData.currentSkillPoint ) : 0;
+            lastGrantedPlayerLevel = _snapshotData != null ? Mathf.Max( 1, _snapshotData.lastGrantedPlayerLevel ) : 1;
+            Dictionary<string, CSkillRuntimeSnapshotEntryData> snapshotEntryBySkillId = new Dictionary<string, CSkillRuntimeSnapshotEntryData>();
+
+            if ( _snapshotData != null && _snapshotData.skillRuntimeEntryList != null )
+            {
+                int snapshotEntryCount = _snapshotData.skillRuntimeEntryList.Count;
+
+                for ( int index = 0; index < snapshotEntryCount; index++ )
+                {
+                    CSkillRuntimeSnapshotEntryData snapshotEntryData = _snapshotData.skillRuntimeEntryList[ index ];
+
+                    if ( snapshotEntryData == null || string.IsNullOrWhiteSpace( snapshotEntryData.skillId ) )
+                    {
+                        continue;
+                    }
+
+                    snapshotEntryBySkillId[ snapshotEntryData.skillId.Trim() ] = snapshotEntryData;
+                }
+            }
+
+            int runtimeDataCount = skillRuntimeDataList.Count;
+
+            for ( int index = 0; index < runtimeDataCount; index++ )
+            {
+                CSkillRuntimeData runtimeData = skillRuntimeDataList[ index ];
+
+                if ( runtimeData == null )
+                {
+                    continue;
+                }
+
+                CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
+                string skillId = skillDefinition != null ? skillDefinition.GetSkillId() : string.Empty;
+                runtimeData.SetUnlocked( false );
+                runtimeData.SetSkillLevel( 0 );
+                runtimeData.SetAssignedQuickSlotIndex( ResolveInitialQuickSlotIndex( skillDefinition ) );
+
+                if ( string.IsNullOrWhiteSpace( skillId ) )
+                {
+                    continue;
+                }
+
+                bool hasSnapshotEntry = snapshotEntryBySkillId.TryGetValue( skillId, out CSkillRuntimeSnapshotEntryData snapshotEntryData );
+
+                if ( hasSnapshotEntry == false || snapshotEntryData == null )
+                {
+                    continue;
+                }
+
+                runtimeData.SetUnlocked( snapshotEntryData.isUnlocked );
+                runtimeData.SetSkillLevel( Mathf.Max( 0, snapshotEntryData.skillLevel ) );
+                runtimeData.SetAssignedQuickSlotIndex( snapshotEntryData.assignedQuickSlotIndex );
+            }
+
+            RebuildPassiveStatBonus();
+            RaiseSkillStateChanged();
+        }
+
+        ///<summary>
         /// 참조 컴포넌트 결정
         ///</summary>
         private void ResolveReferences()
@@ -526,10 +630,12 @@ namespace TinyHero.Skill
             CSkillDefinition flameSlashDefinition = CreateDefaultInstantSampleSkillDefinition();
             CSkillDefinition frostFieldDefinition = CreateDefaultPlaceSampleSkillDefinition();
             CSkillDefinition arcBoltDefinition = CreateDefaultProjectileSampleSkillDefinition();
+            CSkillDefinition phaseStrikeDefinition = CreateDefaultPhaseStrikeSampleSkillDefinition();
             CSkillDefinition echoCloneDefinition = CreateDefaultCloneSampleSkillDefinition();
             defaultSkillDefinitionList.Add( flameSlashDefinition );
             defaultSkillDefinitionList.Add( frostFieldDefinition );
             defaultSkillDefinitionList.Add( arcBoltDefinition );
+            defaultSkillDefinitionList.Add( phaseStrikeDefinition );
             defaultSkillDefinitionList.Add( echoCloneDefinition );
             skillDefinitionList = defaultSkillDefinitionList;
         }
@@ -618,6 +724,31 @@ private CSkillDefinition CreateDefaultProjectileSampleSkillDefinition()
 
         ///<summary>
         /// 기본 분신 샘플 스킬 정의 생성
+        ///</summary>
+        ///<summary>
+        /// 기본 페이즈 스트라이크 샘플 스킬 정의 생성
+        ///</summary>
+private CSkillDefinition CreateDefaultPhaseStrikeSampleSkillDefinition()
+        {
+            string skillId = "sample_phase_strike";
+            string skillName = "Phase Strike";
+            CSkillDefinition skillDefinition = ScriptableObject.CreateInstance<CSkillDefinition>();
+            skillDefinition.name = skillName;
+            runtimeGeneratedScriptableObjectList.Add( skillDefinition );
+
+            CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect = ScriptableObject.CreateInstance<CPhaseStrikeActiveSkillEffect>();
+            phaseStrikeActiveSkillEffect.name = $"{skillName}_Effect";
+            phaseStrikeActiveSkillEffect.Configure( 10, 0.15f, 1.15f, 2 );
+            runtimeGeneratedScriptableObjectList.Add( phaseStrikeActiveSkillEffect );
+
+            Sprite skillIcon = CreateSolidColorSkillIcon( new Color32( 255, 92, 156, 255 ) );
+            skillDefinition.ConfigureActiveSkill( skillId, skillName, skillIcon, 4, 1, 14.0f, 22.0f, "시전 즉시 모습을 감추고 무적 상태가 된다. 화면 안의 적을 {hitInterval}초 간격으로 최대 {hitCount}회 베며, 매 타격마다 {damage}%의 피해를 준다. 총 지속 시간은 {duration}초이며 종료 후 원래 위치로 돌아온다.", phaseStrikeActiveSkillEffect );
+            skillDefinition.SetUnlockConditions( CreateLevelUnlockConditionList( 1 ) );
+            return skillDefinition;
+        }
+
+        ///<summary>
+        /// 湲곕낯 遺꾩떊 ?섑뵆 ?ㅽ궗 ?뺤쓽 ?앹꽦
         ///</summary>
 private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
         {
@@ -1168,7 +1299,8 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             CActiveSkillEffectBase activeSkillEffect = skillDefinition.GetActiveSkillEffect();
             CSkillActionBase activeAction = skillDefinition.GetActiveAction();
             CSkillContext skillContext = CreateSkillContext( skillDefinition, _runtimeData );
-            float mpCost = skillDefinition.GetMpCost();
+            int skillLevel = Mathf.Max( 1, _runtimeData.GetSkillLevel() );
+            float mpCost = skillDefinition.GetMpCost( skillLevel );
             bool didConsumeMp = targetStatManager.TryConsumeMp( mpCost );
 
             if ( didConsumeMp == false )
@@ -1263,7 +1395,8 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             }
 
             float currentMp = targetStatManager.GetCurrentMp();
-            float mpCost = skillDefinition.GetMpCost();
+            int skillLevel = Mathf.Max( 1, _runtimeData.GetSkillLevel() );
+            float mpCost = skillDefinition.GetMpCost( skillLevel );
 
             if ( currentMp < mpCost )
             {

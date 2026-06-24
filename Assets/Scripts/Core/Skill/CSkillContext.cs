@@ -8,6 +8,8 @@ namespace TinyHero.Skill
     ///</summary>
     public sealed class CSkillContext
     {
+        private static int nextExecutionId = 1;
+
         private readonly CSkillManager skillManager;
         private readonly PlayerController playerController;
         private readonly CPlayerStatManager playerStatManager;
@@ -16,6 +18,7 @@ namespace TinyHero.Skill
         private readonly Transform ownerTransform;
         private readonly float attackStatOverride;
         private readonly float skillAttackPowerMultiplierOverride;
+        private readonly int executionId;
 
         ///<summary>
         /// 스킬 실행 문맥 생성자
@@ -38,6 +41,7 @@ namespace TinyHero.Skill
             ownerTransform = _ownerTransform;
             attackStatOverride = _attackStatOverride;
             skillAttackPowerMultiplierOverride = _skillAttackPowerMultiplierOverride;
+            executionId = AllocateExecutionId();
         }
 
         ///<summary>
@@ -109,6 +113,32 @@ namespace TinyHero.Skill
         public float GetSkillAttackPowerMultiplierOverride()
         {
             float result = skillAttackPowerMultiplierOverride;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 시전 식별자 반환
+        ///</summary>
+        public int GetExecutionId()
+        {
+            int result = executionId;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 시전 식별자 발급
+        ///</summary>
+        private static int AllocateExecutionId()
+        {
+            int issuedExecutionId = nextExecutionId;
+            nextExecutionId++;
+
+            if ( nextExecutionId <= 0 )
+            {
+                nextExecutionId = 1;
+            }
+
+            int result = issuedExecutionId;
             return result;
         }
     }

@@ -158,6 +158,12 @@ namespace TinyHero.Skill.Editor
                 return previewData;
             }
 
+            if ( effectTypeName == nameof( CPhaseStrikeActiveSkillEffect ) )
+            {
+                previewData = BuildPhaseStrikeRangePreviewData( activeEffectSerializedObject );
+                return previewData;
+            }
+
             return previewData;
         }
 
@@ -617,6 +623,28 @@ namespace TinyHero.Skill.Editor
             previewData.radius = previewRadius;
             previewData.title = "Replay Clone";
             previewData.detail = $"Offset {previewData.offset}, Duration {durationSeconds:0.##}s, Delay {followDelaySeconds:0.##}s";
+            return previewData;
+        }
+
+        ///<summary>
+        /// 페이즈 스트라이크 범위 데이터 생성
+        ///</summary>
+        private static CSkillRangePreviewData BuildPhaseStrikeRangePreviewData( SerializedObject _activeEffectSerializedObject )
+        {
+            CSkillRangePreviewData previewData = new CSkillRangePreviewData();
+            SerializedProperty hitCountProperty = _activeEffectSerializedObject.FindProperty( "hitCount" );
+            SerializedProperty hitIntervalSecondsProperty = _activeEffectSerializedObject.FindProperty( "hitIntervalSeconds" );
+            SerializedProperty damageMultiplierProperty = _activeEffectSerializedObject.FindProperty( "damageMultiplier" );
+            int hitCount = hitCountProperty != null ? Mathf.Max( 1, hitCountProperty.intValue ) : 1;
+            float hitIntervalSeconds = hitIntervalSecondsProperty != null ? Mathf.Max( 0.01f, hitIntervalSecondsProperty.floatValue ) : 0.01f;
+            float damageMultiplier = damageMultiplierProperty != null ? Mathf.Max( 0.0f, damageMultiplierProperty.floatValue ) : 0.0f;
+            float totalDurationSeconds = Mathf.Max( 0, hitCount - 1 ) * hitIntervalSeconds;
+            previewData.isValid = true;
+            previewData.shapeType = eSkillRangePreviewShape.NONE;
+            previewData.offset = Vector2.zero;
+            previewData.radius = 0.0f;
+            previewData.title = "Phase Strike";
+            previewData.detail = $"Hits {hitCount}, Interval {hitIntervalSeconds:0.##}s, Duration {totalDurationSeconds:0.##}s, Damage {damageMultiplier * 100.0f:0.##}%";
             return previewData;
         }
     }

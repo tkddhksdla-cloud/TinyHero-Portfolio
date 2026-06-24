@@ -18,6 +18,7 @@ namespace TinyHero.Skill
         [SerializeField] private int flatDamageBonus;
         [SerializeField] [HideInInspector] private int maxTargetCount = DefaultSimultaneousTargetCount;
         [SerializeField] private List<CEnemyDebuffEffectBase> debuffEffectList = new List<CEnemyDebuffEffectBase>();
+        [SerializeField] private List<CEnemyCrowdControlEffectBase> crowdControlEffectList = new List<CEnemyCrowdControlEffectBase>();
 
         private readonly Collider2D[] overlapBuffer = new Collider2D[ DefaultOverlapBufferSize ];
         private readonly HashSet<int> processedMonsterInstanceIdSet = new HashSet<int>();
@@ -58,6 +59,23 @@ namespace TinyHero.Skill
         public List<CEnemyDebuffEffectBase> GetDebuffEffects()
         {
             List<CEnemyDebuffEffectBase> result = debuffEffectList;
+            return result;
+        }
+
+        ///<summary>
+        /// 군중제어 효과 목록 설정
+        ///</summary>
+        public void SetCrowdControlEffects( List<CEnemyCrowdControlEffectBase> _crowdControlEffectList )
+        {
+            crowdControlEffectList = _crowdControlEffectList != null ? _crowdControlEffectList : new List<CEnemyCrowdControlEffectBase>();
+        }
+
+        ///<summary>
+        /// 군중제어 효과 목록 반환
+        ///</summary>
+        public List<CEnemyCrowdControlEffectBase> GetCrowdControlEffects()
+        {
+            List<CEnemyCrowdControlEffectBase> result = crowdControlEffectList;
             return result;
         }
 
@@ -248,11 +266,19 @@ namespace TinyHero.Skill
                     continue;
                 }
 
+                bool isNewSingleHitExecution = monsterObject.TryRegisterSingleHitSkillExecution( _skillContext.GetExecutionId() );
+
+                if ( isNewSingleHitExecution == false )
+                {
+                    continue;
+                }
+
                 bool wasAliveBeforeHit = monsterObject.GetCurrentHp() > 0;
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( _skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( _skillContext, monsterObject.transform );
                 ApplyDebuffs( _skillContext, monsterObject );
+                ApplyCrowdControls( _skillContext, monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( _skillContext, monsterObject, wasAliveBeforeHit );
                 processedTargetCount++;
                 didHitAnyTarget = true;
@@ -276,6 +302,24 @@ namespace TinyHero.Skill
                 }
 
                 debuffEffect.TryApply( _skillContext, _monsterObject );
+            }
+        }
+
+        ///<summary>
+        /// 군중제어 효과 적용
+        ///</summary>
+        private void ApplyCrowdControls( CSkillContext _skillContext, MonsterObject _monsterObject )
+        {
+            for ( int index = 0; index < crowdControlEffectList.Count; index++ )
+            {
+                CEnemyCrowdControlEffectBase crowdControlEffect = crowdControlEffectList[ index ];
+
+                if ( crowdControlEffect == null )
+                {
+                    continue;
+                }
+
+                crowdControlEffect.TryApply( _skillContext, _monsterObject );
             }
         }
 

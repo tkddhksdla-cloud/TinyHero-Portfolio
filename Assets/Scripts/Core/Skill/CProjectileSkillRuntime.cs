@@ -27,6 +27,7 @@ namespace TinyHero.Skill
         private CSkillContext skillContext;
         private CSkillPooledVfxHandle projectileVfxHandle;
         private List<CEnemyDebuffEffectBase> debuffEffectList = new List<CEnemyDebuffEffectBase>();
+        private List<CEnemyCrowdControlEffectBase> crowdControlEffectList = new List<CEnemyCrowdControlEffectBase>();
 
         ///<summary>
         /// 활성 투사체 스킬 런타임 일괄 정리
@@ -52,7 +53,7 @@ namespace TinyHero.Skill
         ///<summary>
         /// 발사체 런타임 초기화
         ///</summary>
-        public void Initialize( CSkillContext _skillContext, Vector2 _moveDirection, float _collisionRadius, float _travelDistance, float _travelSpeed, float _damageMultiplier, int _flatDamageBonus, int _simultaneousTargetCount, bool _destroyOnFirstHit, List<CEnemyDebuffEffectBase> _debuffEffectList )
+        public void Initialize( CSkillContext _skillContext, Vector2 _moveDirection, float _collisionRadius, float _travelDistance, float _travelSpeed, float _damageMultiplier, int _flatDamageBonus, int _simultaneousTargetCount, bool _destroyOnFirstHit, List<CEnemyDebuffEffectBase> _debuffEffectList, List<CEnemyCrowdControlEffectBase> _crowdControlEffectList )
         {
             skillContext = _skillContext;
             moveDirection = _moveDirection.sqrMagnitude > 0.0f ? _moveDirection.normalized : Vector2.right;
@@ -64,6 +65,7 @@ namespace TinyHero.Skill
             simultaneousTargetCount = Mathf.Max( 1, _simultaneousTargetCount );
             destroyOnFirstHit = _destroyOnFirstHit;
             debuffEffectList = _debuffEffectList != null ? _debuffEffectList : new List<CEnemyDebuffEffectBase>();
+            crowdControlEffectList = _crowdControlEffectList != null ? _crowdControlEffectList : new List<CEnemyCrowdControlEffectBase>();
             traveledDistance = 0.0f;
             facingDirection = moveDirection.x < 0.0f ? -1.0f : 1.0f;
             isInitialized = true;
@@ -175,11 +177,19 @@ namespace TinyHero.Skill
                     continue;
                 }
 
+                bool isNewSingleHitExecution = skillContext == null || monsterObject.TryRegisterSingleHitSkillExecution( skillContext.GetExecutionId() );
+
+                if ( isNewSingleHitExecution == false )
+                {
+                    continue;
+                }
+
                 bool wasAliveBeforeHit = monsterObject.GetCurrentHp() > 0;
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( skillContext, monsterObject.transform );
                 ApplyDebuffs( monsterObject );
+                ApplyCrowdControls( monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( skillContext, monsterObject, wasAliveBeforeHit );
                 appliedTargetCount++;
 
@@ -237,6 +247,24 @@ namespace TinyHero.Skill
                 }
 
                 debuffEffect.TryApply( skillContext, _monsterObject );
+            }
+        }
+
+        ///<summary>
+        /// 군중제어 효과 적용
+        ///</summary>
+        private void ApplyCrowdControls( MonsterObject _monsterObject )
+        {
+            for ( int index = 0; index < crowdControlEffectList.Count; index++ )
+            {
+                CEnemyCrowdControlEffectBase crowdControlEffect = crowdControlEffectList[ index ];
+
+                if ( crowdControlEffect == null )
+                {
+                    continue;
+                }
+
+                crowdControlEffect.TryApply( skillContext, _monsterObject );
             }
         }
 

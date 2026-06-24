@@ -18,9 +18,11 @@ namespace TinyHero.Skill
         [SerializeField] private int quickSlotIndex;
         [SerializeField] private float cooldownSeconds = 1.0f;
         [SerializeField] private float mpCost;
+        [SerializeField] private float mpCostReductionPerLevel;
         [SerializeField] private int learnSpCost = 1;
         [SerializeField] private int levelUpSpCost = 1;
         [SerializeField] private int maxSkillLevel = 5;
+        [SerializeField] private bool assignableToQuickSlot = true;
         [SerializeField] private float cooldownReductionPerLevel;
         [SerializeField] private float damageMultiplierBonusPerLevel = 0.1f;
         [SerializeField] private int flatDamageBonusPerLevel;
@@ -140,6 +142,17 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 스킬 레벨 기반 MP 소모량 반환
+        ///</summary>
+        public float GetMpCost( int _skillLevel )
+        {
+            int normalizedSkillLevel = Mathf.Max( 1, _skillLevel );
+            float reducedMpCost = mpCost - mpCostReductionPerLevel * ( normalizedSkillLevel - 1 );
+            float result = Mathf.Max( 0.0f, reducedMpCost );
+            return result;
+        }
+
+        ///<summary>
         /// 스킬 학습 SP 비용 반환
         ///</summary>
         public int GetLearnSpCost()
@@ -163,6 +176,15 @@ namespace TinyHero.Skill
         public int GetMaxSkillLevel()
         {
             int result = Mathf.Max( 1, maxSkillLevel );
+            return result;
+        }
+
+        ///<summary>
+        /// 퀵슬롯 배정 가능 여부 반환
+        ///</summary>
+        public bool IsAssignableToQuickSlot()
+        {
+            bool result = assignableToQuickSlot;
             return result;
         }
 
@@ -461,6 +483,7 @@ namespace TinyHero.Skill
             learnSpCost = Mathf.Max( 0, learnSpCost );
             levelUpSpCost = Mathf.Max( 0, levelUpSpCost );
             maxSkillLevel = Mathf.Max( 1, maxSkillLevel );
+            assignableToQuickSlot = true;
             castLockDurationSeconds = 0.15f;
             castAnimation = ePlayerSkillCastAnimation.ATTACK;
             castAnimationName = "Attack";
@@ -488,6 +511,7 @@ namespace TinyHero.Skill
             learnSpCost = Mathf.Max( 0, learnSpCost );
             levelUpSpCost = Mathf.Max( 0, levelUpSpCost );
             maxSkillLevel = Mathf.Max( 1, maxSkillLevel );
+            assignableToQuickSlot = false;
             castLockDurationSeconds = 0.0f;
             castAnimation = ePlayerSkillCastAnimation.ATTACK;
             castAnimationName = "Attack";
@@ -508,6 +532,22 @@ namespace TinyHero.Skill
             castAnimation = _castAnimation;
             castAnimationName = string.IsNullOrWhiteSpace( _castAnimationName ) ? "Attack" : _castAnimationName.Trim();
             castAnimationSpeed = Mathf.Max( 0.01f, _castAnimationSpeed );
+        }
+
+        ///<summary>
+        /// MP 소모 강화 수치 설정
+        ///</summary>
+        public void ConfigureMpScaling( float _mpCostReductionPerLevel )
+        {
+            mpCostReductionPerLevel = Mathf.Max( 0.0f, _mpCostReductionPerLevel );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 배정 가능 여부 설정
+        ///</summary>
+        public void SetAssignableToQuickSlot( bool _isAssignable )
+        {
+            assignableToQuickSlot = _isAssignable;
         }
 
         ///<summary>

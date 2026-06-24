@@ -154,6 +154,13 @@ namespace TinyHero.Skill
                     continue;
                 }
 
+                bool isNewSingleHitExecution = monsterObject.TryRegisterSingleHitSkillExecution( _skillContext.GetExecutionId() );
+
+                if ( isNewSingleHitExecution == false )
+                {
+                    continue;
+                }
+
                 bool wasAliveBeforeHit = monsterObject.GetCurrentHp() > 0;
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( _skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );

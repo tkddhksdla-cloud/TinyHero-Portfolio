@@ -12,6 +12,8 @@ namespace TinyHero.UI
         private const string DamageFontPrefabResourcePath = "Prefabs/UI/Damage/DamageFontObject";
         private const float DefaultMonsterWorldOffsetY = 0.25f;
         private const float DefaultPlayerWorldOffsetY = 0.45f;
+        private const float DefaultDamageFontRandomOffsetX = 0.14f;
+        private const float DefaultDamageFontRandomOffsetY = 0.08f;
 
         [SerializeField] private RectTransform damageFontRootRectTransform;
         [SerializeField] private Canvas targetCanvas;
@@ -22,6 +24,8 @@ namespace TinyHero.UI
         [SerializeField] private Color playerDamageColor = new Color32( 0x53, 0x97, 0xFF, 0xFF );
         [SerializeField] private float monsterWorldOffsetY = DefaultMonsterWorldOffsetY;
         [SerializeField] private float playerWorldOffsetY = DefaultPlayerWorldOffsetY;
+        [SerializeField] private float damageFontRandomOffsetX = DefaultDamageFontRandomOffsetX;
+        [SerializeField] private float damageFontRandomOffsetY = DefaultDamageFontRandomOffsetY;
 
         private static CDamageFontManager instance;
 
@@ -71,6 +75,7 @@ namespace TinyHero.UI
 
             Vector3 worldPosition = _monsterObject.GetMonsterInfoWorldPosition();
             worldPosition.y += monsterWorldOffsetY;
+            worldPosition = ApplyRandomWorldOffset( worldPosition );
             Color damageColor = _isCritical ? monsterCriticalDamageColor : monsterNormalDamageColor;
             string damageText = _damage.ToString();
             ShowDamageFont( worldPosition, damageText, damageColor );
@@ -88,9 +93,21 @@ namespace TinyHero.UI
 
             Vector3 worldPosition = ResolvePlayerDamageWorldPosition( _targetTransform );
             worldPosition.y += playerWorldOffsetY;
+            worldPosition = ApplyRandomWorldOffset( worldPosition );
             int roundedDamage = Mathf.RoundToInt( _damage );
             string damageText = roundedDamage.ToString();
             ShowDamageFont( worldPosition, damageText, playerDamageColor );
+        }
+
+        ///<summary>
+        /// 데미지 폰트 랜덤 오프셋 적용
+        ///</summary>
+        private Vector3 ApplyRandomWorldOffset( Vector3 _worldPosition )
+        {
+            float randomOffsetX = Random.Range( -Mathf.Abs( damageFontRandomOffsetX ), Mathf.Abs( damageFontRandomOffsetX ) );
+            float randomOffsetY = Random.Range( -Mathf.Abs( damageFontRandomOffsetY ), Mathf.Abs( damageFontRandomOffsetY ) );
+            Vector3 result = _worldPosition + new Vector3( randomOffsetX, randomOffsetY, 0.0f );
+            return result;
         }
 
         ///<summary>

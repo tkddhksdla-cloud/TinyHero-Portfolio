@@ -4,6 +4,7 @@ using TinyHero.Core.Data;
 using TinyHero.Maps;
 using TinyHero.Player;
 using TinyHero.Quest;
+using TinyHero.Skill;
 using TinyHero.UI;
 using UnityEngine;
 
@@ -32,6 +33,14 @@ public sealed class MonsterObject : MonoBehaviour
         DIE
     }
 
+    private enum eMonsterCrowdControlType
+    {
+        NONE,
+        STUN,
+        KNOCKBACK,
+        AIRBORNE
+    }
+
     private const string ContactHitboxObjectName = "ContactHitbox";
     private const string MonsterStatTableResourcePath = "Data/Monster/MonsterStatTableData";
     private const string IdleAnimationStateName = "Idle";
@@ -49,6 +58,8 @@ public sealed class MonsterObject : MonoBehaviour
     private const float DefaultHitStateDuration = 0.5f;
     private const float DefaultDeathFallbackDuration = 5.0f;
     private const float DefaultDeathReleaseNormalizedTime = 0.7f;
+    private const float MinimumCrowdControlDuration = 0.01f;
+    private const int RecentSingleHitSkillExecutionCacheSize = 32;
 
     [SerializeField] private string monsterId = string.Empty;
     [SerializeField] private string monsterName = string.Empty;
@@ -88,11 +99,16 @@ public sealed class MonsterObject : MonoBehaviour
     private float defReductionPercent;
     private float hitStateDuration = DefaultHitStateDuration;
     private float atkReductionDebuffRemaining;
+    private float crowdControlRemaining;
+    private float crowdControlTotalDuration;
+    private float crowdControlAirborneHeight;
     private string mapRuntimePoolKey = string.Empty;
     private string pendingAnimationStateName = string.Empty;
     private Vector3 mapRuntimeSpawnPosition;
     private Vector3 mapRuntimeSpawnRotation;
     private Vector3 mapRuntimeSpawnScale = Vector3.one;
+    private Vector3 crowdControlStartPosition;
+    private Vector3 crowdControlTargetPosition;
     private float playerDetectionRetentionRemaining;
     private bool hasTeleportedInCurrentAction;
     private bool isConfigured;
@@ -100,6 +116,10 @@ public sealed class MonsterObject : MonoBehaviour
     private bool hasRewardGranted;
     private Coroutine deathSequenceRoutine;
     private long atkReductionAmount;
+    private eMonsterCrowdControlType activeCrowdControlType = eMonsterCrowdControlType.NONE;
+    private CSkillPooledVfxHandle crowdControlVfxHandle;
+    private readonly int[] recentSingleHitSkillExecutionIdArray = new int[ RecentSingleHitSkillExecutionCacheSize ];
+    private int recentSingleHitSkillExecutionWriteIndex;
 
     ///<summary>
     /// 컴포넌트 초기화
@@ -153,6 +173,7 @@ public sealed class MonsterObject : MonoBehaviour
         isDeathSequenceStarted = false;
         hasRewardGranted = false;
         ClearSkillDebuffState();
+        ClearCrowdControlState();
         SetBodyColliderEnabled( true );
         SetContactHitboxEnabled( true );
         TryPlayPendingAnimationState();
@@ -167,6 +188,7 @@ public sealed class MonsterObject : MonoBehaviour
         StopDeathSequence();
         StopHorizontalMovement();
         ClearSkillDebuffState();
+        ClearCrowdControlState();
         UnregisterMonsterInfo();
     }
 
@@ -181,6 +203,7 @@ public sealed class MonsterObject : MonoBehaviour
         }
 
         TickSkillDebuffState();
+        TickCrowdControlState();
 
         if ( currentHp <= 0 && currentState != eMonsterState.DIE )
         {
@@ -195,6 +218,12 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void FixedUpdate()
     {
+        if ( IsCrowdControlActive() )
+        {
+            ApplyZeroVelocity();
+            return;
+        }
+
         ApplyDesiredHorizontalVelocity();
     }
 
@@ -458,7 +487,9 @@ public sealed class MonsterObject : MonoBehaviour
 
         if ( playerStatManager != null && expReward > 0 )
         {
-            playerStatManager.AddExp( expReward );
+            float expRewardMultiplier = playerStatManager.GetExpGainMultiplier();
+            float scaledExpReward = expReward * expRewardMultiplier;
+            playerStatManager.AddExp( scaledExpReward );
         }
 
         CQuestManager questManager = _playerController.GetQuestManager();
@@ -610,6 +641,99 @@ public sealed class MonsterObject : MonoBehaviour
     }
 
     ///<summary>
+    /// 기절 군중제어 적용
+    ///</summary>
+    public void ApplyStunCrowdControl( float _durationSeconds, GameObject _vfxPrefab, Vector3 _vfxOffset )
+    {
+        float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+
+        if ( resolvedDurationSeconds <= 0.0f || currentState == eMonsterState.DIE )
+        {
+            return;
+        }
+
+        if ( activeCrowdControlType == eMonsterCrowdControlType.STUN && crowdControlRemaining >= resolvedDurationSeconds )
+        {
+            return;
+        }
+
+        BeginCrowdControl( eMonsterCrowdControlType.STUN, resolvedDurationSeconds, _vfxPrefab, _vfxOffset );
+    }
+
+    ///<summary>
+    /// 넉백 군중제어 적용
+    ///</summary>
+    public void ApplyKnockbackCrowdControl( float _durationSeconds, float _distance, Vector3 _sourceWorldPosition, GameObject _vfxPrefab, Vector3 _vfxOffset )
+    {
+        float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+        float resolvedDistance = Mathf.Max( 0.0f, _distance );
+
+        if ( resolvedDurationSeconds <= 0.0f || resolvedDistance <= 0.0f || currentState == eMonsterState.DIE )
+        {
+            return;
+        }
+
+        BeginCrowdControl( eMonsterCrowdControlType.KNOCKBACK, resolvedDurationSeconds, _vfxPrefab, _vfxOffset );
+        float knockbackDirection = ResolveCrowdControlKnockbackDirection( _sourceWorldPosition );
+        crowdControlTargetPosition = crowdControlStartPosition + new Vector3( knockbackDirection * resolvedDistance, 0.0f, 0.0f );
+    }
+
+    ///<summary>
+    /// 에어본 군중제어 적용
+    ///</summary>
+    public void ApplyAirborneCrowdControl( float _durationSeconds, float _height, GameObject _vfxPrefab, Vector3 _vfxOffset )
+    {
+        float resolvedDurationSeconds = Mathf.Max( 0.0f, _durationSeconds );
+        float resolvedHeight = Mathf.Max( 0.0f, _height );
+
+        if ( resolvedDurationSeconds <= 0.0f || resolvedHeight <= 0.0f || currentState == eMonsterState.DIE )
+        {
+            return;
+        }
+
+        if ( activeCrowdControlType == eMonsterCrowdControlType.AIRBORNE && IsCrowdControlActive() )
+        {
+            return;
+        }
+
+        BeginCrowdControl( eMonsterCrowdControlType.AIRBORNE, resolvedDurationSeconds, _vfxPrefab, _vfxOffset );
+        crowdControlAirborneHeight = resolvedHeight;
+    }
+
+    ///<summary>
+    /// 단발 스킬 피격 등록 시도
+    ///</summary>
+    public bool TryRegisterSingleHitSkillExecution( int _executionId )
+    {
+        if ( _executionId <= 0 )
+        {
+            return true;
+        }
+
+        for ( int index = 0; index < recentSingleHitSkillExecutionIdArray.Length; index++ )
+        {
+            int cachedExecutionId = recentSingleHitSkillExecutionIdArray[ index ];
+
+            if ( cachedExecutionId != _executionId )
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        recentSingleHitSkillExecutionIdArray[ recentSingleHitSkillExecutionWriteIndex ] = _executionId;
+        recentSingleHitSkillExecutionWriteIndex++;
+
+        if ( recentSingleHitSkillExecutionWriteIndex >= recentSingleHitSkillExecutionIdArray.Length )
+        {
+            recentSingleHitSkillExecutionWriteIndex = 0;
+        }
+
+        return true;
+    }
+
+    ///<summary>
     /// 몬스터 정보 UI 새로고침 요청
     ///</summary>
     ///<summary>
@@ -739,6 +863,258 @@ public sealed class MonsterObject : MonoBehaviour
     }
 
     ///<summary>
+    /// 군중제어 상태 갱신
+    ///</summary>
+    private void TickCrowdControlState()
+    {
+        if ( IsCrowdControlActive() == false )
+        {
+            return;
+        }
+
+        if ( currentState == eMonsterState.DIE )
+        {
+            ClearCrowdControlState();
+            return;
+        }
+
+        crowdControlRemaining -= Time.deltaTime;
+
+        if ( crowdControlRemaining < 0.0f )
+        {
+            crowdControlRemaining = 0.0f;
+        }
+
+        UpdateCrowdControlMotion();
+
+        if ( crowdControlRemaining > 0.0f )
+        {
+            return;
+        }
+
+        CompleteCrowdControl();
+    }
+
+    ///<summary>
+    /// 군중제어 상태 시작
+    ///</summary>
+    private void BeginCrowdControl( eMonsterCrowdControlType _crowdControlType, float _durationSeconds, GameObject _vfxPrefab, Vector3 _vfxOffset )
+    {
+        float resolvedDurationSeconds = Mathf.Max( MinimumCrowdControlDuration, _durationSeconds );
+        activeCrowdControlType = _crowdControlType;
+        crowdControlRemaining = resolvedDurationSeconds;
+        crowdControlTotalDuration = resolvedDurationSeconds;
+        crowdControlAirborneHeight = 0.0f;
+        crowdControlStartPosition = transform.position;
+        crowdControlTargetPosition = crowdControlStartPosition;
+        InterruptBehaviorForCrowdControl();
+        EnterCrowdControlHitState();
+        ApplyZeroVelocity();
+        RefreshCrowdControlVfx( _vfxPrefab, _vfxOffset, resolvedDurationSeconds );
+    }
+
+    ///<summary>
+    /// 군중제어 동작 종료
+    ///</summary>
+    private void CompleteCrowdControl()
+    {
+        ClearCrowdControlState();
+
+        if ( currentHp <= 0 || currentState != eMonsterState.HIT )
+        {
+            return;
+        }
+
+        ChangeState( eMonsterState.IDLE );
+    }
+
+    ///<summary>
+    /// 군중제어 상태 초기화
+    ///</summary>
+    private void ClearCrowdControlState()
+    {
+        activeCrowdControlType = eMonsterCrowdControlType.NONE;
+        crowdControlRemaining = 0.0f;
+        crowdControlTotalDuration = 0.0f;
+        crowdControlAirborneHeight = 0.0f;
+        crowdControlStartPosition = Vector3.zero;
+        crowdControlTargetPosition = Vector3.zero;
+        ReturnCrowdControlVfx();
+    }
+
+    ///<summary>
+    /// 군중제어 활성 여부 반환
+    ///</summary>
+    private bool IsCrowdControlActive()
+    {
+        bool result = activeCrowdControlType != eMonsterCrowdControlType.NONE && crowdControlRemaining > 0.0f;
+        return result;
+    }
+
+    ///<summary>
+    /// 군중제어 동작 갱신
+    ///</summary>
+    private void UpdateCrowdControlMotion()
+    {
+        StopHorizontalMovement();
+        ApplyZeroVelocity();
+
+        switch ( activeCrowdControlType )
+        {
+            case eMonsterCrowdControlType.STUN:
+                ApplyCrowdControlPosition( crowdControlStartPosition );
+                break;
+
+            case eMonsterCrowdControlType.KNOCKBACK:
+                ApplyKnockbackCrowdControlMotion();
+                break;
+
+            case eMonsterCrowdControlType.AIRBORNE:
+                ApplyAirborneCrowdControlMotion();
+                break;
+        }
+    }
+
+    ///<summary>
+    /// 넉백 군중제어 위치 갱신
+    ///</summary>
+    private void ApplyKnockbackCrowdControlMotion()
+    {
+        float progress = ResolveCrowdControlProgress();
+        Vector3 nextPosition = Vector3.Lerp( crowdControlStartPosition, crowdControlTargetPosition, progress );
+        ApplyCrowdControlPosition( nextPosition );
+    }
+
+    ///<summary>
+    /// 에어본 군중제어 위치 갱신
+    ///</summary>
+    private void ApplyAirborneCrowdControlMotion()
+    {
+        float progress = ResolveCrowdControlProgress();
+        float verticalOffset = Mathf.Sin( progress * Mathf.PI ) * crowdControlAirborneHeight;
+        Vector3 nextPosition = crowdControlStartPosition + new Vector3( 0.0f, verticalOffset, 0.0f );
+        ApplyCrowdControlPosition( nextPosition );
+    }
+
+    ///<summary>
+    /// 군중제어 진행률 계산
+    ///</summary>
+    private float ResolveCrowdControlProgress()
+    {
+        if ( crowdControlTotalDuration <= 0.0f )
+        {
+            return 1.0f;
+        }
+
+        float progress = 1.0f - ( crowdControlRemaining / crowdControlTotalDuration );
+        float result = Mathf.Clamp01( progress );
+        return result;
+    }
+
+    ///<summary>
+    /// 군중제어 위치 반영
+    ///</summary>
+    private void ApplyCrowdControlPosition( Vector3 _worldPosition )
+    {
+        if ( targetRigidbody != null )
+        {
+            targetRigidbody.position = _worldPosition;
+        }
+
+        transform.position = _worldPosition;
+    }
+
+    ///<summary>
+    /// 군중제어 넉백 방향 계산
+    ///</summary>
+    private float ResolveCrowdControlKnockbackDirection( Vector3 _sourceWorldPosition )
+    {
+        float direction = transform.position.x - _sourceWorldPosition.x;
+
+        if ( Mathf.Approximately( direction, 0.0f ) )
+        {
+            bool isFacingRight = ResolveFacingRight();
+            float fallbackDirection = isFacingRight ? 1.0f : -1.0f;
+            return fallbackDirection;
+        }
+
+        float result = direction > 0.0f ? 1.0f : -1.0f;
+        return result;
+    }
+
+    ///<summary>
+    /// 군중제어 피격 상태 진입
+    ///</summary>
+    private void EnterCrowdControlHitState()
+    {
+        if ( currentState == eMonsterState.DIE )
+        {
+            return;
+        }
+
+        if ( currentState == eMonsterState.HIT )
+        {
+            RestartHitState();
+            return;
+        }
+
+        ChangeState( eMonsterState.HIT );
+    }
+
+    ///<summary>
+    /// 군중제어용 행동 중단
+    ///</summary>
+    private void InterruptBehaviorForCrowdControl()
+    {
+        FinishCurrentAction();
+        StopHorizontalMovement();
+    }
+
+    ///<summary>
+    /// 군중제어 이펙트 갱신
+    ///</summary>
+    private void RefreshCrowdControlVfx( GameObject _vfxPrefab, Vector3 _vfxOffset, float _durationSeconds )
+    {
+        ReturnCrowdControlVfx();
+
+        if ( _vfxPrefab == null )
+        {
+            return;
+        }
+
+        Vector3 spawnWorldPosition = transform.position + _vfxOffset;
+        crowdControlVfxHandle = CSkillVfxPoolManager.Spawn( _vfxPrefab, spawnWorldPosition, transform, _durationSeconds );
+    }
+
+    ///<summary>
+    /// 군중제어 이펙트 반환
+    ///</summary>
+    private void ReturnCrowdControlVfx()
+    {
+        if ( crowdControlVfxHandle == null )
+        {
+            return;
+        }
+
+        crowdControlVfxHandle.ForceReturn();
+        crowdControlVfxHandle = null;
+    }
+
+    ///<summary>
+    /// 강제 정지 속도 반영
+    ///</summary>
+    private void ApplyZeroVelocity()
+    {
+        if ( targetRigidbody == null )
+        {
+            return;
+        }
+
+        targetRigidbody.linearVelocity = Vector2.zero;
+        targetRigidbody.angularVelocity = 0.0f;
+    }
+
+    ///<summary>
     /// 상태 머신 갱신
     ///</summary>
     private void UpdateStateMachine()
@@ -858,6 +1234,7 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void EnterDieState()
     {
+        ClearCrowdControlState();
         StopHorizontalMovement();
         SetContactHitboxEnabled( false );
 
@@ -922,6 +1299,12 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void UpdateHitState()
     {
+        if ( IsCrowdControlActive() )
+        {
+            StopHorizontalMovement();
+            return;
+        }
+
         if ( currentStateElapsedTime < hitStateDuration )
         {
             return;

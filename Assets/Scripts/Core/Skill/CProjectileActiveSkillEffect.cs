@@ -18,6 +18,7 @@ namespace TinyHero.Skill
         [SerializeField] private bool destroyOnFirstHit = true;
         [SerializeField] [HideInInspector] private int maxTargetCount = DefaultSimultaneousTargetCount;
         [SerializeField] private List<CEnemyDebuffEffectBase> debuffEffectList = new List<CEnemyDebuffEffectBase>();
+        [SerializeField] private List<CEnemyCrowdControlEffectBase> crowdControlEffectList = new List<CEnemyCrowdControlEffectBase>();
 
         ///<summary>
         /// 발사체 스킬 효과 데이터 구성
@@ -57,6 +58,23 @@ namespace TinyHero.Skill
         public List<CEnemyDebuffEffectBase> GetDebuffEffects()
         {
             List<CEnemyDebuffEffectBase> result = debuffEffectList;
+            return result;
+        }
+
+        ///<summary>
+        /// 군중제어 효과 목록 설정
+        ///</summary>
+        public void SetCrowdControlEffects( List<CEnemyCrowdControlEffectBase> _crowdControlEffectList )
+        {
+            crowdControlEffectList = _crowdControlEffectList != null ? _crowdControlEffectList : new List<CEnemyCrowdControlEffectBase>();
+        }
+
+        ///<summary>
+        /// 군중제어 효과 목록 반환
+        ///</summary>
+        public List<CEnemyCrowdControlEffectBase> GetCrowdControlEffects()
+        {
+            List<CEnemyCrowdControlEffectBase> result = crowdControlEffectList;
             return result;
         }
 
@@ -151,7 +169,8 @@ namespace TinyHero.Skill
                 flatDamageBonus,
                 GetSimultaneousTargetCount(),
                 destroyOnFirstHit,
-                debuffEffectList
+                debuffEffectList,
+                crowdControlEffectList
             );
             return true;
         }

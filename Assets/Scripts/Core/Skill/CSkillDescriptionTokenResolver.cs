@@ -15,10 +15,17 @@ namespace TinyHero.Skill
             "damage",
             "cooldown",
             "duration",
+            "hitCount",
+            "hitInterval",
             "tickInterval",
             "atkReduction",
             "defReduction",
             "debuffDuration",
+            "ccChance",
+            "ccDuration",
+            "ccType",
+            "knockbackDistance",
+            "airborneHeight",
             "finalAttackPercent",
             "invincibleDuration",
             "defense",
@@ -64,6 +71,12 @@ namespace TinyHero.Skill
                 case "duration":
                     return TryResolveDurationValue( _skillDefinition, normalizedSkillLevel, out _resolvedValue );
 
+                case "hitCount":
+                    return TryResolveHitCountValue( _skillDefinition, out _resolvedValue );
+
+                case "hitInterval":
+                    return TryResolveHitIntervalValue( _skillDefinition, out _resolvedValue );
+
                 case "tickInterval":
                     return TryResolveTickIntervalValue( _skillDefinition, out _resolvedValue );
 
@@ -76,6 +89,21 @@ namespace TinyHero.Skill
                 case "debuffDuration":
                     return TryResolveDebuffDurationValue( _skillDefinition, out _resolvedValue );
 
+                case "ccChance":
+                    return TryResolveCrowdControlChanceValue( _skillDefinition, out _resolvedValue );
+
+                case "ccDuration":
+                    return TryResolveCrowdControlDurationValue( _skillDefinition, out _resolvedValue );
+
+                case "ccType":
+                    return TryResolveCrowdControlTypeValue( _skillDefinition, out _resolvedValue );
+
+                case "knockbackDistance":
+                    return TryResolveKnockbackDistanceValue( _skillDefinition, out _resolvedValue );
+
+                case "airborneHeight":
+                    return TryResolveAirborneHeightValue( _skillDefinition, out _resolvedValue );
+
                 case "finalAttackPercent":
                     return TryResolveFinalAttackPercentValue( _skillDefinition, out _resolvedValue );
 
@@ -86,7 +114,7 @@ namespace TinyHero.Skill
                     return TryResolvePassiveStatValue( _skillDefinition, normalizedSkillLevel, ePlayerStatType.DEF, false, out _resolvedValue );
 
                 case "mpCost":
-                    _resolvedValue = FormatFloatValue( _skillDefinition.GetMpCost() );
+                    _resolvedValue = FormatFloatValue( _skillDefinition.GetMpCost( normalizedSkillLevel ) );
                     return true;
 
                 case "learnSpCost":
@@ -193,6 +221,114 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 군중제어 발동 확률 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveCrowdControlChanceValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( TryResolveCrowdControlEffect( _skillDefinition, out CEnemyCrowdControlEffectBase crowdControlEffect ) == false )
+            {
+                return false;
+            }
+
+            float chancePercent = crowdControlEffect.GetApplyChance() * 100.0f;
+            _resolvedValue = FormatFloatValue( chancePercent );
+            return true;
+        }
+
+        ///<summary>
+        /// 군중제어 지속 시간 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveCrowdControlDurationValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( TryResolveCrowdControlEffect( _skillDefinition, out CEnemyCrowdControlEffectBase crowdControlEffect ) == false )
+            {
+                return false;
+            }
+
+            _resolvedValue = FormatFloatValue( crowdControlEffect.GetDurationSeconds() );
+            return true;
+        }
+
+        ///<summary>
+        /// 군중제어 종류 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveCrowdControlTypeValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( TryResolveCrowdControlEffect( _skillDefinition, out CEnemyCrowdControlEffectBase crowdControlEffect ) == false )
+            {
+                return false;
+            }
+
+            if ( crowdControlEffect is CStunCrowdControlEffect )
+            {
+                _resolvedValue = "기절";
+                return true;
+            }
+
+            if ( crowdControlEffect is CKnockbackCrowdControlEffect )
+            {
+                _resolvedValue = "넉백";
+                return true;
+            }
+
+            if ( crowdControlEffect is CAirborneCrowdControlEffect )
+            {
+                _resolvedValue = "에어본";
+                return true;
+            }
+
+            return false;
+        }
+
+        ///<summary>
+        /// 넉백 거리 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveKnockbackDistanceValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( TryResolveCrowdControlEffect( _skillDefinition, out CEnemyCrowdControlEffectBase crowdControlEffect ) == false )
+            {
+                return false;
+            }
+
+            if ( crowdControlEffect is CKnockbackCrowdControlEffect knockbackCrowdControlEffect == false )
+            {
+                return false;
+            }
+
+            _resolvedValue = FormatFloatValue( knockbackCrowdControlEffect.GetDistance() );
+            return true;
+        }
+
+        ///<summary>
+        /// 에어본 높이 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveAirborneHeightValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( TryResolveCrowdControlEffect( _skillDefinition, out CEnemyCrowdControlEffectBase crowdControlEffect ) == false )
+            {
+                return false;
+            }
+
+            if ( crowdControlEffect is CAirborneCrowdControlEffect airborneCrowdControlEffect == false )
+            {
+                return false;
+            }
+
+            _resolvedValue = FormatFloatValue( airborneCrowdControlEffect.GetHeight() );
+            return true;
+        }
+
+        ///<summary>
         /// 지속 시간 토큰 값 반환
         ///</summary>
         private static bool TryResolveDurationValue( CSkillDefinition _skillDefinition, int _skillLevel, out string _resolvedValue )
@@ -215,6 +351,12 @@ namespace TinyHero.Skill
             if ( activeSkillEffect is CCloneReplayActiveSkillEffect cloneReplayActiveSkillEffect )
             {
                 _resolvedValue = FormatFloatValue( cloneReplayActiveSkillEffect.GetDurationSeconds() );
+                return true;
+            }
+
+            if ( activeSkillEffect is CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect )
+            {
+                _resolvedValue = FormatFloatValue( phaseStrikeActiveSkillEffect.GetDurationSeconds() );
                 return true;
             }
 
@@ -241,6 +383,52 @@ namespace TinyHero.Skill
             }
 
             return false;
+        }
+
+        ///<summary>
+        /// 페이즈 스트라이크 타격 횟수 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveHitCountValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( _skillDefinition == null )
+            {
+                return false;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+
+            if ( activeSkillEffect is CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect == false )
+            {
+                return false;
+            }
+
+            _resolvedValue = phaseStrikeActiveSkillEffect.GetHitCount().ToString();
+            return true;
+        }
+
+        ///<summary>
+        /// 페이즈 스트라이크 타격 간격 토큰 값 반환
+        ///</summary>
+        private static bool TryResolveHitIntervalValue( CSkillDefinition _skillDefinition, out string _resolvedValue )
+        {
+            _resolvedValue = UnresolvedValueText;
+
+            if ( _skillDefinition == null )
+            {
+                return false;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+
+            if ( activeSkillEffect is CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect == false )
+            {
+                return false;
+            }
+
+            _resolvedValue = FormatFloatValue( phaseStrikeActiveSkillEffect.GetHitIntervalSeconds() );
+            return true;
         }
 
         ///<summary>
@@ -445,6 +633,12 @@ namespace TinyHero.Skill
                 return true;
             }
 
+            if ( activeSkillEffect is CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect )
+            {
+                _baseDamageMultiplier = phaseStrikeActiveSkillEffect.GetDamageMultiplier();
+                return true;
+            }
+
             CSkillActionBase activeAction = _skillDefinition.GetActiveAction();
 
             if ( activeAction is CSkillAreaDamageAction skillAreaDamageAction )
@@ -483,6 +677,10 @@ namespace TinyHero.Skill
             {
                 debuffEffectList = projectileActiveSkillEffect.GetDebuffEffects();
             }
+            else if ( activeSkillEffect is CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect )
+            {
+                debuffEffectList = phaseStrikeActiveSkillEffect.GetDebuffEffects();
+            }
 
             if ( debuffEffectList == null || debuffEffectList.Count == 0 )
             {
@@ -499,6 +697,59 @@ namespace TinyHero.Skill
                 }
 
                 _debuffEffect = debuffEffect;
+                return true;
+            }
+
+            return false;
+        }
+
+        ///<summary>
+        /// 스킬 군중제어 효과 결정
+        ///</summary>
+        private static bool TryResolveCrowdControlEffect( CSkillDefinition _skillDefinition, out CEnemyCrowdControlEffectBase _crowdControlEffect )
+        {
+            _crowdControlEffect = null;
+
+            if ( _skillDefinition == null )
+            {
+                return false;
+            }
+
+            CActiveSkillEffectBase activeSkillEffect = _skillDefinition.GetActiveSkillEffect();
+            List<CEnemyCrowdControlEffectBase> crowdControlEffectList = null;
+
+            if ( activeSkillEffect is CInstantActiveSkillEffect instantActiveSkillEffect )
+            {
+                crowdControlEffectList = instantActiveSkillEffect.GetCrowdControlEffects();
+            }
+            else if ( activeSkillEffect is CPlaceActiveSkillEffect placeActiveSkillEffect )
+            {
+                crowdControlEffectList = placeActiveSkillEffect.GetCrowdControlEffects();
+            }
+            else if ( activeSkillEffect is CProjectileActiveSkillEffect projectileActiveSkillEffect )
+            {
+                crowdControlEffectList = projectileActiveSkillEffect.GetCrowdControlEffects();
+            }
+            else if ( activeSkillEffect is CPhaseStrikeActiveSkillEffect phaseStrikeActiveSkillEffect )
+            {
+                crowdControlEffectList = phaseStrikeActiveSkillEffect.GetCrowdControlEffects();
+            }
+
+            if ( crowdControlEffectList == null || crowdControlEffectList.Count == 0 )
+            {
+                return false;
+            }
+
+            for ( int index = 0; index < crowdControlEffectList.Count; index++ )
+            {
+                CEnemyCrowdControlEffectBase crowdControlEffect = crowdControlEffectList[ index ];
+
+                if ( crowdControlEffect == null )
+                {
+                    continue;
+                }
+
+                _crowdControlEffect = crowdControlEffect;
                 return true;
             }
 

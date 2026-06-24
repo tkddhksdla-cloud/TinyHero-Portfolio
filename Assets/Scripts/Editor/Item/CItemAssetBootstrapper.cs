@@ -23,15 +23,17 @@ namespace TinyHero.Tools
         private const string QuestItemIconFolderPath = "Assets/Images/Icons/QUEST_ITEM";
         private const string FallbackIconAssetPath = "Assets/Images/Icons/Icon_Item_Sample.png";
         private const int IconTextureSize = 128;
+        private const int CubeMaxStackCount = 99999;
 
         ///<summary>
-        /// 샘플 아이템 에셋 생성 실행
+        /// 샘플 아이템 에셋 생성
         ///</summary>
         public static string GenerateSampleItemAssets()
         {
             EnsureFolderStructure();
             Sprite equipmentIcon = CreateColorIcon( $"{EquipmentIconFolderPath}/ITEM_EQUIPMENT_BRONZE_SWORD.png", new Color32( 120, 176, 255, 255 ) );
             Sprite consumableIcon = CreateColorIcon( $"{ConsumableIconFolderPath}/ITEM_CONSUMABLE_APPLE.png", new Color32( 118, 214, 124, 255 ) );
+            Sprite cubeIcon = CreateColorIcon( $"{ConsumableIconFolderPath}/ITEM_CONSUMABLE_CUBE.png", new Color32( 124, 213, 255, 255 ) );
             Sprite currencyIcon = CreateColorIcon( $"{CurrencyIconFolderPath}/GOLD.png", new Color32( 255, 210, 90, 255 ) );
             Sprite materialIcon = CreateColorIcon( $"{MaterialIconFolderPath}/ITEM_MATERIAL_SLIME_GEL.png", new Color32( 172, 133, 98, 255 ) );
             Sprite questItemIcon = CreateColorIcon( $"{QuestItemIconFolderPath}/ITEM_QUEST_ANCIENT_SEAL.png", new Color32( 235, 123, 123, 255 ) );
@@ -41,8 +43,9 @@ namespace TinyHero.Tools
             CPlayerStatRuntimeData bronzeSwordStatBonus = new CPlayerStatRuntimeData();
             bronzeSwordStatBonus.SetStatValue( ePlayerStatType.ATK, 5.0f );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Equipment_BronzeSword.asset", "ITEM_EQUIPMENT_BRONZE_SWORD", "Bronze Sword", eItemType.EQUIPMENT, "기본 장비 샘플 검.", equipmentIcon, false, 1, eEquipmentType.WEAPON, bronzeSwordStatBonus, PartsType.Sword, 0 ) );
-            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Consumable_Apple.asset", "ITEM_CONSUMABLE_APPLE", "Apple", eItemType.CONSUMABLE, "기본 소모품 샘플.", consumableIcon, true, 99 ) );
-            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Currency_Gold.asset", "GOLD", "Gold", eItemType.CURRENCY, "기본 화폐 샘플.", currencyIcon, true, 999999 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Consumable_Apple.asset", "ITEM_CONSUMABLE_APPLE", "Apple", eItemType.CONSUMABLE, "기본 소비 아이템 샘플.", consumableIcon, true, 99 ) );
+            createdItemDefinitionList.Add( CreateOrUpdateConsumableItemDefinition( $"{DefinitionFolderPath}/Item_Consumable_Cube.asset", "ITEM_CONSUMABLE_CUBE", "Mystic Cube", "장착 장비의 잠재능력을 재설정하는 샘플 큐브.", cubeIcon, eConsumableType.CUBE, string.Empty, CubeMaxStackCount ) );
+            createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Currency_Gold.asset", "GOLD", "Gold", eItemType.CURRENCY, "기본 골드 샘플.", currencyIcon, true, 999999 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Material_SlimeGel.asset", "ITEM_MATERIAL_SLIME_GEL", "Slime Gel", eItemType.MATERIAL, "기본 재료 샘플.", materialIcon, true, 999 ) );
             createdItemDefinitionList.Add( CreateOrUpdateItemDefinition( $"{DefinitionFolderPath}/Item_Quest_AncientSeal.asset", "ITEM_QUEST_ANCIENT_SEAL", "Ancient Seal", eItemType.QUEST_ITEM, "기본 퀘스트 아이템 샘플.", questItemIcon, true, 99 ) );
             AssetDatabase.SaveAssets();
@@ -106,7 +109,7 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 아이템 정의 생성 또는 갱신
+        /// 장비 아이템 정의 생성 또는 갱신
         ///</summary>
         private static CItemDefinition CreateOrUpdateItemDefinition( string _assetPath, string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
         {
@@ -124,7 +127,25 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 단색 아이콘 스프라이트 생성
+        /// 소비 아이템 정의 생성 또는 갱신
+        ///</summary>
+        private static CItemDefinition CreateOrUpdateConsumableItemDefinition( string _assetPath, string _itemId, string _itemName, string _description, Sprite _iconSprite, eConsumableType _consumableType, string _linkedSkillId, int _maxStackCount )
+        {
+            CItemDefinition itemDefinition = AssetDatabase.LoadAssetAtPath<CItemDefinition>( _assetPath );
+
+            if ( itemDefinition == null )
+            {
+                itemDefinition = ScriptableObject.CreateInstance<CItemDefinition>();
+                AssetDatabase.CreateAsset( itemDefinition, _assetPath );
+            }
+
+            itemDefinition.Configure( _itemId, _itemName, eItemType.CONSUMABLE, _description, _iconSprite, true, _maxStackCount, eEquipmentType.NONE, _consumableType, _linkedSkillId, null, PartsType.Chest, -1 );
+            EditorUtility.SetDirty( itemDefinition );
+            return itemDefinition;
+        }
+
+        ///<summary>
+        /// 단색 임시 아이콘 스프라이트 생성
         ///</summary>
         private static Sprite CreateColorIcon( string _assetPath, Color32 _color )
         {
