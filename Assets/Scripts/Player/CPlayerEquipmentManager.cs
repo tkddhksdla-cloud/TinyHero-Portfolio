@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace TinyHero.Player
     {
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
         [SerializeField] private string itemId = string.Empty;
+        [SerializeField] private CEquipmentPotentialData equipmentPotentialData = new CEquipmentPotentialData();
 
         ///<summary>
         /// 장비 슬롯 타입 반환
@@ -41,11 +43,30 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 장비 잠재 데이터 반환
+        ///</summary>
+        public CEquipmentPotentialData GetEquipmentPotentialData()
+        {
+            EnsurePotentialData();
+            CEquipmentPotentialData result = equipmentPotentialData;
+            return result;
+        }
+
+        ///<summary>
         /// 장착 아이템 ID 설정
         ///</summary>
         public void SetItemId( string _itemId )
         {
             itemId = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
+        }
+
+        ///<summary>
+        /// 장비 잠재 데이터 설정
+        ///</summary>
+        public void SetEquipmentPotentialData( CEquipmentPotentialData _equipmentPotentialData )
+        {
+            EnsurePotentialData();
+            equipmentPotentialData.CopyFrom( _equipmentPotentialData );
         }
 
         ///<summary>
@@ -63,6 +84,49 @@ namespace TinyHero.Player
         public void Clear()
         {
             itemId = string.Empty;
+            EnsurePotentialData();
+            equipmentPotentialData.Clear();
+        }
+
+        ///<summary>
+        /// 장비 슬롯 데이터 복사본 생성
+        ///</summary>
+        public CPlayerEquipmentSlotEntryData CreateCopy()
+        {
+            CPlayerEquipmentSlotEntryData copiedSlotEntryData = new CPlayerEquipmentSlotEntryData();
+            copiedSlotEntryData.SetEquipmentType( equipmentType );
+            copiedSlotEntryData.SetItemId( itemId );
+            copiedSlotEntryData.SetEquipmentPotentialData( equipmentPotentialData );
+            return copiedSlotEntryData;
+        }
+
+        ///<summary>
+        /// 장비 슬롯 데이터 복사 반영
+        ///</summary>
+        public void CopyFrom( CPlayerEquipmentSlotEntryData _sourceSlotEntryData )
+        {
+            if ( _sourceSlotEntryData == null )
+            {
+                Clear();
+                return;
+            }
+
+            equipmentType = _sourceSlotEntryData.GetEquipmentType();
+            itemId = _sourceSlotEntryData.GetItemId();
+            SetEquipmentPotentialData( _sourceSlotEntryData.GetEquipmentPotentialData() );
+        }
+
+        ///<summary>
+        /// 잠재 데이터 초기화 보장
+        ///</summary>
+        private void EnsurePotentialData()
+        {
+            if ( equipmentPotentialData != null )
+            {
+                return;
+            }
+
+            equipmentPotentialData = new CEquipmentPotentialData();
         }
     }
 
@@ -75,6 +139,8 @@ namespace TinyHero.Player
         [SerializeField] private List<CPlayerEquipmentSlotEntryData> equipmentSlotEntryList = new List<CPlayerEquipmentSlotEntryData>();
 
         private readonly CPlayerStatRuntimeData aggregatedEquipmentStatBonus = new CPlayerStatRuntimeData();
+        private readonly CPlayerStatRuntimeData aggregatedEquipmentPercentStatBonus = new CPlayerStatRuntimeData();
+        private readonly CPlayerModifierRuntimeData aggregatedEquipmentModifierBonus = new CPlayerModifierRuntimeData();
 
         public event Action<CPlayerEquipmentManager> OnEquipmentChanged;
 
@@ -151,6 +217,22 @@ namespace TinyHero.Player
             }
 
             string result = slotEntryData.GetItemId();
+            return result;
+        }
+
+        ///<summary>
+        /// 장착 잠재 데이터 반환
+        ///</summary>
+        public CEquipmentPotentialData GetEquippedPotentialData( eEquipmentType _equipmentType )
+        {
+            CPlayerEquipmentSlotEntryData slotEntryData = GetEquipmentSlotEntryData( _equipmentType );
+
+            if ( slotEntryData == null || slotEntryData.HasItem() == false )
+            {
+                return null;
+            }
+
+            CEquipmentPotentialData result = slotEntryData.GetEquipmentPotentialData();
             return result;
         }
 
@@ -244,6 +326,14 @@ namespace TinyHero.Player
                 return false;
             }
 
+            CInventoryItemEntryData sourceEntryData = _inventoryManager.GetItemEntryData( _slotIndex );
+
+            if ( sourceEntryData == null || sourceEntryData.IsEmpty() )
+            {
+                return false;
+            }
+
+            CInventoryItemEntryData copiedSourceEntryData = sourceEntryData.CreateCopy();
             CItemDefinition itemDefinition = _inventoryManager.GetItemDefinitionAtSlot( _slotIndex );
 
             if ( itemDefinition == null || itemDefinition.IsEquipmentTypeMatched( _equipmentType ) == false )
@@ -265,6 +355,7 @@ namespace TinyHero.Player
             {
                 replacementEntryData.SetItemId( previouslyEquippedItemId );
                 replacementEntryData.SetQuantity( 1 );
+                replacementEntryData.SetEquipmentPotentialData( slotEntryData.GetEquipmentPotentialData() );
             }
 
             bool didReplaceInventorySlot = _inventoryManager.TryReplaceSlotItem( _slotIndex, replacementEntryData );
@@ -274,7 +365,8 @@ namespace TinyHero.Player
                 return false;
             }
 
-            slotEntryData.SetItemId( itemDefinition.GetItemId() );
+            slotEntryData.SetItemId( copiedSourceEntryData.GetItemId() );
+            slotEntryData.SetEquipmentPotentialData( copiedSourceEntryData.GetEquipmentPotentialData() );
             RefreshEquipmentState();
             return true;
         }
@@ -297,7 +389,11 @@ namespace TinyHero.Player
             }
 
             string equippedItemId = slotEntryData.GetItemId();
-            bool didAddItem = _inventoryManager.TryAddItemById( equippedItemId, 1 );
+            CInventoryItemEntryData copiedEntryData = new CInventoryItemEntryData();
+            copiedEntryData.SetItemId( equippedItemId );
+            copiedEntryData.SetQuantity( 1 );
+            copiedEntryData.SetEquipmentPotentialData( slotEntryData.GetEquipmentPotentialData() );
+            bool didAddItem = _inventoryManager.TryAddItemEntry( copiedEntryData );
 
             if ( didAddItem == false )
             {
@@ -310,12 +406,140 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 장착 장비 잠재 리롤 처리
+        ///</summary>
+        public bool TryRollEquippedPotential( eEquipmentType _equipmentType )
+        {
+            CPlayerEquipmentSlotEntryData slotEntryData = GetEquipmentSlotEntryData( _equipmentType );
+
+            if ( slotEntryData == null || slotEntryData.HasItem() == false )
+            {
+                return false;
+            }
+
+            bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( slotEntryData.GetItemId(), out CItemDefinition itemDefinition );
+
+            if ( hasDefinition == false || itemDefinition == null || itemDefinition.IsEquipmentItem() == false )
+            {
+                return false;
+            }
+
+            CEquipmentPotentialData equipmentPotentialData = slotEntryData.GetEquipmentPotentialData();
+            bool didRoll = CEquipmentPotentialRollUtility.TryRollPotential( itemDefinition.GetEquipmentType(), equipmentPotentialData );
+
+            if ( didRoll == false )
+            {
+                return false;
+            }
+
+            RefreshEquipmentState();
+            return true;
+        }
+
+        ///<summary>
+        /// 장착 장비 잠재 데이터 반영
+        ///</summary>
+        public bool TrySetEquippedPotentialData( eEquipmentType _equipmentType, CEquipmentPotentialData _equipmentPotentialData )
+        {
+            CPlayerEquipmentSlotEntryData slotEntryData = GetEquipmentSlotEntryData( _equipmentType );
+
+            if ( slotEntryData == null || slotEntryData.HasItem() == false )
+            {
+                return false;
+            }
+
+            slotEntryData.SetEquipmentPotentialData( _equipmentPotentialData );
+            RefreshEquipmentState();
+            return true;
+        }
+
+        ///<summary>
         /// 합산 장비 스탯 반환
         ///</summary>
         public CPlayerStatRuntimeData GetAggregatedEquipmentStatBonus()
         {
             CPlayerStatRuntimeData result = aggregatedEquipmentStatBonus;
             return result;
+        }
+
+        ///<summary>
+        /// 합산 장비 특수 보너스 반환
+        ///</summary>
+        public CPlayerModifierRuntimeData GetAggregatedEquipmentModifierBonus()
+        {
+            CPlayerModifierRuntimeData result = aggregatedEquipmentModifierBonus;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 장비 저장 데이터 생성
+        ///</summary>
+        public CPlayerEquipmentSnapshotData CreateSnapshotData()
+        {
+            EnsureEquipmentSlots();
+            CPlayerEquipmentSnapshotData snapshotData = new CPlayerEquipmentSnapshotData();
+            List<CPlayerEquipmentSlotEntryData> copiedSlotEntryList = new List<CPlayerEquipmentSlotEntryData>();
+            int equipmentSlotCount = equipmentSlotEntryList.Count;
+
+            for ( int index = 0; index < equipmentSlotCount; index++ )
+            {
+                CPlayerEquipmentSlotEntryData sourceSlotEntryData = equipmentSlotEntryList[ index ];
+                CPlayerEquipmentSlotEntryData copiedSlotEntryData = sourceSlotEntryData != null ? sourceSlotEntryData.CreateCopy() : null;
+                copiedSlotEntryList.Add( copiedSlotEntryData );
+            }
+
+            snapshotData.equipmentSlotEntryList = copiedSlotEntryList;
+            return snapshotData;
+        }
+
+        ///<summary>
+        /// 플레이어 장비 저장 데이터 로드
+        ///</summary>
+        public void LoadSnapshotData( CPlayerEquipmentSnapshotData _snapshotData )
+        {
+            EnsureEquipmentSlots();
+            int equipmentSlotCount = equipmentSlotEntryList.Count;
+
+            for ( int index = 0; index < equipmentSlotCount; index++ )
+            {
+                CPlayerEquipmentSlotEntryData targetSlotEntryData = equipmentSlotEntryList[ index ];
+
+                if ( targetSlotEntryData == null )
+                {
+                    continue;
+                }
+
+                targetSlotEntryData.Clear();
+            }
+
+            if ( _snapshotData == null || _snapshotData.equipmentSlotEntryList == null )
+            {
+                RefreshEquipmentState();
+                return;
+            }
+
+            int snapshotSlotCount = _snapshotData.equipmentSlotEntryList.Count;
+
+            for ( int index = 0; index < snapshotSlotCount; index++ )
+            {
+                CPlayerEquipmentSlotEntryData sourceSlotEntryData = _snapshotData.equipmentSlotEntryList[ index ];
+
+                if ( sourceSlotEntryData == null )
+                {
+                    continue;
+                }
+
+                CPlayerEquipmentSlotEntryData targetSlotEntryData = GetEquipmentSlotEntryData( sourceSlotEntryData.GetEquipmentType() );
+
+                if ( targetSlotEntryData == null )
+                {
+                    continue;
+                }
+
+                targetSlotEntryData.CopyFrom( sourceSlotEntryData );
+            }
+
+            RefreshEquipmentState();
         }
 
         ///<summary>
@@ -377,6 +601,8 @@ namespace TinyHero.Player
         private void RefreshEquipmentStatBonus()
         {
             aggregatedEquipmentStatBonus.Clear();
+            aggregatedEquipmentPercentStatBonus.Clear();
+            aggregatedEquipmentModifierBonus.Clear();
 
             for ( int index = 0; index < equipmentSlotEntryList.Count; index++ )
             {
@@ -396,11 +622,20 @@ namespace TinyHero.Player
 
                 CPlayerStatRuntimeData equipmentStatBonus = itemDefinition.GetEquipmentStatBonus();
                 aggregatedEquipmentStatBonus.AddFrom( equipmentStatBonus );
+                CEquipmentPotentialData equipmentPotentialData = slotEntryData.GetEquipmentPotentialData();
+
+                if ( equipmentPotentialData != null )
+                {
+                    equipmentPotentialData.AccumulateStatBonus( aggregatedEquipmentStatBonus, aggregatedEquipmentPercentStatBonus );
+                    equipmentPotentialData.AccumulateModifierBonus( aggregatedEquipmentModifierBonus );
+                }
             }
 
             if ( targetStatManager != null )
             {
                 targetStatManager.ApplyEquipmentStatBonus( aggregatedEquipmentStatBonus );
+                targetStatManager.ApplyEquipmentPercentStatBonus( aggregatedEquipmentPercentStatBonus );
+                targetStatManager.ApplyEquipmentModifierBonus( aggregatedEquipmentModifierBonus );
             }
         }
 

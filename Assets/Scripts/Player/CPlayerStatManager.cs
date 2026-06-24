@@ -1,4 +1,5 @@
 using System;
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using UnityEngine;
 
@@ -19,8 +20,10 @@ namespace TinyHero.Player
 
         [Header( "Bonus Stats" )]
         [SerializeField] private CPlayerStatRuntimeData equipmentStatBonus = new CPlayerStatRuntimeData();
+        [SerializeField] private CPlayerStatRuntimeData equipmentPercentStatBonus = new CPlayerStatRuntimeData();
         [SerializeField] private CPlayerStatRuntimeData levelStatBonus = new CPlayerStatRuntimeData();
         [SerializeField] private CPlayerStatRuntimeData skillStatBonus = new CPlayerStatRuntimeData();
+        [SerializeField] private CPlayerModifierRuntimeData equipmentModifierBonus = new CPlayerModifierRuntimeData();
 
         [Header( "Runtime" )]
         [SerializeField] private bool restoreResourceOnAwake = true;
@@ -104,6 +107,15 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 장비 퍼센트 보너스 값 반환
+        ///</summary>
+        public float GetEquipmentPercentStatValue( ePlayerStatType _statType )
+        {
+            float result = equipmentPercentStatBonus.GetStatValue( _statType );
+            return result;
+        }
+
+        ///<summary>
         /// 레벨 보너스 값 반환
         ///</summary>
         public float GetLevelStatValue( ePlayerStatType _statType )
@@ -131,7 +143,9 @@ namespace TinyHero.Player
             float levelValue = GetLevelStatValue( _statType );
             float skillValue = GetSkillStatValue( _statType );
             float summedValue = baseValue + equipmentValue + levelValue + skillValue;
-            float result = Mathf.Max( 0.0f, summedValue );
+            float equipmentPercentValue = GetEquipmentPercentStatValue( _statType );
+            float multipliedValue = summedValue * ( 1.0f + equipmentPercentValue * 0.01f );
+            float result = Mathf.Max( 0.0f, multipliedValue );
             return result;
         }
 
@@ -246,6 +260,35 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 경험치 획득 배수 반환
+        ///</summary>
+        public float GetExpGainMultiplier()
+        {
+            float expGainPercent = equipmentModifierBonus != null ? equipmentModifierBonus.GetExpGainPercent() : 0.0f;
+            float result = Mathf.Max( 0.0f, 1.0f + expGainPercent * 0.01f );
+            return result;
+        }
+
+        ///<summary>
+        /// 골드 획득 배수 반환
+        ///</summary>
+        public float GetGoldGainMultiplier()
+        {
+            float goldGainPercent = equipmentModifierBonus != null ? equipmentModifierBonus.GetGoldGainPercent() : 0.0f;
+            float result = Mathf.Max( 0.0f, 1.0f + goldGainPercent * 0.01f );
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 최종 공격력 증가율 반환
+        ///</summary>
+        public float GetEquipmentFinalAttackPercentBonus()
+        {
+            float result = equipmentModifierBonus != null ? equipmentModifierBonus.GetFinalAttackPercent() * 0.01f : 0.0f;
+            return result;
+        }
+
+        ///<summary>
         /// 현재 레벨 시작 누적 경험치 반환
         ///</summary>
         public float GetCurrentLevelStartExp()
@@ -322,11 +365,30 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 장비 퍼센트 스탯 일괄 반영
+        ///</summary>
+        public void ApplyEquipmentPercentStatBonus( CPlayerStatRuntimeData _bonusData )
+        {
+            equipmentPercentStatBonus.CopyFrom( _bonusData );
+            NotifyStatChanged();
+        }
+
+        ///<summary>
         /// 장비 스탯 초기화
         ///</summary>
         public void ClearEquipmentStatBonus()
         {
             equipmentStatBonus.Clear();
+            equipmentPercentStatBonus.Clear();
+            NotifyStatChanged();
+        }
+
+        ///<summary>
+        /// 장비 특수 보너스 일괄 반영
+        ///</summary>
+        public void ApplyEquipmentModifierBonus( CPlayerModifierRuntimeData _modifierData )
+        {
+            equipmentModifierBonus.CopyFrom( _modifierData );
             NotifyStatChanged();
         }
 
@@ -562,6 +624,42 @@ namespace TinyHero.Player
             currentMp = GetMaxMp();
             RaiseHpChanged();
             RaiseMpChanged();
+        }
+
+        ///<summary>
+        /// 플레이어 스탯 저장 데이터 생성
+        ///</summary>
+        public CPlayerStatSnapshotData CreateSnapshotData()
+        {
+            CPlayerStatSnapshotData snapshotData = new CPlayerStatSnapshotData();
+            snapshotData.currentLevel = currentLevel;
+            snapshotData.currentExp = currentExp;
+            snapshotData.currentHp = currentHp;
+            snapshotData.currentMp = currentMp;
+            snapshotData.unspentStatPoint = unspentStatPoint;
+            snapshotData.levelStatBonus.CopyFrom( levelStatBonus );
+            return snapshotData;
+        }
+
+        ///<summary>
+        /// 플레이어 스탯 저장 데이터 로드
+        ///</summary>
+        public void LoadSnapshotData( CPlayerStatSnapshotData _snapshotData )
+        {
+            if ( _snapshotData == null )
+            {
+                return;
+            }
+
+            currentLevel = Mathf.Max( 1, _snapshotData.currentLevel );
+            currentExp = Mathf.Max( 0.0f, _snapshotData.currentExp );
+            unspentStatPoint = Mathf.Max( 0, _snapshotData.unspentStatPoint );
+            levelStatBonus.CopyFrom( _snapshotData.levelStatBonus );
+            RefreshProgressionFromExperience( false );
+            currentHp = Mathf.Max( 0.0f, _snapshotData.currentHp );
+            currentMp = Mathf.Max( 0.0f, _snapshotData.currentMp );
+            ClampCurrentResourcesToMax();
+            NotifyStatChanged();
         }
 
         ///<summary>

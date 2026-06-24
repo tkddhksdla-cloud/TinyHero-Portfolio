@@ -37,7 +37,8 @@ namespace TinyHero.Core.Data
     {
         NONE,
         GENERAL,
-        SKILL_BOOK
+        SKILL_BOOK,
+        CUBE
     }
 
     ///<summary>
@@ -48,6 +49,7 @@ namespace TinyHero.Core.Data
     {
         [SerializeField] private string itemId = string.Empty;
         [SerializeField] private int quantity;
+        [SerializeField] private CEquipmentPotentialData equipmentPotentialData = new CEquipmentPotentialData();
 
         ///<summary>
         /// 아이템 ID 반환
@@ -76,11 +78,30 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 장비 잠재 데이터 반환
+        ///</summary>
+        public CEquipmentPotentialData GetEquipmentPotentialData()
+        {
+            EnsurePotentialData();
+            CEquipmentPotentialData result = equipmentPotentialData;
+            return result;
+        }
+
+        ///<summary>
         /// 수량 설정
         ///</summary>
         public void SetQuantity( int _quantity )
         {
             quantity = Mathf.Max( 0, _quantity );
+        }
+
+        ///<summary>
+        /// 장비 잠재 데이터 설정
+        ///</summary>
+        public void SetEquipmentPotentialData( CEquipmentPotentialData _equipmentPotentialData )
+        {
+            EnsurePotentialData();
+            equipmentPotentialData.CopyFrom( _equipmentPotentialData );
         }
 
         ///<summary>
@@ -100,6 +121,8 @@ namespace TinyHero.Core.Data
         {
             itemId = string.Empty;
             quantity = 0;
+            EnsurePotentialData();
+            equipmentPotentialData.Clear();
         }
 
         ///<summary>
@@ -110,6 +133,7 @@ namespace TinyHero.Core.Data
             CInventoryItemEntryData copiedEntryData = new CInventoryItemEntryData();
             copiedEntryData.SetItemId( itemId );
             copiedEntryData.SetQuantity( quantity );
+            copiedEntryData.SetEquipmentPotentialData( equipmentPotentialData );
             return copiedEntryData;
         }
 
@@ -126,6 +150,20 @@ namespace TinyHero.Core.Data
 
             itemId = _sourceEntryData.GetItemId();
             quantity = _sourceEntryData.GetQuantity();
+            SetEquipmentPotentialData( _sourceEntryData.GetEquipmentPotentialData() );
+        }
+
+        ///<summary>
+        /// 잠재 데이터 초기화 보장
+        ///</summary>
+        private void EnsurePotentialData()
+        {
+            if ( equipmentPotentialData != null )
+            {
+                return;
+            }
+
+            equipmentPotentialData = new CEquipmentPotentialData();
         }
     }
 
@@ -371,6 +409,15 @@ namespace TinyHero.Core.Data
         public bool IsSkillBook()
         {
             bool result = itemType == eItemType.CONSUMABLE && consumableType == eConsumableType.SKILL_BOOK;
+            return result;
+        }
+
+        ///<summary>
+        /// 큐브 소모품 여부 반환
+        ///</summary>
+        public bool IsCube()
+        {
+            bool result = itemType == eItemType.CONSUMABLE && consumableType == eConsumableType.CUBE;
             return result;
         }
 

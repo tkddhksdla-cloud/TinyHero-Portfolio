@@ -114,6 +114,54 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 인벤토리 엔트리 직접 추가 시도
+        ///</summary>
+        public bool TryAddItemEntry( CInventoryItemEntryData _itemEntryData )
+        {
+            if ( _itemEntryData == null || _itemEntryData.IsEmpty() )
+            {
+                return false;
+            }
+
+            bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( _itemEntryData.GetItemId(), out CItemDefinition itemDefinition );
+
+            if ( hasDefinition == false || itemDefinition == null )
+            {
+                return false;
+            }
+
+            if ( itemDefinition.IsStackable() )
+            {
+                bool didAddStackableItem = TryAddItem( itemDefinition, _itemEntryData.GetQuantity() );
+                return didAddStackableItem;
+            }
+
+            EnsureSlotCapacity();
+
+            for ( int index = 0; index < itemEntryList.Count; index++ )
+            {
+                CInventoryItemEntryData targetEntryData = itemEntryList[ index ];
+
+                if ( targetEntryData == null )
+                {
+                    targetEntryData = new CInventoryItemEntryData();
+                    itemEntryList[ index ] = targetEntryData;
+                }
+
+                if ( targetEntryData.IsEmpty() == false )
+                {
+                    continue;
+                }
+
+                targetEntryData.CopyFrom( _itemEntryData );
+                RaiseInventoryChanged();
+                return true;
+            }
+
+            return false;
+        }
+
+        ///<summary>
         /// 아이템 ID 기준 아이템 추가 시도
         ///</summary>
         public bool TryAddItemById( string _itemId, int _count )
@@ -206,6 +254,37 @@ namespace TinyHero.Player
                 targetEntryData.CopyFrom( _itemEntryData );
             }
 
+            RaiseInventoryChanged();
+            return true;
+        }
+
+        ///<summary>
+        /// 슬롯 잠재 데이터 반영 처리
+        ///</summary>
+        public bool TrySetItemEntryPotentialData( int _slotIndex, CEquipmentPotentialData _equipmentPotentialData )
+        {
+            EnsureSlotCapacity();
+
+            if ( IsValidSlotIndex( _slotIndex ) == false )
+            {
+                return false;
+            }
+
+            CInventoryItemEntryData targetEntryData = itemEntryList[ _slotIndex ];
+
+            if ( targetEntryData == null || targetEntryData.IsEmpty() )
+            {
+                return false;
+            }
+
+            CItemDefinition itemDefinition = GetItemDefinitionAtSlot( _slotIndex );
+
+            if ( itemDefinition == null || itemDefinition.IsEquipmentItem() == false )
+            {
+                return false;
+            }
+
+            targetEntryData.SetEquipmentPotentialData( _equipmentPotentialData );
             RaiseInventoryChanged();
             return true;
         }
@@ -452,6 +531,8 @@ namespace TinyHero.Player
         private int TryFillEmptySlots( string _itemId, int _remainingCount, int _maxStackCount )
         {
             int remainingCount = _remainingCount;
+            bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( _itemId, out CItemDefinition itemDefinition );
+            bool isEquipmentItem = hasDefinition && itemDefinition != null && itemDefinition.IsEquipmentItem();
 
             for ( int index = 0; index < itemEntryList.Count; index++ )
             {
@@ -476,6 +557,17 @@ namespace TinyHero.Player
                 int addedCount = Mathf.Min( Mathf.Max( 1, _maxStackCount ), remainingCount );
                 itemEntryData.SetItemId( _itemId );
                 itemEntryData.SetQuantity( addedCount );
+
+                if ( isEquipmentItem )
+                {
+                    CEquipmentPotentialData generatedPotentialData = new CEquipmentPotentialData();
+                    itemEntryData.SetEquipmentPotentialData( generatedPotentialData );
+                }
+                else
+                {
+                    itemEntryData.GetEquipmentPotentialData().Clear();
+                }
+
                 remainingCount -= addedCount;
             }
 

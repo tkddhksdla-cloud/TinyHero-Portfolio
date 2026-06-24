@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using TMPro;
+using TinyHero.Core.Data;
 using TinyHero.Player;
 using TinyHero.UI;
 using UnityEngine;
@@ -17,7 +19,7 @@ namespace TinyHero.Core
         private const float CanvasReferenceWidth = 1920.0f;
         private const float CanvasReferenceHeight = 1080.0f;
         private const float PanelWidth = 560.0f;
-        private const float PanelHeight = 360.0f;
+        private const float PanelHeight = 420.0f;
         private const float TitleHeight = 40.0f;
         private const float RowHeight = 44.0f;
         private const float ButtonWidth = 128.0f;
@@ -28,6 +30,7 @@ namespace TinyHero.Core
         private const float PanelSpacing = 16.0f;
         private const int DefaultGrantedItemCount = 1;
         private const int MinGrantedItemCount = 1;
+        private const int AllEquipmentGrantedItemCount = 1;
 
         private static CCheatCommandUI instance;
 
@@ -42,6 +45,7 @@ namespace TinyHero.Core
         private TMP_Text statusText;
         private CButtonEx applyLevelButton;
         private CButtonEx grantItemButton;
+        private CButtonEx grantAllItemsButton;
         private CButtonEx closeButton;
         private TMP_FontAsset defaultFontAsset;
         private CPlayerStatManager targetStatManager;
@@ -73,6 +77,7 @@ namespace TinyHero.Core
             }
 
             GameObject rootObject = new GameObject( RootObjectName, typeof( RectTransform ), typeof( Canvas ), typeof( CanvasScaler ), typeof( GraphicRaycaster ), typeof( CCheatCommandUI ) );
+
             if ( Application.isPlaying )
             {
                 Object.DontDestroyOnLoad( rootObject );
@@ -115,6 +120,7 @@ namespace TinyHero.Core
             }
 
             instance = this;
+
             if ( Application.isPlaying )
             {
                 DontDestroyOnLoad( gameObject );
@@ -216,7 +222,7 @@ namespace TinyHero.Core
             int resolvedLevel = targetStatManager.GetCurrentLevel();
             float levelStartExp = targetStatManager.GetLevelStartExp( resolvedLevel );
             targetStatManager.SetCurrentExp( levelStartExp );
-            SetStatusMessage( $"레벨이 {resolvedLevel} 로 변경되었습니다." );
+            SetStatusMessage( $"레벨이 {resolvedLevel}로 변경되었습니다." );
         }
 
         ///<summary>
@@ -242,7 +248,7 @@ namespace TinyHero.Core
 
             if ( string.IsNullOrWhiteSpace( itemId ) )
             {
-                SetStatusMessage( "아이템 ID 를 입력해 주세요." );
+                SetStatusMessage( "아이템 ID를 입력해 주세요." );
                 return;
             }
 
@@ -256,6 +262,47 @@ namespace TinyHero.Core
             }
 
             SetStatusMessage( $"{itemId} x{grantCount} 지급 완료" );
+        }
+
+        ///<summary>
+        /// 모든 아이템 지급 처리
+        ///</summary>
+        private void HandleGrantAllItemsButtonClicked()
+        {
+            ResolveTargets();
+
+            if ( targetInventoryManager == null )
+            {
+                SetStatusMessage( "플레이어 인벤토리 매니저를 찾지 못했습니다." );
+                return;
+            }
+
+            IReadOnlyList<CItemDefinition> itemDefinitionList = CItemDefinitionDatabase.GetItemDefinitionList();
+            int successCount = 0;
+            int failedCount = 0;
+
+            for ( int index = 0; index < itemDefinitionList.Count; index++ )
+            {
+                CItemDefinition itemDefinition = itemDefinitionList[ index ];
+
+                if ( itemDefinition == null || string.IsNullOrWhiteSpace( itemDefinition.GetItemId() ) )
+                {
+                    continue;
+                }
+
+                int grantCount = itemDefinition.IsEquipmentItem() ? AllEquipmentGrantedItemCount : itemDefinition.GetMaxStackCount();
+                bool didAddItem = targetInventoryManager.TryAddItem( itemDefinition, grantCount );
+
+                if ( didAddItem )
+                {
+                    successCount++;
+                    continue;
+                }
+
+                failedCount++;
+            }
+
+            SetStatusMessage( $"전체 아이템 지급 완료. 성공 {successCount}종 / 실패 {failedCount}종" );
         }
 
         ///<summary>
@@ -330,6 +377,7 @@ namespace TinyHero.Core
             }
 
             GameObject eventSystemObject = new GameObject( EventSystemObjectName, typeof( EventSystem ), typeof( StandaloneInputModule ) );
+
             if ( Application.isPlaying )
             {
                 DontDestroyOnLoad( eventSystemObject );
@@ -449,6 +497,13 @@ namespace TinyHero.Core
             grantItemButton = CreateButton( "GrantItemButton", itemGrantRowRectTransform, "Grant Item", 160.0f );
             AddFlexibleSpacer( itemGrantRowRectTransform, "GrantSpacer" );
 
+            RectTransform allItemGrantRowRectTransform = CreateLayoutRow( "AllItemGrantRow", panelRectTransform, RowHeight, false );
+            HorizontalLayoutGroup allItemGrantLayoutGroup = ConfigureHorizontalRow( allItemGrantRowRectTransform );
+            allItemGrantLayoutGroup.spacing = 12.0f;
+            CreateLabelText( allItemGrantRowRectTransform, "AllItemLabel", "All Items" );
+            grantAllItemsButton = CreateButton( "GrantAllItemsButton", allItemGrantRowRectTransform, "Grant All Items", 180.0f );
+            AddFlexibleSpacer( allItemGrantRowRectTransform, "AllItemGrantSpacer" );
+
             RectTransform statusAreaRectTransform = CreateLayoutRow( "StatusArea", panelRectTransform, StatusHeight, true );
             Image statusBackgroundImage = statusAreaRectTransform.gameObject.AddComponent<Image>();
             statusBackgroundImage.color = new Color( 0.08f, 0.08f, 0.11f, 0.92f );
@@ -476,6 +531,12 @@ namespace TinyHero.Core
                 grantItemButton.onClick.AddListener( HandleGrantItemButtonClicked );
             }
 
+            if ( grantAllItemsButton != null )
+            {
+                grantAllItemsButton.onClick.RemoveListener( HandleGrantAllItemsButtonClicked );
+                grantAllItemsButton.onClick.AddListener( HandleGrantAllItemsButtonClicked );
+            }
+
             if ( closeButton != null )
             {
                 closeButton.onClick.RemoveListener( HandleCloseButtonClicked );
@@ -496,6 +557,11 @@ namespace TinyHero.Core
             if ( grantItemButton != null )
             {
                 grantItemButton.onClick.RemoveListener( HandleGrantItemButtonClicked );
+            }
+
+            if ( grantAllItemsButton != null )
+            {
+                grantAllItemsButton.onClick.RemoveListener( HandleGrantAllItemsButtonClicked );
             }
 
             if ( closeButton != null )

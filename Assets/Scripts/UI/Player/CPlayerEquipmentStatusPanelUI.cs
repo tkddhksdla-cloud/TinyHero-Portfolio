@@ -44,7 +44,7 @@ namespace TinyHero.UI
         [SerializeField] private CPlayerEquipmentSlotView armorSlotView;
         [SerializeField] private CPlayerEquipmentSlotView weaponSlotView;
         [SerializeField] private CPlayerEquipmentSlotView shieldSlotView;
-        [SerializeField] private CItemInventoryUIController targetInventoryUiController;
+        [SerializeField] private PopupItemInventory targetInventoryUiController;
         [SerializeField] private Canvas targetCanvas;
 
         [SerializeField] private CPlayerInventoryManager targetInventoryManager;
@@ -142,6 +142,14 @@ namespace TinyHero.UI
         ///</summary>
         public void ShowEquipmentTooltip( CItemDefinition _itemDefinition )
         {
+            ShowEquipmentTooltip( eEquipmentType.NONE, _itemDefinition );
+        }
+
+        ///<summary>
+        /// 장비 잠재 포함 툴팁 표시
+        ///</summary>
+        public void ShowEquipmentTooltip( eEquipmentType _equipmentType, CItemDefinition _itemDefinition )
+        {
             ResolveReferences();
 
             if ( targetInventoryUiController == null || _itemDefinition == null )
@@ -150,7 +158,8 @@ namespace TinyHero.UI
             }
 
             isShowingPanelOwnedTooltip = true;
-            targetInventoryUiController.ShowItemDefinitionTooltip( _itemDefinition );
+            CEquipmentPotentialData equipmentPotentialData = targetEquipmentManager != null ? targetEquipmentManager.GetEquippedPotentialData( _equipmentType ) : null;
+            targetInventoryUiController.ShowItemDefinitionTooltip( _itemDefinition, equipmentPotentialData );
         }
 
         ///<summary>
@@ -274,12 +283,12 @@ namespace TinyHero.UI
 
             if ( targetInventoryUiController == null )
             {
-                targetInventoryUiController = GetComponentInParent<CItemInventoryUIController>();
+                targetInventoryUiController = GetComponentInParent<PopupItemInventory>();
             }
 
             if ( targetInventoryUiController == null )
             {
-                targetInventoryUiController = FindFirstObjectByType<CItemInventoryUIController>();
+                targetInventoryUiController = FindFirstObjectByType<PopupItemInventory>();
             }
         }
 

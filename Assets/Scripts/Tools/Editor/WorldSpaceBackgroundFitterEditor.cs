@@ -7,7 +7,7 @@ namespace TinyHero.Tools
     /// 월드 공간 배경 맞춤 에디터 커스텀 에디터
     ///</summary>
     [CustomEditor( typeof( WorldSpaceBackgroundFitter ) )]
-    public sealed class WorldSpaceBackgroundFitterEditor : Editor
+    public sealed class WorldSpaceBackgroundFitterEditor : UnityEditor.Editor
     {
         ///<summary>
         /// 활성화 처리

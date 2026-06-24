@@ -1,4 +1,5 @@
 using System.Text;
+using System.Collections.Generic;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using TMPro;
@@ -50,6 +51,14 @@ namespace TinyHero.UI
         ///</summary>
         public void SetTooltipContent( CItemDefinition _itemDefinition )
         {
+            SetTooltipContent( _itemDefinition, null );
+        }
+
+        ///<summary>
+        /// 아이템과 잠재 툴팁 내용 반영
+        ///</summary>
+        public void SetTooltipContent( CItemDefinition _itemDefinition, CEquipmentPotentialData _equipmentPotentialData )
+        {
             ResolveReferences();
             string itemName = string.Empty;
             string itemDescription = string.Empty;
@@ -59,7 +68,7 @@ namespace TinyHero.UI
             {
                 itemName = _itemDefinition.GetItemName();
                 itemDescription = _itemDefinition.GetDescription();
-                resolvedEquipmentStatText = BuildEquipmentStatText( _itemDefinition );
+                resolvedEquipmentStatText = BuildEquipmentStatText( _itemDefinition, _equipmentPotentialData );
             }
 
             if ( itemNameText != null )
@@ -194,6 +203,12 @@ namespace TinyHero.UI
                 itemDescText = itemDescTransform != null ? itemDescTransform.GetComponent<TMP_Text>() : null;
             }
 
+            if ( equipmentStatText == null )
+            {
+                Transform equipmentStatTransform = transform.Find( "EquipmentStatText" );
+                equipmentStatText = equipmentStatTransform != null ? equipmentStatTransform.GetComponent<TMP_Text>() : null;
+            }
+
         }
 
         ///<summary>
@@ -214,7 +229,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 장비 스탯 문자열 구성
         ///</summary>
-        private string BuildEquipmentStatText( CItemDefinition _itemDefinition )
+        private string BuildEquipmentStatText( CItemDefinition _itemDefinition, CEquipmentPotentialData _equipmentPotentialData )
         {
             if ( _itemDefinition == null || _itemDefinition.IsEquipmentItem() == false )
             {
@@ -250,7 +265,58 @@ namespace TinyHero.UI
                 statTextBuilder.Append( statLine );
             }
 
+            string potentialText = BuildPotentialText( _equipmentPotentialData );
+
+            if ( string.IsNullOrWhiteSpace( potentialText ) == false )
+            {
+                if ( statTextBuilder.Length > 0 )
+                {
+                    statTextBuilder.AppendLine();
+                    statTextBuilder.AppendLine();
+                }
+
+                statTextBuilder.Append( potentialText );
+            }
+
             string result = statTextBuilder.ToString();
+            return result;
+        }
+
+        ///<summary>
+        /// 잠재 표시 문자열 구성
+        ///</summary>
+        private string BuildPotentialText( CEquipmentPotentialData _equipmentPotentialData )
+        {
+            if ( _equipmentPotentialData == null || _equipmentPotentialData.HasPotential() == false )
+            {
+                return string.Empty;
+            }
+
+            StringBuilder potentialBuilder = new StringBuilder();
+            eEquipmentPotentialRank rank = _equipmentPotentialData.GetRank();
+            Color rankColor = CEquipmentPotentialUtility.GetRankColor( rank );
+            string rankColorHtml = ColorUtility.ToHtmlStringRGB( rankColor );
+            potentialBuilder.Append( $"<color=#{rankColorHtml}>잠재능력</color>" );
+            IReadOnlyList<CEquipmentPotentialLineData> lineDataList = _equipmentPotentialData.GetLineDataList();
+
+            for ( int index = 0; index < lineDataList.Count; index++ )
+            {
+                CEquipmentPotentialLineData lineData = lineDataList[ index ];
+
+                if ( lineData == null || lineData.HasValue() == false )
+                {
+                    continue;
+                }
+
+                eEquipmentPotentialRank lineRank = lineData.GetLineRank();
+                Color lineColor = CEquipmentPotentialUtility.GetRankColor( lineRank );
+                string lineColorHtml = ColorUtility.ToHtmlStringRGB( lineColor );
+                string lineText = CEquipmentPotentialUtility.BuildLineText( rank, lineData );
+                potentialBuilder.AppendLine();
+                potentialBuilder.Append( $"<color=#{lineColorHtml}>{lineText}</color>" );
+            }
+
+            string result = potentialBuilder.ToString();
             return result;
         }
 

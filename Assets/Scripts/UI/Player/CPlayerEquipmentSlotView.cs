@@ -10,7 +10,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 장비 슬롯 표시 컴포넌트
     ///</summary>
-    public sealed class CPlayerEquipmentSlotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    public sealed class CPlayerEquipmentSlotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler
     {
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
         [SerializeField] private Image iconImage;
@@ -89,7 +89,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            ownerPanelUi.ShowEquipmentTooltip( currentItemDefinition );
+            ownerPanelUi.ShowEquipmentTooltip( equipmentType, currentItemDefinition );
         }
 
         ///<summary>
@@ -121,6 +121,47 @@ namespace TinyHero.UI
             }
 
             ownerPanelUi.TryUnequip( equipmentType );
+        }
+
+        ///<summary>
+        /// 마우스 다운 처리
+        ///</summary>
+        public void OnPointerDown( PointerEventData _eventData )
+        {
+            if ( ownerPanelUi == null )
+            {
+                return;
+            }
+
+            ownerPanelUi.HideTooltip();
+        }
+
+        ///<summary>
+        /// 장비 드래그 시작 처리
+        ///</summary>
+        public void OnBeginDrag( PointerEventData _eventData )
+        {
+            if ( currentItemDefinition == null )
+            {
+                return;
+            }
+
+            CEquipmentUiDragState.BeginDrag( equipmentType );
+        }
+
+        ///<summary>
+        /// 장비 드래그 진행 처리
+        ///</summary>
+        public void OnDrag( PointerEventData _eventData )
+        {
+        }
+
+        ///<summary>
+        /// 장비 드래그 종료 처리
+        ///</summary>
+        public void OnEndDrag( PointerEventData _eventData )
+        {
+            CEquipmentUiDragState.EndDrag();
         }
 
         ///<summary>
