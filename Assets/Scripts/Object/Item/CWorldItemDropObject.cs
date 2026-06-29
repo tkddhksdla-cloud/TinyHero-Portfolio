@@ -9,10 +9,16 @@ using UnityEngine;
 [RequireComponent( typeof( Collider2D ) )]
 public sealed class CWorldItemDropObject : MonoBehaviour
 {
+    private const string GroundLayerName = "Ground";
+    private const float DropGravityScale = 3.0f;
+    private const float DropLinearDamping = 1.5f;
+
     [SerializeField] private string itemId = string.Empty;
     [SerializeField] private int itemCount = 1;
     [SerializeField] private SpriteRenderer targetSpriteRenderer;
     [SerializeField] private Collider2D pickupTriggerCollider;
+    [SerializeField] private Collider2D groundCollisionCollider;
+    [SerializeField] private Rigidbody2D targetRigidbody;
 
     private CItemDefinition cachedItemDefinition;
     private string mapRuntimePoolKey = string.Empty;
@@ -48,6 +54,8 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         isPickupInProgress = false;
         ResolveReferences();
         ConfigureCollider();
+        ResetPhysicsState();
+        SetPhysicsSimulationEnabled( true );
     }
 
     ///<summary>
@@ -192,6 +200,16 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         {
             pickupTriggerCollider = GetComponent<Collider2D>();
         }
+
+        if ( groundCollisionCollider == null )
+        {
+            groundCollisionCollider = ResolveOrCreateGroundCollisionCollider();
+        }
+
+        if ( targetRigidbody == null )
+        {
+            targetRigidbody = ResolveOrCreateRigidbody();
+        }
     }
 
     ///<summary>
@@ -205,6 +223,16 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         }
 
         pickupTriggerCollider.isTrigger = true;
+
+        if ( groundCollisionCollider == null )
+        {
+            return;
+        }
+
+        groundCollisionCollider.isTrigger = false;
+        groundCollisionCollider.enabled = true;
+        groundCollisionCollider.includeLayers = LayerMask.GetMask( GroundLayerName );
+        groundCollisionCollider.excludeLayers = ~LayerMask.GetMask( GroundLayerName );
     }
 
     ///<summary>
@@ -228,6 +256,8 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     public void PrepareForRelease()
     {
         SetPickupTriggerEnabled( false );
+        SetPhysicsSimulationEnabled( false );
+        ResetPhysicsState();
     }
 
     ///<summary>
@@ -270,5 +300,86 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         float goldGainMultiplier = _playerStatManager.GetGoldGainMultiplier();
         int scaledItemCount = Mathf.Max( 1, Mathf.RoundToInt( resolvedItemCount * goldGainMultiplier ) );
         return scaledItemCount;
+    }
+
+    ///<summary>
+    /// 낙하 물리 리지드바디 결정
+    ///</summary>
+    private Rigidbody2D ResolveOrCreateRigidbody()
+    {
+        Rigidbody2D resolvedRigidbody = GetComponent<Rigidbody2D>();
+
+        if ( resolvedRigidbody == null )
+        {
+            resolvedRigidbody = gameObject.AddComponent<Rigidbody2D>();
+        }
+
+        resolvedRigidbody.bodyType = RigidbodyType2D.Dynamic;
+        resolvedRigidbody.gravityScale = DropGravityScale;
+        resolvedRigidbody.linearDamping = DropLinearDamping;
+        resolvedRigidbody.angularDamping = 10.0f;
+        resolvedRigidbody.freezeRotation = true;
+        resolvedRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
+        resolvedRigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        return resolvedRigidbody;
+    }
+
+    ///<summary>
+    /// 바닥 충돌 콜라이더 결정
+    ///</summary>
+    private Collider2D ResolveOrCreateGroundCollisionCollider()
+    {
+        Collider2D[] colliderArray = GetComponents<Collider2D>();
+        int colliderCount = colliderArray.Length;
+
+        for ( int index = 0; index < colliderCount; index++ )
+        {
+            Collider2D currentCollider = colliderArray[ index ];
+
+            if ( currentCollider == null || currentCollider == pickupTriggerCollider )
+            {
+                continue;
+            }
+
+            return currentCollider;
+        }
+
+        CircleCollider2D pickupCircleCollider = pickupTriggerCollider as CircleCollider2D;
+        CircleCollider2D createdCollider = gameObject.AddComponent<CircleCollider2D>();
+
+        if ( pickupCircleCollider != null )
+        {
+            createdCollider.offset = pickupCircleCollider.offset;
+            createdCollider.radius = pickupCircleCollider.radius;
+        }
+
+        return createdCollider;
+    }
+
+    ///<summary>
+    /// 낙하 물리 상태 초기화
+    ///</summary>
+    private void ResetPhysicsState()
+    {
+        if ( targetRigidbody == null )
+        {
+            return;
+        }
+
+        targetRigidbody.linearVelocity = Vector2.zero;
+        targetRigidbody.angularVelocity = 0.0f;
+    }
+
+    ///<summary>
+    /// 낙하 물리 시뮬레이션 상태 설정
+    ///</summary>
+    private void SetPhysicsSimulationEnabled( bool _isEnabled )
+    {
+        if ( targetRigidbody == null )
+        {
+            return;
+        }
+
+        targetRigidbody.simulated = _isEnabled;
     }
 }

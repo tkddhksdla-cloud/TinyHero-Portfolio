@@ -11,6 +11,7 @@ namespace TinyHero.Tools
     {
         private const string ResourceFolderPath = "Assets/Resources/Data/Item";
         private const string AssetPath = "Assets/Resources/Data/Item/EquipmentPotentialTableData.asset";
+        private const float DefaultValueGapMultiplier = 1.3f;
 
         ///<summary>
         /// 잠재 테이블 에셋 생성 메뉴 실행
@@ -81,6 +82,7 @@ namespace TinyHero.Tools
                 eEquipmentPotentialOptionType.ACC,
                 eEquipmentPotentialOptionType.ATS,
                 eEquipmentPotentialOptionType.MOVE,
+                eEquipmentPotentialOptionType.RANGE,
                 eEquipmentPotentialOptionType.EXP_GAIN_PERCENT,
                 eEquipmentPotentialOptionType.GOLD_GAIN_PERCENT,
                 eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT
@@ -97,7 +99,7 @@ namespace TinyHero.Tools
                     for ( int optionIndex = 0; optionIndex < optionTypeArray.Length; optionIndex++ )
                     {
                         eEquipmentPotentialOptionType optionType = optionTypeArray[ optionIndex ];
-                        AddEntry( optionEntryListProperty, equipmentType, rank, optionType );
+                        AddEntries( optionEntryListProperty, equipmentType, rank, optionType );
                     }
                 }
             }
@@ -113,7 +115,31 @@ namespace TinyHero.Tools
         ///<summary>
         /// 잠재 엔트리 추가
         ///</summary>
-        private static void AddEntry( SerializedProperty _optionEntryListProperty, eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType )
+        private static void AddEntries( SerializedProperty _optionEntryListProperty, eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType )
+        {
+            if ( CEquipmentPotentialUtility.ShouldForcePercentValueType( _optionType ) )
+            {
+                float firstPercentValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT );
+                float secondPercentValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue );
+                AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue );
+                AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercentValue );
+                return;
+            }
+
+            float firstPercent = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT );
+            float secondPercent = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercent );
+            float firstValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.VALUE );
+            float secondValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValue );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercent );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercent );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValue );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, secondValue );
+        }
+
+        ///<summary>
+        /// 잠재 엔트리 추가
+        ///</summary>
+        private static void AddEntry( SerializedProperty _optionEntryListProperty, eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, float _value )
         {
             if ( _optionEntryListProperty == null )
             {
@@ -129,23 +155,12 @@ namespace TinyHero.Tools
             SerializedProperty valueTypeProperty = entryProperty.FindPropertyRelative( "valueType" );
             SerializedProperty valueProperty = entryProperty.FindPropertyRelative( "value" );
             SerializedProperty weightProperty = entryProperty.FindPropertyRelative( "weight" );
-            eEquipmentPotentialValueType valueType = ResolveDefaultValueType( _optionType );
-            float defaultValue = ResolveDefaultValue( _rank, _optionType, valueType );
             equipmentTypeProperty.enumValueIndex = ( int )_equipmentType;
             rankProperty.enumValueIndex = ( int )_rank;
             optionTypeProperty.enumValueIndex = ( int )_optionType;
-            valueTypeProperty.enumValueIndex = ( int )valueType;
-            valueProperty.floatValue = defaultValue;
+            valueTypeProperty.enumValueIndex = ( int )_valueType;
+            valueProperty.floatValue = _value;
             weightProperty.intValue = 1;
-        }
-
-        ///<summary>
-        /// 기본 잠재 수치 타입 결정
-        ///</summary>
-        private static eEquipmentPotentialValueType ResolveDefaultValueType( eEquipmentPotentialOptionType _optionType )
-        {
-            eEquipmentPotentialValueType result = CEquipmentPotentialUtility.GetDefaultValueType( _optionType );
-            return result;
         }
 
         ///<summary>
@@ -176,6 +191,15 @@ namespace TinyHero.Tools
             }
 
             return baseValue;
+        }
+
+        ///<summary>
+        /// 기본 잠재 보조 수치 결정
+        ///</summary>
+        private static float ResolveSecondaryDefaultValue( eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, float _baseValue )
+        {
+            float result = _baseValue / DefaultValueGapMultiplier;
+            return result;
         }
 
         ///<summary>

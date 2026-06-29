@@ -10,9 +10,23 @@ namespace TinyHero.Tools.Editor
     ///</summary>
     public sealed class CEquipmentPotentialEditorWindow : EditorWindow
     {
+        private struct COptionEntryViewData
+        {
+            public int entryIndex;
+            public eEquipmentPotentialOptionType optionType;
+            public eEquipmentPotentialValueType valueType;
+            public float value;
+            public int weight;
+        }
+
         private const string AssetFolderPath = "Assets/Resources/Data/Item";
         private const string AssetPath = "Assets/Resources/Data/Item/EquipmentPotentialTableData.asset";
         private const float EntrySpacing = 8.0f;
+        private const float PercentScale = 100.0f;
+        private const float BottomSaveSectionHeight = 76.0f;
+        private const float TopSectionEstimateHeight = 220.0f;
+        private const float DefaultValueGapMultiplier = 1.3f;
+        private const int EntryCountPerRow = 4;
 
         private Vector2 scrollPosition;
         private eEquipmentType selectedEquipmentType = eEquipmentType.WEAPON;
@@ -26,20 +40,25 @@ namespace TinyHero.Tools.Editor
         private SerializedProperty uniqueAdditionalCurrentRankChanceProperty;
         private SerializedProperty legendaryAdditionalCurrentRankChanceProperty;
         private SerializedProperty optionEntryListProperty;
+        private List<int> cachedFilteredEntryIndexList = new List<int>();
+        private List<List<int>> cachedGroupedEntryIndexList = new List<List<int>>();
+        private Dictionary<int, COptionEntryViewData> cachedEntryViewDataMap = new Dictionary<int, COptionEntryViewData>();
+        private int cachedFilteredTotalWeight;
+        private bool hasPendingChanges;
 
         ///<summary>
-        /// 잠재 편집 창 열기 메뉴
+        /// 장비 잠재 옵션 편집 창 열기 메뉴
         ///</summary>
         [MenuItem( "Tools/TinyHero/Equipment Potential Editor" )]
         public static void OpenWindow()
         {
             CEquipmentPotentialEditorWindow window = GetWindow<CEquipmentPotentialEditorWindow>( "Equipment Potential Editor" );
-            window.minSize = new Vector2( 1080.0f, 620.0f );
+            window.minSize = new Vector2( 1400.0f, 720.0f );
             window.Show();
         }
 
         ///<summary>
-        /// 잠재 편집 창 활성화 처리
+        /// 장비 잠재 옵션 편집 창 활성화 처리
         ///</summary>
         private void OnEnable()
         {
@@ -48,7 +67,7 @@ namespace TinyHero.Tools.Editor
         }
 
         ///<summary>
-        /// 잠재 편집 창 GUI 렌더링
+        /// 장비 잠재 옵션 편집 창 GUI 렌더링
         ///</summary>
         private void OnGUI()
         {
@@ -61,6 +80,7 @@ namespace TinyHero.Tools.Editor
             }
 
             serializedTableData.Update();
+            RebuildViewCache();
             DrawToolbar();
             EditorGUILayout.Space( 8.0f );
             DrawRuleSection();
@@ -68,16 +88,20 @@ namespace TinyHero.Tools.Editor
             DrawSummarySection();
             EditorGUILayout.Space( 8.0f );
             DrawOptionListSection();
-            serializedTableData.ApplyModifiedProperties();
+            EditorGUILayout.Space( 8.0f );
+            DrawBottomSaveSection();
 
-            if ( GUI.changed )
+            bool hasModifiedProperties = serializedTableData.hasModifiedProperties;
+
+            if ( hasModifiedProperties )
             {
-                EditorUtility.SetDirty( tableData );
+                serializedTableData.ApplyModifiedPropertiesWithoutUndo();
+                hasPendingChanges = true;
             }
         }
 
         ///<summary>
-        /// 잠재 테이블 데이터 보장
+        /// 장비 잠재 테이블 에셋 보장
         ///</summary>
         private void EnsureTableData()
         {
@@ -120,6 +144,17 @@ namespace TinyHero.Tools.Editor
         }
 
         ///<summary>
+        /// 화면 표시용 캐시 재구성
+        ///</summary>
+        private void RebuildViewCache()
+        {
+            cachedEntryViewDataMap.Clear();
+            cachedFilteredEntryIndexList = GetFilteredEntryIndexList();
+            cachedGroupedEntryIndexList = BuildGroupedFilteredEntryIndexList( cachedFilteredEntryIndexList );
+            cachedFilteredTotalWeight = ResolveFilteredTotalWeight( cachedFilteredEntryIndexList );
+        }
+
+        ///<summary>
         /// 상단 툴바 렌더링
         ///</summary>
         private void DrawToolbar()
@@ -139,6 +174,14 @@ namespace TinyHero.Tools.Editor
             }
 
             GUILayout.FlexibleSpace();
+            GUI.enabled = hasPendingChanges;
+
+            if ( GUILayout.Button( "Save", EditorStyles.toolbarButton, GUILayout.Width( 80.0f ) ) )
+            {
+                SaveTableData();
+            }
+
+            GUI.enabled = true;
             EditorGUILayout.EndHorizontal();
         }
 
@@ -149,19 +192,35 @@ namespace TinyHero.Tools.Editor
         {
             EditorGUILayout.BeginVertical( "box" );
             EditorGUILayout.LabelField( "Roll Rules", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "1번째 줄은 현재 등급에서만 등장합니다. 2, 3번째 줄은 기본적으로 한 단계 낮은 등급에서 등장하며, 설정한 확률로 현재 등급이 다시 등장합니다.", MessageType.Info );
+            EditorGUILayout.Space( 2.0f );
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PropertyField( commonToRareChanceProperty, new GUIContent( "Common -> Rare" ) );
-            EditorGUILayout.PropertyField( rareToUniqueChanceProperty, new GUIContent( "Rare -> Unique" ) );
-            EditorGUILayout.PropertyField( uniqueToLegendaryChanceProperty, new GUIContent( "Unique -> Legendary" ) );
+            DrawPercentField( commonToRareChanceProperty, "Common -> Rare (%)" );
+            DrawPercentField( rareToUniqueChanceProperty, "Rare -> Unique (%)" );
+            DrawPercentField( uniqueToLegendaryChanceProperty, "Unique -> Legendary (%)" );
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space( 4.0f );
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PropertyField( rareAdditionalCurrentRankChanceProperty, new GUIContent( "Rare Line 2/3 Current Rank" ) );
-            EditorGUILayout.PropertyField( uniqueAdditionalCurrentRankChanceProperty, new GUIContent( "Unique Line 2/3 Current Rank" ) );
-            EditorGUILayout.PropertyField( legendaryAdditionalCurrentRankChanceProperty, new GUIContent( "Legendary Line 2/3 Current Rank" ) );
+            DrawPercentField( rareAdditionalCurrentRankChanceProperty, "Rare Line 2/3 (%)" );
+            DrawPercentField( uniqueAdditionalCurrentRankChanceProperty, "Unique Line 2/3 (%)" );
+            DrawPercentField( legendaryAdditionalCurrentRankChanceProperty, "Legendary Line 2/3 (%)" );
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
+        }
+
+        ///<summary>
+        /// 퍼센트 규칙 입력 필드 렌더링
+        ///</summary>
+        private void DrawPercentField( SerializedProperty _property, string _label )
+        {
+            if ( _property == null )
+            {
+                return;
+            }
+
+            float percentValue = _property.floatValue * PercentScale;
+            float changedPercentValue = EditorGUILayout.DelayedFloatField( new GUIContent( _label ), percentValue );
+            float clampedPercentValue = Mathf.Clamp( changedPercentValue, 0.0f, PercentScale );
+            _property.floatValue = clampedPercentValue / PercentScale;
         }
 
         ///<summary>
@@ -169,11 +228,11 @@ namespace TinyHero.Tools.Editor
         ///</summary>
         private void DrawSummarySection()
         {
-            int filteredEntryCount = GetFilteredEntryIndexList().Count;
-            int totalWeight = ResolveFilteredTotalWeight();
+            int filteredEntryCount = cachedFilteredEntryIndexList.Count;
+            int totalWeight = cachedFilteredTotalWeight;
             eEquipmentPotentialRank fallbackRank = CEquipmentPotentialUtility.GetPreviousRank( selectedRank );
-            float currentRankChance = tableData != null ? tableData.GetAdditionalCurrentRankChance( selectedRank ) * 100.0f : 100.0f;
-            float fallbackRankChance = 100.0f - currentRankChance;
+            float currentRankChance = tableData != null ? tableData.GetAdditionalCurrentRankChance( selectedRank ) * PercentScale : PercentScale;
+            float fallbackRankChance = PercentScale - currentRankChance;
             EditorGUILayout.BeginVertical( "box" );
             EditorGUILayout.LabelField( "Summary", EditorStyles.boldLabel );
             EditorGUILayout.LabelField( $"Filtered Entries: {filteredEntryCount}" );
@@ -196,31 +255,80 @@ namespace TinyHero.Tools.Editor
         ///</summary>
         private void DrawOptionListSection()
         {
-            EditorGUILayout.BeginVertical( "box" );
+            float optionListHeight = ResolveOptionListHeight();
+            EditorGUILayout.BeginVertical( "box", GUILayout.Height( optionListHeight ) );
             EditorGUILayout.LabelField( "Option Entries", EditorStyles.boldLabel );
-            scrollPosition = EditorGUILayout.BeginScrollView( scrollPosition );
-            List<int> filteredEntryIndexList = GetFilteredEntryIndexList();
+            scrollPosition = EditorGUILayout.BeginScrollView( scrollPosition, GUILayout.ExpandHeight( true ) );
 
-            for ( int index = 0; index < filteredEntryIndexList.Count; index += 2 )
+            for ( int groupIndex = 0; groupIndex < cachedGroupedEntryIndexList.Count; groupIndex++ )
+            {
+                List<int> optionGroupList = cachedGroupedEntryIndexList[ groupIndex ];
+                DrawOptionGroupRows( optionGroupList );
+                GUILayout.Space( EntrySpacing );
+            }
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        ///<summary>
+        /// 옵션 그룹 행 묶음 렌더링
+        ///</summary>
+        private void DrawOptionGroupRows( List<int> _optionGroupList )
+        {
+            if ( _optionGroupList == null || _optionGroupList.Count == 0 )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < _optionGroupList.Count; index += EntryCountPerRow )
             {
                 EditorGUILayout.BeginHorizontal();
-                DrawOptionEntry( filteredEntryIndexList[ index ] );
-                GUILayout.Space( EntrySpacing );
 
-                if ( index + 1 < filteredEntryIndexList.Count )
+                for ( int columnIndex = 0; columnIndex < EntryCountPerRow; columnIndex++ )
                 {
-                    DrawOptionEntry( filteredEntryIndexList[ index + 1 ] );
-                }
-                else
-                {
-                    GUILayout.FlexibleSpace();
+                    int entryListIndex = index + columnIndex;
+
+                    if ( entryListIndex < _optionGroupList.Count )
+                    {
+                        int entryIndex = _optionGroupList[ entryListIndex ];
+                        DrawOptionEntry( entryIndex );
+                    }
+                    else
+                    {
+                        GUILayout.FlexibleSpace();
+                    }
+
+                    if ( columnIndex < EntryCountPerRow - 1 )
+                    {
+                        GUILayout.Space( EntrySpacing );
+                    }
                 }
 
                 EditorGUILayout.EndHorizontal();
                 GUILayout.Space( EntrySpacing );
             }
+        }
 
-            EditorGUILayout.EndScrollView();
+        ///<summary>
+        /// 하단 저장 영역 렌더링
+        ///</summary>
+        private void DrawBottomSaveSection()
+        {
+            EditorGUILayout.BeginVertical( "box", GUILayout.Height( BottomSaveSectionHeight ) );
+            string statusText = hasPendingChanges ? "Unsaved changes" : "All changes saved";
+            EditorGUILayout.LabelField( statusText, EditorStyles.boldLabel );
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUI.enabled = hasPendingChanges;
+
+            if ( GUILayout.Button( "Save Changes", GUILayout.Width( 180.0f ), GUILayout.Height( 30.0f ) ) )
+            {
+                SaveTableData();
+            }
+
+            GUI.enabled = true;
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
 
@@ -241,16 +349,17 @@ namespace TinyHero.Tools.Editor
             SerializedProperty valueTypeProperty = optionEntryProperty.FindPropertyRelative( "valueType" );
             SerializedProperty valueProperty = optionEntryProperty.FindPropertyRelative( "value" );
             SerializedProperty weightProperty = optionEntryProperty.FindPropertyRelative( "weight" );
-            eEquipmentPotentialOptionType optionType = ( eEquipmentPotentialOptionType )optionTypeProperty.enumValueIndex;
-            bool forcePercentValueType = CEquipmentPotentialUtility.ShouldForcePercentValueType( optionType );
-            float chancePercent = ResolveEntryChancePercent( optionEntryProperty );
-            EditorGUILayout.BeginVertical( "box", GUILayout.MaxWidth( position.width * 0.48f ) );
+            COptionEntryViewData viewData = cachedEntryViewDataMap[ _entryIndex ];
+            bool forcePercentValueType = CEquipmentPotentialUtility.ShouldForcePercentValueType( viewData.optionType );
+            float chancePercent = ResolveEntryChancePercent( weightProperty );
+            float entryWidth = ResolveEntryWidth();
+            EditorGUILayout.BeginVertical( "box", GUILayout.Width( entryWidth ) );
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField( $"{CEquipmentPotentialUtility.GetOptionLabel( optionType )}", EditorStyles.boldLabel );
+            EditorGUILayout.LabelField( $"{CEquipmentPotentialUtility.GetOptionLabel( viewData.optionType )}", EditorStyles.boldLabel );
             GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField( $"{chancePercent:0.##}%", GUILayout.Width( 70.0f ) );
+            EditorGUILayout.LabelField( $"{chancePercent:0.##}%", GUILayout.Width( 58.0f ) );
 
-            if ( GUILayout.Button( "Delete", GUILayout.Width( 70.0f ) ) )
+            if ( GUILayout.Button( "Delete", GUILayout.Width( 58.0f ) ) )
             {
                 optionEntryListProperty.DeleteArrayElementAtIndex( _entryIndex );
                 EditorGUILayout.EndHorizontal();
@@ -282,7 +391,7 @@ namespace TinyHero.Tools.Editor
             EditorGUILayout.PropertyField( weightProperty, new GUIContent( "Weight" ) );
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.LabelField( $"Applied: {BuildEntryPreviewText( optionTypeProperty, valueTypeProperty, valueProperty )}" );
-            EditorGUILayout.LabelField( $"Chance by Weight: {chancePercent:0.##}% (within current filter)" );
+            EditorGUILayout.LabelField( $"Chance by Weight: {chancePercent:0.##}%" );
             EditorGUILayout.EndVertical();
         }
 
@@ -292,7 +401,7 @@ namespace TinyHero.Tools.Editor
         private string BuildEntryPreviewText( SerializedProperty _optionTypeProperty, SerializedProperty _valueTypeProperty, SerializedProperty _valueProperty )
         {
             eEquipmentPotentialOptionType optionType = ( eEquipmentPotentialOptionType )_optionTypeProperty.enumValueIndex;
-            eEquipmentPotentialValueType valueType = ( eEquipmentPotentialValueType )_valueTypeProperty.enumValueIndex;
+            eEquipmentPotentialValueType valueType = ResolveDisplayValueType( optionType, _valueTypeProperty );
             string optionLabel = CEquipmentPotentialUtility.GetOptionLabel( optionType );
             string valueText = CEquipmentPotentialUtility.FormatOptionValue( valueType, _valueProperty.floatValue );
             string result = $"{optionLabel} {valueText}";
@@ -320,10 +429,136 @@ namespace TinyHero.Tools.Editor
                     continue;
                 }
 
+                CacheEntryViewData( index, optionEntryProperty );
                 filteredEntryIndexList.Add( index );
             }
 
+            filteredEntryIndexList.Sort( CompareEntryDisplayOrder );
             return filteredEntryIndexList;
+        }
+
+        ///<summary>
+        /// 엔트리 표시 데이터 캐시
+        ///</summary>
+        private void CacheEntryViewData( int _entryIndex, SerializedProperty _optionEntryProperty )
+        {
+            SerializedProperty optionTypeProperty = _optionEntryProperty.FindPropertyRelative( "optionType" );
+            SerializedProperty valueTypeProperty = _optionEntryProperty.FindPropertyRelative( "valueType" );
+            SerializedProperty valueProperty = _optionEntryProperty.FindPropertyRelative( "value" );
+            SerializedProperty weightProperty = _optionEntryProperty.FindPropertyRelative( "weight" );
+            eEquipmentPotentialOptionType optionType = ( eEquipmentPotentialOptionType )optionTypeProperty.enumValueIndex;
+            eEquipmentPotentialValueType valueType = ResolveDisplayValueType( optionType, valueTypeProperty );
+            COptionEntryViewData viewData = new COptionEntryViewData();
+            viewData.entryIndex = _entryIndex;
+            viewData.optionType = optionType;
+            viewData.valueType = valueType;
+            viewData.value = valueProperty.floatValue;
+            viewData.weight = Mathf.Max( 0, weightProperty.intValue );
+            cachedEntryViewDataMap[ _entryIndex ] = viewData;
+        }
+
+        ///<summary>
+        /// 현재 필터 엔트리 그룹 목록 반환
+        ///</summary>
+        private List<List<int>> BuildGroupedFilteredEntryIndexList( List<int> _filteredEntryIndexList )
+        {
+            List<List<int>> groupedEntryIndexList = new List<List<int>>();
+            eEquipmentPotentialOptionType currentOptionType = eEquipmentPotentialOptionType.NONE;
+            List<int> currentGroupList = null;
+
+            if ( _filteredEntryIndexList == null )
+            {
+                return groupedEntryIndexList;
+            }
+
+            for ( int index = 0; index < _filteredEntryIndexList.Count; index++ )
+            {
+                int entryIndex = _filteredEntryIndexList[ index ];
+                COptionEntryViewData viewData = cachedEntryViewDataMap[ entryIndex ];
+
+                if ( currentGroupList == null || currentOptionType != viewData.optionType )
+                {
+                    currentGroupList = new List<int>();
+                    groupedEntryIndexList.Add( currentGroupList );
+                    currentOptionType = viewData.optionType;
+                }
+
+                currentGroupList.Add( entryIndex );
+            }
+
+            return groupedEntryIndexList;
+        }
+
+        ///<summary>
+        /// 엔트리 표시 순서 비교
+        ///</summary>
+        private int CompareEntryDisplayOrder( int _leftIndex, int _rightIndex )
+        {
+            COptionEntryViewData leftViewData = cachedEntryViewDataMap[ _leftIndex ];
+            COptionEntryViewData rightViewData = cachedEntryViewDataMap[ _rightIndex ];
+            int optionCompareResult = CompareEntryOptionType( leftViewData, rightViewData );
+
+            if ( optionCompareResult != 0 )
+            {
+                return optionCompareResult;
+            }
+
+            int valueTypeCompareResult = CompareEntryValueType( leftViewData, rightViewData );
+
+            if ( valueTypeCompareResult != 0 )
+            {
+                return valueTypeCompareResult;
+            }
+
+            int result = _leftIndex.CompareTo( _rightIndex );
+            return result;
+        }
+
+        ///<summary>
+        /// 옵션 타입 기준 비교
+        ///</summary>
+        private int CompareEntryOptionType( COptionEntryViewData _leftViewData, COptionEntryViewData _rightViewData )
+        {
+            int result = _leftViewData.optionType.CompareTo( _rightViewData.optionType );
+            return result;
+        }
+
+        ///<summary>
+        /// 값 타입 기준 비교
+        ///</summary>
+        private int CompareEntryValueType( COptionEntryViewData _leftViewData, COptionEntryViewData _rightViewData )
+        {
+            int leftSortOrder = ResolveValueTypeSortOrder( _leftViewData.valueType );
+            int rightSortOrder = ResolveValueTypeSortOrder( _rightViewData.valueType );
+            int result = leftSortOrder.CompareTo( rightSortOrder );
+            return result;
+        }
+
+        ///<summary>
+        /// 값 타입 정렬 우선순위 결정
+        ///</summary>
+        private int ResolveValueTypeSortOrder( eEquipmentPotentialValueType _valueType )
+        {
+            if ( _valueType == eEquipmentPotentialValueType.PERCENT )
+            {
+                return 0;
+            }
+
+            return 1;
+        }
+
+        ///<summary>
+        /// 표시용 값 타입 결정
+        ///</summary>
+        private eEquipmentPotentialValueType ResolveDisplayValueType( eEquipmentPotentialOptionType _optionType, SerializedProperty _valueTypeProperty )
+        {
+            if ( CEquipmentPotentialUtility.ShouldForcePercentValueType( _optionType ) )
+            {
+                return eEquipmentPotentialValueType.PERCENT;
+            }
+
+            eEquipmentPotentialValueType result = ( eEquipmentPotentialValueType )_valueTypeProperty.enumValueIndex;
+            return result;
         }
 
         ///<summary>
@@ -331,19 +566,8 @@ namespace TinyHero.Tools.Editor
         ///</summary>
         private bool ShouldDrawEntry( SerializedProperty _optionEntryProperty )
         {
-            if ( _optionEntryProperty == null )
-            {
-                return false;
-            }
-
             SerializedProperty equipmentTypeProperty = _optionEntryProperty.FindPropertyRelative( "equipmentType" );
             SerializedProperty rankProperty = _optionEntryProperty.FindPropertyRelative( "rank" );
-
-            if ( equipmentTypeProperty == null || rankProperty == null )
-            {
-                return false;
-            }
-
             eEquipmentType equipmentType = ( eEquipmentType )equipmentTypeProperty.enumValueIndex;
             eEquipmentPotentialRank rank = ( eEquipmentPotentialRank )rankProperty.enumValueIndex;
             bool result = equipmentType == selectedEquipmentType && rank == selectedRank;
@@ -353,17 +577,20 @@ namespace TinyHero.Tools.Editor
         ///<summary>
         /// 현재 필터 총 가중치 반환
         ///</summary>
-        private int ResolveFilteredTotalWeight()
+        private int ResolveFilteredTotalWeight( List<int> _filteredEntryIndexList )
         {
             int totalWeight = 0;
-            List<int> filteredEntryIndexList = GetFilteredEntryIndexList();
 
-            for ( int index = 0; index < filteredEntryIndexList.Count; index++ )
+            if ( _filteredEntryIndexList == null )
             {
-                int entryIndex = filteredEntryIndexList[ index ];
-                SerializedProperty optionEntryProperty = optionEntryListProperty.GetArrayElementAtIndex( entryIndex );
-                SerializedProperty weightProperty = optionEntryProperty.FindPropertyRelative( "weight" );
-                totalWeight += Mathf.Max( 0, weightProperty.intValue );
+                return totalWeight;
+            }
+
+            for ( int index = 0; index < _filteredEntryIndexList.Count; index++ )
+            {
+                int entryIndex = _filteredEntryIndexList[ index ];
+                COptionEntryViewData viewData = cachedEntryViewDataMap[ entryIndex ];
+                totalWeight += viewData.weight;
             }
 
             return totalWeight;
@@ -372,22 +599,14 @@ namespace TinyHero.Tools.Editor
         ///<summary>
         /// 엔트리 실제 확률 반환
         ///</summary>
-        private float ResolveEntryChancePercent( SerializedProperty _optionEntryProperty )
+        private float ResolveEntryChancePercent( SerializedProperty _weightProperty )
         {
-            if ( _optionEntryProperty == null )
+            if ( _weightProperty == null || cachedFilteredTotalWeight <= 0 )
             {
                 return 0.0f;
             }
 
-            SerializedProperty weightProperty = _optionEntryProperty.FindPropertyRelative( "weight" );
-            int totalWeight = ResolveFilteredTotalWeight();
-
-            if ( weightProperty == null || totalWeight <= 0 )
-            {
-                return 0.0f;
-            }
-
-            float chancePercent = Mathf.Max( 0.0f, weightProperty.intValue ) / totalWeight * 100.0f;
+            float chancePercent = Mathf.Max( 0.0f, _weightProperty.intValue ) / cachedFilteredTotalWeight * PercentScale;
             return chancePercent;
         }
 
@@ -406,12 +625,28 @@ namespace TinyHero.Tools.Editor
             SerializedProperty createdEntryProperty = optionEntryListProperty.GetArrayElementAtIndex( newIndex );
             SerializedProperty optionTypeProperty = createdEntryProperty.FindPropertyRelative( "optionType" );
             eEquipmentPotentialOptionType optionType = eEquipmentPotentialOptionType.ATK;
+            eEquipmentPotentialValueType valueType = CEquipmentPotentialUtility.GetDefaultValueType( optionType );
             createdEntryProperty.FindPropertyRelative( "equipmentType" ).enumValueIndex = ( int )selectedEquipmentType;
             createdEntryProperty.FindPropertyRelative( "rank" ).enumValueIndex = ( int )selectedRank;
             optionTypeProperty.enumValueIndex = ( int )optionType;
-            createdEntryProperty.FindPropertyRelative( "valueType" ).enumValueIndex = ( int )CEquipmentPotentialUtility.GetDefaultValueType( optionType );
-            createdEntryProperty.FindPropertyRelative( "value" ).floatValue = ResolveDefaultValue( selectedRank, optionType, CEquipmentPotentialUtility.GetDefaultValueType( optionType ) );
+            createdEntryProperty.FindPropertyRelative( "valueType" ).enumValueIndex = ( int )valueType;
+            createdEntryProperty.FindPropertyRelative( "value" ).floatValue = ResolveDefaultValue( selectedRank, optionType, valueType );
             createdEntryProperty.FindPropertyRelative( "weight" ).intValue = 1;
+        }
+
+        ///<summary>
+        /// 장비 잠재 옵션 테이블 저장
+        ///</summary>
+        private void SaveTableData()
+        {
+            if ( tableData == null )
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty( tableData );
+            AssetDatabase.SaveAssets();
+            hasPendingChanges = false;
         }
 
         ///<summary>
@@ -454,6 +689,7 @@ namespace TinyHero.Tools.Editor
                 eEquipmentPotentialOptionType.ACC,
                 eEquipmentPotentialOptionType.ATS,
                 eEquipmentPotentialOptionType.MOVE,
+                eEquipmentPotentialOptionType.RANGE,
                 eEquipmentPotentialOptionType.EXP_GAIN_PERCENT,
                 eEquipmentPotentialOptionType.GOLD_GAIN_PERCENT,
                 eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT
@@ -470,16 +706,40 @@ namespace TinyHero.Tools.Editor
                     for ( int optionIndex = 0; optionIndex < optionTypeArray.Length; optionIndex++ )
                     {
                         eEquipmentPotentialOptionType optionType = optionTypeArray[ optionIndex ];
-                        AddDefaultOptionEntry( equipmentType, rank, optionType );
+                        AddDefaultOptionEntries( equipmentType, rank, optionType );
                     }
                 }
             }
         }
 
         ///<summary>
+        /// 기본 잠재 엔트리 묶음 추가
+        ///</summary>
+        private void AddDefaultOptionEntries( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType )
+        {
+            if ( CEquipmentPotentialUtility.ShouldForcePercentValueType( _optionType ) )
+            {
+                float forcedFirstPercentValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT );
+                float forcedSecondPercentValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT, forcedFirstPercentValue );
+                AddDefaultOptionEntry( _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, forcedFirstPercentValue );
+                AddDefaultOptionEntry( _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, forcedSecondPercentValue );
+                return;
+            }
+
+            float firstPercentValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT );
+            float secondPercentValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue );
+            float firstValueValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.VALUE );
+            float secondValueValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValueValue );
+            AddDefaultOptionEntry( _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue );
+            AddDefaultOptionEntry( _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercentValue );
+            AddDefaultOptionEntry( _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValueValue );
+            AddDefaultOptionEntry( _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, secondValueValue );
+        }
+
+        ///<summary>
         /// 기본 잠재 엔트리 추가
         ///</summary>
-        private void AddDefaultOptionEntry( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType )
+        private void AddDefaultOptionEntry( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, float _value )
         {
             if ( optionEntryListProperty == null )
             {
@@ -489,12 +749,11 @@ namespace TinyHero.Tools.Editor
             int newIndex = optionEntryListProperty.arraySize;
             optionEntryListProperty.InsertArrayElementAtIndex( newIndex );
             SerializedProperty createdEntryProperty = optionEntryListProperty.GetArrayElementAtIndex( newIndex );
-            eEquipmentPotentialValueType valueType = CEquipmentPotentialUtility.GetDefaultValueType( _optionType );
             createdEntryProperty.FindPropertyRelative( "equipmentType" ).enumValueIndex = ( int )_equipmentType;
             createdEntryProperty.FindPropertyRelative( "rank" ).enumValueIndex = ( int )_rank;
             createdEntryProperty.FindPropertyRelative( "optionType" ).enumValueIndex = ( int )_optionType;
-            createdEntryProperty.FindPropertyRelative( "valueType" ).enumValueIndex = ( int )valueType;
-            createdEntryProperty.FindPropertyRelative( "value" ).floatValue = ResolveDefaultValue( _rank, _optionType, valueType );
+            createdEntryProperty.FindPropertyRelative( "valueType" ).enumValueIndex = ( int )_valueType;
+            createdEntryProperty.FindPropertyRelative( "value" ).floatValue = _value;
             createdEntryProperty.FindPropertyRelative( "weight" ).intValue = 1;
         }
 
@@ -526,6 +785,35 @@ namespace TinyHero.Tools.Editor
             }
 
             return baseValue;
+        }
+
+        ///<summary>
+        /// 기본 잠재 보조 수치 결정
+        ///</summary>
+        private float ResolveSecondaryDefaultValue( eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, float _baseValue )
+        {
+            float result = _baseValue / DefaultValueGapMultiplier;
+            return result;
+        }
+
+        ///<summary>
+        /// 옵션 리스트 영역 높이 계산
+        ///</summary>
+        private float ResolveOptionListHeight()
+        {
+            float estimatedHeight = position.height - TopSectionEstimateHeight - BottomSaveSectionHeight;
+            float clampedHeight = Mathf.Max( 180.0f, estimatedHeight );
+            return clampedHeight;
+        }
+
+        ///<summary>
+        /// 옵션 엔트리 너비 계산
+        ///</summary>
+        private float ResolveEntryWidth()
+        {
+            float availableWidth = position.width - 48.0f - EntrySpacing * ( EntryCountPerRow - 1 );
+            float entryWidth = Mathf.Max( 240.0f, availableWidth / EntryCountPerRow );
+            return entryWidth;
         }
 
         ///<summary>

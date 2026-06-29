@@ -44,7 +44,8 @@ namespace TinyHero.Core.Data
         MOVE,
         EXP_GAIN_PERCENT,
         GOLD_GAIN_PERCENT,
-        FINAL_ATTACK_PERCENT
+        FINAL_ATTACK_PERCENT,
+        RANGE
     }
 
     ///<summary>

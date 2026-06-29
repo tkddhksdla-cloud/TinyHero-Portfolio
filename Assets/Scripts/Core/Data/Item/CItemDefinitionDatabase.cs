@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using UnityEngine;
+using TinyHero.Core;
 
 namespace TinyHero.Core.Data
 {
@@ -8,8 +8,6 @@ namespace TinyHero.Core.Data
     ///</summary>
     public static class CItemDefinitionDatabase
     {
-        private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
-
         private static readonly Dictionary<string, CItemDefinition> itemDefinitionDictionary = new Dictionary<string, CItemDefinition>();
         private static readonly List<CItemDefinition> itemDefinitionList = new List<CItemDefinition>();
         private static bool isInitialized;
@@ -67,7 +65,8 @@ namespace TinyHero.Core.Data
             isInitialized = true;
             itemDefinitionDictionary.Clear();
             itemDefinitionList.Clear();
-            CItemDefinition[] loadedDefinitionArray = Resources.LoadAll<CItemDefinition>( ItemDefinitionResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CItemDefinition[] loadedDefinitionArray = resourceManager != null ? resourceManager.GetItemDefinitionArray() : new CItemDefinition[ 0 ];
 
             for ( int index = 0; index < loadedDefinitionArray.Length; index++ )
             {

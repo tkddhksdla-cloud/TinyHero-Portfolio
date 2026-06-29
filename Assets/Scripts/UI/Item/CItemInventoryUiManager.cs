@@ -9,9 +9,6 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CItemInventoryUiManager : CSingleTon<CItemInventoryUiManager>
     {
-        private const string InventoryPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupItemInventory";
-        private const string LegacyInventoryPopupPrefabResourcePath = "Prefabs/UI/Inventory/PopupItemInventory";
-
         private CPlayerInventoryManager targetInventoryManager;
         private GameObject inventoryPopupPrefabObject;
         private PopupItemInventory inventoryUiController;
@@ -103,15 +100,15 @@ namespace TinyHero.UI
         ///</summary>
         private GameObject LoadInventoryPopupPrefabObject()
         {
-            GameObject loadedPrefabObject = Resources.Load<GameObject>( InventoryPopupPrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
 
-            if ( loadedPrefabObject != null )
+            if ( resourceManager == null )
             {
-                return loadedPrefabObject;
+                return null;
             }
 
-            GameObject legacyLoadedPrefabObject = Resources.Load<GameObject>( LegacyInventoryPopupPrefabResourcePath );
-            return legacyLoadedPrefabObject;
+            GameObject loadedPrefabObject = resourceManager.GetInventoryPopupPrefab();
+            return loadedPrefabObject;
         }
     }
 }

@@ -67,6 +67,10 @@ namespace TinyHero.Core.Data
                 case eEquipmentPotentialOptionType.MOVE:
                     _statType = ePlayerStatType.MOVE;
                     return true;
+
+                case eEquipmentPotentialOptionType.RANGE:
+                    _statType = ePlayerStatType.RANGE;
+                    return true;
             }
 
             return false;
@@ -120,6 +124,9 @@ namespace TinyHero.Core.Data
 
                 case eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT:
                     return "최종 공격력 증가";
+
+                case eEquipmentPotentialOptionType.RANGE:
+                    return "공격 범위 증가";
             }
 
             return "없음";
@@ -132,7 +139,10 @@ namespace TinyHero.Core.Data
         {
             bool result = _optionType == eEquipmentPotentialOptionType.EXP_GAIN_PERCENT
                 || _optionType == eEquipmentPotentialOptionType.GOLD_GAIN_PERCENT
-                || _optionType == eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT;
+                || _optionType == eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT
+                || _optionType == eEquipmentPotentialOptionType.ATS
+                || _optionType == eEquipmentPotentialOptionType.MOVE
+                || _optionType == eEquipmentPotentialOptionType.RANGE;
             return result;
         }
 
@@ -159,7 +169,7 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
-        /// 잠재 등급 단축 문자 반환
+        /// 잠재 등급 축약 문자 반환
         ///</summary>
         public static string GetRankShortLabel( eEquipmentPotentialRank _rank )
         {
@@ -205,7 +215,7 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
-        /// 한 단계 낮은 잠재 등급 반환
+        /// 현재 단계 이전 잠재 등급 반환
         ///</summary>
         public static eEquipmentPotentialRank GetPreviousRank( eEquipmentPotentialRank _rank )
         {

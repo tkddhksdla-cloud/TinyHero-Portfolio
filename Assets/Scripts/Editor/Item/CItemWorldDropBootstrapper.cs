@@ -219,6 +219,8 @@ namespace TinyHero.Tools
                 }
 
                 circleCollider.isTrigger = true;
+                CircleCollider2D groundCollisionCollider = ResolveOrCreateGroundCollisionCollider( prefabRoot, circleCollider );
+                Rigidbody2D targetRigidbody = ResolveOrCreateDropRigidbody( prefabRoot );
                 CWorldItemDropObject worldItemDropObject = prefabRoot.GetComponent<CWorldItemDropObject>();
 
                 if ( worldItemDropObject == null )
@@ -230,6 +232,8 @@ namespace TinyHero.Tools
                 SerializedObject serializedObject = new SerializedObject( worldItemDropObject );
                 SerializedProperty spriteRendererProperty = serializedObject.FindProperty( "targetSpriteRenderer" );
                 SerializedProperty pickupTriggerColliderProperty = serializedObject.FindProperty( "pickupTriggerCollider" );
+                SerializedProperty groundCollisionColliderProperty = serializedObject.FindProperty( "groundCollisionCollider" );
+                SerializedProperty targetRigidbodyProperty = serializedObject.FindProperty( "targetRigidbody" );
 
                 if ( spriteRendererProperty != null )
                 {
@@ -241,8 +245,18 @@ namespace TinyHero.Tools
                     pickupTriggerColliderProperty.objectReferenceValue = circleCollider;
                 }
 
+                if ( groundCollisionColliderProperty != null )
+                {
+                    groundCollisionColliderProperty.objectReferenceValue = groundCollisionCollider;
+                }
+
+                if ( targetRigidbodyProperty != null )
+                {
+                    targetRigidbodyProperty.objectReferenceValue = targetRigidbody;
+                }
+
                 serializedObject.ApplyModifiedPropertiesWithoutUndo();
-                ApplyWorldDropVisualScale( prefabRoot.transform, spriteRenderer, circleCollider );
+                ApplyWorldDropVisualScale( prefabRoot.transform, spriteRenderer, circleCollider, groundCollisionCollider );
 
                 if ( shouldUnloadPrefabContents )
                 {
@@ -460,7 +474,7 @@ namespace TinyHero.Tools
         ///<summary>
         /// 월드 드랍 비주얼 크기 보정
         ///</summary>
-        private static void ApplyWorldDropVisualScale( Transform _rootTransform, SpriteRenderer _spriteRenderer, CircleCollider2D _circleCollider )
+        private static void ApplyWorldDropVisualScale( Transform _rootTransform, SpriteRenderer _spriteRenderer, CircleCollider2D _circleCollider, CircleCollider2D _groundCollisionCollider )
         {
             if ( _rootTransform == null )
             {
@@ -496,6 +510,79 @@ namespace TinyHero.Tools
             }
 
             _circleCollider.radius = colliderRadius;
+
+            if ( _groundCollisionCollider == null )
+            {
+                return;
+            }
+
+            _groundCollisionCollider.offset = _circleCollider.offset;
+            _groundCollisionCollider.radius = _circleCollider.radius;
+        }
+
+        ///<summary>
+        /// 드랍용 리지드바디 보장
+        ///</summary>
+        private static Rigidbody2D ResolveOrCreateDropRigidbody( GameObject _prefabRoot )
+        {
+            if ( _prefabRoot == null )
+            {
+                return null;
+            }
+
+            Rigidbody2D targetRigidbody = _prefabRoot.GetComponent<Rigidbody2D>();
+
+            if ( targetRigidbody == null )
+            {
+                targetRigidbody = _prefabRoot.AddComponent<Rigidbody2D>();
+            }
+
+            targetRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            targetRigidbody.gravityScale = 3.0f;
+            targetRigidbody.linearDamping = 1.5f;
+            targetRigidbody.angularDamping = 10.0f;
+            targetRigidbody.freezeRotation = true;
+            targetRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
+            targetRigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            return targetRigidbody;
+        }
+
+        ///<summary>
+        /// 드랍용 바닥 충돌 콜라이더 보장
+        ///</summary>
+        private static CircleCollider2D ResolveOrCreateGroundCollisionCollider( GameObject _prefabRoot, CircleCollider2D _pickupTriggerCollider )
+        {
+            if ( _prefabRoot == null )
+            {
+                return null;
+            }
+
+            CircleCollider2D[] colliderArray = _prefabRoot.GetComponents<CircleCollider2D>();
+            int colliderCount = colliderArray.Length;
+
+            for ( int index = 0; index < colliderCount; index++ )
+            {
+                CircleCollider2D currentCollider = colliderArray[ index ];
+
+                if ( currentCollider == null || currentCollider == _pickupTriggerCollider )
+                {
+                    continue;
+                }
+
+                currentCollider.isTrigger = false;
+                return currentCollider;
+            }
+
+            CircleCollider2D createdCollider = _prefabRoot.AddComponent<CircleCollider2D>();
+            createdCollider.isTrigger = false;
+
+            if ( _pickupTriggerCollider != null )
+            {
+                createdCollider.offset = _pickupTriggerCollider.offset;
+                createdCollider.radius = _pickupTriggerCollider.radius;
+            }
+
+            return createdCollider;
         }
 
         ///<summary>
