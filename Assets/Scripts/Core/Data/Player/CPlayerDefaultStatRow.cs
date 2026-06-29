@@ -11,11 +11,11 @@ namespace TinyHero.Core.Data
     {
         [SerializeField]
         [CExcelHeader( "ATS" )]
-        private float ats = 1.0f;
+        private float ats = 2.0f;
 
         [SerializeField]
         [CExcelHeader( "MOV" )]
-        private float mov = 4.5f;
+        private float mov = 0.0f;
 
         [SerializeField]
         [CExcelHeader( "CRT" )]
@@ -28,6 +28,10 @@ namespace TinyHero.Core.Data
         [SerializeField]
         [CExcelHeader( "ACC" )]
         private float acc = 0.0f;
+
+        [SerializeField]
+        [CExcelHeader( "RNG" )]
+        private float range = 0.0f;
 
         ///<summary>
         /// 기본 공격 주기 반환
@@ -71,6 +75,15 @@ namespace TinyHero.Core.Data
         public float GetAcc()
         {
             float result = acc;
+            return result;
+        }
+
+        ///<summary>
+        /// 기본 공격 범위 배율 반환
+        ///</summary>
+        public float GetRange()
+        {
+            float result = range;
             return result;
         }
     }

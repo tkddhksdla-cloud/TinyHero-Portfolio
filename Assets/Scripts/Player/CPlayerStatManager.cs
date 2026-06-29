@@ -12,8 +12,9 @@ namespace TinyHero.Player
     {
         private const string PlayerDefaultStatTableResourcePath = "Data/Player/PlayerDefaultStatTableData";
         private const string PlayerLevelStatTableResourcePath = "Data/Player/PlayerLevelStatTableData";
-        private const float DefaultAttackIntervalSeconds = 1.0f;
-        private const float DefaultMoveSpeed = 4.5f;
+        private const float DefaultAttackIntervalSeconds = 0.5f;
+        private const float DefaultAttackRatePerSecond = 2.0f;
+        private const float DefaultMoveSpeedPercent = 0.0f;
 
         [Header( "Fallback Base Stats" )]
         [SerializeField] private CPlayerStatDefinition baseStatDefinition = new CPlayerStatDefinition();
@@ -333,7 +334,55 @@ namespace TinyHero.Player
         public float GetAttackIntervalSeconds()
         {
             float finalAts = GetFinalStatValue( ePlayerStatType.ATS );
-            float result = finalAts > 0.0f ? finalAts : DefaultAttackIntervalSeconds;
+            float resolvedAttackRatePerSecond = finalAts > 0.0f ? finalAts : DefaultAttackRatePerSecond;
+            float result = resolvedAttackRatePerSecond > 0.0f ? 1.0f / resolvedAttackRatePerSecond : DefaultAttackIntervalSeconds;
+            return result;
+        }
+
+        ///<summary>
+        /// 초당 공격 횟수 반환
+        ///</summary>
+        public float GetAttackRatePerSecond()
+        {
+            float finalAts = GetFinalStatValue( ePlayerStatType.ATS );
+            float result = finalAts > 0.0f ? finalAts : DefaultAttackRatePerSecond;
+            return result;
+        }
+
+        ///<summary>
+        /// 공격 애니메이션 속도 배율 반환
+        ///</summary>
+        public float GetAttackAnimationSpeedMultiplier()
+        {
+            float baseAttackRatePerSecond = GetBaseStatValue( ePlayerStatType.ATS );
+
+            if ( baseAttackRatePerSecond <= 0.0f )
+            {
+                baseAttackRatePerSecond = DefaultAttackRatePerSecond;
+            }
+
+            float finalAttackRatePerSecond = GetAttackRatePerSecond();
+            float result = Mathf.Max( 0.01f, finalAttackRatePerSecond / baseAttackRatePerSecond );
+            return result;
+        }
+
+        ///<summary>
+        /// 이동 속도 배율 반환
+        ///</summary>
+        public float GetMoveSpeedMultiplier()
+        {
+            float finalMovePercent = GetFinalStatValue( ePlayerStatType.MOVE );
+            float result = Mathf.Max( 0.0f, 1.0f + finalMovePercent * 0.01f );
+            return result;
+        }
+
+        ///<summary>
+        /// 공격 범위 배율 반환
+        ///</summary>
+        public float GetRangeMultiplier()
+        {
+            float finalRangePercent = GetFinalStatValue( ePlayerStatType.RANGE );
+            float result = Mathf.Max( 0.1f, 1.0f + finalRangePercent * 0.01f );
             return result;
         }
 
@@ -877,7 +926,7 @@ namespace TinyHero.Player
         ///</summary>
         private bool TryGetTableBaseStatValue( ePlayerStatType _statType, out float _value )
         {
-            if ( _statType == ePlayerStatType.ATS || _statType == ePlayerStatType.MOVE || _statType == ePlayerStatType.CRT || _statType == ePlayerStatType.CRD || _statType == ePlayerStatType.ACC )
+            if ( _statType == ePlayerStatType.ATS || _statType == ePlayerStatType.MOVE || _statType == ePlayerStatType.CRT || _statType == ePlayerStatType.CRD || _statType == ePlayerStatType.ACC || _statType == ePlayerStatType.RANGE )
             {
                 CPlayerDefaultStatTableData defaultStatTableData = ResolvePlayerDefaultStatTableData();
 
@@ -897,13 +946,13 @@ namespace TinyHero.Player
 
                 if ( _statType == ePlayerStatType.ATS )
                 {
-                    _value = defaultRow.GetAts();
+                    _value = Mathf.Max( 0.0f, defaultRow.GetAts() );
                     return true;
                 }
 
                 if ( _statType == ePlayerStatType.MOVE )
                 {
-                    _value = defaultRow.GetMov();
+                    _value = Mathf.Max( DefaultMoveSpeedPercent, defaultRow.GetMov() );
                     return true;
                 }
 
@@ -925,7 +974,13 @@ namespace TinyHero.Player
                     return true;
                 }
 
-                _value = defaultRow.GetMov();
+                if ( _statType == ePlayerStatType.RANGE )
+                {
+                    _value = defaultRow.GetRange();
+                    return true;
+                }
+
+                _value = 0.0f;
                 return true;
             }
 

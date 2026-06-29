@@ -29,7 +29,7 @@ namespace TinyHero.UI
         [SerializeField] private TextMeshProUGUI moveText;
         [SerializeField] private TextMeshProUGUI hrText;
         [SerializeField] private TextMeshProUGUI mrText;
-        [SerializeField] private TextMeshProUGUI statPointText;
+        [SerializeField] private TextMeshProUGUI rangeText;
 
         ///<summary>
         /// 참조 자동 연결
@@ -93,10 +93,10 @@ namespace TinyHero.UI
             ApplyCriticalDamagePercentText( crdText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRD ) );
             ApplyValueText( accText, targetStatManager.GetFinalStatValue( ePlayerStatType.ACC ) );
             ApplyValueText( atsText, targetStatManager.GetFinalStatValue( ePlayerStatType.ATS ) );
-            ApplyValueText( moveText, targetStatManager.GetFinalStatValue( ePlayerStatType.MOVE ) );
+            ApplyFlatPercentText( moveText, targetStatManager.GetFinalStatValue( ePlayerStatType.MOVE ) );
             ApplyValueText( hrText, targetStatManager.GetFinalStatValue( ePlayerStatType.HR ) );
             ApplyValueText( mrText, targetStatManager.GetFinalStatValue( ePlayerStatType.MR ) );
-            ApplyStatPointText( statPointText, targetStatManager.GetUnspentStatPoint() );
+            ApplyFlatPercentText( rangeText, targetStatManager.GetFinalStatValue( ePlayerStatType.RANGE ) );
         }
 
         ///<summary>
@@ -135,7 +135,7 @@ namespace TinyHero.UI
             moveText = ResolveTextReference( moveText, "MoveText" );
             hrText = ResolveTextReference( hrText, "HrText" );
             mrText = ResolveTextReference( mrText, "MrText" );
-            statPointText = ResolveTextReference( statPointText, "StatPointText" );
+            rangeText = ResolveTextReference( rangeText, "RngText", "StatPointText" );
             hpFillImage = ResolveImageReference( hpFillImage, "HpFillImage" );
             mpFillImage = ResolveImageReference( mpFillImage, "MpFillImage" );
         }
@@ -143,7 +143,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 텍스트 참조 결정
         ///</summary>
-        private TextMeshProUGUI ResolveTextReference( TextMeshProUGUI _currentReference, string _targetName )
+        private TextMeshProUGUI ResolveTextReference( TextMeshProUGUI _currentReference, params string[] _targetNameArray )
         {
             if ( _currentReference != null )
             {
@@ -156,7 +156,7 @@ namespace TinyHero.UI
             {
                 TMP_Text textComponent = textComponents[ index ];
 
-                if ( textComponent == null || textComponent.name != _targetName )
+                if ( textComponent == null || IsMatchingTextName( textComponent.name, _targetNameArray ) == false )
                 {
                     continue;
                 }
@@ -166,6 +166,34 @@ namespace TinyHero.UI
             }
 
             return null;
+        }
+
+        ///<summary>
+        /// 대상 텍스트 이름 일치 여부 반환
+        ///</summary>
+        private bool IsMatchingTextName( string _textName, params string[] _targetNameArray )
+        {
+            if ( string.IsNullOrWhiteSpace( _textName ) || _targetNameArray == null )
+            {
+                return false;
+            }
+
+            for ( int index = 0; index < _targetNameArray.Length; index++ )
+            {
+                string targetName = _targetNameArray[ index ];
+
+                if ( string.IsNullOrWhiteSpace( targetName ) )
+                {
+                    continue;
+                }
+
+                if ( string.Equals( _textName, targetName, System.StringComparison.Ordinal ) )
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         ///<summary>
@@ -208,12 +236,10 @@ namespace TinyHero.UI
             targetStatManager.OnStatChanged -= HandleStatChanged;
             targetStatManager.OnHpChanged -= HandleHpChanged;
             targetStatManager.OnMpChanged -= HandleMpChanged;
-            targetStatManager.OnStatPointChanged -= HandleStatPointChanged;
 
             targetStatManager.OnStatChanged += HandleStatChanged;
             targetStatManager.OnHpChanged += HandleHpChanged;
             targetStatManager.OnMpChanged += HandleMpChanged;
-            targetStatManager.OnStatPointChanged += HandleStatPointChanged;
         }
 
         ///<summary>
@@ -229,7 +255,6 @@ namespace TinyHero.UI
             targetStatManager.OnStatChanged -= HandleStatChanged;
             targetStatManager.OnHpChanged -= HandleHpChanged;
             targetStatManager.OnMpChanged -= HandleMpChanged;
-            targetStatManager.OnStatPointChanged -= HandleStatPointChanged;
         }
 
         ///<summary>
@@ -256,14 +281,6 @@ namespace TinyHero.UI
         {
             ApplyResourceText( mpText, _currentMp, _maxMp );
             ApplyFillAmount( mpFillImage, _currentMp, _maxMp );
-        }
-
-        ///<summary>
-        /// 스탯 포인트 변경 반영
-        ///</summary>
-        private void HandleStatPointChanged( int _statPoint )
-        {
-            ApplyStatPointText( statPointText, _statPoint );
         }
 
         ///<summary>
@@ -295,7 +312,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 정률 텍스트 반영
+        /// 퍼센트 텍스트 반영
         ///</summary>
         private void ApplyFlatPercentText( TextMeshProUGUI _targetText, float _value )
         {
@@ -308,7 +325,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 배율 텍스트 반영
+        /// 배수 텍스트 반영
         ///</summary>
         private void ApplyCriticalDamagePercentText( TextMeshProUGUI _targetText, float _value )
         {
@@ -319,19 +336,6 @@ namespace TinyHero.UI
 
             float totalPercent = 100.0f + Mathf.Max( 0.0f, _value );
             _targetText.text = $"{totalPercent:0.##}%";
-        }
-
-        ///<summary>
-        /// 스탯 포인트 텍스트 반영
-        ///</summary>
-        private void ApplyStatPointText( TextMeshProUGUI _targetText, int _value )
-        {
-            if ( _targetText == null )
-            {
-                return;
-            }
-
-            _targetText.text = _value.ToString();
         }
 
         ///<summary>

@@ -102,6 +102,7 @@ namespace TinyHero.Player
         private float skillFinalAttackPercentBonus;
         private float skillFinalAttackBuffRemaining;
         private float skillInvincibilityRemaining;
+        private float attackHitColliderBaseCircleRadius;
         private int currentJumpCount;
         private Color[] defaultSpriteColors;
         private GameObject attackSlashFxPrefab;
@@ -109,9 +110,16 @@ namespace TinyHero.Player
         private Coroutine hitReactionRoutine;
         private Coroutine invincibilityRoutine;
         private string skillAnimationStateName = AttackAnimationStateName;
+        private Vector2 attackHitColliderBaseBoxOffset;
+        private Vector2 attackHitColliderBaseBoxSize;
+        private Vector2 attackHitColliderBaseCapsuleOffset;
+        private Vector2 attackHitColliderBaseCapsuleSize;
+        private Vector2 attackHitColliderBaseCircleOffset;
+        private Vector3 attackHitColliderBaseLocalPosition;
         private readonly Collider2D[] overlapResultBuffer = new Collider2D[ 16 ];
         private readonly Collider2D[] attackHitResultBuffer = new Collider2D[ 16 ];
         private readonly List<GameObject> activeAttackSlashFxObjectList = new List<GameObject>();
+        private bool hasCachedAttackHitColliderBaseline;
         private bool isGrounded;
         private bool isHitReactionActive;
         private bool isInvincible;
@@ -276,6 +284,8 @@ namespace TinyHero.Player
             }
 
             ConfigureAttackHitCollider();
+            CacheAttackHitColliderBaseline();
+            ApplyAttackHitColliderRange();
             SetAttackHitColliderActive( false );
             SubscribeAnimationEventReceiver();
             EnsureAttackSlashFxPoolInitialized();
@@ -318,6 +328,8 @@ namespace TinyHero.Player
             }
 
             ConfigureAttackHitCollider();
+            CacheAttackHitColliderBaseline();
+            ApplyAttackHitColliderRange();
             SetAttackHitColliderActive( false );
             CacheTargetColliders();
             SubscribeAnimationEventReceiver();
@@ -963,6 +975,7 @@ namespace TinyHero.Player
         {
             attackElapsedTime = 0.0f;
             ApplyAttackAnimationSpeed();
+            ApplyAttackHitColliderRange();
             SetAttackHorizontalVelocity( 0.0f );
             SetAttackHitColliderActive( false );
             nextAttackAvailableTime = Time.time + ResolveAttackIntervalSeconds();
@@ -1374,15 +1387,8 @@ namespace TinyHero.Player
                 return fallbackMoveSpeed;
             }
 
-            float statMoveSpeed = targetStatManager.GetFinalStatValue( ePlayerStatType.MOVE );
-
-            if ( statMoveSpeed <= 0.0f )
-            {
-                float fallbackMoveSpeed = moveSpeed;
-                return fallbackMoveSpeed;
-            }
-
-            float result = statMoveSpeed;
+            float moveSpeedMultiplier = targetStatManager.GetMoveSpeedMultiplier();
+            float result = moveSpeed * moveSpeedMultiplier;
             return result;
         }
 
@@ -2200,6 +2206,116 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 공격 콜라이더 기준값 캐시
+        ///</summary>
+        private void CacheAttackHitColliderBaseline()
+        {
+            if ( attackHitCollider == null || hasCachedAttackHitColliderBaseline )
+            {
+                return;
+            }
+
+            Transform attackColliderTransform = attackHitCollider.transform;
+
+            if ( attackColliderTransform != null )
+            {
+                attackHitColliderBaseLocalPosition = attackColliderTransform.localPosition;
+            }
+
+            BoxCollider2D boxCollider = attackHitCollider as BoxCollider2D;
+
+            if ( boxCollider != null )
+            {
+                attackHitColliderBaseBoxOffset = boxCollider.offset;
+                attackHitColliderBaseBoxSize = boxCollider.size;
+            }
+
+            CircleCollider2D circleCollider = attackHitCollider as CircleCollider2D;
+
+            if ( circleCollider != null )
+            {
+                attackHitColliderBaseCircleOffset = circleCollider.offset;
+                attackHitColliderBaseCircleRadius = circleCollider.radius;
+            }
+
+            CapsuleCollider2D capsuleCollider = attackHitCollider as CapsuleCollider2D;
+
+            if ( capsuleCollider != null )
+            {
+                attackHitColliderBaseCapsuleOffset = capsuleCollider.offset;
+                attackHitColliderBaseCapsuleSize = capsuleCollider.size;
+            }
+
+            hasCachedAttackHitColliderBaseline = true;
+        }
+
+        ///<summary>
+        /// 공격 콜라이더 범위 배율 적용
+        ///</summary>
+        private void ApplyAttackHitColliderRange()
+        {
+            if ( attackHitCollider == null )
+            {
+                return;
+            }
+
+            CacheAttackHitColliderBaseline();
+            float rangeMultiplier = targetStatManager != null ? targetStatManager.GetRangeMultiplier() : 1.0f;
+            rangeMultiplier = Mathf.Max( 0.1f, rangeMultiplier );
+            Transform attackColliderTransform = attackHitCollider.transform;
+
+            if ( attackColliderTransform != null )
+            {
+                Vector3 adjustedLocalPosition = attackHitColliderBaseLocalPosition;
+                adjustedLocalPosition.x *= rangeMultiplier;
+                attackColliderTransform.localPosition = adjustedLocalPosition;
+            }
+
+            BoxCollider2D boxCollider = attackHitCollider as BoxCollider2D;
+
+            if ( boxCollider != null )
+            {
+                Vector2 adjustedOffset = attackHitColliderBaseBoxOffset;
+                adjustedOffset.x *= rangeMultiplier;
+                Vector2 adjustedSize = attackHitColliderBaseBoxSize;
+                adjustedSize.x *= rangeMultiplier;
+                boxCollider.offset = adjustedOffset;
+                boxCollider.size = adjustedSize;
+            }
+
+            CircleCollider2D circleCollider = attackHitCollider as CircleCollider2D;
+
+            if ( circleCollider != null )
+            {
+                Vector2 adjustedOffset = attackHitColliderBaseCircleOffset;
+                adjustedOffset.x *= rangeMultiplier;
+                circleCollider.offset = adjustedOffset;
+                circleCollider.radius = attackHitColliderBaseCircleRadius * rangeMultiplier;
+            }
+
+            CapsuleCollider2D capsuleCollider = attackHitCollider as CapsuleCollider2D;
+
+            if ( capsuleCollider != null )
+            {
+                Vector2 adjustedOffset = attackHitColliderBaseCapsuleOffset;
+                adjustedOffset.x *= rangeMultiplier;
+                Vector2 adjustedSize = attackHitColliderBaseCapsuleSize;
+
+                if ( capsuleCollider.direction == CapsuleDirection2D.Horizontal )
+                {
+                    adjustedSize.x *= rangeMultiplier;
+                }
+                else
+                {
+                    adjustedSize.y *= rangeMultiplier;
+                }
+
+                capsuleCollider.offset = adjustedOffset;
+                capsuleCollider.size = adjustedSize;
+            }
+        }
+
+        ///<summary>
         /// 공격 범위 활성 상태 설정
         ///</summary>
         private void SetAttackHitColliderActive( bool _isActive )
@@ -2380,7 +2496,8 @@ namespace TinyHero.Player
                 return;
             }
 
-            float resolvedSpeed = Mathf.Max( 0.01f, attackAnimationSpeedMultiplier );
+            float statAttackAnimationSpeedMultiplier = targetStatManager != null ? targetStatManager.GetAttackAnimationSpeedMultiplier() : 1.0f;
+            float resolvedSpeed = Mathf.Max( 0.01f, attackAnimationSpeedMultiplier * statAttackAnimationSpeedMultiplier );
             targetAnimator.speed = defaultAnimatorSpeed * resolvedSpeed;
         }
 
@@ -2546,6 +2663,11 @@ namespace TinyHero.Player
 
             Vector3 fxScale = attackSlashFxPrefab != null ? attackSlashFxPrefab.transform.localScale : Vector3.one;
             float facingDirection = ResolveFacingDirection();
+            float rangeMultiplier = targetStatManager != null ? targetStatManager.GetRangeMultiplier() : 1.0f;
+            rangeMultiplier = Mathf.Max( 0.1f, rangeMultiplier );
+            fxScale.x *= rangeMultiplier;
+            fxScale.y *= rangeMultiplier;
+            fxScale.z *= rangeMultiplier;
             fxScale.x = Mathf.Abs( fxScale.x ) * facingDirection;
             fxTransform.localScale = fxScale;
 

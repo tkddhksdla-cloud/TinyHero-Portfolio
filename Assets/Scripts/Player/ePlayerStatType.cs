@@ -15,6 +15,7 @@ namespace TinyHero.Player
         CRD,
         ACC,
         ATS,
-        MOVE
+        MOVE,
+        RANGE
     }
 }

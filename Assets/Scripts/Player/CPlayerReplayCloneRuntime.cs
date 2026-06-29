@@ -26,12 +26,20 @@ namespace TinyHero.Player
         private GameObject cloneVisualObject;
         private Animator cloneAnimator;
         private Collider2D cloneAttackHitCollider;
+        private float cloneAttackHitColliderBaseCircleRadius;
         private float sourceStartTime;
         private float followDelaySeconds;
         private float durationSeconds;
         private float damageMultiplier;
         private Vector3 replayOffset;
+        private Vector2 cloneAttackHitColliderBaseBoxOffset;
+        private Vector2 cloneAttackHitColliderBaseBoxSize;
+        private Vector2 cloneAttackHitColliderBaseCapsuleOffset;
+        private Vector2 cloneAttackHitColliderBaseCapsuleSize;
+        private Vector2 cloneAttackHitColliderBaseCircleOffset;
+        private Vector3 cloneAttackHitColliderBaseLocalPosition;
         private bool isInitialized;
+        private bool hasCachedCloneAttackHitColliderBaseline;
 
         private float lastProcessedAttackTime;
         private float lastProcessedSkillTime;
@@ -125,6 +133,8 @@ namespace TinyHero.Player
             cloneAnimator = cloneVisualObject.GetComponentInChildren<Animator>( true );
             cloneAttackHitCollider = ResolveCloneAttackHitCollider();
             ConfigureCloneAttackHitCollider();
+            CacheCloneAttackHitColliderBaseline();
+            ApplyCloneAttackHitColliderRange();
             SetCloneAttackHitColliderActive( false );
         }
 
@@ -569,6 +579,11 @@ namespace TinyHero.Player
             fxTransform.rotation = attackSlashFxPrefab.transform.rotation;
             Vector3 fxScale = attackSlashFxPrefab.transform.localScale;
             float facingDirection = cloneVisualObject.transform.localScale.x < 0.0f ? -1.0f : 1.0f;
+            float rangeMultiplier = sourceStatManager != null ? sourceStatManager.GetRangeMultiplier() : 1.0f;
+            rangeMultiplier = Mathf.Max( 0.1f, rangeMultiplier );
+            fxScale.x *= rangeMultiplier;
+            fxScale.y *= rangeMultiplier;
+            fxScale.z *= rangeMultiplier;
             fxScale.x = Mathf.Abs( fxScale.x ) * facingDirection;
             fxTransform.localScale = fxScale;
             CSkillRenderUtility.ApplyForegroundSorting( attackSlashFxObject );
@@ -628,6 +643,116 @@ namespace TinyHero.Player
 
             cloneAttackHitCollider.includeLayers = LayerMask.GetMask( "Monster" );
             cloneAttackHitCollider.excludeLayers = ~LayerMask.GetMask( "Monster" );
+        }
+
+        ///<summary>
+        /// 분신 공격 콜라이더 기준값 캐시
+        ///</summary>
+        private void CacheCloneAttackHitColliderBaseline()
+        {
+            if ( cloneAttackHitCollider == null || hasCachedCloneAttackHitColliderBaseline )
+            {
+                return;
+            }
+
+            Transform attackColliderTransform = cloneAttackHitCollider.transform;
+
+            if ( attackColliderTransform != null )
+            {
+                cloneAttackHitColliderBaseLocalPosition = attackColliderTransform.localPosition;
+            }
+
+            BoxCollider2D boxCollider = cloneAttackHitCollider as BoxCollider2D;
+
+            if ( boxCollider != null )
+            {
+                cloneAttackHitColliderBaseBoxOffset = boxCollider.offset;
+                cloneAttackHitColliderBaseBoxSize = boxCollider.size;
+            }
+
+            CircleCollider2D circleCollider = cloneAttackHitCollider as CircleCollider2D;
+
+            if ( circleCollider != null )
+            {
+                cloneAttackHitColliderBaseCircleOffset = circleCollider.offset;
+                cloneAttackHitColliderBaseCircleRadius = circleCollider.radius;
+            }
+
+            CapsuleCollider2D capsuleCollider = cloneAttackHitCollider as CapsuleCollider2D;
+
+            if ( capsuleCollider != null )
+            {
+                cloneAttackHitColliderBaseCapsuleOffset = capsuleCollider.offset;
+                cloneAttackHitColliderBaseCapsuleSize = capsuleCollider.size;
+            }
+
+            hasCachedCloneAttackHitColliderBaseline = true;
+        }
+
+        ///<summary>
+        /// 분신 공격 콜라이더 범위 배율 적용
+        ///</summary>
+        private void ApplyCloneAttackHitColliderRange()
+        {
+            if ( cloneAttackHitCollider == null )
+            {
+                return;
+            }
+
+            CacheCloneAttackHitColliderBaseline();
+            float rangeMultiplier = sourceStatManager != null ? sourceStatManager.GetRangeMultiplier() : 1.0f;
+            rangeMultiplier = Mathf.Max( 0.1f, rangeMultiplier );
+            Transform attackColliderTransform = cloneAttackHitCollider.transform;
+
+            if ( attackColliderTransform != null )
+            {
+                Vector3 adjustedLocalPosition = cloneAttackHitColliderBaseLocalPosition;
+                adjustedLocalPosition.x *= rangeMultiplier;
+                attackColliderTransform.localPosition = adjustedLocalPosition;
+            }
+
+            BoxCollider2D boxCollider = cloneAttackHitCollider as BoxCollider2D;
+
+            if ( boxCollider != null )
+            {
+                Vector2 adjustedOffset = cloneAttackHitColliderBaseBoxOffset;
+                adjustedOffset.x *= rangeMultiplier;
+                Vector2 adjustedSize = cloneAttackHitColliderBaseBoxSize;
+                adjustedSize.x *= rangeMultiplier;
+                boxCollider.offset = adjustedOffset;
+                boxCollider.size = adjustedSize;
+            }
+
+            CircleCollider2D circleCollider = cloneAttackHitCollider as CircleCollider2D;
+
+            if ( circleCollider != null )
+            {
+                Vector2 adjustedOffset = cloneAttackHitColliderBaseCircleOffset;
+                adjustedOffset.x *= rangeMultiplier;
+                circleCollider.offset = adjustedOffset;
+                circleCollider.radius = cloneAttackHitColliderBaseCircleRadius * rangeMultiplier;
+            }
+
+            CapsuleCollider2D capsuleCollider = cloneAttackHitCollider as CapsuleCollider2D;
+
+            if ( capsuleCollider != null )
+            {
+                Vector2 adjustedOffset = cloneAttackHitColliderBaseCapsuleOffset;
+                adjustedOffset.x *= rangeMultiplier;
+                Vector2 adjustedSize = cloneAttackHitColliderBaseCapsuleSize;
+
+                if ( capsuleCollider.direction == CapsuleDirection2D.Horizontal )
+                {
+                    adjustedSize.x *= rangeMultiplier;
+                }
+                else
+                {
+                    adjustedSize.y *= rangeMultiplier;
+                }
+
+                capsuleCollider.offset = adjustedOffset;
+                capsuleCollider.size = adjustedSize;
+            }
         }
 
         ///<summary>
