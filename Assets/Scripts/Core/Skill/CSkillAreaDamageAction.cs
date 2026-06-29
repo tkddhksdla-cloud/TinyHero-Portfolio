@@ -69,9 +69,10 @@ namespace TinyHero.Skill
             }
 
             Transform ownerTransform = _skillContext.GetOwnerTransform();
-            Vector2 attackCenter = ResolveAttackCenter( ownerTransform );
+            Vector2 attackCenter = ResolveAttackCenter( _skillContext, ownerTransform );
             ContactFilter2D contactFilter = CreateMonsterContactFilter();
-            int hitCount = Physics2D.OverlapCircle( attackCenter, areaRadius, contactFilter, overlapBuffer );
+            float scaledAreaRadius = ResolveScaledAreaRadius( _skillContext );
+            int hitCount = Physics2D.OverlapCircle( attackCenter, scaledAreaRadius, contactFilter, overlapBuffer );
             ApplyDamageToTargets( _skillContext, hitCount );
             return true;
         }
@@ -91,14 +92,33 @@ namespace TinyHero.Skill
         ///<summary>
         /// 공격 중심 좌표 계산
         ///</summary>
-        private Vector2 ResolveAttackCenter( Transform _ownerTransform )
+        private Vector2 ResolveAttackCenter( CSkillContext _skillContext, Transform _ownerTransform )
         {
             float facingDirection = ResolveFacingDirection( _ownerTransform );
-            Vector2 resolvedOffset = areaOffset;
+            Vector2 resolvedOffset = ResolveScaledAreaOffset( _skillContext );
             resolvedOffset.x *= facingDirection;
             Vector2 ownerPosition = _ownerTransform.position;
             Vector2 attackCenter = ownerPosition + resolvedOffset;
             return attackCenter;
+        }
+
+        ///<summary>
+        /// 범위 스킬 반경 계산
+        ///</summary>
+        private float ResolveScaledAreaRadius( CSkillContext _skillContext )
+        {
+            float scaledAreaRadius = _skillContext != null ? _skillContext.ScaleRangeValue( areaRadius ) : areaRadius;
+            float result = Mathf.Max( 0.1f, scaledAreaRadius );
+            return result;
+        }
+
+        ///<summary>
+        /// 범위 스킬 오프셋 계산
+        ///</summary>
+        private Vector2 ResolveScaledAreaOffset( CSkillContext _skillContext )
+        {
+            Vector2 result = _skillContext != null ? _skillContext.ScaleRangeOffset( areaOffset ) : areaOffset;
+            return result;
         }
 
         ///<summary>

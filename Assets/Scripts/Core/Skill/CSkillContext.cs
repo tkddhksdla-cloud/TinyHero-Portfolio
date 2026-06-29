@@ -29,7 +29,7 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
-        /// 스킬 실행 컨텍스트 생성
+        /// 스킬 실행 문맥 생성
         ///</summary>
         public CSkillContext( CSkillManager _skillManager, PlayerController _playerController, CPlayerStatManager _playerStatManager, CSkillDefinition _skillDefinition, CSkillRuntimeData _skillRuntimeData, Transform _ownerTransform, float _attackStatOverride, float _skillAttackPowerMultiplierOverride )
         {
@@ -99,7 +99,7 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
-        /// 공격력 스냅샷 오버라이드 반환
+        /// 공격력 오버라이드 반환
         ///</summary>
         public float GetAttackStatOverride()
         {
@@ -108,7 +108,7 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
-        /// 스킬 공격 배수 스냅샷 오버라이드 반환
+        /// 스킬 공격 배수 오버라이드 반환
         ///</summary>
         public float GetSkillAttackPowerMultiplierOverride()
         {
@@ -117,7 +117,7 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
-        /// 스킬 시전 식별자 반환
+        /// 스킬 실행 식별자 반환
         ///</summary>
         public int GetExecutionId()
         {
@@ -126,7 +126,51 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
-        /// 스킬 시전 식별자 발급
+        /// 스킬 범위 배율 반환
+        ///</summary>
+        public float GetRangeMultiplier()
+        {
+            if ( playerStatManager == null )
+            {
+                return 1.0f;
+            }
+
+            float result = playerStatManager.GetRangeMultiplier();
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 거리 값 배율 적용
+        ///</summary>
+        public float ScaleRangeValue( float _value )
+        {
+            float rangeMultiplier = GetRangeMultiplier();
+            float result = _value * rangeMultiplier;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 이차원 오프셋 배율 적용
+        ///</summary>
+        public Vector2 ScaleRangeOffset( Vector2 _offset )
+        {
+            float rangeMultiplier = GetRangeMultiplier();
+            Vector2 result = _offset * rangeMultiplier;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 삼차원 오프셋 배율 적용
+        ///</summary>
+        public Vector3 ScaleRangeOffset( Vector3 _offset )
+        {
+            float rangeMultiplier = GetRangeMultiplier();
+            Vector3 result = _offset * rangeMultiplier;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 실행 식별자 발급
         ///</summary>
         private static int AllocateExecutionId()
         {

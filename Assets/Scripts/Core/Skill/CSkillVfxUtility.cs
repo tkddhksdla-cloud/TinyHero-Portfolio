@@ -3,12 +3,12 @@ using UnityEngine;
 namespace TinyHero.Skill
 {
     ///<summary>
-    /// 스킬 이펙트 재생 보조 유틸리티
+    /// 스킬 이펙트 생성 보조 유틸리티
     ///</summary>
     public static class CSkillVfxUtility
     {
         ///<summary>
-        /// 스킬 시전 이펙트 재생
+        /// 스킬 시전 이펙트 생성
         ///</summary>
         public static CSkillPooledVfxHandle PlayCastVfx( CSkillContext _skillContext )
         {
@@ -25,13 +25,15 @@ namespace TinyHero.Skill
                 return null;
             }
 
-            Vector3 worldPosition = ResolveWorldPosition( ownerTransform, skillDefinition.GetCastVfxOffset() );
+            Vector3 castOffset = skillDefinition.GetCastVfxOffset();
+            Vector3 worldPosition = ResolveWorldPosition( ownerTransform, castOffset );
             CSkillPooledVfxHandle result = CSkillVfxPoolManager.Spawn( skillDefinition.GetCastVfxPrefab(), worldPosition, null, skillDefinition.GetCastVfxReturnDelay() );
+            ApplyRangeScale( _skillContext, result );
             return result;
         }
 
         ///<summary>
-        /// 스킬 타격 이펙트 재생
+        /// 스킬 타격 이펙트 생성
         ///</summary>
         public static CSkillPooledVfxHandle PlayHitVfx( CSkillContext _skillContext, Transform _targetTransform )
         {
@@ -53,7 +55,7 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
-        /// 스킬 발사체 이펙트 재생
+        /// 스킬 투사체 이펙트 생성
         ///</summary>
         public static CSkillPooledVfxHandle PlayProjectileVfx( CSkillContext _skillContext, Vector3 _worldPosition, float _facingDirection )
         {
@@ -86,14 +88,16 @@ namespace TinyHero.Skill
                 return result;
             }
 
-            Vector3 localScale = spawnedObject.transform.localScale;
+            Transform spawnedTransform = spawnedObject.transform;
+            ApplyRangeScale( _skillContext, spawnedTransform );
+            Vector3 localScale = spawnedTransform.localScale;
             localScale.x = Mathf.Abs( localScale.x ) * ( _facingDirection < 0.0f ? -1.0f : 1.0f );
-            spawnedObject.transform.localScale = localScale;
+            spawnedTransform.localScale = localScale;
             return result;
         }
 
         ///<summary>
-        /// 스킬 지속 이펙트 재생
+        /// 스킬 지속 이펙트 생성
         ///</summary>
         public static CSkillPooledVfxHandle PlayLoopVfx( CSkillContext _skillContext, Transform _anchorTransform, float _overrideReturnDelay )
         {
@@ -109,10 +113,50 @@ namespace TinyHero.Skill
                 return null;
             }
 
-            Vector3 worldPosition = ResolveWorldPosition( _anchorTransform, skillDefinition.GetLoopVfxOffset() );
+            Vector3 loopOffset = skillDefinition.GetLoopVfxOffset();
+            Vector3 worldPosition = ResolveWorldPosition( _anchorTransform, loopOffset );
             float returnDelay = _overrideReturnDelay > 0.0f ? _overrideReturnDelay : skillDefinition.GetLoopVfxReturnDelay();
             CSkillPooledVfxHandle result = CSkillVfxPoolManager.Spawn( skillDefinition.GetLoopVfxPrefab(), worldPosition, _anchorTransform, returnDelay );
+            ApplyRangeScale( _skillContext, result );
             return result;
+        }
+
+        ///<summary>
+        /// 범위 배율 기반 이펙트 크기 적용
+        ///</summary>
+        private static void ApplyRangeScale( CSkillContext _skillContext, CSkillPooledVfxHandle _vfxHandle )
+        {
+            if ( _vfxHandle == null )
+            {
+                return;
+            }
+
+            GameObject spawnedObject = _vfxHandle.GetSpawnedObject();
+
+            if ( spawnedObject == null )
+            {
+                return;
+            }
+
+            ApplyRangeScale( _skillContext, spawnedObject.transform );
+        }
+
+        ///<summary>
+        /// 범위 배율 기반 트랜스폼 크기 적용
+        ///</summary>
+        private static void ApplyRangeScale( CSkillContext _skillContext, Transform _targetTransform )
+        {
+            if ( _skillContext == null || _targetTransform == null )
+            {
+                return;
+            }
+
+            float rangeMultiplier = Mathf.Max( 0.1f, _skillContext.GetRangeMultiplier() );
+            Vector3 localScale = _targetTransform.localScale;
+            localScale.x *= rangeMultiplier;
+            localScale.y *= rangeMultiplier;
+            localScale.z *= rangeMultiplier;
+            _targetTransform.localScale = localScale;
         }
 
         ///<summary>

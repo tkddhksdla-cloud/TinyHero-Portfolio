@@ -152,9 +152,11 @@ namespace TinyHero.Skill
             }
 
             float facingDirection = ResolveFacingDirection( ownerTransform );
-            Vector2 resolvedOffset = ResolveSpawnOffset( facingDirection );
+            Vector2 resolvedOffset = ResolveSpawnOffset( _skillContext, facingDirection );
             Vector3 spawnPosition = ownerTransform.position + ( Vector3 ) resolvedOffset;
             Vector2 moveDirection = new Vector2( facingDirection, 0.0f );
+            float scaledCollisionRadius = ResolveScaledCollisionRadius( _skillContext );
+            float scaledTravelDistance = ResolveScaledTravelDistance( _skillContext, scaledCollisionRadius );
             CSkillVfxUtility.PlayCastVfx( _skillContext );
             GameObject projectileObject = new GameObject( "ProjectileSkillRuntime" );
             projectileObject.transform.position = spawnPosition;
@@ -162,8 +164,8 @@ namespace TinyHero.Skill
             projectileSkillRuntime.Initialize(
                 _skillContext,
                 moveDirection,
-                collisionRadius,
-                travelDistance,
+                scaledCollisionRadius,
+                scaledTravelDistance,
                 travelSpeed,
                 damageMultiplier,
                 flatDamageBonus,
@@ -197,7 +199,7 @@ namespace TinyHero.Skill
         private Vector2 ResolveProjectileEndPosition( Transform _ownerTransform )
         {
             float facingDirection = ResolveFacingDirection( _ownerTransform );
-            Vector2 resolvedOffset = ResolveSpawnOffset( facingDirection );
+            Vector2 resolvedOffset = ResolveSpawnOffset( null, facingDirection );
             Vector2 ownerPosition = _ownerTransform.position;
             Vector2 projectileEndPosition = ownerPosition + resolvedOffset + new Vector2( travelDistance * facingDirection, 0.0f );
             return projectileEndPosition;
@@ -206,11 +208,31 @@ namespace TinyHero.Skill
         ///<summary>
         /// 발사체 생성 오프셋 계산
         ///</summary>
-        private Vector2 ResolveSpawnOffset( float _facingDirection )
+        private Vector2 ResolveSpawnOffset( CSkillContext _skillContext, float _facingDirection )
         {
-            Vector2 resolvedOffset = spawnOffset;
+            Vector2 resolvedOffset = _skillContext != null ? _skillContext.ScaleRangeOffset( spawnOffset ) : spawnOffset;
             resolvedOffset.x *= _facingDirection;
             return resolvedOffset;
+        }
+
+        ///<summary>
+        /// 투사체 충돌 반경 계산
+        ///</summary>
+        private float ResolveScaledCollisionRadius( CSkillContext _skillContext )
+        {
+            float scaledCollisionRadius = _skillContext != null ? _skillContext.ScaleRangeValue( collisionRadius ) : collisionRadius;
+            float result = Mathf.Max( 0.05f, scaledCollisionRadius );
+            return result;
+        }
+
+        ///<summary>
+        /// 투사체 이동 거리 계산
+        ///</summary>
+        private float ResolveScaledTravelDistance( CSkillContext _skillContext, float _scaledCollisionRadius )
+        {
+            float scaledTravelDistance = _skillContext != null ? _skillContext.ScaleRangeValue( travelDistance ) : travelDistance;
+            float result = Mathf.Max( _scaledCollisionRadius, scaledTravelDistance );
+            return result;
         }
 
         ///<summary>

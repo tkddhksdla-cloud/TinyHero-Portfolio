@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using UnityEngine;
+using TinyHero.Core;
 
 namespace TinyHero.Quest
 {
@@ -8,8 +8,6 @@ namespace TinyHero.Quest
     ///</summary>
     public static class CQuestDefinitionDatabase
     {
-        private const string QuestDefinitionResourcePath = "Data/Quest/Definitions";
-
         private static readonly Dictionary<string, CQuestDefinition> questDefinitionDictionary = new Dictionary<string, CQuestDefinition>();
         private static readonly List<CQuestDefinition> questDefinitionList = new List<CQuestDefinition>();
         private static bool isInitialized;
@@ -67,7 +65,8 @@ namespace TinyHero.Quest
             isInitialized = true;
             questDefinitionDictionary.Clear();
             questDefinitionList.Clear();
-            CQuestDefinition[] loadedQuestDefinitionArray = Resources.LoadAll<CQuestDefinition>( QuestDefinitionResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CQuestDefinition[] loadedQuestDefinitionArray = resourceManager != null ? resourceManager.GetQuestDefinitionArray() : new CQuestDefinition[ 0 ];
 
             for ( int index = 0; index < loadedQuestDefinitionArray.Length; index++ )
             {

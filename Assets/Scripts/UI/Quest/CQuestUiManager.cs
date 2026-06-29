@@ -9,9 +9,6 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CQuestUiManager : CSingleTon<CQuestUiManager>
     {
-        private const string NpcQuestPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupQuestList";
-        private const string PlayerQuestPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupQuestList_Mine";
-
         private PlayerController targetPlayerController;
         private GameObject npcQuestPopupPrefabObject;
         private GameObject playerQuestPopupPrefabObject;
@@ -101,7 +98,14 @@ namespace TinyHero.UI
 
             if ( playerQuestPopupPrefabObject == null )
             {
-                playerQuestPopupPrefabObject = Resources.Load<GameObject>( PlayerQuestPopupPrefabResourcePath );
+                CResourceManager resourceManager = CResourceManager.Instance;
+
+                if ( resourceManager == null )
+                {
+                    return null;
+                }
+
+                playerQuestPopupPrefabObject = resourceManager.GetPlayerQuestPopupPrefab();
             }
 
             if ( playerQuestPopupPrefabObject == null )
@@ -139,7 +143,14 @@ namespace TinyHero.UI
 
             if ( npcQuestPopupPrefabObject == null )
             {
-                npcQuestPopupPrefabObject = Resources.Load<GameObject>( NpcQuestPopupPrefabResourcePath );
+                CResourceManager resourceManager = CResourceManager.Instance;
+
+                if ( resourceManager == null )
+                {
+                    return null;
+                }
+
+                npcQuestPopupPrefabObject = resourceManager.GetNpcQuestPopupPrefab();
             }
 
             if ( npcQuestPopupPrefabObject == null )

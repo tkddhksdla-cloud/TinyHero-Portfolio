@@ -154,15 +154,35 @@ namespace TinyHero.Skill
             }
 
             float facingDirection = ownerTransform.localScale.x < 0.0f ? -1.0f : 1.0f;
-            Vector2 resolvedOffset = placementOffset;
+            Vector2 resolvedOffset = ResolveScaledPlacementOffset( _skillContext );
             resolvedOffset.x *= facingDirection;
             Vector3 spawnPosition = ownerTransform.position + ( Vector3 ) resolvedOffset;
+            float scaledAreaRadius = ResolveScaledAreaRadius( _skillContext );
             CSkillVfxUtility.PlayCastVfx( _skillContext );
             GameObject placedSkillObject = new GameObject( "PlacedSkillAreaRuntime" );
             placedSkillObject.transform.position = spawnPosition;
             CPlacedSkillAreaRuntime placedSkillAreaRuntime = placedSkillObject.AddComponent<CPlacedSkillAreaRuntime>();
-            placedSkillAreaRuntime.Initialize( _skillContext, durationSeconds, GetDamageStartDelaySeconds(), tickIntervalSeconds, areaRadius, damageMultiplier, flatDamageBonus, GetSimultaneousTargetCount(), debuffEffectList, crowdControlEffectList );
+            placedSkillAreaRuntime.Initialize( _skillContext, durationSeconds, GetDamageStartDelaySeconds(), tickIntervalSeconds, scaledAreaRadius, damageMultiplier, flatDamageBonus, GetSimultaneousTargetCount(), debuffEffectList, crowdControlEffectList );
             return true;
+        }
+
+        ///<summary>
+        /// 배치 스킬 반경 계산
+        ///</summary>
+        private float ResolveScaledAreaRadius( CSkillContext _skillContext )
+        {
+            float scaledAreaRadius = _skillContext != null ? _skillContext.ScaleRangeValue( areaRadius ) : areaRadius;
+            float result = Mathf.Max( 0.1f, scaledAreaRadius );
+            return result;
+        }
+
+        ///<summary>
+        /// 배치 스킬 오프셋 계산
+        ///</summary>
+        private Vector2 ResolveScaledPlacementOffset( CSkillContext _skillContext )
+        {
+            Vector2 result = _skillContext != null ? _skillContext.ScaleRangeOffset( placementOffset ) : placementOffset;
+            return result;
         }
 
         ///<summary>

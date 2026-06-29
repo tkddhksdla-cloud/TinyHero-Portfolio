@@ -41,7 +41,7 @@ namespace TinyHero.Skill
 
             Transform ownerTransform = _skillContext.GetOwnerTransform();
             float facingDirection = ResolveFacingDirection( ownerTransform );
-            Vector3 adjustedOffset = ResolveSpawnOffset( facingDirection );
+            Vector3 adjustedOffset = ResolveSpawnOffset( _skillContext, facingDirection );
             Vector3 spawnPosition = ownerTransform.position + adjustedOffset;
             Quaternion spawnRotation = ownerTransform.rotation;
             Transform parentTransform = attachToOwner ? ownerTransform : null;
@@ -71,9 +71,9 @@ namespace TinyHero.Skill
         ///<summary>
         /// 생성 오프셋 계산
         ///</summary>
-        private Vector3 ResolveSpawnOffset( float _facingDirection )
+        private Vector3 ResolveSpawnOffset( CSkillContext _skillContext, float _facingDirection )
         {
-            Vector3 resolvedOffset = spawnOffset;
+            Vector3 resolvedOffset = _skillContext != null ? _skillContext.ScaleRangeOffset( spawnOffset ) : spawnOffset;
 
             if ( useFacingDirection == false )
             {

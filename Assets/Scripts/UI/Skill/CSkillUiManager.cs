@@ -9,8 +9,6 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CSkillUiManager : CSingleTon<CSkillUiManager>
     {
-        private const string SkillPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupSkillList";
-
         private CSkillManager targetSkillManager;
         private GameObject skillPopupPrefabObject;
         private PopupSkillList skillUiController;
@@ -69,7 +67,14 @@ namespace TinyHero.UI
 
             if ( skillPopupPrefabObject == null )
             {
-                skillPopupPrefabObject = Resources.Load<GameObject>( SkillPopupPrefabResourcePath );
+                CResourceManager resourceManager = CResourceManager.Instance;
+
+                if ( resourceManager == null )
+                {
+                    return null;
+                }
+
+                skillPopupPrefabObject = resourceManager.GetSkillPopupPrefab();
             }
 
             if ( skillPopupPrefabObject == null )

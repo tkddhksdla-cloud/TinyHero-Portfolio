@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TinyHero.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 
@@ -10,6 +11,7 @@ using UnityEngine.UI;
     public sealed class CNPCNameTagManager : CSingleTon<CNPCNameTagManager>
     {
         private const string SceneNpcNameAreaCanvasObjectName = "Canvas_NPCNameArea";
+        private const string SceneMapToolName = "SceneMapTool";
         private const string NpcNameTagCanvasObjectName = "Canvas_NPCNameTag";
         private const string NpcNameTagPoolObjectName = "NpcNameTagPool";
         private const string NpcNameTagRootCanvasObjectName = "Canvas_NPCNameTag_Root";
@@ -133,6 +135,7 @@ using UnityEngine.UI;
 
                 if ( canvasObject != null )
                 {
+                    EnsureNameTagCanvasGraphicRaycaster( canvasObject );
                     Canvas resolvedCanvas = canvasObject.GetComponent<Canvas>();
                     RectTransform resolvedRectTransform = canvasObject.transform as RectTransform;
                     targetCanvas = resolvedCanvas;
@@ -183,6 +186,7 @@ using UnityEngine.UI;
 
             if ( existingCanvasObject != null )
             {
+                EnsureNameTagCanvasGraphicRaycaster( existingCanvasObject );
                 EnsurePoolObjectExists( existingCanvasObject.transform );
                 return;
             }
@@ -199,7 +203,7 @@ using UnityEngine.UI;
                 createdRootCanvasObject = rootCanvasObject;
             }
 
-            GameObject canvasObject = new GameObject( NpcNameTagCanvasObjectName, typeof( RectTransform ), typeof( Canvas ) );
+            GameObject canvasObject = new GameObject( NpcNameTagCanvasObjectName, typeof( RectTransform ), typeof( Canvas ), typeof( GraphicRaycaster ) );
             RectTransform canvasRectTransform = canvasObject.transform as RectTransform;
             Canvas childCanvas = canvasObject.GetComponent<Canvas>();
             canvasRectTransform.SetParent( createdRootCanvasObject.transform, false );
@@ -209,6 +213,41 @@ using UnityEngine.UI;
             canvasRectTransform.offsetMax = Vector2.zero;
             childCanvas.overrideSorting = false;
             EnsurePoolObjectExists( canvasRectTransform );
+        }
+
+        ///<summary>
+        /// NPC 이름표 대상 캔버스 결정
+        ///</summary>
+        ///<summary>
+        /// 맵툴 씬 이름표 캔버스 레이캐스터 보장
+        ///</summary>
+        private void EnsureNameTagCanvasGraphicRaycaster( GameObject _canvasObject )
+        {
+            if ( _canvasObject == null )
+            {
+                return;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            if ( activeScene.name != SceneMapToolName )
+            {
+                return;
+            }
+
+            if ( _canvasObject.name != NpcNameTagCanvasObjectName )
+            {
+                return;
+            }
+
+            GraphicRaycaster existingGraphicRaycaster = _canvasObject.GetComponent<GraphicRaycaster>();
+
+            if ( existingGraphicRaycaster != null )
+            {
+                return;
+            }
+
+            _canvasObject.AddComponent<GraphicRaycaster>();
         }
 
         ///<summary>
