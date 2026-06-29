@@ -16,6 +16,7 @@ namespace TinyHero.Core
         [RuntimeInitializeOnLoadMethod( RuntimeInitializeLoadType.BeforeSceneLoad )]
         private static void Bootstrap()
         {
+            CResourceManager.Instance.PreloadCoreResources();
             CInputManager inputManager = CInputManager.Instance;
             CDataManager dataManager = CDataManager.Instance;
             CUINavigationController uiNavigationController = CUINavigationController.Instance;

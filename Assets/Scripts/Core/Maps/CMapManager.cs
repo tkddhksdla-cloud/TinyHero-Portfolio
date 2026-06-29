@@ -66,6 +66,7 @@ namespace TinyHero.Maps
         private RectTransform mapTitleLogoUiPoolRectTransform;
         private GameObject mapTitleLogoUiPrefab;
         private CObjectPool<MapTitleLogoUI> mapTitleLogoUiPool;
+        private Sprite currentBackgroundSprite;
         private string currentMapId = string.Empty;
         private string currentMapName = string.Empty;
         private int currentMapRuntimeVersion;
@@ -115,6 +116,40 @@ namespace TinyHero.Maps
         {
             string result = currentMapName;
             return result;
+        }
+
+        ///<summary>
+        /// 현재 적용 중인 배경 스프라이트 반환
+        ///</summary>
+        public Sprite GetCurrentBackgroundSprite()
+        {
+            Sprite result = currentBackgroundSprite;
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 배경 스프라이트의 월드 경계 조회 시도
+        ///</summary>
+        public bool TryGetCurrentBackgroundBounds( out Bounds _backgroundBounds )
+        {
+            _backgroundBounds = default;
+
+            WorldSpaceBackgroundFitter targetBackgroundFitter = FindFirstObjectByType<WorldSpaceBackgroundFitter>();
+
+            if ( targetBackgroundFitter == null )
+            {
+                return false;
+            }
+
+            SpriteRenderer targetBackgroundRenderer = targetBackgroundFitter.GetComponent<SpriteRenderer>();
+
+            if ( targetBackgroundRenderer == null || targetBackgroundRenderer.sprite == null )
+            {
+                return false;
+            }
+
+            _backgroundBounds = targetBackgroundRenderer.bounds;
+            return true;
         }
 
         ///<summary>
@@ -559,6 +594,8 @@ namespace TinyHero.Maps
         ///</summary>
         private void ApplyBackgroundSprite(string _backgroundSpriteName)
         {
+            currentBackgroundSprite = null;
+
             if ( string.IsNullOrWhiteSpace( _backgroundSpriteName ) )
             {
                 return;
@@ -583,6 +620,7 @@ namespace TinyHero.Maps
                 return;
             }
 
+            currentBackgroundSprite = backgroundSprite;
             targetBackgroundRenderer.sprite = backgroundSprite;
             targetBackgroundFitter.ApplyFit();
             CMapToolBackgroundColliderVisualizer colliderVisualizer = targetBackgroundRenderer.GetComponent<CMapToolBackgroundColliderVisualizer>();
