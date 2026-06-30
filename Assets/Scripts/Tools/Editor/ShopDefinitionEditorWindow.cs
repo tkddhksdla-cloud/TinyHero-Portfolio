@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using TinyHero.Core.Data;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace TinyHero.Tools
@@ -37,10 +38,19 @@ namespace TinyHero.Tools
     {
         private const string ShopDefinitionFolderPath = "Assets/Resources/Data/Shop/Definitions";
         private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
-        private const string DefaultPriceItemId = "GOLD";
+        private const string DefaultPriceItemId = "ITEM_CURRENCY_GOLD";
         private const float ListViewHeight = 480.0f;
         private const float ListItemHeight = 42.0f;
         private const float ListItemSpacing = 4.0f;
+        private const float EntryIndexLabelWidth = 68.0f;
+        private const float EntryIconButtonWidth = 26.0f;
+        private const float EntryButtonColumnWidth = 58.0f;
+        private const float EntryColumnMinWidth = 182.0f;
+        private const float EntryColumnSpacing = 18.0f;
+        private const float EntryFieldLabelWidth = 68.0f;
+        private const float EntryElementHeight = 58.0f;
+        private const float EntryDeleteButtonWidth = 24.0f;
+        private const float EntryRectPadding = 4.0f;
         private const int ShopSlotCapacity = 15;
 
         [SerializeField] private List<ShopDefinitionInfo> shopDefinitionInfoList = new List<ShopDefinitionInfo>();
@@ -54,6 +64,15 @@ namespace TinyHero.Tools
         private MessageType statusMessageType = MessageType.Info;
         private bool isPendingFocusToSelection;
         private bool hasPendingAssetChanges;
+        private ReorderableList shopEntryReorderableList;
+        private int shopEntryReorderableTargetId = int.MinValue;
+
+        private static readonly Color[] ShopEntryBackgroundColorArray =
+        {
+            new Color( 0.18f, 0.34f, 0.50f, 0.18f ),
+            new Color( 0.30f, 0.42f, 0.22f, 0.18f ),
+            new Color( 0.45f, 0.32f, 0.18f, 0.18f )
+        };
 
         ///<summary>
         /// 상점 정의 편집 창 표시
@@ -63,7 +82,7 @@ namespace TinyHero.Tools
         {
             ShopDefinitionEditorWindow window = GetWindow<ShopDefinitionEditorWindow>();
             window.titleContent = new GUIContent( "Shop Definition Editor" );
-            window.minSize = new Vector2( 1280.0f, 780.0f );
+            window.minSize = new Vector2( 1120.0f, 780.0f );
             window.Show();
         }
 
@@ -282,11 +301,7 @@ namespace TinyHero.Tools
                 EditorGUILayout.HelpBox( "등록된 판매 품목이 없습니다.", MessageType.None );
             }
 
-            for ( int index = 0; index < entryCount; index++ )
-            {
-                SerializedProperty entryProperty = _shopEntryDataListProperty.GetArrayElementAtIndex( index );
-                DrawShopEntryElement( _shopEntryDataListProperty, entryProperty, index );
-            }
+            DrawShopEntryReorderableList( _shopEntryDataListProperty );
 
             EditorGUILayout.BeginHorizontal();
 
@@ -304,63 +319,207 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 상점 판매 항목 렌더링
+        /// 상점 판매 항목 드래그 목록 렌더링
         ///</summary>
-        private void DrawShopEntryElement( SerializedProperty _shopEntryDataListProperty, SerializedProperty _entryProperty, int _entryIndex )
+        private void DrawShopEntryReorderableList( SerializedProperty _shopEntryDataListProperty )
         {
-            if ( _shopEntryDataListProperty == null || _entryProperty == null )
+            if ( _shopEntryDataListProperty == null )
             {
                 return;
+            }
+
+            ReorderableList reorderableList = GetOrCreateShopEntryReorderableList( _shopEntryDataListProperty );
+
+            if ( reorderableList == null )
+            {
+                return;
+            }
+
+            int requestedRemoveIndex = -1;
+            reorderableList.serializedProperty = _shopEntryDataListProperty;
+            reorderableList.elementHeight = EntryElementHeight;
+            reorderableList.drawElementCallback = ( Rect _rect, int _index, bool _isActive, bool _isFocused ) =>
+            {
+                bool shouldRemove = DrawShopEntryElement( _rect, _shopEntryDataListProperty, _index );
+
+                if ( shouldRemove )
+                {
+                    requestedRemoveIndex = _index;
+                }
+            };
+            reorderableList.onReorderCallback = ( ReorderableList _list ) =>
+            {
+                hasPendingAssetChanges = true;
+            };
+            reorderableList.DoLayoutList();
+
+            if ( requestedRemoveIndex < 0 )
+            {
+                return;
+            }
+
+            if ( requestedRemoveIndex >= _shopEntryDataListProperty.arraySize )
+            {
+                return;
+            }
+
+            _shopEntryDataListProperty.DeleteArrayElementAtIndex( requestedRemoveIndex );
+            hasPendingAssetChanges = true;
+            Repaint();
+        }
+
+        ///<summary>
+        /// 상점 판매 항목 드래그 목록 반환
+        ///</summary>
+        private ReorderableList GetOrCreateShopEntryReorderableList( SerializedProperty _shopEntryDataListProperty )
+        {
+            if ( _shopEntryDataListProperty == null || _shopEntryDataListProperty.serializedObject == null )
+            {
+                return null;
+            }
+
+            int targetId = _shopEntryDataListProperty.serializedObject.targetObject != null ? _shopEntryDataListProperty.serializedObject.targetObject.GetInstanceID() : int.MinValue;
+            bool shouldCreate = shopEntryReorderableList == null || shopEntryReorderableTargetId != targetId;
+
+            if ( shouldCreate )
+            {
+                shopEntryReorderableList = new ReorderableList( _shopEntryDataListProperty.serializedObject, _shopEntryDataListProperty, true, false, false, false );
+                shopEntryReorderableTargetId = targetId;
+            }
+
+            return shopEntryReorderableList;
+        }
+
+        ///<summary>
+        /// 상점 판매 항목 렌더링
+        ///</summary>
+        private bool DrawShopEntryElement( Rect _rect, SerializedProperty _shopEntryDataListProperty, int _entryIndex )
+        {
+            if ( _shopEntryDataListProperty == null )
+            {
+                return false;
+            }
+
+            if ( _entryIndex < 0 || _entryIndex >= _shopEntryDataListProperty.arraySize )
+            {
+                return false;
+            }
+
+            SerializedProperty _entryProperty = _shopEntryDataListProperty.GetArrayElementAtIndex( _entryIndex );
+
+            if ( _entryProperty == null )
+            {
+                return false;
             }
 
             SerializedProperty itemIdProperty = _entryProperty.FindPropertyRelative( "itemId" );
-            SerializedProperty itemCountProperty = _entryProperty.FindPropertyRelative( "itemCount" );
+            SerializedProperty itemCountProperty = _entryProperty.FindPropertyRelative( "itemCountValue" );
             SerializedProperty priceItemIdProperty = _entryProperty.FindPropertyRelative( "priceItemId" );
-            SerializedProperty priceAmountProperty = _entryProperty.FindPropertyRelative( "priceAmount" );
-            EditorGUILayout.BeginVertical( "box" );
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField( $"Entry {_entryIndex + 1}", EditorStyles.boldLabel );
+            SerializedProperty priceAmountProperty = _entryProperty.FindPropertyRelative( "priceAmountValue" );
+            Color entryBackgroundColor = ResolveShopEntryBackgroundColor( _entryIndex );
+            Rect entryRect = new Rect( _rect.x + EntryRectPadding, _rect.y + EntryRectPadding, _rect.width - EntryRectPadding * 2.0f, _rect.height - EntryRectPadding * 2.0f );
+            EditorGUI.DrawRect( entryRect, entryBackgroundColor );
+            Rect removeButtonRect = new Rect( entryRect.x + EntryRectPadding, entryRect.y + 16.0f, EntryDeleteButtonWidth, EditorGUIUtility.singleLineHeight );
 
-            if ( GUILayout.Button( "Up", GUILayout.Width( 50.0f ) ) )
+            if ( GUI.Button( removeButtonRect, "-" ) )
             {
-                MoveShopEntry( _shopEntryDataListProperty, _entryIndex, -1 );
+                return true;
             }
 
-            if ( GUILayout.Button( "Down", GUILayout.Width( 58.0f ) ) )
-            {
-                MoveShopEntry( _shopEntryDataListProperty, _entryIndex, 1 );
-            }
+            Rect entryLabelRect = new Rect( removeButtonRect.xMax + EntryRectPadding, entryRect.y + 16.0f, EntryIndexLabelWidth, EditorGUIUtility.singleLineHeight );
+            EditorGUI.LabelField( entryLabelRect, $"Entry {_entryIndex + 1}", EditorStyles.boldLabel );
+            float columnStartX = entryLabelRect.xMax + EntryRectPadding;
+            float availableColumnWidth = entryRect.xMax - columnStartX;
+            float columnWidth = Mathf.Max( EntryColumnMinWidth, ( availableColumnWidth - EntryColumnSpacing ) * 0.5f );
+            Rect sellColumnRect = new Rect( columnStartX, entryRect.y + 4.0f, columnWidth, entryRect.height - 8.0f );
+            Rect priceColumnRect = new Rect( sellColumnRect.xMax + EntryColumnSpacing, sellColumnRect.y, columnWidth, sellColumnRect.height );
+            DrawShopEntryColumn( sellColumnRect, "판매 아이템", itemIdProperty, false, "판매 수량", itemCountProperty, false );
+            DrawShopEntryColumn( priceColumnRect, "가격 아이템", priceItemIdProperty, true, "가격", priceAmountProperty, true );
+            return false;
+        }
 
-            if ( GUILayout.Button( "Remove", GUILayout.Width( 80.0f ) ) )
+        ///<summary>
+        /// 상점 판매 항목 2열 컬럼 렌더링
+        ///</summary>
+        private void DrawShopEntryColumn( Rect _rect, string _itemLabel, SerializedProperty _itemIdProperty, bool _useDefaultPriceItem, string _amountLabel, SerializedProperty _amountProperty, bool _allowZero )
+        {
+            Rect itemRect = new Rect( _rect.x, _rect.y, _rect.width, EditorGUIUtility.singleLineHeight );
+            Rect amountRect = new Rect( _rect.x, itemRect.yMax + 4.0f, _rect.width, EditorGUIUtility.singleLineHeight );
+            DrawShopEntryItemSelectorField( itemRect, _itemLabel, _itemIdProperty, _useDefaultPriceItem );
+            DrawShopEntryAmountField( amountRect, _amountLabel, _amountProperty, _allowZero );
+        }
+
+        ///<summary>
+        /// 상점 판매 항목 아이템 선택 필드 렌더링
+        ///</summary>
+        private void DrawShopEntryItemSelectorField( Rect _rect, string _label, SerializedProperty _itemIdProperty, bool _useDefaultPriceItem )
+        {
+            if ( _itemIdProperty == null )
             {
-                _shopEntryDataListProperty.DeleteArrayElementAtIndex( _entryIndex );
-                hasPendingAssetChanges = true;
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.EndVertical();
                 return;
             }
 
-            EditorGUILayout.EndHorizontal();
-            DrawItemSelectorField( "판매 아이템", itemIdProperty, false );
-
-            if ( itemCountProperty != null )
+            if ( _useDefaultPriceItem && string.IsNullOrWhiteSpace( _itemIdProperty.stringValue ) )
             {
-                int resolvedItemCount = Mathf.Max( 1, EditorGUILayout.IntField( "판매 수량", itemCountProperty.intValue ) );
-                itemCountProperty.intValue = resolvedItemCount;
+                _itemIdProperty.stringValue = DefaultPriceItemId;
             }
 
-            EditorGUILayout.Space( 2.0f );
-            DrawItemSelectorField( "구매 재화", priceItemIdProperty, true );
+            string currentItemId = string.IsNullOrWhiteSpace( _itemIdProperty.stringValue ) == false ? _itemIdProperty.stringValue.Trim() : string.Empty;
+            string[] optionLabelArray = BuildItemOptionLabelArray();
+            int selectedOptionIndex = ResolveItemOptionIndex( currentItemId );
+            Rect labelRect = new Rect( _rect.x, _rect.y, EntryFieldLabelWidth, _rect.height );
+            Rect fieldRect = new Rect( labelRect.xMax + 4.0f, _rect.y, _rect.width - EntryFieldLabelWidth - 4.0f, _rect.height );
+            EditorGUI.LabelField( labelRect, _label );
 
-            if ( priceAmountProperty != null )
+            if ( string.IsNullOrWhiteSpace( currentItemId ) && itemReferenceInfoList.Count > 0 )
             {
-                int resolvedPriceAmount = Mathf.Max( 0, EditorGUILayout.IntField( "가격 수량", priceAmountProperty.intValue ) );
-                priceAmountProperty.intValue = resolvedPriceAmount;
+                selectedOptionIndex = 1;
+                currentItemId = ResolveItemIdByOptionIndex( selectedOptionIndex, currentItemId );
+                _itemIdProperty.stringValue = currentItemId;
             }
 
-            string entrySummaryText = BuildEntrySummaryText( itemIdProperty, itemCountProperty, priceItemIdProperty, priceAmountProperty );
-            EditorGUILayout.HelpBox( entrySummaryText, MessageType.None );
-            EditorGUILayout.EndVertical();
+            if ( selectedOptionIndex == 0 )
+            {
+                string updatedItemId = EditorGUI.TextField( fieldRect, currentItemId );
+                _itemIdProperty.stringValue = updatedItemId.Trim();
+                return;
+            }
+
+            int updatedOptionIndex = EditorGUI.Popup( fieldRect, selectedOptionIndex, optionLabelArray );
+
+            if ( updatedOptionIndex != selectedOptionIndex )
+            {
+                string selectedItemId = ResolveItemIdByOptionIndex( updatedOptionIndex, currentItemId );
+                _itemIdProperty.stringValue = selectedItemId;
+            }
+        }
+
+        ///<summary>
+        /// 상점 판매 항목 수량 필드 렌더링
+        ///</summary>
+        private void DrawShopEntryAmountField( Rect _rect, string _label, SerializedProperty _amountProperty, bool _allowZero )
+        {
+            if ( _amountProperty == null )
+            {
+                return;
+            }
+
+            long minValue = _allowZero ? 0L : 1L;
+            Rect labelRect = new Rect( _rect.x, _rect.y, EntryFieldLabelWidth, _rect.height );
+            Rect fieldRect = new Rect( labelRect.xMax + 4.0f, _rect.y, _rect.width - EntryFieldLabelWidth - 4.0f, _rect.height );
+            EditorGUI.LabelField( labelRect, _label );
+            long resolvedAmount = System.Math.Max( minValue, EditorGUI.LongField( fieldRect, _amountProperty.longValue ) );
+            _amountProperty.longValue = resolvedAmount;
+        }
+
+        ///<summary>
+        /// 상점 판매 항목 배경색 반환
+        ///</summary>
+        private Color ResolveShopEntryBackgroundColor( int _entryIndex )
+        {
+            int colorIndex = Mathf.Abs( _entryIndex ) % ShopEntryBackgroundColorArray.Length;
+            Color result = ShopEntryBackgroundColorArray[ colorIndex ];
+            return result;
         }
 
         ///<summary>
@@ -676,8 +835,58 @@ namespace TinyHero.Tools
             int nextIndex = _shopEntryDataListProperty.arraySize;
             _shopEntryDataListProperty.InsertArrayElementAtIndex( nextIndex );
             SerializedProperty createdEntryProperty = _shopEntryDataListProperty.GetArrayElementAtIndex( nextIndex );
-            InitializeShopEntryProperty( createdEntryProperty );
+
+            if ( nextIndex > 0 )
+            {
+                SerializedProperty previousEntryProperty = _shopEntryDataListProperty.GetArrayElementAtIndex( nextIndex - 1 );
+                CopyShopEntryProperty( previousEntryProperty, createdEntryProperty );
+            }
+            else
+            {
+                InitializeShopEntryProperty( createdEntryProperty );
+            }
+
             hasPendingAssetChanges = true;
+        }
+
+        ///<summary>
+        /// 상점 항목 값 복제
+        ///</summary>
+        private void CopyShopEntryProperty( SerializedProperty _sourceEntryProperty, SerializedProperty _targetEntryProperty )
+        {
+            if ( _sourceEntryProperty == null || _targetEntryProperty == null )
+            {
+                return;
+            }
+
+            SerializedProperty sourceItemIdProperty = _sourceEntryProperty.FindPropertyRelative( "itemId" );
+            SerializedProperty sourceItemCountProperty = _sourceEntryProperty.FindPropertyRelative( "itemCountValue" );
+            SerializedProperty sourcePriceItemIdProperty = _sourceEntryProperty.FindPropertyRelative( "priceItemId" );
+            SerializedProperty sourcePriceAmountProperty = _sourceEntryProperty.FindPropertyRelative( "priceAmountValue" );
+            SerializedProperty targetItemIdProperty = _targetEntryProperty.FindPropertyRelative( "itemId" );
+            SerializedProperty targetItemCountProperty = _targetEntryProperty.FindPropertyRelative( "itemCountValue" );
+            SerializedProperty targetPriceItemIdProperty = _targetEntryProperty.FindPropertyRelative( "priceItemId" );
+            SerializedProperty targetPriceAmountProperty = _targetEntryProperty.FindPropertyRelative( "priceAmountValue" );
+
+            if ( sourceItemIdProperty != null && targetItemIdProperty != null )
+            {
+                targetItemIdProperty.stringValue = sourceItemIdProperty.stringValue;
+            }
+
+            if ( sourceItemCountProperty != null && targetItemCountProperty != null )
+            {
+                targetItemCountProperty.longValue = sourceItemCountProperty.longValue;
+            }
+
+            if ( sourcePriceItemIdProperty != null && targetPriceItemIdProperty != null )
+            {
+                targetPriceItemIdProperty.stringValue = sourcePriceItemIdProperty.stringValue;
+            }
+
+            if ( sourcePriceAmountProperty != null && targetPriceAmountProperty != null )
+            {
+                targetPriceAmountProperty.longValue = sourcePriceAmountProperty.longValue;
+            }
         }
 
         ///<summary>
@@ -691,18 +900,18 @@ namespace TinyHero.Tools
             }
 
             SerializedProperty itemIdProperty = _entryProperty.FindPropertyRelative( "itemId" );
-            SerializedProperty itemCountProperty = _entryProperty.FindPropertyRelative( "itemCount" );
+            SerializedProperty itemCountProperty = _entryProperty.FindPropertyRelative( "itemCountValue" );
             SerializedProperty priceItemIdProperty = _entryProperty.FindPropertyRelative( "priceItemId" );
-            SerializedProperty priceAmountProperty = _entryProperty.FindPropertyRelative( "priceAmount" );
+            SerializedProperty priceAmountProperty = _entryProperty.FindPropertyRelative( "priceAmountValue" );
 
             if ( itemIdProperty != null )
             {
-                itemIdProperty.stringValue = string.Empty;
+                itemIdProperty.stringValue = ResolveDefaultShopItemId();
             }
 
             if ( itemCountProperty != null )
             {
-                itemCountProperty.intValue = 1;
+                itemCountProperty.longValue = 1L;
             }
 
             if ( priceItemIdProperty != null )
@@ -712,8 +921,34 @@ namespace TinyHero.Tools
 
             if ( priceAmountProperty != null )
             {
-                priceAmountProperty.intValue = 1;
+                priceAmountProperty.longValue = 1L;
             }
+        }
+
+        ///<summary>
+        /// 상점 항목 기본 아이템 ID 반환
+        ///</summary>
+        private string ResolveDefaultShopItemId()
+        {
+            for ( int index = 0; index < itemReferenceInfoList.Count; index++ )
+            {
+                ShopItemReferenceInfo itemReferenceInfo = itemReferenceInfoList[ index ];
+
+                if ( itemReferenceInfo == null )
+                {
+                    continue;
+                }
+
+                if ( string.IsNullOrWhiteSpace( itemReferenceInfo.itemId ) )
+                {
+                    continue;
+                }
+
+                string result = itemReferenceInfo.itemId.Trim();
+                return result;
+            }
+
+            return string.Empty;
         }
 
         ///<summary>
@@ -759,12 +994,12 @@ namespace TinyHero.Tools
         private string BuildEntrySummaryText( SerializedProperty _itemIdProperty, SerializedProperty _itemCountProperty, SerializedProperty _priceItemIdProperty, SerializedProperty _priceAmountProperty )
         {
             string itemId = _itemIdProperty != null ? _itemIdProperty.stringValue.Trim() : string.Empty;
-            int itemCount = _itemCountProperty != null ? Mathf.Max( 1, _itemCountProperty.intValue ) : 1;
+            long itemCount = _itemCountProperty != null ? System.Math.Max( 1L, _itemCountProperty.longValue ) : 1L;
             string priceItemId = _priceItemIdProperty != null ? _priceItemIdProperty.stringValue.Trim() : DefaultPriceItemId;
-            int priceAmount = _priceAmountProperty != null ? Mathf.Max( 0, _priceAmountProperty.intValue ) : 0;
+            long priceAmount = _priceAmountProperty != null ? System.Math.Max( 0L, _priceAmountProperty.longValue ) : 0L;
             string itemName = ResolveItemName( itemId );
             string priceItemName = ResolveItemName( priceItemId );
-            string result = $"판매: {itemName} x{itemCount}\n가격: {priceItemName} x{priceAmount}";
+            string result = $"{itemName} x{itemCount} / {priceItemName} x{priceAmount}";
             return result;
         }
 
@@ -845,7 +1080,8 @@ namespace TinyHero.Tools
                     continue;
                 }
 
-                optionLabelList.Add( $"{itemReferenceInfo.itemName} ({itemReferenceInfo.itemId})" );
+                string itemName = string.IsNullOrWhiteSpace( itemReferenceInfo.itemName ) ? itemReferenceInfo.itemId : itemReferenceInfo.itemName;
+                optionLabelList.Add( itemName );
             }
 
             string[] result = optionLabelList.ToArray();

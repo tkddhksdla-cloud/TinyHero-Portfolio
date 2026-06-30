@@ -632,7 +632,7 @@ namespace TinyHero.Tools
         {
             CItemDefinition targetItemDefinition = ( CItemDefinition )EditorGUILayout.ObjectField( "Target Item", _conditionEntry.GetTargetItemDefinition(), typeof( CItemDefinition ), false );
             _conditionEntry.SetTargetItemDefinition( targetItemDefinition );
-            int requiredItemCount = EditorGUILayout.IntField( "Required Item Count", _conditionEntry.GetRequiredItemCount() );
+            long requiredItemCount = EditorGUILayout.LongField( "Required Item Count", _conditionEntry.GetRequiredItemCount() );
             _conditionEntry.SetRequiredItemCount( requiredItemCount );
 
             if ( targetItemDefinition != null )
@@ -678,7 +678,7 @@ namespace TinyHero.Tools
                 case eQuestRewardType.ITEM:
                     CItemDefinition itemDefinition = ( CItemDefinition )EditorGUILayout.ObjectField( "Item Definition", _rewardEntry.GetItemDefinition(), typeof( CItemDefinition ), false );
                     _rewardEntry.SetItemDefinition( itemDefinition );
-                    int itemCount = EditorGUILayout.IntField( "Item Count", _rewardEntry.GetItemCount() );
+                    long itemCount = EditorGUILayout.LongField( "Item Count", _rewardEntry.GetItemCount() );
                     _rewardEntry.SetItemCount( itemCount );
 
                     if ( itemDefinition != null )
