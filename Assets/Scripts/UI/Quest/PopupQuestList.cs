@@ -38,7 +38,6 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class PopupQuestList : CUIPopup
     {
-        private const string TooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const string NormalQuestTypeLabel = "[ 일반 ]";
         private const string RepeatableQuestTypeLabel = "[ 반복 ]";
         private const string AcceptButtonText = "수락 하기";
@@ -82,8 +81,6 @@ namespace TinyHero.UI
         private CNPCObject currentNpcObject;
         private PlayerController currentPlayerController;
         private CQuestManager currentQuestManager;
-        private CItemTooltipUI runtimeTooltipUi;
-        private GameObject tooltipPrefabObject;
         private string selectedQuestId = string.Empty;
         private bool isQuestListVisible;
 
@@ -159,8 +156,6 @@ namespace TinyHero.UI
             {
                 return;
             }
-
-            UpdateTooltipPosition();
         }
 
         ///<summary>
@@ -343,17 +338,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            EnsureTooltipUi();
-
-            if ( runtimeTooltipUi == null )
-            {
-                return;
-            }
-
-            runtimeTooltipUi.SetTooltipContent( _itemDefinition );
-            runtimeTooltipUi.transform.SetAsLastSibling();
-            runtimeTooltipUi.SetVisible( true );
-            UpdateTooltipPosition();
+            CUITooltipManager.ShowItemTooltip( _itemDefinition );
         }
 
         ///<summary>
@@ -361,12 +346,7 @@ namespace TinyHero.UI
         ///</summary>
         public void HideRewardTooltip()
         {
-            if ( runtimeTooltipUi == null )
-            {
-                return;
-            }
-
-            runtimeTooltipUi.SetVisible( false );
+            CUITooltipManager.HideItemTooltip();
         }
 
         ///<summary>
@@ -1245,56 +1225,11 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 아이템 툴팁 UI 생성 보장
-        ///</summary>
-        private void EnsureTooltipUi()
-        {
-            if ( targetCanvas == null )
-            {
-                return;
-            }
-
-            if ( tooltipPrefabObject == null )
-            {
-                tooltipPrefabObject = Resources.Load<GameObject>( TooltipPrefabResourcePath );
-            }
-
-            if ( runtimeTooltipUi != null || tooltipPrefabObject == null )
-            {
-                return;
-            }
-
-            GameObject createdTooltipObject = Instantiate( tooltipPrefabObject, targetCanvas.transform );
-            createdTooltipObject.name = tooltipPrefabObject.name;
-            CItemTooltipUI createdTooltipUi = createdTooltipObject.GetComponent<CItemTooltipUI>();
-
-            if ( createdTooltipUi == null )
-            {
-                createdTooltipUi = createdTooltipObject.AddComponent<CItemTooltipUI>();
-            }
-
-            createdTooltipUi.SetVisible( false );
-            runtimeTooltipUi = createdTooltipUi;
-        }
-
-        ///<summary>
         /// 창 드래그 핸들 구성 보장
         ///</summary>
         private void EnsureWindowDragHandle()
         {
-            if ( windowRootRectTransform == null || windowDragHandleRectTransform == null )
-            {
-                return;
-            }
-
-            CItemInventoryWindowDragHandle dragHandle = windowDragHandleRectTransform.GetComponent<CItemInventoryWindowDragHandle>();
-
-            if ( dragHandle == null )
-            {
-                dragHandle = windowDragHandleRectTransform.gameObject.AddComponent<CItemInventoryWindowDragHandle>();
-            }
-
-            dragHandle.Configure( windowRootRectTransform, targetCanvas );
+            EnsurePopupWindowDragHandle( windowRootRectTransform, windowDragHandleRectTransform, targetCanvas );
         }
 
         ///<summary>
@@ -1303,46 +1238,7 @@ namespace TinyHero.UI
         private void EnsureWindowFocusHandlers()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
-
-            if ( windowRootRectTransform == null || siblingTargetRectTransform == null )
-            {
-                return;
-            }
-
-            Graphic[] graphicArray = windowRootRectTransform.GetComponentsInChildren<Graphic>( true );
-
-            for ( int index = 0; index < graphicArray.Length; index++ )
-            {
-                Graphic graphic = graphicArray[ index ];
-
-                if ( graphic == null || graphic.raycastTarget == false )
-                {
-                    continue;
-                }
-
-                CWindowDragHandle focusHandler = graphic.GetComponent<CWindowDragHandle>();
-
-                if ( focusHandler == null )
-                {
-                    focusHandler = graphic.gameObject.AddComponent<CWindowDragHandle>();
-                }
-
-                focusHandler.Configure( siblingTargetRectTransform );
-            }
-        }
-
-        ///<summary>
-        /// 툴팁 위치 갱신
-        ///</summary>
-        private void UpdateTooltipPosition()
-        {
-            if ( runtimeTooltipUi == null || targetCanvas == null || runtimeTooltipUi.gameObject.activeSelf == false )
-            {
-                return;
-            }
-
-            Vector2 mousePosition = Input.mousePosition;
-            runtimeTooltipUi.SetScreenPosition( mousePosition, targetCanvas );
+            EnsurePopupWindowFocusHandlers( windowRootRectTransform, siblingTargetRectTransform );
         }
 
         ///<summary>
@@ -1471,13 +1367,7 @@ namespace TinyHero.UI
         public override void BringLayerToFront()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
-
-            if ( siblingTargetRectTransform == null )
-            {
-                return;
-            }
-
-            siblingTargetRectTransform.SetAsLastSibling();
+            BringPopupWindowToFront( siblingTargetRectTransform );
         }
 
         ///<summary>

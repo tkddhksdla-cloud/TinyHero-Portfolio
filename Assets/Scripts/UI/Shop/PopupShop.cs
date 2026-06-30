@@ -142,7 +142,7 @@ namespace TinyHero.UI
 
             CShopEntryData entryData = entryDataList[ slotIndex ];
             string additionalInfoText = BuildShopTooltipText( entryData, _shopSlot.GetCurrentItemDefinition() );
-            linkedInventoryUi.ShowItemDefinitionTooltip( _shopSlot.GetCurrentItemDefinition(), null, additionalInfoText );
+            CUITooltipManager.ShowItemTooltip( _shopSlot.GetCurrentItemDefinition(), null, additionalInfoText );
         }
 
         ///<summary>
@@ -150,12 +150,7 @@ namespace TinyHero.UI
         ///</summary>
         public void HideTooltip( CShopSlot _shopSlot )
         {
-            if ( linkedInventoryUi == null )
-            {
-                return;
-            }
-
-            linkedInventoryUi.HideSharedTooltip();
+            CUITooltipManager.HideItemTooltip();
         }
 
         ///<summary>
@@ -243,14 +238,14 @@ namespace TinyHero.UI
 
                 if ( entryDataList == null || index >= entryDataList.Count )
                 {
-                    shopSlot.RefreshSlot( null, 0 );
+                    shopSlot.RefreshSlot( null, 0L );
                     continue;
                 }
 
                 CShopEntryData entryData = entryDataList[ index ];
                 CItemDefinition itemDefinition = null;
                 bool hasItemDefinition = entryData != null && CItemDefinitionDatabase.TryGetItemDefinition( entryData.GetItemId(), out itemDefinition );
-                int itemCount = entryData != null ? entryData.GetItemCount() : 0;
+                long itemCount = entryData != null ? entryData.GetItemCount() : 0L;
                 shopSlot.RefreshSlot( hasItemDefinition ? itemDefinition : null, itemCount );
             }
         }
@@ -436,8 +431,8 @@ namespace TinyHero.UI
             }
 
             string priceItemId = entryData.GetPriceItemId();
-            int priceAmount = entryData.GetPriceAmount();
-            int itemCount = entryData.GetItemCount();
+            long priceAmount = entryData.GetPriceAmount();
+            long itemCount = entryData.GetItemCount();
 
             if ( priceAmount > 0 )
             {
@@ -491,9 +486,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            int itemQuantity = sourceEntryData.GetQuantity();
-            long totalPriceLong = ( long )itemDefinition.GetSellPrice() * itemQuantity;
-            int totalPrice = totalPriceLong > int.MaxValue ? int.MaxValue : ( int )totalPriceLong;
+            long itemQuantity = sourceEntryData.GetQuantity();
+            long totalPrice = itemDefinition.GetSellPrice() * itemQuantity;
             string priceItemId = itemDefinition.GetSellPriceItemId();
             string priceText = BuildPriceText( priceItemId, totalPrice );
             string descriptionText = $"{itemDefinition.GetItemName()} x{itemQuantity}\n{priceText}\n판매하시겠습니까?";
@@ -527,10 +521,9 @@ namespace TinyHero.UI
             }
 
             CInventoryItemEntryData copiedEntryData = sourceEntryData.CreateCopy();
-            int itemQuantity = copiedEntryData.GetQuantity();
+            long itemQuantity = copiedEntryData.GetQuantity();
             string priceItemId = itemDefinition.GetSellPriceItemId();
-            long totalPriceLong = ( long )itemDefinition.GetSellPrice() * itemQuantity;
-            int totalPrice = totalPriceLong > int.MaxValue ? int.MaxValue : ( int )totalPriceLong;
+            long totalPrice = itemDefinition.GetSellPrice() * itemQuantity;
             bool didRemoveItem = targetInventoryManager.TryRemoveItemAtSlot( _inventorySlotIndex, itemQuantity );
 
             if ( didRemoveItem == false )
@@ -582,11 +575,11 @@ namespace TinyHero.UI
         ///<summary>
         /// 가격 표시 문구 구성
         ///</summary>
-        private string BuildPriceText( string _priceItemId, int _priceAmount )
+        private string BuildPriceText( string _priceItemId, long _priceAmount )
         {
             string resolvedPriceItemId = string.IsNullOrWhiteSpace( _priceItemId ) ? DefaultPriceItemId : _priceItemId.Trim();
             string priceItemName = ResolveItemDisplayName( resolvedPriceItemId );
-            string result = $"{priceItemName} x{Mathf.Max( 0, _priceAmount )}";
+            string result = $"{priceItemName} x{System.Math.Max( 0L, _priceAmount )}";
             return result;
         }
 
@@ -602,8 +595,8 @@ namespace TinyHero.UI
 
             string itemName = _itemDefinition.GetItemName();
             string priceItemName = ResolveItemDisplayName( _entryData.GetPriceItemId() );
-            int itemCount = _entryData.GetItemCount();
-            int priceAmount = _entryData.GetPriceAmount();
+            long itemCount = _entryData.GetItemCount();
+            long priceAmount = _entryData.GetPriceAmount();
             string result = $"[ {itemName} ] x{itemCount} 을(를)\n[ {priceItemName} ] x{priceAmount} 으로\n구매하시겠습니까?";
             return result;
         }
@@ -681,19 +674,7 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureWindowDragHandle()
         {
-            if ( windowDragHandleRectTransform == null || windowRootRectTransform == null || targetCanvas == null )
-            {
-                return;
-            }
-
-            CItemInventoryWindowDragHandle dragHandle = windowDragHandleRectTransform.GetComponent<CItemInventoryWindowDragHandle>();
-
-            if ( dragHandle == null )
-            {
-                dragHandle = windowDragHandleRectTransform.gameObject.AddComponent<CItemInventoryWindowDragHandle>();
-            }
-
-            dragHandle.Configure( windowRootRectTransform, targetCanvas );
+            EnsurePopupWindowDragHandle( windowRootRectTransform, windowDragHandleRectTransform, targetCanvas );
         }
 
         ///<summary>
@@ -702,32 +683,7 @@ namespace TinyHero.UI
         private void EnsureWindowFocusHandlers()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
-
-            if ( windowRootRectTransform == null || siblingTargetRectTransform == null )
-            {
-                return;
-            }
-
-            Graphic[] graphicArray = windowRootRectTransform.GetComponentsInChildren<Graphic>( true );
-
-            for ( int index = 0; index < graphicArray.Length; index++ )
-            {
-                Graphic graphic = graphicArray[ index ];
-
-                if ( graphic == null || graphic.raycastTarget == false )
-                {
-                    continue;
-                }
-
-                CWindowDragHandle focusHandler = graphic.GetComponent<CWindowDragHandle>();
-
-                if ( focusHandler == null )
-                {
-                    focusHandler = graphic.gameObject.AddComponent<CWindowDragHandle>();
-                }
-
-                focusHandler.Configure( siblingTargetRectTransform );
-            }
+            EnsurePopupWindowFocusHandlers( windowRootRectTransform, siblingTargetRectTransform );
         }
 
         ///<summary>

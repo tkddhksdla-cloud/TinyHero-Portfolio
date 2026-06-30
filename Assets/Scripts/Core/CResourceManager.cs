@@ -16,6 +16,9 @@ namespace TinyHero.Core
         private const string ShopPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupShop";
         private const string NpcQuestPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupQuestList";
         private const string PlayerQuestPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupQuestList_Mine";
+        private const string RewardPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupReward";
+        private const string ItemTooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
+        private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
         private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
         private const string ShopDefinitionResourcePath = "Data/Shop/Definitions";
         private const string QuestDefinitionResourcePath = "Data/Quest/Definitions";
@@ -54,6 +57,9 @@ namespace TinyHero.Core
             LoadResource<GameObject>( ShopPopupPrefabResourcePath );
             LoadResource<GameObject>( NpcQuestPopupPrefabResourcePath );
             LoadResource<GameObject>( PlayerQuestPopupPrefabResourcePath );
+            LoadResource<GameObject>( RewardPopupPrefabResourcePath );
+            LoadResource<GameObject>( ItemTooltipPrefabResourcePath );
+            LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
             LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
             LoadResourceAll<CShopDefinition>( ShopDefinitionResourcePath );
             LoadResourceAll<CQuestDefinition>( QuestDefinitionResourcePath );
@@ -107,6 +113,33 @@ namespace TinyHero.Core
         public GameObject GetPlayerQuestPopupPrefab()
         {
             GameObject result = LoadResource<GameObject>( PlayerQuestPopupPrefabResourcePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 보상 팝업 프리팹 반환
+        ///</summary>
+        public GameObject GetRewardPopupPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( RewardPopupPrefabResourcePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 아이템 툴팁 프리팹 반환
+        ///</summary>
+        public GameObject GetItemTooltipPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( ItemTooltipPrefabResourcePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 툴팁 프리팹 반환
+        ///</summary>
+        public GameObject GetSkillTooltipPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
             return result;
         }
 

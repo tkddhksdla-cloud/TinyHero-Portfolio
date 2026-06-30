@@ -15,8 +15,6 @@ namespace TinyHero.UI
         [SerializeField] private TMP_Text itemCountText;
 
         private CItemDefinition currentItemDefinition;
-        private PopupQuestList ownerQuestListUiController;
-
         ///<summary>
         /// 보상 슬롯 참조 초기화
         ///</summary>
@@ -30,18 +28,17 @@ namespace TinyHero.UI
         ///</summary>
         public void Configure( PopupQuestList _ownerQuestListUiController )
         {
-            ownerQuestListUiController = _ownerQuestListUiController;
             ResolveReferences();
         }
 
         ///<summary>
         /// 아이템 보상 정보 표시
         ///</summary>
-        public void ShowItemReward( CItemDefinition _itemDefinition, int _quantity )
+        public void ShowItemReward( CItemDefinition _itemDefinition, long _quantity )
         {
             ResolveReferences();
             currentItemDefinition = _itemDefinition;
-            int displayQuantity = Mathf.Max( 0, _quantity );
+            long displayQuantity = System.Math.Max( 0L, _quantity );
             bool hasItem = currentItemDefinition != null;
 
             if ( itemImage != null )
@@ -67,11 +64,11 @@ namespace TinyHero.UI
         ///<summary>
         /// 스프라이트 보상 정보 표시
         ///</summary>
-        public void ShowSpriteReward( Sprite _iconSprite, int _quantity )
+        public void ShowSpriteReward( Sprite _iconSprite, long _quantity )
         {
             ResolveReferences();
             currentItemDefinition = null;
-            int displayQuantity = Mathf.Max( 0, _quantity );
+            long displayQuantity = System.Math.Max( 0L, _quantity );
             bool hasIcon = _iconSprite != null;
 
             if ( itemImage != null )
@@ -175,12 +172,12 @@ namespace TinyHero.UI
         ///</summary>
         public void OnPointerEnter( PointerEventData _eventData )
         {
-            if ( ownerQuestListUiController == null || currentItemDefinition == null )
+            if ( currentItemDefinition == null )
             {
                 return;
             }
 
-            ownerQuestListUiController.ShowRewardTooltip( currentItemDefinition );
+            CUITooltipManager.ShowItemTooltip( currentItemDefinition );
         }
 
         ///<summary>
@@ -188,12 +185,7 @@ namespace TinyHero.UI
         ///</summary>
         public void OnPointerExit( PointerEventData _eventData )
         {
-            if ( ownerQuestListUiController == null )
-            {
-                return;
-            }
-
-            ownerQuestListUiController.HideRewardTooltip();
+            CUITooltipManager.HideItemTooltip();
         }
 
         ///<summary>

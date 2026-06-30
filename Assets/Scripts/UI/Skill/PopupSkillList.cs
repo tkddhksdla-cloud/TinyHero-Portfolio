@@ -13,7 +13,6 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class PopupSkillList : CUIPopup
     {
-        private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
         private const string SkillSlotCloneNamePrefix = "SkillSlot";
 
         [SerializeField] private CSkillManager targetSkillManager;
@@ -30,8 +29,6 @@ namespace TinyHero.UI
 
         private readonly List<CSkillListSlotView> runtimeSlotViewList = new List<CSkillListSlotView>();
 
-        private CSkillTooltipUI runtimeTooltipUi;
-        private GameObject tooltipPrefabObject;
         private bool isSkillWindowVisible;
 
         ///<summary>
@@ -96,7 +93,6 @@ namespace TinyHero.UI
                 return;
             }
 
-            UpdateTooltipPosition();
         }
 
         ///<summary>
@@ -126,13 +122,6 @@ namespace TinyHero.UI
                 return;
             }
 
-            EnsureTooltipUi();
-
-            if ( runtimeTooltipUi == null )
-            {
-                return;
-            }
-
             bool isUnlocked = runtimeData.IsUnlocked();
             int currentLevel = runtimeData.GetSkillLevel();
             int displayCurrentLevel = isUnlocked ? Mathf.Max( 1, currentLevel ) : 1;
@@ -144,10 +133,7 @@ namespace TinyHero.UI
             string nextDescriptionValue = hasNextLevel ? skillDefinition.GetFormattedDescription( nextLevel ) : "최대 레벨에 도달한 스킬입니다.";
             string infoTextValue = BuildTooltipInfoText( skillDefinition, currentLevel, isUnlocked );
 
-            runtimeTooltipUi.SetTooltipContent( skillDefinition.GetSkillName(), infoTextValue, currentLevelTitleValue, currentDescriptionValue, nextLevelTitleValue, nextDescriptionValue, hasNextLevel );
-            runtimeTooltipUi.transform.SetAsLastSibling();
-            runtimeTooltipUi.SetVisible( true );
-            UpdateTooltipPosition();
+            CUITooltipManager.ShowSkillTooltip( skillDefinition.GetSkillName(), infoTextValue, currentLevelTitleValue, currentDescriptionValue, nextLevelTitleValue, nextDescriptionValue, hasNextLevel );
         }
 
         ///<summary>
@@ -155,12 +141,7 @@ namespace TinyHero.UI
         ///</summary>
         public void HideSkillTooltip()
         {
-            if ( runtimeTooltipUi == null )
-            {
-                return;
-            }
-
-            runtimeTooltipUi.SetVisible( false );
+            CUITooltipManager.HideSkillTooltip();
         }
 
         ///<summary>
@@ -808,12 +789,8 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         ///</summary>
         private void EnsureWindowDragHandle()
         {
-            if ( windowDragHandle == null || skillWindowRootRectTransform == null || targetCanvas == null )
-            {
-                return;
-            }
-
-            windowDragHandle.Configure( skillWindowRootRectTransform, targetCanvas );
+            RectTransform dragHandleRectTransform = windowDragHandle != null ? windowDragHandle.transform as RectTransform : null;
+            EnsurePopupWindowDragHandle( skillWindowRootRectTransform, dragHandleRectTransform, targetCanvas );
         }
 
         ///<summary>
@@ -822,32 +799,7 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         private void EnsureWindowFocusHandlers()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
-
-            if ( skillWindowRootRectTransform == null || siblingTargetRectTransform == null )
-            {
-                return;
-            }
-
-            Graphic[] graphicArray = skillWindowRootRectTransform.GetComponentsInChildren<Graphic>( true );
-
-            for ( int index = 0; index < graphicArray.Length; index++ )
-            {
-                Graphic graphic = graphicArray[ index ];
-
-                if ( graphic == null || graphic.raycastTarget == false )
-                {
-                    continue;
-                }
-
-                CWindowDragHandle focusHandler = graphic.GetComponent<CWindowDragHandle>();
-
-                if ( focusHandler == null )
-                {
-                    focusHandler = graphic.gameObject.AddComponent<CWindowDragHandle>();
-                }
-
-                focusHandler.Configure( siblingTargetRectTransform );
-            }
+            EnsurePopupWindowFocusHandlers( skillWindowRootRectTransform, siblingTargetRectTransform );
         }
 
         ///<summary>
@@ -886,40 +838,6 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         }
 
         ///<summary>
-        /// 툴팁 UI 생성 보장
-        ///</summary>
-        private void EnsureTooltipUi()
-        {
-            if ( tooltipPrefabObject == null )
-            {
-                tooltipPrefabObject = Resources.Load<GameObject>( SkillTooltipPrefabResourcePath );
-            }
-
-            if ( runtimeTooltipUi != null || tooltipPrefabObject == null || targetCanvas == null )
-            {
-                return;
-            }
-
-            GameObject createdTooltipObject = Instantiate( tooltipPrefabObject, targetCanvas.transform );
-            createdTooltipObject.name = tooltipPrefabObject.name;
-            runtimeTooltipUi = createdTooltipObject.GetComponent<CSkillTooltipUI>();
-        }
-
-        ///<summary>
-        /// 툴팁 위치 갱신
-        ///</summary>
-        private void UpdateTooltipPosition()
-        {
-            if ( runtimeTooltipUi == null || runtimeTooltipUi.gameObject.activeSelf == false || targetCanvas == null )
-            {
-                return;
-            }
-
-            Vector2 mousePosition = Input.mousePosition;
-            runtimeTooltipUi.SetScreenPosition( mousePosition, targetCanvas );
-        }
-
-        ///<summary>
         /// 툴팁 정보 문자 구성
         ///</summary>
         private string BuildTooltipInfoText( CSkillDefinition _skillDefinition, int _currentLevel, bool _isUnlocked )
@@ -953,54 +871,6 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         ///</summary>
         private void ResolveReferences()
         {
-            if ( skillWindowRootRectTransform == null || string.Equals( skillWindowRootRectTransform.name, "SkillList", System.StringComparison.Ordinal ) )
-            {
-                Transform windowTransform = transform.Find( "SkillUI" );
-
-                if ( windowTransform == null )
-                {
-                    windowTransform = transform.Find( "SkillUI/SkillList" );
-                }
-
-                skillWindowRootRectTransform = windowTransform != null ? windowTransform as RectTransform : null;
-            }
-
-            if ( skillListContentRootRectTransform == null )
-            {
-                Transform contentTransform = transform.Find( "SkillUI/SkillList/BG/Scroll View/Viewport/Content" );
-                skillListContentRootRectTransform = contentTransform != null ? contentTransform as RectTransform : null;
-            }
-
-            if ( skillListScrollRect == null )
-            {
-                Transform scrollViewTransform = transform.Find( "SkillUI/SkillList/BG/Scroll View" );
-                skillListScrollRect = scrollViewTransform != null ? scrollViewTransform.GetComponent<ScrollRect>() : null;
-            }
-
-            if ( closeButton == null )
-            {
-                Transform closeButtonTransform = transform.Find( "SkillUI/SkillList/ButtonClose" );
-                closeButton = closeButtonTransform != null ? closeButtonTransform.GetComponent<CButtonEx>() : null;
-            }
-
-            if ( titleText == null )
-            {
-                Transform titleTransform = transform.Find( "SkillUI/SkillList/BG/HeaderArea/TitleText" );
-                titleText = titleTransform != null ? titleTransform.GetComponent<TMP_Text>() : null;
-            }
-
-            if ( skillPointText == null )
-            {
-                Transform skillPointTransform = transform.Find( "SkillUI/SkillList/BG/HeaderArea/SkillPointText" );
-                skillPointText = skillPointTransform != null ? skillPointTransform.GetComponent<TMP_Text>() : null;
-            }
-
-            if ( windowDragHandle == null )
-            {
-                Transform dragHandleTransform = transform.Find( "SkillUI/SkillList/BG/WindowDragHandle" );
-                windowDragHandle = dragHandleTransform != null ? dragHandleTransform.GetComponent<CItemInventoryWindowDragHandle>() : null;
-            }
-
             if ( targetCanvas == null )
             {
                 targetCanvas = GetComponentInParent<Canvas>();
@@ -1029,13 +899,7 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
         public override void BringLayerToFront()
         {
             RectTransform siblingTargetRectTransform = transform as RectTransform;
-
-            if ( siblingTargetRectTransform == null )
-            {
-                return;
-            }
-
-            siblingTargetRectTransform.SetAsLastSibling();
+            BringPopupWindowToFront( siblingTargetRectTransform );
         }
 
         ///<summary>

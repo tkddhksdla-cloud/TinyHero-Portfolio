@@ -51,6 +51,7 @@ namespace TinyHero.UI
         private void OnDisable()
         {
             UnsubscribeEvents();
+            HideQuickSlotSkillTooltip();
             EndSkillDragInternal();
         }
 
@@ -64,6 +65,56 @@ namespace TinyHero.UI
             ProcessSlotInput();
             RefreshView();
             UpdateDragGhostPosition();
+        }
+
+        ///<summary>
+        /// 퀵슬롯 스킬 툴팁 표시 처리
+        ///</summary>
+        public void ShowQuickSlotSkillTooltip( int _quickSlotIndex )
+        {
+            if ( targetSkillManager == null || _quickSlotIndex < 0 || string.IsNullOrWhiteSpace( draggedSkillId ) == false )
+            {
+                HideQuickSlotSkillTooltip();
+                return;
+            }
+
+            CSkillDefinition skillDefinition = targetSkillManager.GetSkillDefinitionByQuickSlotIndex( _quickSlotIndex );
+
+            if ( skillDefinition == null )
+            {
+                HideQuickSlotSkillTooltip();
+                return;
+            }
+
+            string skillId = skillDefinition.GetSkillId();
+            CSkillRuntimeData runtimeData = targetSkillManager.GetSkillRuntimeData( skillId );
+
+            if ( runtimeData == null )
+            {
+                HideQuickSlotSkillTooltip();
+                return;
+            }
+
+            bool isUnlocked = runtimeData.IsUnlocked();
+            int currentLevel = runtimeData.GetSkillLevel();
+            int displayCurrentLevel = isUnlocked ? Mathf.Max( 1, currentLevel ) : 1;
+            int nextLevel = Mathf.Min( skillDefinition.GetMaxSkillLevel(), displayCurrentLevel + 1 );
+            bool hasNextLevel = isUnlocked == false || currentLevel < skillDefinition.GetMaxSkillLevel();
+            string currentLevelTitleValue = isUnlocked ? $"현재 레벨 Lv.{currentLevel}" : "습득 시 효과 Lv.1";
+            string currentDescriptionValue = skillDefinition.GetFormattedDescription( displayCurrentLevel );
+            string nextLevelTitleValue = hasNextLevel ? $"다음 레벨 Lv.{nextLevel}" : "다음 레벨";
+            string nextDescriptionValue = hasNextLevel ? skillDefinition.GetFormattedDescription( nextLevel ) : "최대 레벨에 도달한 스킬입니다.";
+            string infoTextValue = BuildTooltipInfoText( skillDefinition, currentLevel, isUnlocked );
+
+            CUITooltipManager.ShowSkillTooltip( skillDefinition.GetSkillName(), infoTextValue, currentLevelTitleValue, currentDescriptionValue, nextLevelTitleValue, nextDescriptionValue, hasNextLevel );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 스킬 툴팁 숨김 처리
+        ///</summary>
+        public void HideQuickSlotSkillTooltip()
+        {
+            CUITooltipManager.HideSkillTooltip();
         }
 
         ///<summary>
@@ -407,6 +458,7 @@ namespace TinyHero.UI
             }
 
             EnsureDragGhost();
+            HideQuickSlotSkillTooltip();
             draggedSkillId = _skillId.Trim();
             draggedFromQuickSlotIndex = _fromQuickSlotIndex;
 
@@ -563,6 +615,35 @@ namespace TinyHero.UI
 
             Camera result = parentCanvas.worldCamera;
             return result;
+        }
+
+        ///<summary>
+        /// 퀵슬롯 툴팁 정보 문자 구성
+        ///</summary>
+        private string BuildTooltipInfoText( CSkillDefinition _skillDefinition, int _currentLevel, bool _isUnlocked )
+        {
+            int displayLevel = _isUnlocked ? _currentLevel : 0;
+            int mpLevel = _isUnlocked ? Mathf.Max( 1, _currentLevel ) : 1;
+            string mpCostText = ResolveTokenText( _skillDefinition, mpLevel, "mpCost" );
+            string mpInfoPrefixText = $"MP {mpCostText}  |  ";
+            string result = $"레벨 Lv.{displayLevel}/{_skillDefinition.GetMaxSkillLevel()}  |  필요 레벨 Lv.{_skillDefinition.GetRequiredLevel()}\n습득 SP {_skillDefinition.GetLearnSpCost()}  |  강화 SP {_skillDefinition.GetLevelUpSpCost()}";
+            result = result.Replace( "\n", $"\n{mpInfoPrefixText}" );
+            return result;
+        }
+
+        ///<summary>
+        /// 퀵슬롯 설명 토큰 문자 결정
+        ///</summary>
+        private string ResolveTokenText( CSkillDefinition _skillDefinition, int _skillLevel, string _tokenName )
+        {
+            bool isResolved = CSkillDescriptionTokenResolver.TryResolveTokenValue( _skillDefinition, Mathf.Max( 1, _skillLevel ), _tokenName, out string resolvedText );
+
+            if ( isResolved == false )
+            {
+                return string.Empty;
+            }
+
+            return resolvedText;
         }
     }
 }

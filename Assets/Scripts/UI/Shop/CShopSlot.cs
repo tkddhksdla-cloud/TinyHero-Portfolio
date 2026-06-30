@@ -1,22 +1,14 @@
 using TinyHero.Core.Data;
-using TMPro;
-using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace TinyHero.UI
 {
     ///<summary>
     /// 상점 슬롯 컴포넌트
     ///</summary>
-    public sealed class CShopSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    public sealed class CShopSlot : CItemSlotBase, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
-        [SerializeField] private Image itemImage;
-        [SerializeField] private TMP_Text itemCountText;
-
         private PopupShop ownerPopupShop;
-        private CItemDefinition currentItemDefinition;
-        private int currentItemCount;
         private int slotIndex = -1;
 
         ///<summary>
@@ -31,25 +23,13 @@ namespace TinyHero.UI
         ///<summary>
         /// 슬롯 표시 데이터 반영
         ///</summary>
-        public void RefreshSlot( CItemDefinition _itemDefinition, int _itemCount )
+        ///<summary>
+        /// 현재 아이템 수량 반환
+        ///</summary>
+        public long GetCurrentQuantity()
         {
-            currentItemDefinition = _itemDefinition;
-            currentItemCount = Mathf.Max( 0, _itemCount );
-            bool hasItem = currentItemDefinition != null && currentItemCount > 0;
-
-            if ( itemImage != null )
-            {
-                itemImage.sprite = hasItem ? currentItemDefinition.GetIconSprite() : null;
-                itemImage.enabled = hasItem && itemImage.sprite != null;
-                Color imageColor = itemImage.color;
-                imageColor.a = hasItem ? 1.0f : 0.0f;
-                itemImage.color = imageColor;
-            }
-
-            if ( itemCountText != null )
-            {
-                itemCountText.text = hasItem && currentItemCount > 1 ? currentItemCount.ToString() : string.Empty;
-            }
+            long result = GetCurrentItemCount();
+            return result;
         }
 
         ///<summary>
@@ -58,33 +38,6 @@ namespace TinyHero.UI
         public int GetSlotIndex()
         {
             int result = slotIndex;
-            return result;
-        }
-
-        ///<summary>
-        /// 현재 아이템 정의 반환
-        ///</summary>
-        public CItemDefinition GetCurrentItemDefinition()
-        {
-            CItemDefinition result = currentItemDefinition;
-            return result;
-        }
-
-        ///<summary>
-        /// 현재 아이템 수량 반환
-        ///</summary>
-        public int GetCurrentItemCount()
-        {
-            int result = currentItemCount;
-            return result;
-        }
-
-        ///<summary>
-        /// 아이템 보유 여부 반환
-        ///</summary>
-        public bool HasItem()
-        {
-            bool result = currentItemDefinition != null && currentItemCount > 0;
             return result;
         }
 
