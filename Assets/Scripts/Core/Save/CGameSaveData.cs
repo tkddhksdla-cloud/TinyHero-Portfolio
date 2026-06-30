@@ -44,6 +44,7 @@ namespace TinyHero.Core
     [Serializable]
     public sealed class CPlayerEquipmentSnapshotData
     {
+        public List<CPlayerEquippedItemSnapshotData> equippedItemSnapshotList = new List<CPlayerEquippedItemSnapshotData>();
         public List<CPlayerEquipmentSlotEntryData> equipmentSlotEntryList = new List<CPlayerEquipmentSlotEntryData>();
     }
 

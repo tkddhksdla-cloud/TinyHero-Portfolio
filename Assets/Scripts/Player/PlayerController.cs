@@ -2102,7 +2102,7 @@ namespace TinyHero.Player
             }
 
             bool wasAliveBeforeHit = attackTarget.GetCurrentHp() > 0;
-            int attackDamage = ResolveAttackDamage( attackTarget, out bool isCritical );
+            long attackDamage = ResolveAttackDamage( attackTarget, out bool isCritical );
             attackTarget.TakeDamage( attackDamage, isCritical );
 
             if ( wasAliveBeforeHit && attackTarget.GetCurrentHp() <= 0 )
@@ -2394,13 +2394,13 @@ namespace TinyHero.Player
         ///<summary>
         /// 플레이어 공격 피해량 계산
         ///</summary>
-        private int ResolveAttackDamage( MonsterObject _monsterObject, out bool _isCritical )
+        private long ResolveAttackDamage( MonsterObject _monsterObject, out bool _isCritical )
         {
             _isCritical = false;
 
             if ( _monsterObject == null )
             {
-                return 0;
+                return 0L;
             }
 
             float playerAtk = targetStatManager != null ? targetStatManager.GetFinalStatValue( ePlayerStatType.ATK ) : 0.0f;
@@ -2409,7 +2409,7 @@ namespace TinyHero.Player
             float rawDamage = playerAtk * skillAttackPowerMultiplier - monsterDef;
             float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( targetStatManager, rawDamage, out bool isCritical );
             _isCritical = isCritical;
-            int damage = Mathf.Max( 0, Mathf.RoundToInt( resolvedDamage ) );
+            long damage = System.Math.Max( 0L, ( long )System.Math.Round( resolvedDamage ) );
             return damage;
         }
 
@@ -2461,10 +2461,10 @@ namespace TinyHero.Player
 
             float playerDef = targetStatManager.GetFinalStatValue( ePlayerStatType.DEF );
             float rawDamage = _monsterObject.GetAtk() - playerDef;
-            float damage = Mathf.Max( 0.0f, rawDamage );
+            long damage = System.Math.Max( 0L, ( long )System.Math.Round( Mathf.Max( 0.0f, rawDamage ) ) );
             targetStatManager.ConsumeHp( damage );
 
-            if ( damage > 0.0f && CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager ) )
+            if ( damage > 0L && CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager ) )
             {
                 damageFontManager.ShowPlayerDamage( transform, damage );
             }

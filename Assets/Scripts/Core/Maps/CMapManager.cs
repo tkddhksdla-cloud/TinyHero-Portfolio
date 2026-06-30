@@ -1010,7 +1010,7 @@ namespace TinyHero.Maps
         ///<summary>
         /// 월드 드랍 오브젝트 풀 생성 시도
         ///</summary>
-        public bool TrySpawnWorldItemDrop( GameObject _worldItemDropPrefab, CItemDefinition _itemDefinition, int _itemCount, Vector3 _dropPosition )
+        public bool TrySpawnWorldItemDrop( GameObject _worldItemDropPrefab, CItemDefinition _itemDefinition, long _itemCount, Vector3 _dropPosition )
         {
             if ( _worldItemDropPrefab == null || _itemDefinition == null || _itemCount <= 0 )
             {
@@ -1215,7 +1215,7 @@ namespace TinyHero.Maps
         ///<summary>
         /// 월드 드랍 오브젝트 초기화
         ///</summary>
-        private void InitializeSpawnedWorldItemDrop( CWorldItemDropObject _worldItemDropObject, string _worldItemDropPoolKey, CItemDefinition _itemDefinition, int _itemCount, Vector3 _dropPosition )
+        private void InitializeSpawnedWorldItemDrop( CWorldItemDropObject _worldItemDropObject, string _worldItemDropPoolKey, CItemDefinition _itemDefinition, long _itemCount, Vector3 _dropPosition )
         {
             if ( _worldItemDropObject == null || _itemDefinition == null || _itemCount <= 0 )
             {

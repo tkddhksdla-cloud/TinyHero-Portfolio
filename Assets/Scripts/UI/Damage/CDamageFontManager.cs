@@ -88,9 +88,9 @@ namespace TinyHero.UI
         ///<summary>
         /// 플레이어 데미지 폰트 표시
         ///</summary>
-        public void ShowPlayerDamage( Transform _targetTransform, float _damage )
+        public void ShowPlayerDamage( Transform _targetTransform, long _damage )
         {
-            if ( _targetTransform == null || _damage <= 0.0f )
+            if ( _targetTransform == null || _damage <= 0L )
             {
                 return;
             }
@@ -98,8 +98,7 @@ namespace TinyHero.UI
             Vector3 worldPosition = ResolvePlayerDamageWorldPosition( _targetTransform );
             worldPosition.y += playerWorldOffsetY;
             worldPosition = ApplyRandomWorldOffset( worldPosition );
-            int roundedDamage = Mathf.RoundToInt( _damage );
-            string damageText = roundedDamage.ToString();
+            string damageText = _damage.ToString();
             ShowDamageFont( worldPosition, damageText, playerDamageColor );
         }
 

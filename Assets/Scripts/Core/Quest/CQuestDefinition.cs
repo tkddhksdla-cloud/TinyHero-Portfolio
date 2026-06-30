@@ -69,7 +69,8 @@ namespace TinyHero.Quest
         [SerializeField] private int requiredKillCount = 1;
         [SerializeField] private int requiredLevel = 1;
         [SerializeField] private CItemDefinition targetItemDefinition;
-        [SerializeField] private int requiredItemCount = 1;
+        [SerializeField] [HideInInspector] private int requiredItemCount = 1;
+        [SerializeField] private long requiredItemCountValue = 1L;
 
         ///<summary>
         /// 조건 ID 반환
@@ -176,18 +177,21 @@ namespace TinyHero.Quest
         ///<summary>
         /// 필요 아이템 개수 반환
         ///</summary>
-        public int GetRequiredItemCount()
+        public long GetRequiredItemCount()
         {
-            int result = Mathf.Max( 1, requiredItemCount );
+            long resolvedRequiredItemCount = requiredItemCountValue > 0L ? requiredItemCountValue : requiredItemCount;
+            long result = Math.Max( 1L, resolvedRequiredItemCount );
             return result;
         }
 
         ///<summary>
         /// 필요 아이템 개수 설정
         ///</summary>
-        public void SetRequiredItemCount( int _requiredItemCount )
+        public void SetRequiredItemCount( long _requiredItemCount )
         {
-            requiredItemCount = Mathf.Max( 1, _requiredItemCount );
+            long resolvedRequiredItemCount = Math.Max( 1L, _requiredItemCount );
+            requiredItemCountValue = resolvedRequiredItemCount;
+            requiredItemCount = resolvedRequiredItemCount > int.MaxValue ? int.MaxValue : ( int )resolvedRequiredItemCount;
         }
     }
 
@@ -200,7 +204,8 @@ namespace TinyHero.Quest
         [SerializeField] private eQuestRewardType rewardType = eQuestRewardType.EXP;
         [SerializeField] private int expAmount = 10;
         [SerializeField] private CItemDefinition itemDefinition;
-        [SerializeField] private int itemCount = 1;
+        [SerializeField] [HideInInspector] private int itemCount = 1;
+        [SerializeField] private long itemCountValue = 1L;
 
         ///<summary>
         /// 보상 유형 반환
@@ -256,18 +261,21 @@ namespace TinyHero.Quest
         ///<summary>
         /// 아이템 보상 개수 반환
         ///</summary>
-        public int GetItemCount()
+        public long GetItemCount()
         {
-            int result = Mathf.Max( 1, itemCount );
+            long resolvedItemCount = itemCountValue > 0L ? itemCountValue : itemCount;
+            long result = Math.Max( 1L, resolvedItemCount );
             return result;
         }
 
         ///<summary>
         /// 아이템 보상 개수 설정
         ///</summary>
-        public void SetItemCount( int _itemCount )
+        public void SetItemCount( long _itemCount )
         {
-            itemCount = Mathf.Max( 1, _itemCount );
+            long resolvedItemCount = Math.Max( 1L, _itemCount );
+            itemCountValue = resolvedItemCount;
+            itemCount = resolvedItemCount > int.MaxValue ? int.MaxValue : ( int )resolvedItemCount;
         }
     }
 

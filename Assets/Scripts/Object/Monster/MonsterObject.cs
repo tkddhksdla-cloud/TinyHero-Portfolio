@@ -2531,7 +2531,7 @@ public sealed class MonsterObject : MonoBehaviour
                 continue;
             }
 
-            int dropCount = ResolveDropCount( dropEntry );
+            long dropCount = ResolveDropCount( dropEntry );
 
             if ( dropCount <= 0 )
             {
@@ -2545,29 +2545,31 @@ public sealed class MonsterObject : MonoBehaviour
     ///<summary>
     /// 드랍 수량 결정
     ///</summary>
-    private int ResolveDropCount( CMonsterItemDropEntry _dropEntry )
+    private long ResolveDropCount( CMonsterItemDropEntry _dropEntry )
     {
         if ( _dropEntry == null )
         {
-            return 0;
+            return 0L;
         }
 
-        int minDropCount = _dropEntry.GetMinDropCount();
-        int maxDropCount = _dropEntry.GetMaxDropCount();
+        long minDropCount = _dropEntry.GetMinDropCount();
+        long maxDropCount = _dropEntry.GetMaxDropCount();
 
         if ( maxDropCount <= minDropCount )
         {
             return minDropCount;
         }
 
-        int result = Random.Range( minDropCount, maxDropCount + 1 );
+        double randomValue = UnityEngine.Random.value;
+        double randomCount = minDropCount + ( ( maxDropCount - minDropCount + 1L ) * randomValue );
+        long result = System.Math.Min( maxDropCount, ( long )randomCount );
         return result;
     }
 
     ///<summary>
     /// 월드 드랍 오브젝트 생성
     ///</summary>
-    private void CreateWorldDropObject( CItemDefinition _itemDefinition, int _dropCount, int _dropIndex )
+    private void CreateWorldDropObject( CItemDefinition _itemDefinition, long _dropCount, int _dropIndex )
     {
         if ( _itemDefinition == null || _dropCount <= 0 )
         {

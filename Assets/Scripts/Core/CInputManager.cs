@@ -3,6 +3,10 @@ using UnityEngine;
 
 using TinyHero.UI;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace TinyHero.Core
 {
     ///<summary>
@@ -33,7 +37,7 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode skillSlot8Key = KeyCode.F;
 
         ///<summary>
-        /// 치트 창 토글 입력 처리
+        /// 전역 입력 갱신 처리
         ///</summary>
         private void Update()
         {
@@ -41,6 +45,9 @@ namespace TinyHero.Core
             HandleSkillWindowToggleInput();
             HandleQuestJournalToggleInput();
             HandleCheatWindowToggleInput();
+#if UNITY_EDITOR
+            HandleEditorPauseInput();
+#endif
         }
 
         ///<summary>
@@ -340,6 +347,23 @@ namespace TinyHero.Core
 
             questUiManager.TogglePlayerQuestListUi();
         }
+
+#if UNITY_EDITOR
+        ///<summary>
+        /// 에디터 플레이모드 일시정지 입력 처리
+        ///</summary>
+        private void HandleEditorPauseInput()
+        {
+            bool isPauseDown = Input.GetKeyDown( KeyCode.Backspace );
+
+            if ( isPauseDown == false )
+            {
+                return;
+            }
+
+            EditorApplication.isPaused = true;
+        }
+#endif
 
         ///<summary>
         /// 치트 UI 입력 점유 상태 반환

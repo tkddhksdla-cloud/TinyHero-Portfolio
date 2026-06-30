@@ -10,7 +10,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 스킬 퀵슬롯 단일 슬롯 뷰
     ///</summary>
-    public sealed class CSkillQuickSlotItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public sealed class CSkillQuickSlotItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         private static readonly string[] FixedQuickKeyLabelArray = { "Q", "W", "E", "R", "A", "S", "D", "F" };
 
@@ -71,6 +71,45 @@ namespace TinyHero.UI
 
             string result = skillDefinition.GetSkillId();
             return result;
+        }
+
+        ///<summary>
+        /// 퀵슬롯 마우스 진입 처리
+        ///</summary>
+        public void OnPointerEnter( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.ShowQuickSlotSkillTooltip( quickSlotIndex );
+        }
+
+        ///<summary>
+        /// 퀵슬롯 마우스 이탈 처리
+        ///</summary>
+        public void OnPointerExit( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.HideQuickSlotSkillTooltip();
+        }
+
+        ///<summary>
+        /// 퀵슬롯 마우스 다운 처리
+        ///</summary>
+        public void OnPointerDown( PointerEventData _eventData )
+        {
+            if ( ownerSkillQuickSlotUi == null )
+            {
+                return;
+            }
+
+            ownerSkillQuickSlotUi.HideQuickSlotSkillTooltip();
         }
 
         ///<summary>
@@ -187,6 +226,11 @@ namespace TinyHero.UI
             {
                 Transform childTransform = transform.Find( "SkillIcon" );
                 skillIcon = childTransform != null ? childTransform.GetComponent<Image>() : null;
+            }
+
+            if ( skillIcon != null )
+            {
+                skillIcon.raycastTarget = true;
             }
 
             if ( skillCooltimeFillImage == null )

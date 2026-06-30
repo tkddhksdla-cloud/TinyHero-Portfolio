@@ -577,7 +577,7 @@ namespace TinyHero.Quest
                 return false;
             }
 
-            Dictionary<string, int> requiredItemCountByIdDictionary = new Dictionary<string, int>();
+            Dictionary<string, long> requiredItemCountByIdDictionary = new Dictionary<string, long>();
             List<CQuestConditionEntry> conditionEntryList = questDefinition.GetConditionEntryList();
 
             for ( int index = 0; index < conditionEntryList.Count; index++ )
@@ -597,7 +597,7 @@ namespace TinyHero.Quest
                 }
 
                 string itemId = itemDefinition.GetItemId();
-                int requiredItemCount = conditionEntry.GetRequiredItemCount();
+                long requiredItemCount = conditionEntry.GetRequiredItemCount();
 
                 if ( requiredItemCountByIdDictionary.ContainsKey( itemId ) )
                 {
@@ -609,7 +609,7 @@ namespace TinyHero.Quest
                 }
             }
 
-            foreach ( KeyValuePair<string, int> pairData in requiredItemCountByIdDictionary )
+            foreach ( KeyValuePair<string, long> pairData in requiredItemCountByIdDictionary )
             {
                 bool isRemoved = targetPlayerInventoryManager.TryRemoveItem( pairData.Key, pairData.Value );
 
@@ -629,7 +629,9 @@ namespace TinyHero.Quest
                 }
 
                 CQuestConditionProgressData progressData = ResolveOrCreateConditionProgressData( runtimeEntryData, conditionEntry );
-                progressData.SetCurrentValue( conditionEntry.GetRequiredItemCount() );
+                long requiredItemCount = conditionEntry.GetRequiredItemCount();
+                int progressValue = requiredItemCount > int.MaxValue ? int.MaxValue : ( int )requiredItemCount;
+                progressData.SetCurrentValue( progressValue );
                 progressData.SetIsCompleted( true );
             }
 
@@ -698,7 +700,8 @@ namespace TinyHero.Quest
                 return false;
             }
 
-            bool wasGranted = GrantRewardList( questDefinition.GetRewardEntryList() );
+            List<CRewardItemData> grantedItemRewardList = new List<CRewardItemData>();
+            bool wasGranted = GrantRewardList( questDefinition.GetRewardEntryList(), grantedItemRewardList );
 
             if ( wasGranted == false )
             {
@@ -721,6 +724,7 @@ namespace TinyHero.Quest
             }
 
             NotifyQuestUpdated( _questId );
+            ShowGrantedItemRewardPopup( grantedItemRewardList );
             return true;
         }
 
@@ -734,9 +738,9 @@ namespace TinyHero.Quest
                 return false;
             }
 
-            Dictionary<string, int> requiredItemCountByIdDictionary = BuildTurnInRequirementDictionary( _questDefinition );
+            Dictionary<string, long> requiredItemCountByIdDictionary = BuildTurnInRequirementDictionary( _questDefinition );
 
-            foreach ( KeyValuePair<string, int> pairData in requiredItemCountByIdDictionary )
+            foreach ( KeyValuePair<string, long> pairData in requiredItemCountByIdDictionary )
             {
                 bool hasItem = targetPlayerInventoryManager.HasItem( pairData.Key, pairData.Value );
 
@@ -759,9 +763,9 @@ namespace TinyHero.Quest
                 return false;
             }
 
-            Dictionary<string, int> requiredItemCountByIdDictionary = BuildTurnInRequirementDictionary( _questDefinition );
+            Dictionary<string, long> requiredItemCountByIdDictionary = BuildTurnInRequirementDictionary( _questDefinition );
 
-            foreach ( KeyValuePair<string, int> pairData in requiredItemCountByIdDictionary )
+            foreach ( KeyValuePair<string, long> pairData in requiredItemCountByIdDictionary )
             {
                 bool isRemoved = targetPlayerInventoryManager.TryRemoveItem( pairData.Key, pairData.Value );
 
@@ -1005,7 +1009,7 @@ namespace TinyHero.Quest
 
                 CItemDefinition itemDefinition = conditionEntry.GetTargetItemDefinition();
                 string itemId = itemDefinition != null ? itemDefinition.GetItemId() : string.Empty;
-                int ownedCount = string.IsNullOrWhiteSpace( itemId ) ? 0 : targetPlayerInventoryManager.GetItemCount( itemId );
+                long ownedCount = string.IsNullOrWhiteSpace( itemId ) ? 0L : targetPlayerInventoryManager.GetItemCount( itemId );
                 CQuestConditionProgressData progressData = ResolveOrCreateConditionProgressData( _runtimeEntryData, conditionEntry );
                 int currentValue = progressData.GetCurrentValue();
                 bool wasCompleted = progressData.GetIsCompleted();
@@ -1016,7 +1020,8 @@ namespace TinyHero.Quest
                     continue;
                 }
 
-                progressData.SetCurrentValue( ownedCount );
+                int progressValue = ownedCount > int.MaxValue ? int.MaxValue : ( int )ownedCount;
+                progressData.SetCurrentValue( progressValue );
                 progressData.SetIsCompleted( isCompleted );
                 wasChanged = true;
             }
@@ -1055,8 +1060,9 @@ namespace TinyHero.Quest
                 {
                     CItemDefinition itemDefinition = _conditionEntry.GetTargetItemDefinition();
                     string itemId = itemDefinition != null ? itemDefinition.GetItemId() : string.Empty;
-                    int ownedCount = string.IsNullOrWhiteSpace( itemId ) == false && targetPlayerInventoryManager != null ? targetPlayerInventoryManager.GetItemCount( itemId ) : 0;
-                    return ownedCount;
+                    long ownedCount = string.IsNullOrWhiteSpace( itemId ) == false && targetPlayerInventoryManager != null ? targetPlayerInventoryManager.GetItemCount( itemId ) : 0L;
+                    int progressValue = ownedCount > int.MaxValue ? int.MaxValue : ( int )ownedCount;
+                    return progressValue;
                 }
             }
 
@@ -1138,9 +1144,9 @@ namespace TinyHero.Quest
                 return false;
             }
 
-            Dictionary<string, int> requiredItemCountByIdDictionary = BuildTurnInRequirementDictionary( _questDefinition );
+            Dictionary<string, long> requiredItemCountByIdDictionary = BuildTurnInRequirementDictionary( _questDefinition );
 
-            foreach ( KeyValuePair<string, int> pairData in requiredItemCountByIdDictionary )
+            foreach ( KeyValuePair<string, long> pairData in requiredItemCountByIdDictionary )
             {
                 bool hasItem = targetPlayerInventoryManager.HasItem( pairData.Key, pairData.Value );
 
@@ -1156,9 +1162,9 @@ namespace TinyHero.Quest
         ///<summary>
         /// 건네주기 요구 아이템 집계 반환
         ///</summary>
-        private Dictionary<string, int> BuildTurnInRequirementDictionary( CQuestDefinition _questDefinition )
+        private Dictionary<string, long> BuildTurnInRequirementDictionary( CQuestDefinition _questDefinition )
         {
-            Dictionary<string, int> requiredItemCountByIdDictionary = new Dictionary<string, int>();
+            Dictionary<string, long> requiredItemCountByIdDictionary = new Dictionary<string, long>();
 
             if ( _questDefinition == null )
             {
@@ -1189,7 +1195,7 @@ namespace TinyHero.Quest
                 }
 
                 string itemId = itemDefinition.GetItemId();
-                int requiredItemCount = conditionEntry.GetRequiredItemCount();
+                long requiredItemCount = conditionEntry.GetRequiredItemCount();
 
                 if ( requiredItemCountByIdDictionary.ContainsKey( itemId ) )
                 {
@@ -1276,7 +1282,7 @@ namespace TinyHero.Quest
         ///<summary>
         /// 보상 지급 처리
         ///</summary>
-        private bool GrantRewardList( List<CQuestRewardEntry> _rewardEntryList )
+        private bool GrantRewardList( List<CQuestRewardEntry> _rewardEntryList, List<CRewardItemData> _grantedItemRewardList )
         {
             if ( _rewardEntryList == null )
             {
@@ -1330,12 +1336,38 @@ namespace TinyHero.Quest
                             return false;
                         }
 
+                        if ( _grantedItemRewardList != null )
+                        {
+                            CRewardItemData rewardItemData = new CRewardItemData( itemDefinition, rewardEntry.GetItemCount() );
+                            _grantedItemRewardList.Add( rewardItemData );
+                        }
+
                         break;
                     }
                 }
             }
 
             return true;
+        }
+
+        ///<summary>
+        /// 지급 아이템 보상 팝업 표시
+        ///</summary>
+        private void ShowGrantedItemRewardPopup( IReadOnlyList<CRewardItemData> _grantedItemRewardList )
+        {
+            if ( _grantedItemRewardList == null || _grantedItemRewardList.Count == 0 )
+            {
+                return;
+            }
+
+            CRewardUiManager rewardUiManager = CRewardUiManager.Instance;
+
+            if ( rewardUiManager == null )
+            {
+                return;
+            }
+
+            rewardUiManager.ShowItemRewardList( _grantedItemRewardList );
         }
 
         ///<summary>
@@ -1359,7 +1391,7 @@ namespace TinyHero.Quest
         ///<summary>
         /// 아이템 추가 시뮬레이션 처리
         ///</summary>
-        private bool TrySimulateAddItem( List<CInventoryItemEntryData> _simulatedEntryList, CItemDefinition _itemDefinition, int _count )
+        private bool TrySimulateAddItem( List<CInventoryItemEntryData> _simulatedEntryList, CItemDefinition _itemDefinition, long _count )
         {
             if ( _simulatedEntryList == null || _itemDefinition == null || _count <= 0 )
             {
@@ -1367,7 +1399,7 @@ namespace TinyHero.Quest
             }
 
             string itemId = _itemDefinition.GetItemId();
-            int remainingCount = _count;
+            long remainingCount = _count;
 
             if ( _itemDefinition.IsStackable() )
             {
@@ -1392,14 +1424,14 @@ namespace TinyHero.Quest
                         continue;
                     }
 
-                    int availableCapacity = _itemDefinition.GetMaxStackCount() - entryData.GetQuantity();
+                    long availableCapacity = _itemDefinition.GetMaxStackCount() - entryData.GetQuantity();
 
                     if ( availableCapacity <= 0 )
                     {
                         continue;
                     }
 
-                    int addedCount = Mathf.Min( availableCapacity, remainingCount );
+                    long addedCount = System.Math.Min( availableCapacity, remainingCount );
                     entryData.SetQuantity( entryData.GetQuantity() + addedCount );
                     remainingCount -= addedCount;
                 }
@@ -1425,8 +1457,8 @@ namespace TinyHero.Quest
                     continue;
                 }
 
-                int maxAddCount = _itemDefinition.IsStackable() ? _itemDefinition.GetMaxStackCount() : 1;
-                int addedCount = Mathf.Min( maxAddCount, remainingCount );
+                long maxAddCount = _itemDefinition.IsStackable() ? _itemDefinition.GetMaxStackCount() : 1L;
+                long addedCount = System.Math.Min( maxAddCount, remainingCount );
                 entryData.SetItemId( itemId );
                 entryData.SetQuantity( addedCount );
                 remainingCount -= addedCount;
@@ -1538,7 +1570,11 @@ namespace TinyHero.Quest
                     return _conditionEntry.GetRequiredLevel();
 
                 case eQuestConditionType.TURN_IN_ITEM:
-                    return _conditionEntry.GetRequiredItemCount();
+                {
+                    long requiredItemCount = _conditionEntry.GetRequiredItemCount();
+                    int displayValue = requiredItemCount > int.MaxValue ? int.MaxValue : ( int )requiredItemCount;
+                    return displayValue;
+                }
             }
 
             return 0;

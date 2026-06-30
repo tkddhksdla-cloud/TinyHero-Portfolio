@@ -152,7 +152,7 @@ namespace TinyHero.UI
                 return true;
             }
 
-            if ( PopupQuestList.IsAnyUiBlockingNpcInteraction() )
+            if ( IsBlockedByVisibleUi() )
             {
                 return true;
             }
@@ -227,6 +227,27 @@ namespace TinyHero.UI
         {
             ResolveSceneReferences();
             EndInteraction();
+        }
+
+        ///<summary>
+        /// 표시 중인 UI에 의한 NPC 상호작용 차단 여부 반환
+        ///</summary>
+        private bool IsBlockedByVisibleUi()
+        {
+            if ( PopupQuestList.IsAnyUiBlockingNpcInteraction() )
+            {
+                return true;
+            }
+
+            CShopUiManager shopUiManager = CShopUiManager.Instance;
+            bool isShopVisible = shopUiManager != null && shopUiManager.IsShopVisible();
+
+            if ( isShopVisible )
+            {
+                return true;
+            }
+
+            return false;
         }
 
         ///<summary>

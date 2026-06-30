@@ -13,9 +13,11 @@ namespace TinyHero.Core.Data
         private const string DefaultPriceItemId = "GOLD";
 
         [SerializeField] private string itemId = string.Empty;
-        [SerializeField] private int itemCount = 1;
+        [SerializeField] [HideInInspector] private int itemCount = 1;
+        [SerializeField] private long itemCountValue = 1L;
         [SerializeField] private string priceItemId = DefaultPriceItemId;
-        [SerializeField] private int priceAmount = 1;
+        [SerializeField] [HideInInspector] private int priceAmount = 1;
+        [SerializeField] private long priceAmountValue = 1L;
 
         ///<summary>
         /// 판매 아이템 ID 반환
@@ -29,9 +31,10 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 판매 아이템 수량 반환
         ///</summary>
-        public int GetItemCount()
+        public long GetItemCount()
         {
-            int result = Mathf.Max( 1, itemCount );
+            long resolvedItemCount = itemCountValue > 0L ? itemCountValue : itemCount;
+            long result = System.Math.Max( 1L, resolvedItemCount );
             return result;
         }
 
@@ -47,9 +50,10 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 구매 가격 수량 반환
         ///</summary>
-        public int GetPriceAmount()
+        public long GetPriceAmount()
         {
-            int result = Mathf.Max( 0, priceAmount );
+            long resolvedPriceAmount = priceAmountValue > 0L ? priceAmountValue : priceAmount;
+            long result = System.Math.Max( 0L, resolvedPriceAmount );
             return result;
         }
 
@@ -64,9 +68,11 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 판매 아이템 수량 설정
         ///</summary>
-        public void SetItemCount( int _itemCount )
+        public void SetItemCount( long _itemCount )
         {
-            itemCount = Mathf.Max( 1, _itemCount );
+            long resolvedItemCount = System.Math.Max( 1L, _itemCount );
+            itemCountValue = resolvedItemCount;
+            itemCount = resolvedItemCount > int.MaxValue ? int.MaxValue : ( int )resolvedItemCount;
         }
 
         ///<summary>
@@ -80,9 +86,11 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 구매 가격 수량 설정
         ///</summary>
-        public void SetPriceAmount( int _priceAmount )
+        public void SetPriceAmount( long _priceAmount )
         {
-            priceAmount = Mathf.Max( 0, _priceAmount );
+            long resolvedPriceAmount = System.Math.Max( 0L, _priceAmount );
+            priceAmountValue = resolvedPriceAmount;
+            priceAmount = resolvedPriceAmount > int.MaxValue ? int.MaxValue : ( int )resolvedPriceAmount;
         }
     }
 

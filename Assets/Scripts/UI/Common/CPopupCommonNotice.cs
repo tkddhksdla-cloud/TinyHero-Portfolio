@@ -10,16 +10,6 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CPopupCommonNotice : CUIPopup
     {
-        private const string PopupRootPath = "Popup";
-        private const string BackgroundPath = "Popup/BG";
-        private const string DescriptionPath = "Popup/BG/Desc";
-        private const string PositiveButtonPath = "Popup/BG/ButtonArea/ButtonInteraction_Positive";
-        private const string PositiveButtonTextPath = "Popup/BG/ButtonArea/ButtonInteraction_Positive/Button/ButtonText";
-        private const string NegativeButtonPath = "Popup/BG/ButtonArea/ButtonInteraction_Negative";
-        private const string NegativeButtonTextPath = "Popup/BG/ButtonArea/ButtonInteraction_Negative/Button/ButtonText";
-        private const string CloseButtonPath = "Popup/ButtonClose";
-        private const string DragHandlePath = "Popup/BG/WindowDragHandle";
-
         [SerializeField] private RectTransform popupRootRectTransform;
         [SerializeField] private RectTransform windowRootRectTransform;
         [SerializeField] private RectTransform windowDragHandleRectTransform;
@@ -235,19 +225,7 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureWindowDragHandle()
         {
-            if ( windowDragHandleRectTransform == null )
-            {
-                return;
-            }
-
-            CItemInventoryWindowDragHandle dragHandle = windowDragHandleRectTransform.GetComponent<CItemInventoryWindowDragHandle>();
-
-            if ( dragHandle == null )
-            {
-                dragHandle = windowDragHandleRectTransform.gameObject.AddComponent<CItemInventoryWindowDragHandle>();
-            }
-
-            dragHandle.Configure( windowRootRectTransform, targetCanvas );
+            EnsurePopupWindowDragHandle( windowRootRectTransform, windowDragHandleRectTransform, targetCanvas );
         }
 
         ///<summary>
@@ -255,32 +233,7 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureWindowFocusHandlers()
         {
-            if ( windowRootRectTransform == null || popupRootRectTransform == null )
-            {
-                return;
-            }
-
-            Graphic[] graphicArray = windowRootRectTransform.GetComponentsInChildren<Graphic>( true );
-            int graphicCount = graphicArray.Length;
-
-            for ( int index = 0; index < graphicCount; index++ )
-            {
-                Graphic targetGraphic = graphicArray[ index ];
-
-                if ( targetGraphic == null || targetGraphic.raycastTarget == false )
-                {
-                    continue;
-                }
-
-                CWindowDragHandle focusHandler = targetGraphic.GetComponent<CWindowDragHandle>();
-
-                if ( focusHandler == null )
-                {
-                    focusHandler = targetGraphic.gameObject.AddComponent<CWindowDragHandle>();
-                }
-
-                focusHandler.Configure( popupRootRectTransform );
-            }
+            EnsurePopupWindowFocusHandlers( windowRootRectTransform, popupRootRectTransform );
         }
 
         ///<summary>
@@ -288,12 +241,7 @@ namespace TinyHero.UI
         ///</summary>
         public override void BringLayerToFront()
         {
-            if ( popupRootRectTransform == null )
-            {
-                return;
-            }
-
-            popupRootRectTransform.SetAsLastSibling();
+            BringPopupWindowToFront( popupRootRectTransform );
         }
 
         ///<summary>
@@ -307,73 +255,10 @@ namespace TinyHero.UI
                 popupRootRectTransform = resolvedPopupRootRectTransform;
             }
 
-            if ( windowRootRectTransform == null )
-            {
-                Transform popupTransform = transform.Find( PopupRootPath );
-                RectTransform resolvedWindowRootRectTransform = popupTransform as RectTransform;
-                windowRootRectTransform = resolvedWindowRootRectTransform;
-            }
-
-            if ( descriptionText == null )
-            {
-                Transform descriptionTransform = transform.Find( DescriptionPath );
-                TMP_Text resolvedDescriptionText = descriptionTransform != null ? descriptionTransform.GetComponent<TMP_Text>() : null;
-                descriptionText = resolvedDescriptionText;
-            }
-
-            if ( positiveButton == null )
-            {
-                Transform positiveButtonTransform = transform.Find( PositiveButtonPath );
-                CButtonEx resolvedPositiveButton = positiveButtonTransform != null ? positiveButtonTransform.GetComponent<CButtonEx>() : null;
-                positiveButton = resolvedPositiveButton;
-            }
-
-            if ( positiveButtonText == null )
-            {
-                Transform positiveButtonTextTransform = transform.Find( PositiveButtonTextPath );
-                TMP_Text resolvedPositiveButtonText = positiveButtonTextTransform != null ? positiveButtonTextTransform.GetComponent<TMP_Text>() : null;
-                positiveButtonText = resolvedPositiveButtonText;
-            }
-
-            if ( negativeButton == null )
-            {
-                Transform negativeButtonTransform = transform.Find( NegativeButtonPath );
-                CButtonEx resolvedNegativeButton = negativeButtonTransform != null ? negativeButtonTransform.GetComponent<CButtonEx>() : null;
-                negativeButton = resolvedNegativeButton;
-            }
-
-            if ( negativeButtonText == null )
-            {
-                Transform negativeButtonTextTransform = transform.Find( NegativeButtonTextPath );
-                TMP_Text resolvedNegativeButtonText = negativeButtonTextTransform != null ? negativeButtonTextTransform.GetComponent<TMP_Text>() : null;
-                negativeButtonText = resolvedNegativeButtonText;
-            }
-
-            if ( closeButton == null )
-            {
-                Transform closeButtonTransform = transform.Find( CloseButtonPath );
-                CButtonEx resolvedCloseButton = closeButtonTransform != null ? closeButtonTransform.GetComponent<CButtonEx>() : null;
-                closeButton = resolvedCloseButton;
-            }
-
-            if ( windowDragHandleRectTransform == null )
-            {
-                Transform dragHandleTransform = transform.Find( DragHandlePath );
-                RectTransform resolvedDragHandleRectTransform = dragHandleTransform as RectTransform;
-                windowDragHandleRectTransform = resolvedDragHandleRectTransform;
-            }
-
             if ( targetCanvas == null )
             {
                 Canvas resolvedTargetCanvas = GetComponentInParent<Canvas>();
                 targetCanvas = resolvedTargetCanvas;
-            }
-
-            if ( windowRootRectTransform == null )
-            {
-                Transform backgroundTransform = transform.Find( BackgroundPath );
-                RectTransform resolvedBackgroundRectTransform = backgroundTransform as RectTransform;
-                windowRootRectTransform = resolvedBackgroundRectTransform;
             }
         }
     }

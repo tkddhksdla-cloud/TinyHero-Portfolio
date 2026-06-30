@@ -253,7 +253,15 @@ namespace TinyHero.Core
             }
 
             int grantCount = ResolveGrantedItemCount();
-            bool didAddItem = targetInventoryManager.TryAddItemById( itemId, grantCount );
+            bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( itemId, out CItemDefinition itemDefinition );
+
+            if ( hasDefinition == false || itemDefinition == null )
+            {
+                SetStatusMessage( "아이템 지급에 실패했습니다. ID 또는 인벤토리 공간을 확인해 주세요." );
+                return;
+            }
+
+            bool didAddItem = targetInventoryManager.TryAddItem( itemDefinition, grantCount );
 
             if ( didAddItem == false )
             {
@@ -261,6 +269,7 @@ namespace TinyHero.Core
                 return;
             }
 
+            ShowCheatItemRewardPopup( itemDefinition, grantCount );
             SetStatusMessage( $"{itemId} x{grantCount} 지급 완료" );
         }
 
@@ -278,6 +287,7 @@ namespace TinyHero.Core
             }
 
             IReadOnlyList<CItemDefinition> itemDefinitionList = CItemDefinitionDatabase.GetItemDefinitionList();
+            List<CRewardItemData> rewardItemDataList = new List<CRewardItemData>();
             int successCount = 0;
             int failedCount = 0;
 
@@ -290,11 +300,13 @@ namespace TinyHero.Core
                     continue;
                 }
 
-                int grantCount = itemDefinition.IsEquipmentItem() ? AllEquipmentGrantedItemCount : itemDefinition.GetMaxStackCount();
+                long grantCount = itemDefinition.IsEquipmentItem() ? AllEquipmentGrantedItemCount : itemDefinition.GetMaxStackCount();
                 bool didAddItem = targetInventoryManager.TryAddItem( itemDefinition, grantCount );
 
                 if ( didAddItem )
                 {
+                    CRewardItemData rewardItemData = new CRewardItemData( itemDefinition, grantCount );
+                    rewardItemDataList.Add( rewardItemData );
                     successCount++;
                     continue;
                 }
@@ -302,7 +314,38 @@ namespace TinyHero.Core
                 failedCount++;
             }
 
+            ShowCheatItemRewardPopup( rewardItemDataList );
             SetStatusMessage( $"전체 아이템 지급 완료. 성공 {successCount}종 / 실패 {failedCount}종" );
+        }
+
+        ///<summary>
+        /// 치트 아이템 보상 팝업 표시
+        ///</summary>
+        private void ShowCheatItemRewardPopup( CItemDefinition _itemDefinition, long _itemCount )
+        {
+            CRewardUiManager rewardUiManager = CRewardUiManager.Instance;
+
+            if ( rewardUiManager == null )
+            {
+                return;
+            }
+
+            rewardUiManager.ShowItemReward( _itemDefinition, _itemCount );
+        }
+
+        ///<summary>
+        /// 치트 아이템 보상 목록 팝업 표시
+        ///</summary>
+        private void ShowCheatItemRewardPopup( IReadOnlyList<CRewardItemData> _rewardItemDataList )
+        {
+            CRewardUiManager rewardUiManager = CRewardUiManager.Instance;
+
+            if ( rewardUiManager == null )
+            {
+                return;
+            }
+
+            rewardUiManager.ShowItemRewardList( _rewardItemDataList );
         }
 
         ///<summary>
@@ -669,7 +712,7 @@ namespace TinyHero.Core
             textComponent.alignment = _alignment;
             textComponent.color = Color.white;
             textComponent.raycastTarget = false;
-            textComponent.enableWordWrapping = true;
+            textComponent.textWrappingMode = TextWrappingModes.Normal;
 
             LayoutElement layoutElement = textObject.AddComponent<LayoutElement>();
             layoutElement.flexibleWidth = _stretchWidth ? 1.0f : 0.0f;
@@ -737,7 +780,7 @@ namespace TinyHero.Core
             textComponent.fontSize = 18.0f;
             textComponent.alignment = TextAlignmentOptions.MidlineLeft;
             textComponent.color = new Color( 0.1f, 0.1f, 0.1f, 1.0f );
-            textComponent.enableWordWrapping = false;
+            textComponent.textWrappingMode = TextWrappingModes.NoWrap;
             inputField.textComponent = textComponent;
 
             GameObject placeholderObject = new GameObject( "Placeholder", typeof( RectTransform ) );
@@ -759,7 +802,7 @@ namespace TinyHero.Core
             placeholderTextComponent.alignment = TextAlignmentOptions.MidlineLeft;
             placeholderTextComponent.color = new Color( 0.45f, 0.45f, 0.5f, 0.9f );
             placeholderTextComponent.raycastTarget = false;
-            placeholderTextComponent.enableWordWrapping = false;
+            placeholderTextComponent.textWrappingMode = TextWrappingModes.NoWrap;
             inputField.placeholder = placeholderTextComponent;
 
             return inputField;

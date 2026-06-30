@@ -1,5 +1,6 @@
 using System.Collections;
 using System.IO;
+using System.Text.RegularExpressions;
 using TinyHero.Maps;
 using TinyHero.Player;
 using TinyHero.Quest;
@@ -306,7 +307,8 @@ namespace TinyHero.Core
                 return false;
             }
 
-            CGameSaveData loadedSaveData = JsonUtility.FromJson<CGameSaveData>( serializedJsonText );
+            string migratedJsonText = MigrateLegacySaveJsonText( serializedJsonText );
+            CGameSaveData loadedSaveData = JsonUtility.FromJson<CGameSaveData>( migratedJsonText );
 
             if ( loadedSaveData == null )
             {
@@ -317,6 +319,22 @@ namespace TinyHero.Core
             Debug.Log( $"[ SaveDebug ] Save file read succeeded. Path: {saveFilePath}", this );
             _gameSaveData = loadedSaveData;
             return true;
+        }
+
+        ///<summary>
+        /// 구버전 저장 JSON 필드명 변환
+        ///</summary>
+        private string MigrateLegacySaveJsonText( string _serializedJsonText )
+        {
+            if ( string.IsNullOrWhiteSpace( _serializedJsonText ) )
+            {
+                return string.Empty;
+            }
+
+            string quantityPattern = "\"quantity\"\\s*:";
+            string quantityReplacement = "\"quantityValue\":";
+            string result = Regex.Replace( _serializedJsonText, quantityPattern, quantityReplacement );
+            return result;
         }
 
         ///<summary>
