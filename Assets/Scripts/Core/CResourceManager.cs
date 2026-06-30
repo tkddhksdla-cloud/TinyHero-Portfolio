@@ -13,9 +13,11 @@ namespace TinyHero.Core
         private const string InventoryPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupItemInventory";
         private const string LegacyInventoryPopupPrefabResourcePath = "Prefabs/UI/Inventory/PopupItemInventory";
         private const string SkillPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupSkillList";
+        private const string ShopPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupShop";
         private const string NpcQuestPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupQuestList";
         private const string PlayerQuestPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupQuestList_Mine";
         private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
+        private const string ShopDefinitionResourcePath = "Data/Shop/Definitions";
         private const string QuestDefinitionResourcePath = "Data/Quest/Definitions";
 
         private readonly Dictionary<string, Object> cachedResourceDictionary = new Dictionary<string, Object>();
@@ -49,9 +51,11 @@ namespace TinyHero.Core
 
             LoadFirstAvailableResource<GameObject>( inventoryPopupResourcePathArray );
             LoadResource<GameObject>( SkillPopupPrefabResourcePath );
+            LoadResource<GameObject>( ShopPopupPrefabResourcePath );
             LoadResource<GameObject>( NpcQuestPopupPrefabResourcePath );
             LoadResource<GameObject>( PlayerQuestPopupPrefabResourcePath );
             LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
+            LoadResourceAll<CShopDefinition>( ShopDefinitionResourcePath );
             LoadResourceAll<CQuestDefinition>( QuestDefinitionResourcePath );
         }
 
@@ -80,6 +84,15 @@ namespace TinyHero.Core
         }
 
         ///<summary>
+        /// 상점 팝업 프리팹 반환
+        ///</summary>
+        public GameObject GetShopPopupPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( ShopPopupPrefabResourcePath );
+            return result;
+        }
+
+        ///<summary>
         /// NPC 퀘스트 팝업 프리팹 반환
         ///</summary>
         public GameObject GetNpcQuestPopupPrefab()
@@ -103,6 +116,15 @@ namespace TinyHero.Core
         public CItemDefinition[] GetItemDefinitionArray()
         {
             CItemDefinition[] result = LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 상점 정의 목록 반환
+        ///</summary>
+        public CShopDefinition[] GetShopDefinitionArray()
+        {
+            CShopDefinition[] result = LoadResourceAll<CShopDefinition>( ShopDefinitionResourcePath );
             return result;
         }
 

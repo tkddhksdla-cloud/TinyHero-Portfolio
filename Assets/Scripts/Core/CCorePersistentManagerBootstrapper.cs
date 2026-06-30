@@ -17,10 +17,12 @@ namespace TinyHero.Core
         private static void Bootstrap()
         {
             CResourceManager.Instance.PreloadCoreResources();
+            _ = CObjectPoolManager.Instance;
             CInputManager inputManager = CInputManager.Instance;
             CDataManager dataManager = CDataManager.Instance;
             CUINavigationController uiNavigationController = CUINavigationController.Instance;
             CItemInventoryUiManager itemInventoryUiManager = CItemInventoryUiManager.Instance;
+            CShopUiManager shopUiManager = CShopUiManager.Instance;
             CCubeUiManager cubeUiManager = CCubeUiManager.Instance;
             CSkillUiManager skillUiManager = CSkillUiManager.Instance;
             CQuestUiManager questUiManager = CQuestUiManager.Instance;

@@ -173,10 +173,64 @@ namespace TinyHero.Core.Data
     [Serializable]
     public sealed class CPlayerInventorySnapshotData
     {
+        [SerializeField] private List<CInventoryCategoryEntryData> inventoryCategoryEntryList = new List<CInventoryCategoryEntryData>();
         [SerializeField] private List<CInventoryItemEntryData> itemEntryList = new List<CInventoryItemEntryData>();
 
         ///<summary>
-        /// 저장 항목 목록 반환
+        /// 저장 카테고리 목록 반환
+        ///</summary>
+        public List<CInventoryCategoryEntryData> GetInventoryCategoryEntryList()
+        {
+            List<CInventoryCategoryEntryData> result = inventoryCategoryEntryList;
+            return result;
+        }
+
+        ///<summary>
+        /// 저장 카테고리 목록 설정
+        ///</summary>
+        public void SetInventoryCategoryEntryList( List<CInventoryCategoryEntryData> _inventoryCategoryEntryList )
+        {
+            inventoryCategoryEntryList = _inventoryCategoryEntryList ?? new List<CInventoryCategoryEntryData>();
+        }
+
+        ///<summary>
+        /// 구버전 저장 항목 목록 반환
+        ///</summary>
+        public List<CInventoryItemEntryData> GetLegacyItemEntryList()
+        {
+            List<CInventoryItemEntryData> result = itemEntryList;
+            return result;
+        }
+    }
+
+    ///<summary>
+    /// 아이템 타입별 인벤토리 카테고리 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CInventoryCategoryEntryData
+    {
+        [SerializeField] private eItemType itemType = eItemType.EQUIPMENT;
+        [SerializeField] private List<CInventoryItemEntryData> itemEntryList = new List<CInventoryItemEntryData>();
+
+        ///<summary>
+        /// 카테고리 아이템 타입 반환
+        ///</summary>
+        public eItemType GetItemType()
+        {
+            eItemType result = itemType;
+            return result;
+        }
+
+        ///<summary>
+        /// 카테고리 아이템 타입 설정
+        ///</summary>
+        public void SetItemType( eItemType _itemType )
+        {
+            itemType = _itemType;
+        }
+
+        ///<summary>
+        /// 카테고리 슬롯 목록 반환
         ///</summary>
         public List<CInventoryItemEntryData> GetItemEntryList()
         {
@@ -185,7 +239,7 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
-        /// 저장 항목 목록 설정
+        /// 카테고리 슬롯 목록 설정
         ///</summary>
         public void SetItemEntryList( List<CInventoryItemEntryData> _itemEntryList )
         {
@@ -281,6 +335,8 @@ namespace TinyHero.Core.Data
     [CreateAssetMenu( fileName = "ItemDefinition", menuName = "TinyHero/Data/Item Definition" )]
     public sealed class CItemDefinition : ScriptableObject
     {
+        private const string DefaultSellPriceItemId = "GOLD";
+
         [SerializeField] private string itemId = string.Empty;
         [SerializeField] private string itemName = string.Empty;
         [SerializeField] private eItemType itemType = eItemType.CONSUMABLE;
@@ -289,6 +345,8 @@ namespace TinyHero.Core.Data
         [SerializeField] private GameObject worldDropPrefab;
         [SerializeField] private bool isStackable = true;
         [SerializeField] private int maxStackCount = 99;
+        [SerializeField] private string sellPriceItemId = DefaultSellPriceItemId;
+        [SerializeField] private int sellPrice;
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
         [SerializeField] private eConsumableType consumableType = eConsumableType.NONE;
         [SerializeField] private string linkedSkillId = string.Empty;
@@ -373,6 +431,33 @@ namespace TinyHero.Core.Data
         public int GetMaxStackCount()
         {
             int result = isStackable ? Mathf.Max( 1, maxStackCount ) : 1;
+            return result;
+        }
+
+        ///<summary>
+        /// 판매 가격 아이템 ID 반환
+        ///</summary>
+        public string GetSellPriceItemId()
+        {
+            string result = string.IsNullOrWhiteSpace( sellPriceItemId ) ? DefaultSellPriceItemId : sellPriceItemId.Trim();
+            return result;
+        }
+
+        ///<summary>
+        /// 판매 가격 수량 반환
+        ///</summary>
+        public int GetSellPrice()
+        {
+            int result = Mathf.Max( 0, sellPrice );
+            return result;
+        }
+
+        ///<summary>
+        /// 판매 가격 보유 여부 반환
+        ///</summary>
+        public bool HasSellPrice()
+        {
+            bool result = GetSellPrice() > 0;
             return result;
         }
 
@@ -489,6 +574,22 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 판매 가격 아이템 ID 설정
+        ///</summary>
+        public void SetSellPriceItemId( string _sellPriceItemId )
+        {
+            sellPriceItemId = string.IsNullOrWhiteSpace( _sellPriceItemId ) ? DefaultSellPriceItemId : _sellPriceItemId.Trim();
+        }
+
+        ///<summary>
+        /// 판매 가격 수량 설정
+        ///</summary>
+        public void SetSellPrice( int _sellPrice )
+        {
+            sellPrice = Mathf.Max( 0, _sellPrice );
+        }
+
+        ///<summary>
         /// 아이템 정의 구성
         ///</summary>
         public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
@@ -523,6 +624,8 @@ namespace TinyHero.Core.Data
             itemType = _itemType;
             description = string.IsNullOrWhiteSpace( _description ) ? string.Empty : _description.Trim();
             iconSprite = _iconSprite;
+            sellPriceItemId = DefaultSellPriceItemId;
+            sellPrice = 0;
             bool isEquipmentItem = _itemType == eItemType.EQUIPMENT;
             bool isConsumableItem = _itemType == eItemType.CONSUMABLE;
             equipmentType = isEquipmentItem ? _equipmentType : eEquipmentType.NONE;

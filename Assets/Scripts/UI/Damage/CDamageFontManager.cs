@@ -14,6 +14,7 @@ namespace TinyHero.UI
         private const float DefaultPlayerWorldOffsetY = 0.45f;
         private const float DefaultDamageFontRandomOffsetX = 0.14f;
         private const float DefaultDamageFontRandomOffsetY = 0.08f;
+        private const string DamageFontPoolKeyPrefix = "UI.DamageFontManager";
 
         [SerializeField] private RectTransform damageFontRootRectTransform;
         [SerializeField] private Canvas targetCanvas;
@@ -30,13 +31,14 @@ namespace TinyHero.UI
         private static CDamageFontManager instance;
 
         private readonly List<CDamageFontObject> activeDamageFontObjectList = new List<CDamageFontObject>();
-        private CObjectPool<CDamageFontObject> damageFontPool;
+        private string damageFontPoolKey = string.Empty;
 
         ///<summary>
         /// 싱글 인스턴스 초기화
         ///</summary>
         private void Awake()
         {
+            damageFontPoolKey = DamageFontPoolKeyPrefix + "." + GetInstanceID();
             instance = this;
             ResolveReferences();
             EnsurePoolInitialized();
@@ -47,6 +49,8 @@ namespace TinyHero.UI
         ///</summary>
         private void OnDestroy()
         {
+            CObjectPoolManager.TryClearPool( damageFontPoolKey );
+
             if ( instance == this )
             {
                 instance = null;
@@ -115,11 +119,6 @@ namespace TinyHero.UI
         ///</summary>
         public void ReleaseAllActiveDamageFonts()
         {
-            if ( damageFontPool == null )
-            {
-                return;
-            }
-
             List<CDamageFontObject> copiedActiveDamageFontObjectList = new List<CDamageFontObject>( activeDamageFontObjectList );
             int activeDamageFontCount = copiedActiveDamageFontObjectList.Count;
 
@@ -132,7 +131,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                damageFontPool.Release( damageFontObject );
+                CObjectPoolManager.TryRelease( damageFontPoolKey, damageFontObject );
             }
         }
 
@@ -144,7 +143,7 @@ namespace TinyHero.UI
             ResolveReferences();
             EnsurePoolInitialized();
 
-            if ( damageFontPool == null || damageFontRootRectTransform == null )
+            if ( string.IsNullOrWhiteSpace( damageFontPoolKey ) || damageFontRootRectTransform == null )
             {
                 return;
             }
@@ -169,9 +168,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            CDamageFontObject damageFontObject = damageFontPool.Get();
-
-            if ( damageFontObject == null )
+            if ( CObjectPoolManager.TryGet( damageFontPoolKey, out CDamageFontObject damageFontObject ) == false || damageFontObject == null )
             {
                 return;
             }
@@ -245,7 +242,7 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsurePoolInitialized()
         {
-            if ( damageFontPool != null )
+            if ( string.IsNullOrWhiteSpace( damageFontPoolKey ) )
             {
                 return;
             }
@@ -255,11 +252,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            CObjectPool<CDamageFontObject> createdPool = new CObjectPool<CDamageFontObject>(
-                CreateDamageFontObject,
-                OnGetDamageFontObject,
-                OnReleaseDamageFontObject );
-            damageFontPool = createdPool;
+            CObjectPoolManager.TryEnsurePoolRegistered<CDamageFontObject>( damageFontPoolKey, CreateDamageFontObject, OnGetDamageFontObject, OnReleaseDamageFontObject );
         }
 
         ///<summary>
@@ -313,11 +306,6 @@ namespace TinyHero.UI
         ///</summary>
         private void HandleAutoReturnDamageFontObject( CAutoPoolReturnObject _autoPoolReturnObject )
         {
-            if ( damageFontPool == null )
-            {
-                return;
-            }
-
             CDamageFontObject damageFontObject = _autoPoolReturnObject as CDamageFontObject;
 
             if ( damageFontObject == null )
@@ -325,7 +313,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            damageFontPool.Release( damageFontObject );
+            CObjectPoolManager.TryRelease( damageFontPoolKey, damageFontObject );
         }
 
         ///<summary>

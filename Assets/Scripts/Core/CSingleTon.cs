@@ -43,6 +43,36 @@ namespace TinyHero.Core
         }
 
         ///<summary>
+        /// 기존 싱글톤 인스턴스 조회 시도
+        ///</summary>
+        public static bool TryGetExistingInstance( out T _instance )
+        {
+            _instance = null;
+
+            if ( isApplicationQuitting )
+            {
+                return false;
+            }
+
+            if ( instance != null )
+            {
+                _instance = instance;
+                return true;
+            }
+
+            T foundInstance = Object.FindAnyObjectByType<T>( FindObjectsInactive.Include );
+
+            if ( foundInstance == null )
+            {
+                return false;
+            }
+
+            instance = foundInstance;
+            _instance = foundInstance;
+            return true;
+        }
+
+        ///<summary>
         /// 컴포넌트 초기화
         ///</summary>
         protected virtual void Awake()

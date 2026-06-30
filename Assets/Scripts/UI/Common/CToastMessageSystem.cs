@@ -12,6 +12,7 @@ namespace TinyHero.UI
     {
         private const string ToastMessageSystemPrefabResourcePath = "Prefabs/UI/Common/CToastMessageSystem";
         private const string ToastMessagePrefabResourcePath = "Prefabs/UI/Common/ToastMessage";
+        private const string ToastMessagePoolKey = "UI.ToastMessageSystem.ToastMessage";
         private const int ToastCanvasSortingOrder = 50;
 
         [SerializeField] private RectTransform toastCanvasRectTransform;
@@ -21,7 +22,6 @@ namespace TinyHero.UI
         private readonly List<CToastMessage> activeToastMessageList = new List<CToastMessage>();
 
         private GameObject toastMessagePrefabObject;
-        private CObjectPool<CToastMessage> toastMessagePool;
 
         ///<summary>
         /// 토스트 메시지 시스템 초기화
@@ -75,14 +75,12 @@ namespace TinyHero.UI
 
             bool isReady = EnsureToastSystemReady();
 
-            if ( isReady == false || toastMessagePool == null )
+            if ( isReady == false )
             {
                 return;
             }
 
-            CToastMessage toastMessage = toastMessagePool.Get();
-
-            if ( toastMessage == null )
+            if ( CObjectPoolManager.TryGet( ToastMessagePoolKey, out CToastMessage toastMessage ) == false || toastMessage == null )
             {
                 return;
             }
@@ -128,7 +126,8 @@ namespace TinyHero.UI
             ResolveReferences();
             ApplyCanvasSortingOrder();
             EnsureToastPoolInitialized();
-            bool isReady = isPrefabReady && toastCanvasRectTransform != null && toastPoolRootRectTransform != null && toastContentRootRectTransform != null && toastMessagePool != null;
+            bool hasPool = CObjectPoolManager.TryEnsurePoolRegistered<CToastMessage>( ToastMessagePoolKey, CreateToastMessage, OnGetToastMessage, OnReleaseToastMessage, OnDestroyToastMessage );
+            bool isReady = isPrefabReady && toastCanvasRectTransform != null && toastPoolRootRectTransform != null && toastContentRootRectTransform != null && hasPool;
             return isReady;
         }
 
@@ -200,17 +199,12 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureToastPoolInitialized()
         {
-            if ( toastMessagePool != null || toastMessagePrefabObject == null || toastPoolRootRectTransform == null || toastContentRootRectTransform == null )
+            if ( toastMessagePrefabObject == null || toastPoolRootRectTransform == null || toastContentRootRectTransform == null )
             {
                 return;
             }
 
-            CObjectPool<CToastMessage> createdToastMessagePool = new CObjectPool<CToastMessage>(
-                CreateToastMessage,
-                OnGetToastMessage,
-                OnReleaseToastMessage,
-                OnDestroyToastMessage );
-            toastMessagePool = createdToastMessagePool;
+            CObjectPoolManager.TryEnsurePoolRegistered<CToastMessage>( ToastMessagePoolKey, CreateToastMessage, OnGetToastMessage, OnReleaseToastMessage, OnDestroyToastMessage );
         }
 
         ///<summary>
@@ -292,12 +286,12 @@ namespace TinyHero.UI
         {
             CToastMessage toastMessage = _autoPoolReturnObject as CToastMessage;
 
-            if ( toastMessage == null || toastMessagePool == null )
+            if ( toastMessage == null )
             {
                 return;
             }
 
-            toastMessagePool.Release( toastMessage );
+            CObjectPoolManager.TryRelease( ToastMessagePoolKey, toastMessage );
         }
 
         ///<summary>
@@ -305,11 +299,6 @@ namespace TinyHero.UI
         ///</summary>
         private void ReleaseAllActiveToastMessages()
         {
-            if ( toastMessagePool == null )
-            {
-                return;
-            }
-
             List<CToastMessage> copiedActiveToastMessageList = new List<CToastMessage>( activeToastMessageList );
             int activeToastMessageCount = copiedActiveToastMessageList.Count;
 
@@ -322,7 +311,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                toastMessagePool.Release( toastMessage );
+                CObjectPoolManager.TryRelease( ToastMessagePoolKey, toastMessage );
             }
 
             activeToastMessageList.Clear();
@@ -334,12 +323,7 @@ namespace TinyHero.UI
         protected override void OnDestroy()
         {
             ReleaseAllActiveToastMessages();
-
-            if ( toastMessagePool != null )
-            {
-                toastMessagePool.Clear();
-                toastMessagePool = null;
-            }
+            CObjectPoolManager.TryClearPool( ToastMessagePoolKey );
 
             base.OnDestroy();
         }

@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+namespace TinyHero.UI
+{
+
 
     ///<summary>
     /// NPC 이름표 UI 관리 컴포넌트
@@ -16,6 +19,7 @@ using UnityEngine.UI;
         private const string NpcNameTagPoolObjectName = "NpcNameTagPool";
         private const string NpcNameTagRootCanvasObjectName = "Canvas_NPCNameTag_Root";
         private const string NpcNameTagPrefabResourcePath = "Prefabs/UI/NameTag/NpcNameTag";
+        private const string NpcNameTagPoolKey = "UI.NPCNameTagManager.View";
         private const float NpcNameTagScreenOffsetY = 18.0f;
         private const int NpcNameTagSortingOrder = 55;
 
@@ -27,7 +31,6 @@ using UnityEngine.UI;
         private Camera targetCamera;
         private GameObject npcNameTagPrefab;
         private GameObject createdRootCanvasObject;
-        private CObjectPool<CNPCNameTagView> npcNameTagViewPool;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -78,7 +81,7 @@ using UnityEngine.UI;
             ResolveSceneReferences();
             EnsurePoolInitialized();
 
-            if ( npcNameTagPoolRectTransform == null || npcNameTagViewPool == null )
+            if ( npcNameTagPoolRectTransform == null )
             {
                 return;
             }
@@ -87,7 +90,11 @@ using UnityEngine.UI;
 
             if ( hasExistingView == false || existingView == null )
             {
-                CNPCNameTagView createdView = npcNameTagViewPool.Get();
+                if ( CObjectPoolManager.TryGet( NpcNameTagPoolKey, out CNPCNameTagView createdView ) == false || createdView == null )
+                {
+                    return;
+                }
+
                 nameTagViewByNpc[ _npcObject ] = createdView;
                 existingView = createdView;
             }
@@ -114,12 +121,7 @@ using UnityEngine.UI;
 
             nameTagViewByNpc.Remove( _npcObject );
 
-            if ( npcNameTagViewPool == null )
-            {
-                return;
-            }
-
-            npcNameTagViewPool.Release( nameTagView );
+            CObjectPoolManager.TryRelease( NpcNameTagPoolKey, nameTagView );
         }
 
         ///<summary>
@@ -297,11 +299,6 @@ using UnityEngine.UI;
         ///</summary>
         private void EnsurePoolInitialized()
         {
-            if ( npcNameTagViewPool != null )
-            {
-                return;
-            }
-
             npcNameTagPrefab = Resources.Load<GameObject>( NpcNameTagPrefabResourcePath );
 
             if ( npcNameTagPrefab == null )
@@ -309,8 +306,7 @@ using UnityEngine.UI;
                 return;
             }
 
-            CObjectPool<CNPCNameTagView> createdPool = new CObjectPool<CNPCNameTagView>( CreateNameTagView, OnGetNameTagView, OnReleaseNameTagView );
-            npcNameTagViewPool = createdPool;
+            CObjectPoolManager.TryEnsurePoolRegistered<CNPCNameTagView>( NpcNameTagPoolKey, CreateNameTagView, OnGetNameTagView, OnReleaseNameTagView );
         }
 
         ///<summary>
@@ -453,3 +449,4 @@ using UnityEngine.UI;
             return result;
         }
     }
+}

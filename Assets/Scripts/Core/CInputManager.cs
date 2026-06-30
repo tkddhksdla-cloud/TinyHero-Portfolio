@@ -289,6 +289,11 @@ namespace TinyHero.Core
                 return;
             }
 
+            if ( itemInventoryUiManager.IsInventoryToggleLocked() )
+            {
+                return;
+            }
+
             itemInventoryUiManager.ToggleInventoryUi();
         }
 

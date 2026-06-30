@@ -15,6 +15,7 @@ namespace TinyHero.UI
         private const string MonsterInfoRootCanvasObjectName = "Canvas_MonsterInfo_Root";
         private const string PrimaryMonsterInfoPrefabResourcePath = "Prefabs/UI/Monster/MonsterInfo";
         private const string FallbackMonsterInfoPrefabResourcePath = "Prefabs/UI/HpBar/MonsterInfo";
+        private const string MonsterInfoPoolKey = "UI.MonsterInfoManager.View";
         private const float MonsterInfoScreenOffsetY = 20.0f;
         private const int MonsterInfoSortingOrder = 50;
 
@@ -26,7 +27,6 @@ namespace TinyHero.UI
         private Camera targetCamera;
         private GameObject monsterInfoPrefab;
         private GameObject createdRootCanvasObject;
-        private CObjectPool<CMonsterInfoView> monsterInfoViewPool;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -77,7 +77,7 @@ namespace TinyHero.UI
             ResolveSceneReferences();
             EnsurePoolInitialized();
 
-            if ( monsterInfoPoolRectTransform == null || monsterInfoViewPool == null )
+            if ( monsterInfoPoolRectTransform == null )
             {
                 return;
             }
@@ -86,7 +86,11 @@ namespace TinyHero.UI
 
             if ( hasExistingView == false || existingView == null )
             {
-                CMonsterInfoView createdView = monsterInfoViewPool.Get();
+                if ( CObjectPoolManager.TryGet( MonsterInfoPoolKey, out CMonsterInfoView createdView ) == false || createdView == null )
+                {
+                    return;
+                }
+
                 monsterInfoViewByMonster[ _monsterObject ] = createdView;
                 existingView = createdView;
             }
@@ -113,12 +117,7 @@ namespace TinyHero.UI
 
             monsterInfoViewByMonster.Remove( _monsterObject );
 
-            if ( monsterInfoViewPool == null )
-            {
-                return;
-            }
-
-            monsterInfoViewPool.Release( monsterInfoView );
+            CObjectPoolManager.TryRelease( MonsterInfoPoolKey, monsterInfoView );
         }
 
         ///<summary>
@@ -238,11 +237,6 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsurePoolInitialized()
         {
-            if ( monsterInfoViewPool != null )
-            {
-                return;
-            }
-
             monsterInfoPrefab = ResolveMonsterInfoPrefab();
 
             if ( monsterInfoPrefab == null )
@@ -250,8 +244,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            CObjectPool<CMonsterInfoView> createdPool = new CObjectPool<CMonsterInfoView>( CreateMonsterInfoView, OnGetMonsterInfoView, OnReleaseMonsterInfoView );
-            monsterInfoViewPool = createdPool;
+            CObjectPoolManager.TryEnsurePoolRegistered<CMonsterInfoView>( MonsterInfoPoolKey, CreateMonsterInfoView, OnGetMonsterInfoView, OnReleaseMonsterInfoView );
         }
 
         ///<summary>

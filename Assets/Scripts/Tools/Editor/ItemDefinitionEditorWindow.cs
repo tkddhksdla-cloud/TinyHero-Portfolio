@@ -274,6 +274,8 @@ namespace TinyHero.Tools
             SerializedProperty worldDropPrefabProperty = serializedObject.FindProperty( "worldDropPrefab" );
             SerializedProperty isStackableProperty = serializedObject.FindProperty( "isStackable" );
             SerializedProperty maxStackCountProperty = serializedObject.FindProperty( "maxStackCount" );
+            SerializedProperty sellPriceItemIdProperty = serializedObject.FindProperty( "sellPriceItemId" );
+            SerializedProperty sellPriceProperty = serializedObject.FindProperty( "sellPrice" );
             SerializedProperty equipmentTypeProperty = serializedObject.FindProperty( "equipmentType" );
             SerializedProperty consumableTypeProperty = serializedObject.FindProperty( "consumableType" );
             SerializedProperty linkedSkillIdProperty = serializedObject.FindProperty( "linkedSkillId" );
@@ -330,6 +332,26 @@ namespace TinyHero.Tools
                 if ( isStackable == false )
                 {
                     maxStackCountProperty.intValue = 1;
+                }
+            }
+
+            if ( sellPriceItemIdProperty != null )
+            {
+                EditorGUILayout.PropertyField( sellPriceItemIdProperty );
+
+                if ( string.IsNullOrWhiteSpace( sellPriceItemIdProperty.stringValue ) )
+                {
+                    sellPriceItemIdProperty.stringValue = "GOLD";
+                }
+            }
+
+            if ( sellPriceProperty != null )
+            {
+                EditorGUILayout.PropertyField( sellPriceProperty );
+
+                if ( sellPriceProperty.intValue < 0 )
+                {
+                    sellPriceProperty.intValue = 0;
                 }
             }
 
@@ -621,6 +643,8 @@ namespace TinyHero.Tools
             {
                 string duplicatedName = Path.GetFileNameWithoutExtension( duplicatedAssetPath );
                 duplicatedItemDefinition.Configure( $"{duplicatedName.ToUpperInvariant()}_COPY", $"{duplicatedItemDefinition.GetItemName()} Copy", duplicatedItemDefinition.GetItemType(), duplicatedItemDefinition.GetDescription(), duplicatedItemDefinition.GetIconSprite(), duplicatedItemDefinition.IsStackable(), duplicatedItemDefinition.GetMaxStackCount(), duplicatedItemDefinition.GetEquipmentType(), duplicatedItemDefinition.GetConsumableType(), duplicatedItemDefinition.GetLinkedSkillId(), duplicatedItemDefinition.GetEquipmentStatBonus(), duplicatedItemDefinition.GetEquipmentPartsType(), duplicatedItemDefinition.GetEquipmentPartsIndex() );
+                duplicatedItemDefinition.SetSellPriceItemId( _itemDefinition.GetSellPriceItemId() );
+                duplicatedItemDefinition.SetSellPrice( _itemDefinition.GetSellPrice() );
                 EditorUtility.SetDirty( duplicatedItemDefinition );
                 AssetDatabase.SaveAssets();
             }

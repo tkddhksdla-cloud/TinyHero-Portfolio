@@ -34,6 +34,9 @@ namespace TinyHero.Maps
         private const string MapTitleLogoUiPrefabResourcePath = "Prefabs/UI/Map/MapTitleLogoUI";
         private const string MapTitleLogoUiPoolObjectName = "MapTitleLogoUIPool";
         private const string TempUiCanvasObjectName = "Canvas_TempUI";
+        private const string MapTitleLogoUiPoolKey = "Maps.MapTitleLogoUI";
+        private const string MonsterPoolKeyPrefix = "Maps.Monster";
+        private const string WorldItemDropPoolKeyPrefix = "Maps.WorldItemDrop";
 
         private sealed class CMapMonsterRespawnContext
         {
@@ -56,8 +59,8 @@ namespace TinyHero.Maps
         private readonly List<CWorldItemDropObject> activePooledWorldItemDropObjects = new List<CWorldItemDropObject>();
         private readonly List<MapTitleLogoUI> activeMapTitleLogoUiList = new List<MapTitleLogoUI>();
         private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
-        private readonly Dictionary<string, CObjectPool<MonsterObject>> monsterPoolByKey = new Dictionary<string, CObjectPool<MonsterObject>>();
-        private readonly Dictionary<string, CObjectPool<CWorldItemDropObject>> worldItemDropPoolByKey = new Dictionary<string, CObjectPool<CWorldItemDropObject>>();
+        private readonly HashSet<string> monsterPoolKeySet = new HashSet<string>();
+        private readonly HashSet<string> worldItemDropPoolKeySet = new HashSet<string>();
         private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
         private readonly Dictionary<string, GameObject> npcPrefabByName = new Dictionary<string, GameObject>();
         private Canvas fadeCanvas;
@@ -65,7 +68,6 @@ namespace TinyHero.Maps
         private GraphicRaycaster fadeGraphicRaycaster;
         private RectTransform mapTitleLogoUiPoolRectTransform;
         private GameObject mapTitleLogoUiPrefab;
-        private CObjectPool<MapTitleLogoUI> mapTitleLogoUiPool;
         private Sprite currentBackgroundSprite;
         private string currentMapId = string.Empty;
         private string currentMapName = string.Empty;
@@ -835,21 +837,15 @@ namespace TinyHero.Maps
         {
             List<string> removalKeyList = new List<string>();
 
-            foreach ( KeyValuePair<string, CObjectPool<MonsterObject>> pairData in monsterPoolByKey )
+            foreach ( string poolKey in monsterPoolKeySet )
             {
-                string poolKey = pairData.Key;
-
                 if ( _requiredMonsterPoolKeySet.Contains( poolKey ) )
                 {
                     continue;
                 }
 
-                CObjectPool<MonsterObject> monsterPool = pairData.Value;
-
-                if ( monsterPool != null )
-                {
-                    monsterPool.Clear();
-                }
+                string managedPoolKey = BuildManagedMonsterPoolKey( poolKey );
+                CObjectPoolManager.TryClearPool( managedPoolKey );
 
                 removalKeyList.Add( poolKey );
             }
@@ -857,7 +853,7 @@ namespace TinyHero.Maps
             for ( int index = 0; index < removalKeyList.Count; index++ )
             {
                 string removalKey = removalKeyList[ index ];
-                monsterPoolByKey.Remove( removalKey );
+                monsterPoolKeySet.Remove( removalKey );
             }
         }
 
@@ -911,16 +907,16 @@ namespace TinyHero.Maps
         ///<summary>
         /// 몬스터 풀 획득 또는 생성
         ///</summary>
-        private CObjectPool<MonsterObject> GetOrCreateMonsterPool( string _monsterPoolKey )
+        private bool GetOrCreateMonsterPool( string _monsterPoolKey )
         {
             if ( string.IsNullOrWhiteSpace( _monsterPoolKey ) )
             {
-                return null;
+                return false;
             }
 
-            if ( monsterPoolByKey.TryGetValue( _monsterPoolKey, out CObjectPool<MonsterObject> existingPool ) )
+            if ( monsterPoolKeySet.Contains( _monsterPoolKey ) )
             {
-                return existingPool;
+                return true;
             }
 
             GameObject monsterPrefab = ResolveMonsterPrefab( _monsterPoolKey, _monsterPoolKey );
@@ -932,16 +928,24 @@ namespace TinyHero.Maps
 
             if ( monsterPrefab == null )
             {
-                return null;
+                return false;
             }
 
-            CObjectPool<MonsterObject> createdPool = new CObjectPool<MonsterObject>(
+            string managedPoolKey = BuildManagedMonsterPoolKey( _monsterPoolKey );
+            bool isRegistered = CObjectPoolManager.TryEnsurePoolRegistered<MonsterObject>(
+                managedPoolKey,
                 () => CreatePooledMonsterInstance( _monsterPoolKey, monsterPrefab ),
                 OnGetPooledMonsterInstance,
                 OnReleasePooledMonsterInstance,
                 OnDestroyPooledMonsterInstance );
-            monsterPoolByKey[ _monsterPoolKey ] = createdPool;
-            return createdPool;
+
+            if ( isRegistered == false )
+            {
+                return false;
+            }
+
+            monsterPoolKeySet.Add( _monsterPoolKey );
+            return true;
         }
 
         ///<summary>
@@ -954,16 +958,16 @@ namespace TinyHero.Maps
                 return null;
             }
 
-            CObjectPool<MonsterObject> monsterPool = GetOrCreateMonsterPool( _monsterPoolKey );
+            bool isReady = GetOrCreateMonsterPool( _monsterPoolKey );
 
-            if ( monsterPool == null )
+            if ( isReady == false )
             {
                 return null;
             }
 
-            MonsterObject monsterObject = monsterPool.Get();
+            string managedPoolKey = BuildManagedMonsterPoolKey( _monsterPoolKey );
 
-            if ( monsterObject == null )
+            if ( CObjectPoolManager.TryGet( managedPoolKey, out MonsterObject monsterObject ) == false || monsterObject == null )
             {
                 return null;
             }
@@ -1042,15 +1046,17 @@ namespace TinyHero.Maps
                 return false;
             }
 
-            if ( worldItemDropPoolByKey.TryGetValue( _worldItemDropPoolKey, out CObjectPool<CWorldItemDropObject> worldItemDropPool ) == false || worldItemDropPool == null )
+            string managedPoolKey = BuildManagedWorldItemDropPoolKey( _worldItemDropPoolKey );
+
+            if ( worldItemDropPoolKeySet.Contains( _worldItemDropPoolKey ) == false )
             {
                 return false;
             }
 
             activePooledWorldItemDropObjects.Remove( _worldItemDropObject );
             _worldItemDropObject.SetMapRuntimePoolKey( string.Empty );
-            worldItemDropPool.Release( _worldItemDropObject );
-            return true;
+            bool result = CObjectPoolManager.TryRelease( managedPoolKey, _worldItemDropObject );
+            return result;
         }
 
         ///<summary>
@@ -1063,7 +1069,7 @@ namespace TinyHero.Maps
                 return false;
             }
 
-            if ( monsterPoolByKey.TryGetValue( _monsterPoolKey, out CObjectPool<MonsterObject> monsterPool ) == false || monsterPool == null )
+            if ( monsterPoolKeySet.Contains( _monsterPoolKey ) == false )
             {
                 return false;
             }
@@ -1077,7 +1083,13 @@ namespace TinyHero.Maps
 
             activePooledMonsterObjects.Remove( _monsterObject );
             _monsterObject.ClearMapRuntimePoolKey();
-            monsterPool.Release( _monsterObject );
+            string managedPoolKey = BuildManagedMonsterPoolKey( _monsterPoolKey );
+            bool wasReleased = CObjectPoolManager.TryRelease( managedPoolKey, _monsterObject );
+
+            if ( wasReleased == false )
+            {
+                return false;
+            }
 
             if ( respawnContext != null )
             {
@@ -1127,25 +1139,33 @@ namespace TinyHero.Maps
         ///<summary>
         /// 월드 드랍 풀 획득 또는 생성
         ///</summary>
-        private CObjectPool<CWorldItemDropObject> GetOrCreateWorldItemDropPool( string _worldItemDropPoolKey, GameObject _worldItemDropPrefab )
+        private bool GetOrCreateWorldItemDropPool( string _worldItemDropPoolKey, GameObject _worldItemDropPrefab )
         {
             if ( string.IsNullOrWhiteSpace( _worldItemDropPoolKey ) || _worldItemDropPrefab == null )
             {
-                return null;
+                return false;
             }
 
-            if ( worldItemDropPoolByKey.TryGetValue( _worldItemDropPoolKey, out CObjectPool<CWorldItemDropObject> existingPool ) )
+            if ( worldItemDropPoolKeySet.Contains( _worldItemDropPoolKey ) )
             {
-                return existingPool;
+                return true;
             }
 
-            CObjectPool<CWorldItemDropObject> createdPool = new CObjectPool<CWorldItemDropObject>(
+            string managedPoolKey = BuildManagedWorldItemDropPoolKey( _worldItemDropPoolKey );
+            bool isRegistered = CObjectPoolManager.TryEnsurePoolRegistered<CWorldItemDropObject>(
+                managedPoolKey,
                 () => CreatePooledWorldItemDropInstance( _worldItemDropPoolKey, _worldItemDropPrefab ),
                 OnGetPooledWorldItemDropInstance,
                 OnReleasePooledWorldItemDropInstance,
                 OnDestroyPooledWorldItemDropInstance );
-            worldItemDropPoolByKey[ _worldItemDropPoolKey ] = createdPool;
-            return createdPool;
+
+            if ( isRegistered == false )
+            {
+                return false;
+            }
+
+            worldItemDropPoolKeySet.Add( _worldItemDropPoolKey );
+            return true;
         }
 
         ///<summary>
@@ -1153,16 +1173,16 @@ namespace TinyHero.Maps
         ///</summary>
         private CWorldItemDropObject AcquirePooledWorldItemDrop( string _worldItemDropPoolKey, GameObject _worldItemDropPrefab )
         {
-            CObjectPool<CWorldItemDropObject> worldItemDropPool = GetOrCreateWorldItemDropPool( _worldItemDropPoolKey, _worldItemDropPrefab );
+            bool isReady = GetOrCreateWorldItemDropPool( _worldItemDropPoolKey, _worldItemDropPrefab );
 
-            if ( worldItemDropPool == null )
+            if ( isReady == false )
             {
                 return null;
             }
 
-            CWorldItemDropObject worldItemDropObject = worldItemDropPool.Get();
+            string managedPoolKey = BuildManagedWorldItemDropPoolKey( _worldItemDropPoolKey );
 
-            if ( worldItemDropObject == null )
+            if ( CObjectPoolManager.TryGet( managedPoolKey, out CWorldItemDropObject worldItemDropObject ) == false || worldItemDropObject == null )
             {
                 return null;
             }
@@ -1830,14 +1850,7 @@ namespace TinyHero.Maps
 
             EnsureMapTitleLogoUiPoolInitialized();
 
-            if ( mapTitleLogoUiPool == null )
-            {
-                return;
-            }
-
-            MapTitleLogoUI mapTitleLogoUi = mapTitleLogoUiPool.Get();
-
-            if ( mapTitleLogoUi == null )
+            if ( CObjectPoolManager.TryGet( MapTitleLogoUiPoolKey, out MapTitleLogoUI mapTitleLogoUi ) == false || mapTitleLogoUi == null )
             {
                 return;
             }
@@ -1853,11 +1866,6 @@ namespace TinyHero.Maps
         ///</summary>
         private void EnsureMapTitleLogoUiPoolInitialized()
         {
-            if ( mapTitleLogoUiPool != null )
-            {
-                return;
-            }
-
             mapTitleLogoUiPrefab = Resources.Load<GameObject>( MapTitleLogoUiPrefabResourcePath );
             RectTransform parentCanvasRectTransform = ResolveMapTitleLogoUiParentRectTransform();
 
@@ -1888,11 +1896,11 @@ namespace TinyHero.Maps
                 mapTitleLogoUiPoolRectTransform = poolRectTransform;
             }
 
-            CObjectPool<MapTitleLogoUI> createdPool = new CObjectPool<MapTitleLogoUI>(
+            CObjectPoolManager.TryEnsurePoolRegistered<MapTitleLogoUI>(
+                MapTitleLogoUiPoolKey,
                 CreateMapTitleLogoUi,
                 OnGetMapTitleLogoUi,
                 OnReleaseMapTitleLogoUi );
-            mapTitleLogoUiPool = createdPool;
         }
 
         ///<summary>
@@ -1986,12 +1994,12 @@ namespace TinyHero.Maps
         ///</summary>
         private void HandleAutoReturnObjectToMapTitleLogoUiPool( CAutoPoolReturnObject _autoPoolReturnObject )
         {
-            if ( _autoPoolReturnObject is MapTitleLogoUI mapTitleLogoUi == false || mapTitleLogoUiPool == null )
+            if ( _autoPoolReturnObject is MapTitleLogoUI mapTitleLogoUi == false )
             {
                 return;
             }
 
-            mapTitleLogoUiPool.Release( mapTitleLogoUi );
+            CObjectPoolManager.TryRelease( MapTitleLogoUiPoolKey, mapTitleLogoUi );
         }
 
         ///<summary>
@@ -1999,11 +2007,6 @@ namespace TinyHero.Maps
         ///</summary>
         private void ReturnAllActiveMapTitleLogoUis()
         {
-            if ( mapTitleLogoUiPool == null )
-            {
-                return;
-            }
-
             List<MapTitleLogoUI> activeUiList = new List<MapTitleLogoUI>( activeMapTitleLogoUiList );
 
             for ( int index = 0; index < activeUiList.Count; index++ )
@@ -2015,7 +2018,7 @@ namespace TinyHero.Maps
                     continue;
                 }
 
-                mapTitleLogoUiPool.Release( mapTitleLogoUi );
+                CObjectPoolManager.TryRelease( MapTitleLogoUiPoolKey, mapTitleLogoUi );
             }
 
             activeMapTitleLogoUiList.Clear();
@@ -2090,19 +2093,13 @@ namespace TinyHero.Maps
         {
             ReturnAllActiveMapTitleLogoUis();
 
-            foreach ( KeyValuePair<string, CObjectPool<MonsterObject>> pairData in monsterPoolByKey )
+            foreach ( string poolKey in monsterPoolKeySet )
             {
-                CObjectPool<MonsterObject> monsterPool = pairData.Value;
-
-                if ( monsterPool == null )
-                {
-                    continue;
-                }
-
-                monsterPool.Clear();
+                string managedPoolKey = BuildManagedMonsterPoolKey( poolKey );
+                CObjectPoolManager.TryClearPool( managedPoolKey );
             }
 
-            monsterPoolByKey.Clear();
+            monsterPoolKeySet.Clear();
             activePooledMonsterObjects.Clear();
         }
 
@@ -2113,20 +2110,32 @@ namespace TinyHero.Maps
         {
             ReturnAllActivePooledWorldItemDrops();
 
-            foreach ( KeyValuePair<string, CObjectPool<CWorldItemDropObject>> pairData in worldItemDropPoolByKey )
+            foreach ( string poolKey in worldItemDropPoolKeySet )
             {
-                CObjectPool<CWorldItemDropObject> worldItemDropPool = pairData.Value;
-
-                if ( worldItemDropPool == null )
-                {
-                    continue;
-                }
-
-                worldItemDropPool.Clear();
+                string managedPoolKey = BuildManagedWorldItemDropPoolKey( poolKey );
+                CObjectPoolManager.TryClearPool( managedPoolKey );
             }
 
-            worldItemDropPoolByKey.Clear();
+            worldItemDropPoolKeySet.Clear();
             activePooledWorldItemDropObjects.Clear();
+        }
+
+        ///<summary>
+        /// 몬스터 풀 관리 키 구성
+        ///</summary>
+        private string BuildManagedMonsterPoolKey( string _monsterPoolKey )
+        {
+            string result = MonsterPoolKeyPrefix + "." + _monsterPoolKey;
+            return result;
+        }
+
+        ///<summary>
+        /// 월드 드랍 풀 관리 키 구성
+        ///</summary>
+        private string BuildManagedWorldItemDropPoolKey( string _worldItemDropPoolKey )
+        {
+            string result = WorldItemDropPoolKeyPrefix + "." + _worldItemDropPoolKey;
+            return result;
         }
 
         ///<summary>

@@ -566,11 +566,24 @@ namespace TinyHero.UI
         ///</summary>
         private void HandleShopAction()
         {
-            if ( activeNpcObject != null && activeActionEntry != null )
+            if ( activeNpcObject == null || activeActionEntry == null )
             {
-                string shopId = activeActionEntry.GetLinkedShopId();
-                Debug.Log( $"NPC shop action placeholder. NPC: {activeNpcObject.GetDisplayName()}, ShopId: {shopId}" );
+                EndInteraction();
+                return;
             }
+
+            PlayerController playerController = ResolvePlayerControllerForNpc( activeNpcObject );
+            CPlayerInventoryManager inventoryManager = playerController != null ? playerController.GetInventoryManager() : null;
+            CShopUiManager shopUiManager = CShopUiManager.Instance;
+
+            if ( inventoryManager == null || shopUiManager == null )
+            {
+                EndInteraction();
+                return;
+            }
+
+            string shopId = activeActionEntry.GetLinkedShopId();
+            shopUiManager.OpenShop( shopId, activeNpcObject.GetDisplayName(), inventoryManager );
 
             EndInteraction();
         }

@@ -44,6 +44,7 @@ namespace TinyHero.Player
         private const int InvalidSkillSlotIndex = -1;
         private const int MaxSkillSlotCount = 8;
         private const string DoubleJumpSkillId = "skill_double_jump";
+        private const string AttackSlashFxPoolKeyPrefix = "Player.AttackSlashFx";
 
         [Header( "References" )]
         [SerializeField] private Animator targetAnimator;
@@ -106,7 +107,7 @@ namespace TinyHero.Player
         private int currentJumpCount;
         private Color[] defaultSpriteColors;
         private GameObject attackSlashFxPrefab;
-        private CObjectPool<GameObject> attackSlashFxPool;
+        private string attackSlashFxPoolKey = string.Empty;
         private Coroutine hitReactionRoutine;
         private Coroutine invincibilityRoutine;
         private string skillAnimationStateName = AttackAnimationStateName;
@@ -230,6 +231,7 @@ namespace TinyHero.Player
         ///</summary>
         private void Awake()
         {
+            attackSlashFxPoolKey = AttackSlashFxPoolKeyPrefix + "." + GetInstanceID();
             defaultScaleX = Mathf.Abs( transform.localScale.x );
 
             if ( defaultScaleX <= 0.0f )
@@ -407,6 +409,8 @@ namespace TinyHero.Player
             RestoreAnimatorSpeed();
             SetAttackHitColliderActive( false );
             ReleaseAllPooledEffects();
+            CObjectPoolManager.TryClearPool( attackSlashFxPoolKey );
+
             SetSpriteRendererVisible( true );
             RestoreSpriteColors();
         }
@@ -416,11 +420,6 @@ namespace TinyHero.Player
         ///</summary>
         public void ReleaseAllPooledEffects()
         {
-            if ( attackSlashFxPool == null )
-            {
-                return;
-            }
-
             List<GameObject> activeFxObjectList = new List<GameObject>( activeAttackSlashFxObjectList );
 
             for ( int index = 0; index < activeFxObjectList.Count; index++ )
@@ -432,7 +431,7 @@ namespace TinyHero.Player
                     continue;
                 }
 
-                attackSlashFxPool.Release( fxObject );
+                CObjectPoolManager.TryRelease( attackSlashFxPoolKey, fxObject );
             }
 
             activeAttackSlashFxObjectList.Clear();
@@ -2563,7 +2562,7 @@ namespace TinyHero.Player
         ///</summary>
         private void EnsureAttackSlashFxPoolInitialized()
         {
-            if ( attackSlashFxPool != null )
+            if ( string.IsNullOrWhiteSpace( attackSlashFxPoolKey ) )
             {
                 return;
             }
@@ -2577,8 +2576,7 @@ namespace TinyHero.Player
                 return;
             }
 
-            CObjectPool<GameObject> createdPool = new CObjectPool<GameObject>( CreateAttackSlashFxInstance, OnGetAttackSlashFxInstance, OnReleaseAttackSlashFxInstance );
-            attackSlashFxPool = createdPool;
+            CObjectPoolManager.TryEnsurePoolRegistered<GameObject>( attackSlashFxPoolKey, CreateAttackSlashFxInstance, OnGetAttackSlashFxInstance, OnReleaseAttackSlashFxInstance );
         }
 
         ///<summary>
@@ -2643,14 +2641,7 @@ namespace TinyHero.Player
 
             EnsureAttackSlashFxPoolInitialized();
 
-            if ( attackSlashFxPool == null )
-            {
-                return;
-            }
-
-            GameObject attackSlashFxObject = attackSlashFxPool.Get();
-
-            if ( attackSlashFxObject == null )
+            if ( CObjectPoolManager.TryGet( attackSlashFxPoolKey, out GameObject attackSlashFxObject ) == false || attackSlashFxObject == null )
             {
                 return;
             }
@@ -2687,7 +2678,7 @@ namespace TinyHero.Player
 
             yield return new WaitForSeconds( _delay );
 
-            if ( attackSlashFxPool == null )
+            if ( string.IsNullOrWhiteSpace( attackSlashFxPoolKey ) )
             {
                 yield break;
             }
@@ -2697,7 +2688,7 @@ namespace TinyHero.Player
                 yield break;
             }
 
-            attackSlashFxPool.Release( _fxObject );
+            CObjectPoolManager.TryRelease( attackSlashFxPoolKey, _fxObject );
         }
 
         ///<summary>

@@ -12,6 +12,7 @@ namespace TinyHero.UI
         private CPlayerInventoryManager targetInventoryManager;
         private GameObject inventoryPopupPrefabObject;
         private PopupItemInventory inventoryUiController;
+        private bool isInventoryToggleLocked;
 
         ///<summary>
         /// 플레이어 인벤토리 매니저 바인딩
@@ -53,6 +54,70 @@ namespace TinyHero.UI
 
             bool nextVisibleState = resolvedInventoryUiController.IsInventoryVisible() == false;
             resolvedInventoryUiController.SetInventoryVisible( nextVisibleState );
+        }
+
+        ///<summary>
+        /// 상점 연동용 인벤토리 열기 처리
+        ///</summary>
+        public PopupItemInventory OpenInventoryForShop( CPlayerInventoryManager _targetInventoryManager )
+        {
+            if ( _targetInventoryManager != null )
+            {
+                targetInventoryManager = _targetInventoryManager;
+            }
+
+            PopupItemInventory resolvedInventoryUiController = ResolveOrCreateInventoryUiController();
+
+            if ( resolvedInventoryUiController == null )
+            {
+                return null;
+            }
+
+            resolvedInventoryUiController.BindInventoryManager( targetInventoryManager );
+            resolvedInventoryUiController.SetEquipmentStatusPanelVisible( false );
+            resolvedInventoryUiController.SetInventoryVisible( true );
+            resolvedInventoryUiController.SnapWindowToRightSide();
+            return resolvedInventoryUiController;
+        }
+
+        ///<summary>
+        /// 상점 연동용 인벤토리 닫기 처리
+        ///</summary>
+        public void CloseInventoryForShop()
+        {
+            if ( inventoryUiController == null )
+            {
+                return;
+            }
+
+            inventoryUiController.SetEquipmentStatusPanelVisible( true );
+            inventoryUiController.SetInventoryVisible( false );
+        }
+
+        ///<summary>
+        /// 인벤토리 토글 잠금 상태 설정
+        ///</summary>
+        public void SetInventoryToggleLocked( bool _isLocked )
+        {
+            isInventoryToggleLocked = _isLocked;
+        }
+
+        ///<summary>
+        /// 인벤토리 토글 잠금 상태 반환
+        ///</summary>
+        public bool IsInventoryToggleLocked()
+        {
+            bool result = isInventoryToggleLocked;
+            return result;
+        }
+
+        ///<summary>
+        /// 인벤토리 UI 컨트롤러 반환
+        ///</summary>
+        public PopupItemInventory GetInventoryUiController()
+        {
+            PopupItemInventory result = inventoryUiController;
+            return result;
         }
 
         ///<summary>

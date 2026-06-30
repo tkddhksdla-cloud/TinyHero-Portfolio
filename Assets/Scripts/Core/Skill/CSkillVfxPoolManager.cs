@@ -9,14 +9,16 @@ namespace TinyHero.Skill
     ///</summary>
     public static class CSkillVfxPoolManager
     {
+        private const string SkillVfxPoolKeyPrefix = "Skill.Vfx";
+
         private sealed class CPooledVfxEntry
         {
             public GameObject Prefab;
-            public CObjectPool<GameObject> Pool;
+            public string PoolKey;
         }
 
         private static readonly Dictionary<int, CPooledVfxEntry> pooledVfxEntryByPrefabId = new Dictionary<int, CPooledVfxEntry>();
-        private static readonly Dictionary<int, CObjectPool<GameObject>> pooledVfxPoolByInstanceId = new Dictionary<int, CObjectPool<GameObject>>();
+        private static readonly Dictionary<int, string> pooledVfxPoolKeyByInstanceId = new Dictionary<int, string>();
 
         ///<summary>
         /// 스킬 이펙트 생성 처리
@@ -30,14 +32,12 @@ namespace TinyHero.Skill
 
             CPooledVfxEntry pooledVfxEntry = GetOrCreatePoolEntry( _prefab );
 
-            if ( pooledVfxEntry == null || pooledVfxEntry.Pool == null )
+            if ( pooledVfxEntry == null || string.IsNullOrWhiteSpace( pooledVfxEntry.PoolKey ) )
             {
                 return null;
             }
 
-            GameObject spawnedObject = pooledVfxEntry.Pool.Get();
-
-            if ( spawnedObject == null )
+            if ( CObjectPoolManager.TryGet( pooledVfxEntry.PoolKey, out GameObject spawnedObject ) == false || spawnedObject == null )
             {
                 return null;
             }
@@ -110,10 +110,15 @@ namespace TinyHero.Skill
 
             CPooledVfxEntry createdEntry = new CPooledVfxEntry();
             createdEntry.Prefab = _prefab;
-            createdEntry.Pool = new CObjectPool<GameObject>(
+            createdEntry.PoolKey = BuildPoolKey( _prefab );
+            if ( CObjectPoolManager.TryEnsurePoolRegistered<GameObject>(
+                createdEntry.PoolKey,
                 () => CreateInstance( _prefab ),
                 _item => OnGetInstance( _item ),
-                _item => OnReleaseInstance( _item ) );
+                _item => OnReleaseInstance( _item ) ) == false )
+            {
+                return null;
+            }
             pooledVfxEntryByPrefabId.Add( prefabInstanceId, createdEntry );
             return createdEntry;
         }
@@ -136,13 +141,13 @@ namespace TinyHero.Skill
 
             int createdInstanceId = createdObject.GetInstanceID();
 
-            if ( pooledVfxPoolByInstanceId.ContainsKey( createdInstanceId ) == false )
+            if ( pooledVfxPoolKeyByInstanceId.ContainsKey( createdInstanceId ) == false )
             {
                 bool hasEntry = pooledVfxEntryByPrefabId.TryGetValue( _prefab.GetInstanceID(), out CPooledVfxEntry pooledVfxEntry );
 
                 if ( hasEntry && pooledVfxEntry != null )
                 {
-                    pooledVfxPoolByInstanceId.Add( createdInstanceId, pooledVfxEntry.Pool );
+                    pooledVfxPoolKeyByInstanceId.Add( createdInstanceId, pooledVfxEntry.PoolKey );
                 }
             }
 
@@ -192,15 +197,24 @@ namespace TinyHero.Skill
             }
 
             int instanceId = _autoPoolReturnObject.gameObject.GetInstanceID();
-            bool hasPool = pooledVfxPoolByInstanceId.TryGetValue( instanceId, out CObjectPool<GameObject> pooledVfxPool );
+            bool hasPool = pooledVfxPoolKeyByInstanceId.TryGetValue( instanceId, out string pooledVfxPoolKey );
 
-            if ( hasPool == false || pooledVfxPool == null )
+            if ( hasPool == false || string.IsNullOrWhiteSpace( pooledVfxPoolKey ) )
             {
                 _autoPoolReturnObject.gameObject.SetActive( false );
                 return;
             }
 
-            pooledVfxPool.Release( _autoPoolReturnObject.gameObject );
+            CObjectPoolManager.TryRelease( pooledVfxPoolKey, _autoPoolReturnObject.gameObject );
+        }
+
+        ///<summary>
+        /// 스킬 이펙트 풀 키 구성
+        ///</summary>
+        private static string BuildPoolKey( GameObject _prefab )
+        {
+            string result = SkillVfxPoolKeyPrefix + "." + _prefab.GetInstanceID();
+            return result;
         }
 
         ///<summary>

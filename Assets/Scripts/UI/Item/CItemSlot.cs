@@ -14,6 +14,7 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     [SerializeField] private TMP_Text itemCountText;
 
     private int slotIndex = -1;
+    private int boundInventorySlotIndex = -1;
     private int currentQuantity;
     private CItemDefinition currentItemDefinition;
     private PopupItemInventory ownerInventoryUiController;
@@ -42,6 +43,23 @@ public sealed class CItemSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public int GetSlotIndex()
     {
         int result = slotIndex;
+        return result;
+    }
+
+    ///<summary>
+    /// 실제 인벤토리 슬롯 인덱스 설정
+    ///</summary>
+    public void SetBoundInventorySlotIndex( int _boundInventorySlotIndex )
+    {
+        boundInventorySlotIndex = _boundInventorySlotIndex;
+    }
+
+    ///<summary>
+    /// 실제 인벤토리 슬롯 인덱스 반환
+    ///</summary>
+    public int GetBoundInventorySlotIndex()
+    {
+        int result = boundInventorySlotIndex;
         return result;
     }
 

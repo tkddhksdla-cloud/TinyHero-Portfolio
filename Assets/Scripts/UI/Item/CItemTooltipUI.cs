@@ -52,13 +52,21 @@ namespace TinyHero.UI
         ///</summary>
         public void SetTooltipContent(CItemDefinition _itemDefinition)
         {
-            SetTooltipContent(_itemDefinition, null);
+            SetTooltipContent(_itemDefinition, null, string.Empty);
         }
 
         ///<summary>
         /// 아이템과 잠재 툴팁 내용 반영
         ///</summary>
         public void SetTooltipContent(CItemDefinition _itemDefinition, CEquipmentPotentialData _equipmentPotentialData)
+        {
+            SetTooltipContent(_itemDefinition, _equipmentPotentialData, string.Empty);
+        }
+
+        ///<summary>
+        /// 아이템과 추가 정보 툴팁 내용 반영
+        ///</summary>
+        public void SetTooltipContent(CItemDefinition _itemDefinition, CEquipmentPotentialData _equipmentPotentialData, string _additionalInfoText)
         {
             ResolveReferences();
             string itemName = string.Empty;
@@ -71,6 +79,8 @@ namespace TinyHero.UI
                 itemDescription = _itemDefinition.GetDescription();
                 resolvedEquipmentStatText = BuildEquipmentStatText(_itemDefinition, _equipmentPotentialData);
             }
+
+            resolvedEquipmentStatText = AppendAdditionalInfoText(resolvedEquipmentStatText, _additionalInfoText);
 
             if (itemNameText != null)
             {
@@ -285,6 +295,31 @@ namespace TinyHero.UI
 
         ///<summary>
         /// 잠재 표시 문자열 구성
+        ///</summary>
+        ///<summary>
+        /// 추가 정보 문자열 결합
+        ///</summary>
+        private string AppendAdditionalInfoText(string _baseText, string _additionalInfoText)
+        {
+            string resolvedBaseText = string.IsNullOrWhiteSpace(_baseText) ? string.Empty : _baseText.Trim();
+            string resolvedAdditionalInfoText = string.IsNullOrWhiteSpace(_additionalInfoText) ? string.Empty : _additionalInfoText.Trim();
+
+            if (string.IsNullOrWhiteSpace(resolvedAdditionalInfoText))
+            {
+                return resolvedBaseText;
+            }
+
+            if (string.IsNullOrWhiteSpace(resolvedBaseText))
+            {
+                return resolvedAdditionalInfoText;
+            }
+
+            string result = $"{resolvedBaseText}\n\n{resolvedAdditionalInfoText}";
+            return result;
+        }
+
+        ///<summary>
+        /// ?좎옱 ?쒖떆 臾몄옄??援ъ꽦
         ///</summary>
         private string BuildPotentialText(CEquipmentPotentialData _equipmentPotentialData)
         {

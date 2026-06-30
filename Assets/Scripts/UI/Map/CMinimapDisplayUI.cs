@@ -28,6 +28,9 @@ namespace TinyHero.UI
         private const float DefaultIconOutlineDistance = 1.2f;
         private const int CircleTextureSize = 64;
         private const int SolidTextureSize = 2;
+        private const string MonsterIconPoolKeyPrefix = "UI.MinimapDisplay.MonsterIcon";
+        private const string NpcIconPoolKeyPrefix = "UI.MinimapDisplay.NpcIcon";
+        private const string PortalIconPoolKeyPrefix = "UI.MinimapDisplay.PortalIcon";
         private static readonly Color DefaultViewportColor = new Color( 0.05f, 0.07f, 0.09f, 0.52f );
         private static readonly Color DefaultBackgroundTintColor = new Color( 1.0f, 1.0f, 1.0f, 0.72f );
         private static readonly Color DefaultPlayerColor = new Color32( 255, 214, 64, 255 );
@@ -70,9 +73,9 @@ namespace TinyHero.UI
         private readonly List<MonsterObject> releaseTargetMonsterList = new List<MonsterObject>();
         private readonly List<CNPCObject> releaseTargetNpcList = new List<CNPCObject>();
         private readonly List<PortalObject> releaseTargetPortalList = new List<PortalObject>();
-        private CObjectPool<Image> monsterIconPool;
-        private CObjectPool<Image> npcIconPool;
-        private CObjectPool<Image> portalIconPool;
+        private string monsterIconPoolKey = string.Empty;
+        private string npcIconPoolKey = string.Empty;
+        private string portalIconPoolKey = string.Empty;
         private PlayerController targetPlayerController;
         private string lastMapId = string.Empty;
         private Sprite currentMinimapBackgroundSprite;
@@ -86,6 +89,9 @@ namespace TinyHero.UI
         ///</summary>
         private void Awake()
         {
+            monsterIconPoolKey = MonsterIconPoolKeyPrefix + "." + GetInstanceID();
+            npcIconPoolKey = NpcIconPoolKeyPrefix + "." + GetInstanceID();
+            portalIconPoolKey = PortalIconPoolKeyPrefix + "." + GetInstanceID();
             ApplyDefaultConfigurationValues();
             ResolveReferences();
             EnsureRuntimeHierarchy();
@@ -129,21 +135,9 @@ namespace TinyHero.UI
             ReleaseAllMonsterIcons();
             ReleaseAllNpcIcons();
             ReleaseAllPortalIcons();
-
-            if ( monsterIconPool != null )
-            {
-                monsterIconPool.Clear();
-            }
-
-            if ( npcIconPool != null )
-            {
-                npcIconPool.Clear();
-            }
-
-            if ( portalIconPool != null )
-            {
-                portalIconPool.Clear();
-            }
+            CObjectPoolManager.TryClearPool( monsterIconPoolKey );
+            CObjectPoolManager.TryClearPool( npcIconPoolKey );
+            CObjectPoolManager.TryClearPool( portalIconPoolKey );
         }
 
         ///<summary>
@@ -550,35 +544,9 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureIconPoolsInitialized()
         {
-            if ( monsterIconPool == null )
-            {
-                CObjectPool<Image> createdMonsterPool = new CObjectPool<Image>(
-                    CreateMonsterIcon,
-                    OnGetMonsterIcon,
-                    OnReleaseCharacterIcon,
-                    OnDestroyCharacterIcon );
-                monsterIconPool = createdMonsterPool;
-            }
-
-            if ( npcIconPool == null )
-            {
-                CObjectPool<Image> createdNpcPool = new CObjectPool<Image>(
-                    CreateNpcIcon,
-                    OnGetNpcIcon,
-                    OnReleaseCharacterIcon,
-                    OnDestroyCharacterIcon );
-                npcIconPool = createdNpcPool;
-            }
-
-            if ( portalIconPool == null )
-            {
-                CObjectPool<Image> createdPortalPool = new CObjectPool<Image>(
-                    CreatePortalIcon,
-                    OnGetPortalIcon,
-                    OnReleaseCharacterIcon,
-                    OnDestroyCharacterIcon );
-                portalIconPool = createdPortalPool;
-            }
+            CObjectPoolManager.TryEnsurePoolRegistered<Image>( monsterIconPoolKey, CreateMonsterIcon, OnGetMonsterIcon, OnReleaseCharacterIcon, OnDestroyCharacterIcon );
+            CObjectPoolManager.TryEnsurePoolRegistered<Image>( npcIconPoolKey, CreateNpcIcon, OnGetNpcIcon, OnReleaseCharacterIcon, OnDestroyCharacterIcon );
+            CObjectPoolManager.TryEnsurePoolRegistered<Image>( portalIconPoolKey, CreatePortalIcon, OnGetPortalIcon, OnReleaseCharacterIcon, OnDestroyCharacterIcon );
         }
 
         ///<summary>
@@ -1140,14 +1108,7 @@ namespace TinyHero.UI
 
             EnsureIconPoolsInitialized();
 
-            if ( monsterIconPool == null )
-            {
-                return;
-            }
-
-            Image monsterIconImage = monsterIconPool.Get();
-
-            if ( monsterIconImage == null )
+            if ( CObjectPoolManager.TryGet( monsterIconPoolKey, out Image monsterIconImage ) == false || monsterIconImage == null )
             {
                 return;
             }
@@ -1167,14 +1128,7 @@ namespace TinyHero.UI
 
             EnsureIconPoolsInitialized();
 
-            if ( npcIconPool == null )
-            {
-                return;
-            }
-
-            Image npcIconImage = npcIconPool.Get();
-
-            if ( npcIconImage == null )
+            if ( CObjectPoolManager.TryGet( npcIconPoolKey, out Image npcIconImage ) == false || npcIconImage == null )
             {
                 return;
             }
@@ -1194,14 +1148,7 @@ namespace TinyHero.UI
 
             EnsureIconPoolsInitialized();
 
-            if ( portalIconPool == null )
-            {
-                return;
-            }
-
-            Image portalIconImage = portalIconPool.Get();
-
-            if ( portalIconImage == null )
+            if ( CObjectPoolManager.TryGet( portalIconPoolKey, out Image portalIconImage ) == false || portalIconImage == null )
             {
                 return;
             }
@@ -1381,9 +1328,9 @@ namespace TinyHero.UI
 
             monsterIconByMonster.Remove( _monsterObject );
 
-            if ( monsterIconPool != null && monsterIconImage != null )
+            if ( monsterIconImage != null )
             {
-                monsterIconPool.Release( monsterIconImage );
+                CObjectPoolManager.TryRelease( monsterIconPoolKey, monsterIconImage );
             }
         }
 
@@ -1406,9 +1353,9 @@ namespace TinyHero.UI
 
             npcIconByNpc.Remove( _npcObject );
 
-            if ( npcIconPool != null && npcIconImage != null )
+            if ( npcIconImage != null )
             {
-                npcIconPool.Release( npcIconImage );
+                CObjectPoolManager.TryRelease( npcIconPoolKey, npcIconImage );
             }
         }
 
@@ -1431,9 +1378,9 @@ namespace TinyHero.UI
 
             portalIconByPortal.Remove( _portalObject );
 
-            if ( portalIconPool != null && portalIconImage != null )
+            if ( portalIconImage != null )
             {
-                portalIconPool.Release( portalIconImage );
+                CObjectPoolManager.TryRelease( portalIconPoolKey, portalIconImage );
             }
         }
 
