@@ -8681,11 +8681,11 @@ PrefabInstance:
       value: ITEM_EQUIPMENT_BRONZE_SWORD
       objectReference: {fileID: 0}
     - target: {fileID: 5258578409863777467, guid: 2dbfe91b3ba540942b2978c78051cd39, type: 3}
-      propertyPath: itemEntryList.Array.data[0].quantity
+      propertyPath: itemEntryList.Array.data[0].quantityValue
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5258578409863777467, guid: 2dbfe91b3ba540942b2978c78051cd39, type: 3}
-      propertyPath: itemEntryList.Array.data[1].quantity
+      propertyPath: itemEntryList.Array.data[1].quantityValue
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5258578409863777467, guid: 2dbfe91b3ba540942b2978c78051cd39, type: 3}
