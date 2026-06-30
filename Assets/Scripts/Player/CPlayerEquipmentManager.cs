@@ -131,6 +131,26 @@ namespace TinyHero.Player
     }
 
     ///<summary>
+    /// 플레이어 장착 장비 저장 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CPlayerEquippedItemSnapshotData
+    {
+        public eEquipmentType equipmentType = eEquipmentType.NONE;
+        public string itemId = string.Empty;
+        public CEquipmentPotentialSnapshotData equipmentPotentialSnapshotData = new CEquipmentPotentialSnapshotData();
+
+        ///<summary>
+        /// 장착 장비 저장 데이터 유효 여부 반환
+        ///</summary>
+        public bool IsValid()
+        {
+            bool result = equipmentType != eEquipmentType.NONE && string.IsNullOrWhiteSpace( itemId ) == false;
+            return result;
+        }
+    }
+
+    ///<summary>
     /// 플레이어 장비 상태 관리
     ///</summary>
     public sealed class CPlayerEquipmentManager : MonoBehaviour
@@ -478,17 +498,23 @@ namespace TinyHero.Player
         {
             EnsureEquipmentSlots();
             CPlayerEquipmentSnapshotData snapshotData = new CPlayerEquipmentSnapshotData();
-            List<CPlayerEquipmentSlotEntryData> copiedSlotEntryList = new List<CPlayerEquipmentSlotEntryData>();
+            List<CPlayerEquippedItemSnapshotData> equippedItemSnapshotList = new List<CPlayerEquippedItemSnapshotData>();
             int equipmentSlotCount = equipmentSlotEntryList.Count;
 
             for ( int index = 0; index < equipmentSlotCount; index++ )
             {
                 CPlayerEquipmentSlotEntryData sourceSlotEntryData = equipmentSlotEntryList[ index ];
-                CPlayerEquipmentSlotEntryData copiedSlotEntryData = sourceSlotEntryData != null ? sourceSlotEntryData.CreateCopy() : null;
-                copiedSlotEntryList.Add( copiedSlotEntryData );
+
+                if ( sourceSlotEntryData == null || sourceSlotEntryData.HasItem() == false )
+                {
+                    continue;
+                }
+
+                CPlayerEquippedItemSnapshotData equippedItemSnapshotData = CreateEquippedItemSnapshotData( sourceSlotEntryData );
+                equippedItemSnapshotList.Add( equippedItemSnapshotData );
             }
 
-            snapshotData.equipmentSlotEntryList = copiedSlotEntryList;
+            snapshotData.equippedItemSnapshotList = equippedItemSnapshotList;
             return snapshotData;
         }
 
@@ -512,7 +538,20 @@ namespace TinyHero.Player
                 targetSlotEntryData.Clear();
             }
 
-            if ( _snapshotData == null || _snapshotData.equipmentSlotEntryList == null )
+            if ( _snapshotData == null )
+            {
+                RefreshEquipmentState();
+                return;
+            }
+
+            if ( _snapshotData.equippedItemSnapshotList != null && _snapshotData.equippedItemSnapshotList.Count > 0 )
+            {
+                LoadEquippedItemSnapshotData( _snapshotData.equippedItemSnapshotList );
+                RefreshEquipmentState();
+                return;
+            }
+
+            if ( _snapshotData.equipmentSlotEntryList == null )
             {
                 RefreshEquipmentState();
                 return;
@@ -540,6 +579,57 @@ namespace TinyHero.Player
             }
 
             RefreshEquipmentState();
+        }
+
+        ///<summary>
+        /// 장착 장비 저장 데이터 생성
+        ///</summary>
+        private CPlayerEquippedItemSnapshotData CreateEquippedItemSnapshotData( CPlayerEquipmentSlotEntryData _sourceSlotEntryData )
+        {
+            CPlayerEquippedItemSnapshotData snapshotData = new CPlayerEquippedItemSnapshotData();
+            snapshotData.equipmentType = _sourceSlotEntryData.GetEquipmentType();
+            snapshotData.itemId = _sourceSlotEntryData.GetItemId();
+            CEquipmentPotentialData potentialData = _sourceSlotEntryData.GetEquipmentPotentialData();
+
+            if ( potentialData != null && potentialData.HasPotential() )
+            {
+                snapshotData.equipmentPotentialSnapshotData = potentialData.CreateSnapshotData();
+            }
+
+            return snapshotData;
+        }
+
+        ///<summary>
+        /// 장착 장비 저장 데이터 로드
+        ///</summary>
+        private void LoadEquippedItemSnapshotData( List<CPlayerEquippedItemSnapshotData> _equippedItemSnapshotList )
+        {
+            for ( int index = 0; index < _equippedItemSnapshotList.Count; index++ )
+            {
+                CPlayerEquippedItemSnapshotData equippedItemSnapshotData = _equippedItemSnapshotList[ index ];
+
+                if ( equippedItemSnapshotData == null || equippedItemSnapshotData.IsValid() == false )
+                {
+                    continue;
+                }
+
+                bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( equippedItemSnapshotData.itemId, out CItemDefinition itemDefinition );
+
+                if ( hasDefinition == false || itemDefinition == null || itemDefinition.IsEquipmentTypeMatched( equippedItemSnapshotData.equipmentType ) == false )
+                {
+                    continue;
+                }
+
+                CPlayerEquipmentSlotEntryData targetSlotEntryData = GetEquipmentSlotEntryData( equippedItemSnapshotData.equipmentType );
+
+                if ( targetSlotEntryData == null )
+                {
+                    continue;
+                }
+
+                targetSlotEntryData.SetItemId( equippedItemSnapshotData.itemId );
+                targetSlotEntryData.GetEquipmentPotentialData().LoadSnapshotData( equippedItemSnapshotData.equipmentPotentialSnapshotData );
+            }
         }
 
         ///<summary>

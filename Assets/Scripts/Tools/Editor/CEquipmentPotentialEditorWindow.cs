@@ -45,6 +45,7 @@ namespace TinyHero.Tools.Editor
         private Dictionary<int, COptionEntryViewData> cachedEntryViewDataMap = new Dictionary<int, COptionEntryViewData>();
         private int cachedFilteredTotalWeight;
         private bool hasPendingChanges;
+        private bool isViewCacheDirty = true;
 
         ///<summary>
         /// 장비 잠재 옵션 편집 창 열기 메뉴
@@ -79,8 +80,8 @@ namespace TinyHero.Tools.Editor
                 return;
             }
 
-            serializedTableData.Update();
-            RebuildViewCache();
+            serializedTableData.UpdateIfRequiredOrScript();
+            RebuildViewCacheIfNeeded();
             DrawToolbar();
             EditorGUILayout.Space( 8.0f );
             DrawRuleSection();
@@ -97,6 +98,8 @@ namespace TinyHero.Tools.Editor
             {
                 serializedTableData.ApplyModifiedPropertiesWithoutUndo();
                 hasPendingChanges = true;
+                RebuildViewCache();
+                Repaint();
             }
         }
 
@@ -152,6 +155,28 @@ namespace TinyHero.Tools.Editor
             cachedFilteredEntryIndexList = GetFilteredEntryIndexList();
             cachedGroupedEntryIndexList = BuildGroupedFilteredEntryIndexList( cachedFilteredEntryIndexList );
             cachedFilteredTotalWeight = ResolveFilteredTotalWeight( cachedFilteredEntryIndexList );
+            isViewCacheDirty = false;
+        }
+
+        ///<summary>
+        /// 화면 표시용 캐시 재구성 보장
+        ///</summary>
+        private void RebuildViewCacheIfNeeded()
+        {
+            if ( isViewCacheDirty == false )
+            {
+                return;
+            }
+
+            RebuildViewCache();
+        }
+
+        ///<summary>
+        /// 화면 표시용 캐시 갱신 요청
+        ///</summary>
+        private void MarkViewCacheDirty()
+        {
+            isViewCacheDirty = true;
         }
 
         ///<summary>
@@ -160,17 +185,27 @@ namespace TinyHero.Tools.Editor
         private void DrawToolbar()
         {
             EditorGUILayout.BeginHorizontal( EditorStyles.toolbar );
-            selectedEquipmentType = ( eEquipmentType )EditorGUILayout.EnumPopup( selectedEquipmentType, EditorStyles.toolbarPopup, GUILayout.Width( 150.0f ) );
-            selectedRank = ( eEquipmentPotentialRank )EditorGUILayout.EnumPopup( selectedRank, EditorStyles.toolbarPopup, GUILayout.Width( 150.0f ) );
+            eEquipmentType changedEquipmentType = ( eEquipmentType )EditorGUILayout.EnumPopup( selectedEquipmentType, EditorStyles.toolbarPopup, GUILayout.Width( 150.0f ) );
+            eEquipmentPotentialRank changedRank = ( eEquipmentPotentialRank )EditorGUILayout.EnumPopup( selectedRank, EditorStyles.toolbarPopup, GUILayout.Width( 150.0f ) );
+
+            if ( changedEquipmentType != selectedEquipmentType || changedRank != selectedRank )
+            {
+                selectedEquipmentType = changedEquipmentType;
+                selectedRank = changedRank;
+                MarkViewCacheDirty();
+                RebuildViewCacheIfNeeded();
+            }
 
             if ( GUILayout.Button( "Add Option", EditorStyles.toolbarButton, GUILayout.Width( 110.0f ) ) )
             {
                 AddOptionEntry();
+                MarkViewCacheDirty();
             }
 
             if ( GUILayout.Button( "Generate Defaults", EditorStyles.toolbarButton, GUILayout.Width( 130.0f ) ) )
             {
                 GenerateDefaultEntries();
+                MarkViewCacheDirty();
             }
 
             GUILayout.FlexibleSpace();
@@ -362,6 +397,7 @@ namespace TinyHero.Tools.Editor
             if ( GUILayout.Button( "Delete", GUILayout.Width( 58.0f ) ) )
             {
                 optionEntryListProperty.DeleteArrayElementAtIndex( _entryIndex );
+                MarkViewCacheDirty();
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
                 return;
@@ -376,7 +412,11 @@ namespace TinyHero.Tools.Editor
 
             if ( forcePercentValueType )
             {
-                valueTypeProperty.enumValueIndex = ( int )eEquipmentPotentialValueType.PERCENT;
+                if ( valueTypeProperty.enumValueIndex != ( int )eEquipmentPotentialValueType.PERCENT )
+                {
+                    valueTypeProperty.enumValueIndex = ( int )eEquipmentPotentialValueType.PERCENT;
+                }
+
                 EditorGUI.BeginDisabledGroup( true );
                 EditorGUILayout.PropertyField( valueTypeProperty, new GUIContent( "Value Type" ) );
                 EditorGUI.EndDisabledGroup();
@@ -620,18 +660,21 @@ namespace TinyHero.Tools.Editor
                 return;
             }
 
+            eEquipmentPotentialOptionType optionType = eEquipmentPotentialOptionType.ATK;
+            eEquipmentPotentialValueType valueType = CEquipmentPotentialUtility.GetDefaultValueType( optionType );
+            int variantIndex = ResolveNextVariantIndex( selectedEquipmentType, selectedRank, optionType, valueType );
             int newIndex = optionEntryListProperty.arraySize;
             optionEntryListProperty.InsertArrayElementAtIndex( newIndex );
             SerializedProperty createdEntryProperty = optionEntryListProperty.GetArrayElementAtIndex( newIndex );
             SerializedProperty optionTypeProperty = createdEntryProperty.FindPropertyRelative( "optionType" );
-            eEquipmentPotentialOptionType optionType = eEquipmentPotentialOptionType.ATK;
-            eEquipmentPotentialValueType valueType = CEquipmentPotentialUtility.GetDefaultValueType( optionType );
+            createdEntryProperty.FindPropertyRelative( "optionKey" ).stringValue = BuildOptionKey( selectedEquipmentType, selectedRank, optionType, valueType, variantIndex );
             createdEntryProperty.FindPropertyRelative( "equipmentType" ).enumValueIndex = ( int )selectedEquipmentType;
             createdEntryProperty.FindPropertyRelative( "rank" ).enumValueIndex = ( int )selectedRank;
             optionTypeProperty.enumValueIndex = ( int )optionType;
             createdEntryProperty.FindPropertyRelative( "valueType" ).enumValueIndex = ( int )valueType;
             createdEntryProperty.FindPropertyRelative( "value" ).floatValue = ResolveDefaultValue( selectedRank, optionType, valueType );
             createdEntryProperty.FindPropertyRelative( "weight" ).intValue = 1;
+            MarkViewCacheDirty();
         }
 
         ///<summary>
@@ -644,9 +687,16 @@ namespace TinyHero.Tools.Editor
                 return;
             }
 
+            if ( serializedTableData != null )
+            {
+                NormalizeOptionKeys();
+                serializedTableData.ApplyModifiedPropertiesWithoutUndo();
+            }
+
             EditorUtility.SetDirty( tableData );
             AssetDatabase.SaveAssets();
             hasPendingChanges = false;
+            MarkViewCacheDirty();
         }
 
         ///<summary>
@@ -746,6 +796,7 @@ namespace TinyHero.Tools.Editor
                 return;
             }
 
+            int variantIndex = ResolveNextVariantIndex( _equipmentType, _rank, _optionType, _valueType );
             int newIndex = optionEntryListProperty.arraySize;
             optionEntryListProperty.InsertArrayElementAtIndex( newIndex );
             SerializedProperty createdEntryProperty = optionEntryListProperty.GetArrayElementAtIndex( newIndex );
@@ -755,6 +806,121 @@ namespace TinyHero.Tools.Editor
             createdEntryProperty.FindPropertyRelative( "valueType" ).enumValueIndex = ( int )_valueType;
             createdEntryProperty.FindPropertyRelative( "value" ).floatValue = _value;
             createdEntryProperty.FindPropertyRelative( "weight" ).intValue = 1;
+            createdEntryProperty.FindPropertyRelative( "optionKey" ).stringValue = BuildOptionKey( _equipmentType, _rank, _optionType, _valueType, variantIndex );
+        }
+
+        ///<summary>
+        /// 잠재 엔트리 안정 키 자동 보정
+        ///</summary>
+        private void NormalizeOptionKeys()
+        {
+            if ( optionEntryListProperty == null )
+            {
+                return;
+            }
+
+            Dictionary<string, int> variantCountByBaseKey = new Dictionary<string, int>();
+
+            for ( int index = 0; index < optionEntryListProperty.arraySize; index++ )
+            {
+                SerializedProperty entryProperty = optionEntryListProperty.GetArrayElementAtIndex( index );
+
+                if ( entryProperty == null )
+                {
+                    continue;
+                }
+
+                SerializedProperty optionKeyProperty = entryProperty.FindPropertyRelative( "optionKey" );
+                SerializedProperty equipmentTypeProperty = entryProperty.FindPropertyRelative( "equipmentType" );
+                SerializedProperty rankProperty = entryProperty.FindPropertyRelative( "rank" );
+                SerializedProperty optionTypeProperty = entryProperty.FindPropertyRelative( "optionType" );
+                SerializedProperty valueTypeProperty = entryProperty.FindPropertyRelative( "valueType" );
+                eEquipmentType equipmentType = ( eEquipmentType )equipmentTypeProperty.enumValueIndex;
+                eEquipmentPotentialRank rank = ( eEquipmentPotentialRank )rankProperty.enumValueIndex;
+                eEquipmentPotentialOptionType optionType = ( eEquipmentPotentialOptionType )optionTypeProperty.enumValueIndex;
+                eEquipmentPotentialValueType valueType = ResolveDisplayValueType( optionType, valueTypeProperty );
+                string baseKey = BuildOptionBaseKey( equipmentType, rank, optionType, valueType );
+                int variantIndex = 1;
+
+                if ( variantCountByBaseKey.TryGetValue( baseKey, out int currentVariantCount ) )
+                {
+                    variantIndex = currentVariantCount + 1;
+                }
+
+                variantCountByBaseKey[ baseKey ] = variantIndex;
+                optionKeyProperty.stringValue = BuildOptionKey( equipmentType, rank, optionType, valueType, variantIndex );
+            }
+        }
+
+        ///<summary>
+        /// 잠재 엔트리 다음 변형 인덱스 반환
+        ///</summary>
+        private int ResolveNextVariantIndex( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType )
+        {
+            int nextVariantIndex = 1;
+
+            if ( optionEntryListProperty == null )
+            {
+                return nextVariantIndex;
+            }
+
+            for ( int index = 0; index < optionEntryListProperty.arraySize; index++ )
+            {
+                SerializedProperty entryProperty = optionEntryListProperty.GetArrayElementAtIndex( index );
+
+                if ( entryProperty == null )
+                {
+                    continue;
+                }
+
+                SerializedProperty equipmentTypeProperty = entryProperty.FindPropertyRelative( "equipmentType" );
+                SerializedProperty rankProperty = entryProperty.FindPropertyRelative( "rank" );
+                SerializedProperty optionTypeProperty = entryProperty.FindPropertyRelative( "optionType" );
+                SerializedProperty valueTypeProperty = entryProperty.FindPropertyRelative( "valueType" );
+
+                if ( equipmentTypeProperty.enumValueIndex != ( int )_equipmentType )
+                {
+                    continue;
+                }
+
+                if ( rankProperty.enumValueIndex != ( int )_rank )
+                {
+                    continue;
+                }
+
+                if ( optionTypeProperty.enumValueIndex != ( int )_optionType )
+                {
+                    continue;
+                }
+
+                if ( ResolveDisplayValueType( _optionType, valueTypeProperty ) != _valueType )
+                {
+                    continue;
+                }
+
+                nextVariantIndex++;
+            }
+
+            return nextVariantIndex;
+        }
+
+        ///<summary>
+        /// 잠재 엔트리 안정 키 구성
+        ///</summary>
+        private string BuildOptionKey( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, int _variantIndex )
+        {
+            string baseKey = BuildOptionBaseKey( _equipmentType, _rank, _optionType, _valueType );
+            string result = $"{baseKey}_{_variantIndex:00}";
+            return result;
+        }
+
+        ///<summary>
+        /// 잠재 엔트리 안정 키 기본값 구성
+        ///</summary>
+        private string BuildOptionBaseKey( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType )
+        {
+            string result = $"{_equipmentType}_{_rank}_{_optionType}_{_valueType}";
+            return result;
         }
 
         ///<summary>

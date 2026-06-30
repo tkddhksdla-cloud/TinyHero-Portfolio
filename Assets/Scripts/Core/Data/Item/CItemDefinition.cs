@@ -38,7 +38,8 @@ namespace TinyHero.Core.Data
         NONE,
         GENERAL,
         SKILL_BOOK,
-        CUBE
+        CUBE,
+        RANDOM_BOX
     }
 
     ///<summary>
@@ -48,7 +49,7 @@ namespace TinyHero.Core.Data
     public sealed class CInventoryItemEntryData
     {
         [SerializeField] private string itemId = string.Empty;
-        [SerializeField] private int quantity;
+        [SerializeField] private long quantityValue;
         [SerializeField] private CEquipmentPotentialData equipmentPotentialData = new CEquipmentPotentialData();
 
         ///<summary>
@@ -71,9 +72,9 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 수량 반환
         ///</summary>
-        public int GetQuantity()
+        public long GetQuantity()
         {
-            int result = quantity;
+            long result = Math.Max( 0L, quantityValue );
             return result;
         }
 
@@ -90,9 +91,10 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 수량 설정
         ///</summary>
-        public void SetQuantity( int _quantity )
+        public void SetQuantity( long _quantity )
         {
-            quantity = Mathf.Max( 0, _quantity );
+            long resolvedQuantity = Math.Max( 0L, _quantity );
+            quantityValue = resolvedQuantity;
         }
 
         ///<summary>
@@ -110,7 +112,7 @@ namespace TinyHero.Core.Data
         public bool IsEmpty()
         {
             bool hasItemId = string.IsNullOrWhiteSpace( itemId ) == false;
-            bool result = hasItemId == false || quantity <= 0;
+            bool result = hasItemId == false || GetQuantity() <= 0L;
             return result;
         }
 
@@ -120,7 +122,7 @@ namespace TinyHero.Core.Data
         public void Clear()
         {
             itemId = string.Empty;
-            quantity = 0;
+            quantityValue = 0L;
             EnsurePotentialData();
             equipmentPotentialData.Clear();
         }
@@ -132,7 +134,7 @@ namespace TinyHero.Core.Data
         {
             CInventoryItemEntryData copiedEntryData = new CInventoryItemEntryData();
             copiedEntryData.SetItemId( itemId );
-            copiedEntryData.SetQuantity( quantity );
+            copiedEntryData.SetQuantity( GetQuantity() );
             copiedEntryData.SetEquipmentPotentialData( equipmentPotentialData );
             return copiedEntryData;
         }
@@ -149,7 +151,7 @@ namespace TinyHero.Core.Data
             }
 
             itemId = _sourceEntryData.GetItemId();
-            quantity = _sourceEntryData.GetQuantity();
+            SetQuantity( _sourceEntryData.GetQuantity() );
             SetEquipmentPotentialData( _sourceEntryData.GetEquipmentPotentialData() );
         }
 
@@ -168,13 +170,53 @@ namespace TinyHero.Core.Data
     }
 
     ///<summary>
+    /// 인벤토리 점유 슬롯 저장 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CInventoryOccupiedSlotSnapshotData
+    {
+        public eItemType itemType = eItemType.EQUIPMENT;
+        public int localSlotIndex = -1;
+        public string itemId = string.Empty;
+        public long quantityValue;
+        public CEquipmentPotentialSnapshotData equipmentPotentialSnapshotData = new CEquipmentPotentialSnapshotData();
+
+        ///<summary>
+        /// 저장 슬롯 데이터 유효 여부 반환
+        ///</summary>
+        public bool IsValid()
+        {
+            bool result = localSlotIndex >= 0 && string.IsNullOrWhiteSpace( itemId ) == false && quantityValue > 0L;
+            return result;
+        }
+    }
+
+    ///<summary>
     /// 플레이어 인벤토리 저장 데이터
     ///</summary>
     [Serializable]
     public sealed class CPlayerInventorySnapshotData
     {
+        [SerializeField] private List<CInventoryOccupiedSlotSnapshotData> occupiedSlotSnapshotList = new List<CInventoryOccupiedSlotSnapshotData>();
         [SerializeField] private List<CInventoryCategoryEntryData> inventoryCategoryEntryList = new List<CInventoryCategoryEntryData>();
         [SerializeField] private List<CInventoryItemEntryData> itemEntryList = new List<CInventoryItemEntryData>();
+
+        ///<summary>
+        /// 점유 슬롯 저장 목록 반환
+        ///</summary>
+        public List<CInventoryOccupiedSlotSnapshotData> GetOccupiedSlotSnapshotList()
+        {
+            List<CInventoryOccupiedSlotSnapshotData> result = occupiedSlotSnapshotList;
+            return result;
+        }
+
+        ///<summary>
+        /// 점유 슬롯 저장 목록 설정
+        ///</summary>
+        public void SetOccupiedSlotSnapshotList( List<CInventoryOccupiedSlotSnapshotData> _occupiedSlotSnapshotList )
+        {
+            occupiedSlotSnapshotList = _occupiedSlotSnapshotList ?? new List<CInventoryOccupiedSlotSnapshotData>();
+        }
 
         ///<summary>
         /// 저장 카테고리 목록 반환
@@ -255,8 +297,8 @@ namespace TinyHero.Core.Data
     {
         [SerializeField] private CItemDefinition itemDefinition;
         [SerializeField] [Range( 0.0f, 1.0f )] private float dropChance = 1.0f;
-        [SerializeField] private int minDropCount = 1;
-        [SerializeField] private int maxDropCount = 1;
+        [SerializeField] private long minDropCountValue = 1L;
+        [SerializeField] private long maxDropCountValue = 1L;
 
         ///<summary>
         /// 아이템 정의 반환
@@ -295,37 +337,39 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 최소 드랍 수량 반환
         ///</summary>
-        public int GetMinDropCount()
+        public long GetMinDropCount()
         {
-            int result = Mathf.Max( 0, minDropCount );
+            long result = Math.Max( 0L, minDropCountValue );
             return result;
         }
 
         ///<summary>
         /// 최소 드랍 수량 설정
         ///</summary>
-        public void SetMinDropCount( int _minDropCount )
+        public void SetMinDropCount( long _minDropCount )
         {
-            minDropCount = Mathf.Max( 0, _minDropCount );
+            long resolvedMinDropCount = Math.Max( 0L, _minDropCount );
+            minDropCountValue = resolvedMinDropCount;
         }
 
         ///<summary>
         /// 최대 드랍 수량 반환
         ///</summary>
-        public int GetMaxDropCount()
+        public long GetMaxDropCount()
         {
-            int normalizedMinDropCount = Mathf.Max( 0, minDropCount );
-            int result = Mathf.Max( normalizedMinDropCount, maxDropCount );
+            long normalizedMinDropCount = GetMinDropCount();
+            long result = Math.Max( normalizedMinDropCount, maxDropCountValue );
             return result;
         }
 
         ///<summary>
         /// 최대 드랍 수량 설정
         ///</summary>
-        public void SetMaxDropCount( int _maxDropCount )
+        public void SetMaxDropCount( long _maxDropCount )
         {
-            int normalizedMinDropCount = Mathf.Max( 0, minDropCount );
-            maxDropCount = Mathf.Max( normalizedMinDropCount, _maxDropCount );
+            long normalizedMinDropCount = GetMinDropCount();
+            long resolvedMaxDropCount = Math.Max( normalizedMinDropCount, _maxDropCount );
+            maxDropCountValue = resolvedMaxDropCount;
         }
     }
 
@@ -344,12 +388,13 @@ namespace TinyHero.Core.Data
         [SerializeField] private Sprite iconSprite;
         [SerializeField] private GameObject worldDropPrefab;
         [SerializeField] private bool isStackable = true;
-        [SerializeField] private int maxStackCount = 99;
+        [SerializeField] private long maxStackCountValue = 99L;
         [SerializeField] private string sellPriceItemId = DefaultSellPriceItemId;
-        [SerializeField] private int sellPrice;
+        [SerializeField] private long sellPriceValue;
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
         [SerializeField] private eConsumableType consumableType = eConsumableType.NONE;
         [SerializeField] private string linkedSkillId = string.Empty;
+        [SerializeField] private CRandomBoxRewardTable randomBoxRewardTable;
         [SerializeField] private CPlayerStatRuntimeData equipmentStatBonus = new CPlayerStatRuntimeData();
         [SerializeField] private PartsType equipmentPartsType = PartsType.Chest;
         [SerializeField] private int equipmentPartsIndex = -1;
@@ -428,9 +473,9 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 최대 중첩 수량 반환
         ///</summary>
-        public int GetMaxStackCount()
+        public long GetMaxStackCount()
         {
-            int result = isStackable ? Mathf.Max( 1, maxStackCount ) : 1;
+            long result = isStackable ? Math.Max( 1L, maxStackCountValue ) : 1L;
             return result;
         }
 
@@ -446,9 +491,9 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 판매 가격 수량 반환
         ///</summary>
-        public int GetSellPrice()
+        public long GetSellPrice()
         {
-            int result = Mathf.Max( 0, sellPrice );
+            long result = Math.Max( 0L, sellPriceValue );
             return result;
         }
 
@@ -507,11 +552,29 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 랜덤상자 여부 반환
+        ///</summary>
+        public bool IsRandomBox()
+        {
+            bool result = itemType == eItemType.CONSUMABLE && consumableType == eConsumableType.RANDOM_BOX;
+            return result;
+        }
+
+        ///<summary>
         /// 연결 스킬 ID 반환
         ///</summary>
         public string GetLinkedSkillId()
         {
             string result = IsSkillBook() ? linkedSkillId : string.Empty;
+            return result;
+        }
+
+        ///<summary>
+        /// 랜덤상자 보상 테이블 반환
+        ///</summary>
+        public CRandomBoxRewardTable GetRandomBoxRewardTable()
+        {
+            CRandomBoxRewardTable result = IsRandomBox() ? randomBoxRewardTable : null;
             return result;
         }
 
@@ -584,15 +647,16 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 판매 가격 수량 설정
         ///</summary>
-        public void SetSellPrice( int _sellPrice )
+        public void SetSellPrice( long _sellPrice )
         {
-            sellPrice = Mathf.Max( 0, _sellPrice );
+            long resolvedSellPrice = Math.Max( 0L, _sellPrice );
+            sellPriceValue = resolvedSellPrice;
         }
 
         ///<summary>
         /// 아이템 정의 구성
         ///</summary>
-        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount )
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, long _maxStackCount )
         {
             Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, eEquipmentType.NONE, null, PartsType.Chest, -1 );
         }
@@ -600,7 +664,7 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 아이템 정의 구성
         ///</summary>
-        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus )
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, long _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus )
         {
             PartsType defaultEquipmentPartsType = ResolveDefaultEquipmentPartsType( _equipmentType );
             Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, eConsumableType.NONE, string.Empty, _equipmentStatBonus, defaultEquipmentPartsType, -1 );
@@ -609,7 +673,7 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 아이템 정의 구성
         ///</summary>
-        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, long _maxStackCount, eEquipmentType _equipmentType, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
         {
             Configure( _itemId, _itemName, _itemType, _description, _iconSprite, _isStackable, _maxStackCount, _equipmentType, eConsumableType.NONE, string.Empty, _equipmentStatBonus, _equipmentPartsType, _equipmentPartsIndex );
         }
@@ -617,7 +681,7 @@ namespace TinyHero.Core.Data
         ///<summary>
         /// 아이템 정의 구성
         ///</summary>
-        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, int _maxStackCount, eEquipmentType _equipmentType, eConsumableType _consumableType, string _linkedSkillId, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
+        public void Configure( string _itemId, string _itemName, eItemType _itemType, string _description, Sprite _iconSprite, bool _isStackable, long _maxStackCount, eEquipmentType _equipmentType, eConsumableType _consumableType, string _linkedSkillId, CPlayerStatRuntimeData _equipmentStatBonus, PartsType _equipmentPartsType, int _equipmentPartsIndex )
         {
             itemId = string.IsNullOrWhiteSpace( _itemId ) ? string.Empty : _itemId.Trim();
             itemName = string.IsNullOrWhiteSpace( _itemName ) ? itemId : _itemName.Trim();
@@ -625,16 +689,18 @@ namespace TinyHero.Core.Data
             description = string.IsNullOrWhiteSpace( _description ) ? string.Empty : _description.Trim();
             iconSprite = _iconSprite;
             sellPriceItemId = DefaultSellPriceItemId;
-            sellPrice = 0;
+            sellPriceValue = 0L;
             bool isEquipmentItem = _itemType == eItemType.EQUIPMENT;
             bool isConsumableItem = _itemType == eItemType.CONSUMABLE;
             equipmentType = isEquipmentItem ? _equipmentType : eEquipmentType.NONE;
             consumableType = isConsumableItem ? _consumableType : eConsumableType.NONE;
             linkedSkillId = isConsumableItem ? ( string.IsNullOrWhiteSpace( _linkedSkillId ) ? string.Empty : _linkedSkillId.Trim() ) : string.Empty;
+            randomBoxRewardTable = isConsumableItem && _consumableType == eConsumableType.RANDOM_BOX ? randomBoxRewardTable : null;
             equipmentPartsType = isEquipmentItem ? _equipmentPartsType : PartsType.Chest;
             equipmentPartsIndex = isEquipmentItem ? Mathf.Max( -1, _equipmentPartsIndex ) : -1;
             isStackable = isEquipmentItem == false && _isStackable;
-            maxStackCount = isStackable ? Mathf.Max( 1, _maxStackCount ) : 1;
+            long resolvedMaxStackCount = isStackable ? Math.Max( 1L, _maxStackCount ) : 1L;
+            maxStackCountValue = resolvedMaxStackCount;
 
             if ( equipmentStatBonus == null )
             {

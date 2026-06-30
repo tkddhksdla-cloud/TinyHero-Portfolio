@@ -1,6 +1,7 @@
 using TinyHero.Core.Data;
 using TinyHero.Maps;
 using TinyHero.Player;
+using System;
 using UnityEngine;
 
 ///<summary>
@@ -14,7 +15,8 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     private const float DropLinearDamping = 1.5f;
 
     [SerializeField] private string itemId = string.Empty;
-    [SerializeField] private int itemCount = 1;
+    [SerializeField] [HideInInspector] private int itemCount = 1;
+    [SerializeField] private long itemCountValue = 1L;
     [SerializeField] private SpriteRenderer targetSpriteRenderer;
     [SerializeField] private Collider2D pickupTriggerCollider;
     [SerializeField] private Collider2D groundCollisionCollider;
@@ -37,12 +39,14 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     ///<summary>
     /// 드랍 오브젝트 데이터 구성
     ///</summary>
-    public void ConfigureDrop( CItemDefinition _itemDefinition, int _itemCount )
+    public void ConfigureDrop( CItemDefinition _itemDefinition, long _itemCount )
     {
         PrepareForSpawn();
         cachedItemDefinition = _itemDefinition;
         itemId = _itemDefinition != null ? _itemDefinition.GetItemId() : string.Empty;
-        itemCount = Mathf.Max( 1, _itemCount );
+        long resolvedItemCount = Math.Max( 1L, _itemCount );
+        itemCountValue = resolvedItemCount;
+        itemCount = resolvedItemCount > int.MaxValue ? int.MaxValue : ( int )resolvedItemCount;
         RefreshVisual();
     }
 
@@ -125,7 +129,7 @@ public sealed class CWorldItemDropObject : MonoBehaviour
             pickupTriggerCollider.enabled = false;
         }
 
-        int resolvedItemCount = ResolvePickupItemCount( itemDefinition, statManager );
+        long resolvedItemCount = ResolvePickupItemCount( itemDefinition, statManager );
         bool wasAdded = inventoryManager.TryAddItem( itemDefinition, resolvedItemCount );
 
         if ( wasAdded == false )
@@ -283,9 +287,10 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     ///<summary>
     /// 획득 수량 보정 처리
     ///</summary>
-    private int ResolvePickupItemCount( CItemDefinition _itemDefinition, CPlayerStatManager _playerStatManager )
+    private long ResolvePickupItemCount( CItemDefinition _itemDefinition, CPlayerStatManager _playerStatManager )
     {
-        int resolvedItemCount = Mathf.Max( 1, itemCount );
+        long storedItemCount = itemCountValue > 0L ? itemCountValue : itemCount;
+        long resolvedItemCount = Math.Max( 1L, storedItemCount );
 
         if ( _itemDefinition == null || _playerStatManager == null )
         {
@@ -298,7 +303,8 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         }
 
         float goldGainMultiplier = _playerStatManager.GetGoldGainMultiplier();
-        int scaledItemCount = Mathf.Max( 1, Mathf.RoundToInt( resolvedItemCount * goldGainMultiplier ) );
+        double scaledItemCountDouble = resolvedItemCount * goldGainMultiplier;
+        long scaledItemCount = Math.Max( 1L, ( long )Math.Round( scaledItemCountDouble ) );
         return scaledItemCount;
     }
 

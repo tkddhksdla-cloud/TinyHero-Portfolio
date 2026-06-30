@@ -170,10 +170,7 @@ namespace TinyHero.Core.Data
                 }
 
                 CEquipmentPotentialLineData rolledLineData = new CEquipmentPotentialLineData();
-                rolledLineData.SetOptionType( optionEntry.GetOptionType() );
-                rolledLineData.SetValueType( optionEntry.GetValueType() );
-                rolledLineData.SetLineRank( _rank );
-                rolledLineData.SetValue( optionEntry.GetValue() );
+                rolledLineData.CopyFromOptionEntry( optionEntry, _rank );
                 _rolledLineData = rolledLineData;
                 return true;
             }

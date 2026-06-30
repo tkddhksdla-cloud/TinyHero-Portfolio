@@ -121,8 +121,8 @@ namespace TinyHero.Tools
             {
                 float firstPercentValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT );
                 float secondPercentValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue );
-                AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue );
-                AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercentValue );
+                AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercentValue, 1 );
+                AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercentValue, 2 );
                 return;
             }
 
@@ -130,16 +130,16 @@ namespace TinyHero.Tools
             float secondPercent = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercent );
             float firstValue = ResolveDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.VALUE );
             float secondValue = ResolveSecondaryDefaultValue( _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValue );
-            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercent );
-            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercent );
-            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValue );
-            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, secondValue );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, firstPercent, 1 );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.PERCENT, secondPercent, 2 );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, firstValue, 1 );
+            AddEntry( _optionEntryListProperty, _equipmentType, _rank, _optionType, eEquipmentPotentialValueType.VALUE, secondValue, 2 );
         }
 
         ///<summary>
         /// 잠재 엔트리 추가
         ///</summary>
-        private static void AddEntry( SerializedProperty _optionEntryListProperty, eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, float _value )
+        private static void AddEntry( SerializedProperty _optionEntryListProperty, eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, float _value, int _variantIndex )
         {
             if ( _optionEntryListProperty == null )
             {
@@ -149,18 +149,29 @@ namespace TinyHero.Tools
             int newIndex = _optionEntryListProperty.arraySize;
             _optionEntryListProperty.InsertArrayElementAtIndex( newIndex );
             SerializedProperty entryProperty = _optionEntryListProperty.GetArrayElementAtIndex( newIndex );
+            SerializedProperty optionKeyProperty = entryProperty.FindPropertyRelative( "optionKey" );
             SerializedProperty equipmentTypeProperty = entryProperty.FindPropertyRelative( "equipmentType" );
             SerializedProperty rankProperty = entryProperty.FindPropertyRelative( "rank" );
             SerializedProperty optionTypeProperty = entryProperty.FindPropertyRelative( "optionType" );
             SerializedProperty valueTypeProperty = entryProperty.FindPropertyRelative( "valueType" );
             SerializedProperty valueProperty = entryProperty.FindPropertyRelative( "value" );
             SerializedProperty weightProperty = entryProperty.FindPropertyRelative( "weight" );
+            optionKeyProperty.stringValue = BuildOptionKey( _equipmentType, _rank, _optionType, _valueType, _variantIndex );
             equipmentTypeProperty.enumValueIndex = ( int )_equipmentType;
             rankProperty.enumValueIndex = ( int )_rank;
             optionTypeProperty.enumValueIndex = ( int )_optionType;
             valueTypeProperty.enumValueIndex = ( int )_valueType;
             valueProperty.floatValue = _value;
             weightProperty.intValue = 1;
+        }
+
+        ///<summary>
+        /// 잠재 엔트리 안정 키 구성
+        ///</summary>
+        private static string BuildOptionKey( eEquipmentType _equipmentType, eEquipmentPotentialRank _rank, eEquipmentPotentialOptionType _optionType, eEquipmentPotentialValueType _valueType, int _variantIndex )
+        {
+            string result = $"{_equipmentType}_{_rank}_{_optionType}_{_valueType}_{_variantIndex:00}";
+            return result;
         }
 
         ///<summary>

@@ -27,10 +27,12 @@ namespace TinyHero.Tools
     {
         private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
         private const string PlayerPrefabAssetPath = "Assets/Resources/Prefabs/Character/Player/Player.prefab";
+        private const string DefaultSellPriceItemId = "ITEM_CURRENCY_GOLD";
         private const float ListViewHeight = 480.0f;
         private const float ListItemHeight = 42.0f;
         private const float ListItemSpacing = 4.0f;
         private const int PreviewSize = 180;
+        private const int DefaultMaxStackCount = 9999;
 
         [SerializeField] private List<ItemDefinitionInfo> itemDefinitionInfoList = new List<ItemDefinitionInfo>();
         [SerializeField] private int selectedItemIndex = -1;
@@ -273,12 +275,13 @@ namespace TinyHero.Tools
             SerializedProperty iconSpriteProperty = serializedObject.FindProperty( "iconSprite" );
             SerializedProperty worldDropPrefabProperty = serializedObject.FindProperty( "worldDropPrefab" );
             SerializedProperty isStackableProperty = serializedObject.FindProperty( "isStackable" );
-            SerializedProperty maxStackCountProperty = serializedObject.FindProperty( "maxStackCount" );
+            SerializedProperty maxStackCountProperty = serializedObject.FindProperty( "maxStackCountValue" );
             SerializedProperty sellPriceItemIdProperty = serializedObject.FindProperty( "sellPriceItemId" );
-            SerializedProperty sellPriceProperty = serializedObject.FindProperty( "sellPrice" );
+            SerializedProperty sellPriceProperty = serializedObject.FindProperty( "sellPriceValue" );
             SerializedProperty equipmentTypeProperty = serializedObject.FindProperty( "equipmentType" );
             SerializedProperty consumableTypeProperty = serializedObject.FindProperty( "consumableType" );
             SerializedProperty linkedSkillIdProperty = serializedObject.FindProperty( "linkedSkillId" );
+            SerializedProperty randomBoxRewardTableProperty = serializedObject.FindProperty( "randomBoxRewardTable" );
             SerializedProperty equipmentStatBonusProperty = serializedObject.FindProperty( "equipmentStatBonus" );
             SerializedProperty equipmentPartsTypeProperty = serializedObject.FindProperty( "equipmentPartsType" );
             SerializedProperty equipmentPartsIndexProperty = serializedObject.FindProperty( "equipmentPartsIndex" );
@@ -331,7 +334,7 @@ namespace TinyHero.Tools
 
                 if ( isStackable == false )
                 {
-                    maxStackCountProperty.intValue = 1;
+                    maxStackCountProperty.longValue = 1L;
                 }
             }
 
@@ -341,7 +344,7 @@ namespace TinyHero.Tools
 
                 if ( string.IsNullOrWhiteSpace( sellPriceItemIdProperty.stringValue ) )
                 {
-                    sellPriceItemIdProperty.stringValue = "GOLD";
+                    sellPriceItemIdProperty.stringValue = DefaultSellPriceItemId;
                 }
             }
 
@@ -349,9 +352,9 @@ namespace TinyHero.Tools
             {
                 EditorGUILayout.PropertyField( sellPriceProperty );
 
-                if ( sellPriceProperty.intValue < 0 )
+                if ( sellPriceProperty.longValue < 0L )
                 {
-                    sellPriceProperty.intValue = 0;
+                    sellPriceProperty.longValue = 0L;
                 }
             }
 
@@ -369,6 +372,7 @@ namespace TinyHero.Tools
                 }
 
                 bool isSkillBook = consumableTypeProperty != null && consumableTypeProperty.enumValueIndex == ( int )eConsumableType.SKILL_BOOK;
+                bool isRandomBox = consumableTypeProperty != null && consumableTypeProperty.enumValueIndex == ( int )eConsumableType.RANDOM_BOX;
 
                 if ( linkedSkillIdProperty != null )
                 {
@@ -380,6 +384,24 @@ namespace TinyHero.Tools
                     if ( isSkillBook == false )
                     {
                         linkedSkillIdProperty.stringValue = string.Empty;
+                    }
+                }
+
+                if ( randomBoxRewardTableProperty != null )
+                {
+                    using ( new EditorGUI.DisabledScope( isRandomBox == false ) )
+                    {
+                        EditorGUILayout.PropertyField( randomBoxRewardTableProperty );
+                    }
+
+                    if ( isRandomBox == false )
+                    {
+                        randomBoxRewardTableProperty.objectReferenceValue = null;
+                    }
+
+                    if ( isRandomBox && GUILayout.Button( "Open Random Box Editor", GUILayout.Height( 26.0f ) ) )
+                    {
+                        RandomBoxRewardTableEditorWindow.OpenWindow();
                     }
                 }
             }
@@ -572,7 +594,8 @@ namespace TinyHero.Tools
             string nextAssetPath = AssetDatabase.GenerateUniqueAssetPath( $"{ItemDefinitionFolderPath}/Item_NewItem.asset" );
             string assetFileName = Path.GetFileNameWithoutExtension( nextAssetPath );
             CItemDefinition createdItemDefinition = ScriptableObject.CreateInstance<CItemDefinition>();
-            createdItemDefinition.Configure( assetFileName.ToUpperInvariant(), assetFileName, eItemType.CONSUMABLE, string.Empty, null, true, 99 );
+            createdItemDefinition.Configure( assetFileName.ToUpperInvariant(), assetFileName, eItemType.CONSUMABLE, string.Empty, null, true, DefaultMaxStackCount );
+            createdItemDefinition.SetSellPriceItemId( DefaultSellPriceItemId );
             AssetDatabase.CreateAsset( createdItemDefinition, nextAssetPath );
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

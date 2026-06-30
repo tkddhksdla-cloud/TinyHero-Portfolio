@@ -175,7 +175,7 @@ namespace TinyHero.Player
         ///<summary>
         /// 아이템 정의 기준 아이템 추가 시도
         ///</summary>
-        public bool TryAddItem( CItemDefinition _itemDefinition, int _count )
+        public bool TryAddItem( CItemDefinition _itemDefinition, long _count )
         {
             if ( _itemDefinition == null || _count <= 0 )
             {
@@ -185,7 +185,7 @@ namespace TinyHero.Player
             EnsureCategorySlots();
             string itemId = _itemDefinition.GetItemId();
             eItemType itemType = _itemDefinition.GetItemType();
-            int remainingCount = _count;
+            long remainingCount = _count;
 
             if ( _itemDefinition.IsStackable() )
             {
@@ -201,6 +201,33 @@ namespace TinyHero.Player
 
             RaiseInventoryChanged();
             return true;
+        }
+
+        ///<summary>
+        /// 아이템 전체 수량 추가 가능 여부 반환
+        ///</summary>
+        public bool CanAddItem( CItemDefinition _itemDefinition, long _count )
+        {
+            if ( _itemDefinition == null || _count <= 0 )
+            {
+                return false;
+            }
+
+            EnsureCategorySlots();
+            eItemType itemType = _itemDefinition.GetItemType();
+            string itemId = _itemDefinition.GetItemId();
+            long remainingCount = _count;
+            long maxStackCount = _itemDefinition.GetMaxStackCount();
+            List<CInventoryItemEntryData> itemEntryList = GetOrCreateItemEntryList( itemType );
+
+            if ( _itemDefinition.IsStackable() )
+            {
+                remainingCount = CalculateRemainingCountAfterExistingStackCapacity( itemEntryList, itemId, remainingCount, maxStackCount );
+            }
+
+            remainingCount = CalculateRemainingCountAfterEmptySlotCapacity( itemEntryList, remainingCount, maxStackCount );
+            bool result = remainingCount <= 0L;
+            return result;
         }
 
         ///<summary>
@@ -255,7 +282,7 @@ namespace TinyHero.Player
         ///<summary>
         /// 아이템 ID 기준 아이템 추가 시도
         ///</summary>
-        public bool TryAddItemById( string _itemId, int _count )
+        public bool TryAddItemById( string _itemId, long _count )
         {
             if ( string.IsNullOrWhiteSpace( _itemId ) || _count <= 0 )
             {
@@ -437,7 +464,7 @@ namespace TinyHero.Player
         ///<summary>
         /// 아이템 제거 시도
         ///</summary>
-        public bool TryRemoveItem( string _itemId, int _count )
+        public bool TryRemoveItem( string _itemId, long _count )
         {
             EnsureCategorySlots();
 
@@ -447,7 +474,7 @@ namespace TinyHero.Player
             }
 
             string normalizedItemId = _itemId.Trim();
-            int currentItemCount = GetItemCount( normalizedItemId );
+            long currentItemCount = GetItemCount( normalizedItemId );
 
             if ( currentItemCount < _count )
             {
@@ -462,7 +489,7 @@ namespace TinyHero.Player
             }
 
             List<CInventoryItemEntryData> itemEntryList = GetOrCreateItemEntryList( itemDefinition.GetItemType() );
-            int remainingCount = _count;
+            long remainingCount = _count;
 
             for ( int index = itemEntryList.Count - 1; index >= 0; index-- )
             {
@@ -480,9 +507,9 @@ namespace TinyHero.Player
                     continue;
                 }
 
-                int quantity = itemEntryData.GetQuantity();
-                int removedCount = Mathf.Min( quantity, remainingCount );
-                int nextQuantity = quantity - removedCount;
+                long quantity = itemEntryData.GetQuantity();
+                long removedCount = Math.Min( quantity, remainingCount );
+                long nextQuantity = quantity - removedCount;
 
                 if ( nextQuantity <= 0 )
                 {
@@ -509,7 +536,7 @@ namespace TinyHero.Player
         ///<summary>
         /// 지정 슬롯 아이템 수량 제거 시도
         ///</summary>
-        public bool TryRemoveItemAtSlot( eItemType _itemType, int _localSlotIndex, int _count )
+        public bool TryRemoveItemAtSlot( eItemType _itemType, int _localSlotIndex, long _count )
         {
             EnsureCategorySlots();
 
@@ -525,14 +552,14 @@ namespace TinyHero.Player
                 return false;
             }
 
-            int currentQuantity = targetEntryData.GetQuantity();
+            long currentQuantity = targetEntryData.GetQuantity();
 
             if ( currentQuantity < _count )
             {
                 return false;
             }
 
-            int nextQuantity = currentQuantity - _count;
+            long nextQuantity = currentQuantity - _count;
 
             if ( nextQuantity <= 0 )
             {
@@ -550,7 +577,7 @@ namespace TinyHero.Player
         ///<summary>
         /// 지정 전역 슬롯 아이템 수량 제거 시도
         ///</summary>
-        public bool TryRemoveItemAtSlot( int _slotIndex, int _count )
+        public bool TryRemoveItemAtSlot( int _slotIndex, long _count )
         {
             bool isResolved = TryConvertGlobalSlotIndex( _slotIndex, out eItemType itemType, out int localSlotIndex );
 
@@ -566,27 +593,27 @@ namespace TinyHero.Player
         ///<summary>
         /// 아이템 보유 여부 반환
         ///</summary>
-        public bool HasItem( string _itemId, int _requiredCount = 1 )
+        public bool HasItem( string _itemId, long _requiredCount = 1L )
         {
-            int itemCount = GetItemCount( _itemId );
-            bool result = itemCount >= Mathf.Max( 1, _requiredCount );
+            long itemCount = GetItemCount( _itemId );
+            bool result = itemCount >= Math.Max( 1L, _requiredCount );
             return result;
         }
 
         ///<summary>
         /// 아이템 총 수량 반환
         ///</summary>
-        public int GetItemCount( string _itemId )
+        public long GetItemCount( string _itemId )
         {
             EnsureCategorySlots();
 
             if ( string.IsNullOrWhiteSpace( _itemId ) )
             {
-                return 0;
+                return 0L;
             }
 
             string normalizedItemId = _itemId.Trim();
-            int totalQuantity = 0;
+            long totalQuantity = 0L;
             eItemType[] itemTypeArray = GetSupportedItemTypeArray();
 
             for ( int typeIndex = 0; typeIndex < itemTypeArray.Length; typeIndex++ )
@@ -624,29 +651,29 @@ namespace TinyHero.Player
         {
             EnsureCategorySlots();
             CPlayerInventorySnapshotData snapshotData = new CPlayerInventorySnapshotData();
-            List<CInventoryCategoryEntryData> copiedCategoryEntryList = new List<CInventoryCategoryEntryData>();
+            List<CInventoryOccupiedSlotSnapshotData> occupiedSlotSnapshotList = new List<CInventoryOccupiedSlotSnapshotData>();
             eItemType[] itemTypeArray = GetSupportedItemTypeArray();
 
             for ( int typeIndex = 0; typeIndex < itemTypeArray.Length; typeIndex++ )
             {
                 eItemType itemType = itemTypeArray[ typeIndex ];
                 List<CInventoryItemEntryData> sourceEntryList = GetOrCreateItemEntryList( itemType );
-                List<CInventoryItemEntryData> copiedEntryList = new List<CInventoryItemEntryData>();
 
                 for ( int slotIndex = 0; slotIndex < sourceEntryList.Count; slotIndex++ )
                 {
                     CInventoryItemEntryData sourceEntryData = sourceEntryList[ slotIndex ];
-                    CInventoryItemEntryData copiedEntryData = sourceEntryData != null ? sourceEntryData.CreateCopy() : new CInventoryItemEntryData();
-                    copiedEntryList.Add( copiedEntryData );
-                }
 
-                CInventoryCategoryEntryData copiedCategoryEntryData = new CInventoryCategoryEntryData();
-                copiedCategoryEntryData.SetItemType( itemType );
-                copiedCategoryEntryData.SetItemEntryList( copiedEntryList );
-                copiedCategoryEntryList.Add( copiedCategoryEntryData );
+                    if ( sourceEntryData == null || sourceEntryData.IsEmpty() )
+                    {
+                        continue;
+                    }
+
+                    CInventoryOccupiedSlotSnapshotData occupiedSlotSnapshotData = CreateOccupiedSlotSnapshotData( itemType, slotIndex, sourceEntryData );
+                    occupiedSlotSnapshotList.Add( occupiedSlotSnapshotData );
+                }
             }
 
-            snapshotData.SetInventoryCategoryEntryList( copiedCategoryEntryList );
+            snapshotData.SetOccupiedSlotSnapshotList( occupiedSlotSnapshotList );
             return snapshotData;
         }
 
@@ -661,6 +688,14 @@ namespace TinyHero.Player
             if ( _snapshotData == null )
             {
                 RaiseInventoryChanged();
+                return;
+            }
+
+            List<CInventoryOccupiedSlotSnapshotData> occupiedSlotSnapshotList = _snapshotData.GetOccupiedSlotSnapshotList();
+
+            if ( occupiedSlotSnapshotList != null && occupiedSlotSnapshotList.Count > 0 )
+            {
+                LoadOccupiedSlotSnapshotData( occupiedSlotSnapshotList );
                 return;
             }
 
@@ -710,6 +745,73 @@ namespace TinyHero.Player
                     }
 
                     targetEntryData.CopyFrom( sourceEntryData );
+                }
+            }
+
+            RaiseInventoryChanged();
+        }
+
+        ///<summary>
+        /// 점유 인벤토리 슬롯 저장 데이터 생성
+        ///</summary>
+        private CInventoryOccupiedSlotSnapshotData CreateOccupiedSlotSnapshotData( eItemType _itemType, int _localSlotIndex, CInventoryItemEntryData _sourceEntryData )
+        {
+            CInventoryOccupiedSlotSnapshotData snapshotData = new CInventoryOccupiedSlotSnapshotData();
+            snapshotData.itemType = _itemType;
+            snapshotData.localSlotIndex = _localSlotIndex;
+            snapshotData.itemId = _sourceEntryData.GetItemId();
+            snapshotData.quantityValue = _sourceEntryData.GetQuantity();
+            CEquipmentPotentialData potentialData = _sourceEntryData.GetEquipmentPotentialData();
+
+            if ( potentialData != null && potentialData.HasPotential() )
+            {
+                snapshotData.equipmentPotentialSnapshotData = potentialData.CreateSnapshotData();
+            }
+
+            return snapshotData;
+        }
+
+        ///<summary>
+        /// 점유 인벤토리 슬롯 저장 데이터 로드
+        ///</summary>
+        private void LoadOccupiedSlotSnapshotData( List<CInventoryOccupiedSlotSnapshotData> _occupiedSlotSnapshotList )
+        {
+            for ( int index = 0; index < _occupiedSlotSnapshotList.Count; index++ )
+            {
+                CInventoryOccupiedSlotSnapshotData sourceSlotSnapshotData = _occupiedSlotSnapshotList[ index ];
+
+                if ( sourceSlotSnapshotData == null || sourceSlotSnapshotData.IsValid() == false )
+                {
+                    continue;
+                }
+
+                if ( IsValidLocalSlotIndex( sourceSlotSnapshotData.localSlotIndex ) == false )
+                {
+                    continue;
+                }
+
+                bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( sourceSlotSnapshotData.itemId, out CItemDefinition itemDefinition );
+
+                if ( hasDefinition == false || itemDefinition == null || itemDefinition.GetItemType() != sourceSlotSnapshotData.itemType )
+                {
+                    continue;
+                }
+
+                List<CInventoryItemEntryData> targetEntryList = GetOrCreateItemEntryList( sourceSlotSnapshotData.itemType );
+                CInventoryItemEntryData targetEntryData = targetEntryList[ sourceSlotSnapshotData.localSlotIndex ];
+
+                if ( targetEntryData == null )
+                {
+                    targetEntryData = new CInventoryItemEntryData();
+                    targetEntryList[ sourceSlotSnapshotData.localSlotIndex ] = targetEntryData;
+                }
+
+                targetEntryData.SetItemId( sourceSlotSnapshotData.itemId );
+                targetEntryData.SetQuantity( sourceSlotSnapshotData.quantityValue );
+
+                if ( itemDefinition.IsEquipmentItem() )
+                {
+                    targetEntryData.GetEquipmentPotentialData().LoadSnapshotData( sourceSlotSnapshotData.equipmentPotentialSnapshotData );
                 }
             }
 
@@ -937,16 +1039,16 @@ namespace TinyHero.Player
         ///<summary>
         /// 타입별 기존 슬롯 중첩 처리
         ///</summary>
-        private int TryStackToExistingSlots( eItemType _itemType, string _itemId, int _remainingCount, int _maxStackCount )
+        private long TryStackToExistingSlots( eItemType _itemType, string _itemId, long _remainingCount, long _maxStackCount )
         {
             List<CInventoryItemEntryData> itemEntryList = GetOrCreateItemEntryList( _itemType );
-            int remainingCount = _remainingCount;
+            long remainingCount = _remainingCount;
 
             for ( int index = 0; index < itemEntryList.Count; index++ )
             {
                 if ( remainingCount <= 0 )
                 {
-                    return 0;
+                    return 0L;
                 }
 
                 CInventoryItemEntryData itemEntryData = itemEntryList[ index ];
@@ -963,15 +1065,15 @@ namespace TinyHero.Player
                     continue;
                 }
 
-                int currentQuantity = itemEntryData.GetQuantity();
-                int availableCapacity = Mathf.Max( 0, _maxStackCount - currentQuantity );
+                long currentQuantity = itemEntryData.GetQuantity();
+                long availableCapacity = Math.Max( 0L, _maxStackCount - currentQuantity );
 
                 if ( availableCapacity <= 0 )
                 {
                     continue;
                 }
 
-                int addedCount = Mathf.Min( availableCapacity, remainingCount );
+                long addedCount = Math.Min( availableCapacity, remainingCount );
                 itemEntryData.SetQuantity( currentQuantity + addedCount );
                 remainingCount -= addedCount;
             }
@@ -980,12 +1082,94 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 기존 중첩 슬롯 반영 후 잔여 수량 계산
+        ///</summary>
+        private long CalculateRemainingCountAfterExistingStackCapacity( List<CInventoryItemEntryData> _itemEntryList, string _itemId, long _remainingCount, long _maxStackCount )
+        {
+            if ( _itemEntryList == null )
+            {
+                return _remainingCount;
+            }
+
+            long remainingCount = _remainingCount;
+
+            for ( int index = 0; index < _itemEntryList.Count; index++ )
+            {
+                if ( remainingCount <= 0L )
+                {
+                    return 0L;
+                }
+
+                CInventoryItemEntryData itemEntryData = _itemEntryList[ index ];
+
+                if ( itemEntryData == null || itemEntryData.IsEmpty() )
+                {
+                    continue;
+                }
+
+                bool isMatched = string.Equals( itemEntryData.GetItemId(), _itemId, StringComparison.Ordinal );
+
+                if ( isMatched == false )
+                {
+                    continue;
+                }
+
+                long currentQuantity = itemEntryData.GetQuantity();
+                long availableCapacity = Math.Max( 0L, _maxStackCount - currentQuantity );
+
+                if ( availableCapacity <= 0L )
+                {
+                    continue;
+                }
+
+                long resolvedCount = Math.Min( availableCapacity, remainingCount );
+                remainingCount -= resolvedCount;
+            }
+
+            return remainingCount;
+        }
+
+        ///<summary>
+        /// 빈 슬롯 반영 후 잔여 수량 계산
+        ///</summary>
+        private long CalculateRemainingCountAfterEmptySlotCapacity( List<CInventoryItemEntryData> _itemEntryList, long _remainingCount, long _maxStackCount )
+        {
+            if ( _itemEntryList == null )
+            {
+                return _remainingCount;
+            }
+
+            long remainingCount = _remainingCount;
+            long slotCapacity = Math.Max( 1L, _maxStackCount );
+
+            for ( int index = 0; index < _itemEntryList.Count; index++ )
+            {
+                if ( remainingCount <= 0L )
+                {
+                    return 0L;
+                }
+
+                CInventoryItemEntryData itemEntryData = _itemEntryList[ index ];
+
+                if ( itemEntryData != null && itemEntryData.IsEmpty() == false )
+                {
+                    continue;
+                }
+
+                long resolvedCount = Math.Min( slotCapacity, remainingCount );
+                remainingCount -= resolvedCount;
+            }
+
+            return remainingCount;
+        }
+
+        ///<summary>
         /// 타입별 빈 슬롯 채우기 처리
         ///</summary>
-        private int TryFillEmptySlots( eItemType _itemType, string _itemId, int _remainingCount, int _maxStackCount )
+        private long TryFillEmptySlots( eItemType _itemType, string _itemId, long _remainingCount, long _maxStackCount )
         {
             List<CInventoryItemEntryData> itemEntryList = GetOrCreateItemEntryList( _itemType );
-            int remainingCount = _remainingCount;
+            long remainingCount = _remainingCount;
             bool hasDefinition = CItemDefinitionDatabase.TryGetItemDefinition( _itemId, out CItemDefinition itemDefinition );
             bool isEquipmentItem = hasDefinition && itemDefinition != null && itemDefinition.IsEquipmentItem();
 
@@ -993,7 +1177,7 @@ namespace TinyHero.Player
             {
                 if ( remainingCount <= 0 )
                 {
-                    return 0;
+                    return 0L;
                 }
 
                 CInventoryItemEntryData itemEntryData = itemEntryList[ index ];
@@ -1009,7 +1193,7 @@ namespace TinyHero.Player
                     continue;
                 }
 
-                int addedCount = Mathf.Min( Mathf.Max( 1, _maxStackCount ), remainingCount );
+                long addedCount = Math.Min( Math.Max( 1L, _maxStackCount ), remainingCount );
                 itemEntryData.SetItemId( _itemId );
                 itemEntryData.SetQuantity( addedCount );
 

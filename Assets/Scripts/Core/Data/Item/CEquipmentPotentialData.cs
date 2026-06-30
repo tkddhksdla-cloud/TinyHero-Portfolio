@@ -54,10 +54,28 @@ namespace TinyHero.Core.Data
     [Serializable]
     public sealed class CEquipmentPotentialLineData
     {
+        [SerializeField] private string optionKey = string.Empty;
         [SerializeField] private eEquipmentPotentialOptionType optionType = eEquipmentPotentialOptionType.NONE;
         [SerializeField] private eEquipmentPotentialValueType valueType = eEquipmentPotentialValueType.VALUE;
         [SerializeField] private eEquipmentPotentialRank lineRank = eEquipmentPotentialRank.COMMON;
         [SerializeField] private float value;
+
+        ///<summary>
+        /// 잠재 옵션 안정 키 반환
+        ///</summary>
+        public string GetOptionKey()
+        {
+            string result = string.IsNullOrWhiteSpace( optionKey ) ? string.Empty : optionKey.Trim();
+            return result;
+        }
+
+        ///<summary>
+        /// 잠재 옵션 안정 키 설정
+        ///</summary>
+        public void SetOptionKey( string _optionKey )
+        {
+            optionKey = string.IsNullOrWhiteSpace( _optionKey ) ? string.Empty : _optionKey.Trim();
+        }
 
         ///<summary>
         /// 잠재 옵션 종류 반환
@@ -141,6 +159,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public void Clear()
         {
+            optionKey = string.Empty;
             optionType = eEquipmentPotentialOptionType.NONE;
             valueType = eEquipmentPotentialValueType.VALUE;
             lineRank = eEquipmentPotentialRank.COMMON;
@@ -153,6 +172,7 @@ namespace TinyHero.Core.Data
         public CEquipmentPotentialLineData CreateCopy()
         {
             CEquipmentPotentialLineData copiedData = new CEquipmentPotentialLineData();
+            copiedData.optionKey = optionKey;
             copiedData.optionType = optionType;
             copiedData.valueType = valueType;
             copiedData.lineRank = lineRank;
@@ -171,10 +191,59 @@ namespace TinyHero.Core.Data
                 return;
             }
 
-            optionType = _sourceData.optionType;
-            valueType = _sourceData.valueType;
-            lineRank = _sourceData.lineRank;
-            value = _sourceData.value;
+            optionKey = _sourceData.GetOptionKey();
+            optionType = _sourceData.GetOptionType();
+            valueType = _sourceData.GetValueType();
+            lineRank = _sourceData.GetLineRank();
+            value = _sourceData.GetValue();
+        }
+
+        ///<summary>
+        /// 잠재 옵션 테이블 엔트리 반영
+        ///</summary>
+        public void CopyFromOptionEntry( CEquipmentPotentialOptionEntry _optionEntry, eEquipmentPotentialRank _lineRank )
+        {
+            if ( _optionEntry == null )
+            {
+                Clear();
+                return;
+            }
+
+            optionKey = _optionEntry.GetOptionKey();
+            optionType = _optionEntry.GetOptionType();
+            valueType = _optionEntry.GetValueType();
+            lineRank = _lineRank;
+            value = _optionEntry.GetValue();
+        }
+    }
+
+    ///<summary>
+    /// 장비 잠재 줄 저장 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CEquipmentPotentialLineSnapshotData
+    {
+        public int lineIndex;
+        public string optionKey = string.Empty;
+        public eEquipmentPotentialRank lineRank = eEquipmentPotentialRank.COMMON;
+    }
+
+    ///<summary>
+    /// 장비 잠재 저장 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CEquipmentPotentialSnapshotData
+    {
+        public eEquipmentPotentialRank rank = eEquipmentPotentialRank.COMMON;
+        public List<CEquipmentPotentialLineSnapshotData> lineSnapshotList = new List<CEquipmentPotentialLineSnapshotData>();
+
+        ///<summary>
+        /// 잠재 저장 데이터 보유 여부 반환
+        ///</summary>
+        public bool HasPotential()
+        {
+            bool result = lineSnapshotList != null && lineSnapshotList.Count > 0;
+            return result;
         }
     }
 
@@ -396,6 +465,93 @@ namespace TinyHero.Core.Data
             CEquipmentPotentialData copiedData = new CEquipmentPotentialData();
             copiedData.CopyFrom( this );
             return copiedData;
+        }
+
+        ///<summary>
+        /// 잠재 저장 데이터 생성
+        ///</summary>
+        public CEquipmentPotentialSnapshotData CreateSnapshotData()
+        {
+            EnsureLineCapacity();
+            CEquipmentPotentialSnapshotData snapshotData = new CEquipmentPotentialSnapshotData();
+            snapshotData.rank = rank;
+
+            for ( int index = 0; index < lineDataList.Count; index++ )
+            {
+                CEquipmentPotentialLineData lineData = lineDataList[ index ];
+
+                if ( lineData == null || lineData.HasValue() == false )
+                {
+                    continue;
+                }
+
+                string resolvedOptionKey = lineData.GetOptionKey();
+
+                if ( string.IsNullOrWhiteSpace( resolvedOptionKey ) )
+                {
+                    bool hasResolvedKey = CEquipmentPotentialDatabase.TryResolveOptionKey( lineData, out string fallbackOptionKey );
+                    resolvedOptionKey = hasResolvedKey ? fallbackOptionKey : string.Empty;
+                }
+
+                if ( string.IsNullOrWhiteSpace( resolvedOptionKey ) )
+                {
+                    continue;
+                }
+
+                CEquipmentPotentialLineSnapshotData lineSnapshotData = new CEquipmentPotentialLineSnapshotData();
+                lineSnapshotData.lineIndex = index;
+                lineSnapshotData.optionKey = resolvedOptionKey;
+                lineSnapshotData.lineRank = lineData.GetLineRank();
+                snapshotData.lineSnapshotList.Add( lineSnapshotData );
+            }
+
+            return snapshotData;
+        }
+
+        ///<summary>
+        /// 잠재 저장 데이터 반영
+        ///</summary>
+        public void LoadSnapshotData( CEquipmentPotentialSnapshotData _snapshotData )
+        {
+            Clear();
+
+            if ( _snapshotData == null || _snapshotData.lineSnapshotList == null )
+            {
+                return;
+            }
+
+            rank = _snapshotData.rank;
+
+            for ( int index = 0; index < _snapshotData.lineSnapshotList.Count; index++ )
+            {
+                CEquipmentPotentialLineSnapshotData lineSnapshotData = _snapshotData.lineSnapshotList[ index ];
+
+                if ( lineSnapshotData == null )
+                {
+                    continue;
+                }
+
+                if ( lineSnapshotData.lineIndex < 0 || lineSnapshotData.lineIndex >= FixedLineCount )
+                {
+                    continue;
+                }
+
+                bool hasOptionEntry = CEquipmentPotentialDatabase.TryGetOptionEntryByKey( lineSnapshotData.optionKey, out CEquipmentPotentialOptionEntry optionEntry );
+
+                if ( hasOptionEntry == false || optionEntry == null )
+                {
+                    continue;
+                }
+
+                CEquipmentPotentialLineData lineData = GetLineData( lineSnapshotData.lineIndex );
+
+                if ( lineData == null )
+                {
+                    continue;
+                }
+
+                lineData.CopyFromOptionEntry( optionEntry, lineSnapshotData.lineRank );
+            }
         }
 
         ///<summary>

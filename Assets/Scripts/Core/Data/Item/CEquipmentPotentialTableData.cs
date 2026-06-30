@@ -10,12 +10,22 @@ namespace TinyHero.Core.Data
     [Serializable]
     public sealed class CEquipmentPotentialOptionEntry
     {
+        [SerializeField] private string optionKey = string.Empty;
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
         [SerializeField] private eEquipmentPotentialRank rank = eEquipmentPotentialRank.COMMON;
         [SerializeField] private eEquipmentPotentialOptionType optionType = eEquipmentPotentialOptionType.NONE;
         [SerializeField] private eEquipmentPotentialValueType valueType = eEquipmentPotentialValueType.VALUE;
         [SerializeField] private float value = 1.0f;
         [SerializeField] private int weight = 1;
+
+        ///<summary>
+        /// 잠재 옵션 안정 키 반환
+        ///</summary>
+        public string GetOptionKey()
+        {
+            string result = string.IsNullOrWhiteSpace( optionKey ) ? BuildFallbackOptionKey() : optionKey.Trim();
+            return result;
+        }
 
         ///<summary>
         /// 장비 타입 반환
@@ -68,6 +78,49 @@ namespace TinyHero.Core.Data
         public int GetWeight()
         {
             int result = Mathf.Max( 0, weight );
+            return result;
+        }
+
+        ///<summary>
+        /// 잠재 옵션 안정 키 일치 여부 반환
+        ///</summary>
+        public bool IsMatchedOptionKey( string _optionKey )
+        {
+            if ( string.IsNullOrWhiteSpace( _optionKey ) )
+            {
+                return false;
+            }
+
+            string normalizedOptionKey = _optionKey.Trim();
+            bool result = string.Equals( GetOptionKey(), normalizedOptionKey, StringComparison.Ordinal );
+            return result;
+        }
+
+        ///<summary>
+        /// 잠재 옵션 값 일치 여부 반환
+        ///</summary>
+        public bool IsMatchedLineData( CEquipmentPotentialLineData _lineData )
+        {
+            if ( _lineData == null )
+            {
+                return false;
+            }
+
+            bool isOptionMatched = optionType == _lineData.GetOptionType();
+            bool isValueTypeMatched = GetValueType() == _lineData.GetValueType();
+            bool isValueMatched = Mathf.Approximately( value, _lineData.GetValue() );
+            bool result = isOptionMatched && isValueTypeMatched && isValueMatched;
+            return result;
+        }
+
+        ///<summary>
+        /// 잠재 옵션 기본 안정 키 구성
+        ///</summary>
+        private string BuildFallbackOptionKey()
+        {
+            string valueTypeText = GetValueType().ToString();
+            string valueText = value.ToString( "0.###", System.Globalization.CultureInfo.InvariantCulture ).Replace( ".", "P" );
+            string result = $"{equipmentType}_{rank}_{optionType}_{valueTypeText}_{valueText}";
             return result;
         }
     }
