@@ -1,6 +1,6 @@
+using System;
 using TinyHero.Core;
 using TinyHero.Player;
-using UnityEngine;
 
 namespace TinyHero.UI
 {
@@ -10,7 +10,6 @@ namespace TinyHero.UI
     public sealed class CItemInventoryUiManager : CSingleTon<CItemInventoryUiManager>
     {
         private CPlayerInventoryManager targetInventoryManager;
-        private GameObject inventoryPopupPrefabObject;
         private PopupItemInventory inventoryUiController;
         private bool isInventoryToggleLocked;
 
@@ -39,21 +38,21 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool shouldCreateInventoryUi = inventoryUiController == null;
-            PopupItemInventory resolvedInventoryUiController = ResolveOrCreateInventoryUiController();
-
-            if ( resolvedInventoryUiController == null )
+            if ( inventoryUiController != null )
             {
+                bool nextVisibleState = inventoryUiController.IsInventoryVisible() == false;
+                inventoryUiController.SetInventoryVisible( nextVisibleState );
                 return;
             }
 
-            if ( shouldCreateInventoryUi )
-            {
-                return;
-            }
-
-            bool nextVisibleState = resolvedInventoryUiController.IsInventoryVisible() == false;
-            resolvedInventoryUiController.SetInventoryVisible( nextVisibleState );
+            RequestInventoryUiController(
+                ( PopupItemInventory _createdInventoryUiController ) =>
+                {
+                    if ( _createdInventoryUiController == null )
+                    {
+                        return;
+                    }
+                } );
         }
 
         ///<summary>
@@ -66,18 +65,35 @@ namespace TinyHero.UI
                 targetInventoryManager = _targetInventoryManager;
             }
 
-            PopupItemInventory resolvedInventoryUiController = ResolveOrCreateInventoryUiController();
-
-            if ( resolvedInventoryUiController == null )
+            if ( inventoryUiController == null )
             {
                 return null;
             }
 
-            resolvedInventoryUiController.BindInventoryManager( targetInventoryManager );
-            resolvedInventoryUiController.SetEquipmentStatusPanelVisible( false );
-            resolvedInventoryUiController.SetInventoryVisible( true );
-            resolvedInventoryUiController.SnapWindowToRightSide();
-            return resolvedInventoryUiController;
+            ConfigureInventoryForShop( inventoryUiController );
+            return inventoryUiController;
+        }
+
+        ///<summary>
+        /// 상점 연동용 인벤토리 비동기 열기 처리
+        ///</summary>
+        public void OpenInventoryForShopAsync( CPlayerInventoryManager _targetInventoryManager, Action<PopupItemInventory> _onCompleted )
+        {
+            if ( _targetInventoryManager != null )
+            {
+                targetInventoryManager = _targetInventoryManager;
+            }
+
+            RequestInventoryUiController(
+                ( PopupItemInventory _resolvedInventoryUiController ) =>
+                {
+                    if ( _resolvedInventoryUiController != null )
+                    {
+                        ConfigureInventoryForShop( _resolvedInventoryUiController );
+                    }
+
+                    InvokeInventoryUiControllerCompletedHandler( _onCompleted, _resolvedInventoryUiController );
+                } );
         }
 
         ///<summary>
@@ -121,59 +137,67 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 인벤토리 UI 컨트롤러 결정
+        /// 인벤토리 UI 컨트롤러 비동기 요청
         ///</summary>
-        private PopupItemInventory ResolveOrCreateInventoryUiController()
+        private void RequestInventoryUiController( Action<PopupItemInventory> _onCompleted )
         {
             if ( inventoryUiController != null )
             {
                 inventoryUiController.BindInventoryManager( targetInventoryManager );
-                return inventoryUiController;
-            }
-
-            if ( inventoryPopupPrefabObject == null )
-            {
-                inventoryPopupPrefabObject = LoadInventoryPopupPrefabObject();
-            }
-
-            if ( inventoryPopupPrefabObject == null )
-            {
-                return null;
+                InvokeInventoryUiControllerCompletedHandler( _onCompleted, inventoryUiController );
+                return;
             }
 
             CUINavigationController navigationController = CUINavigationController.Instance;
 
             if ( navigationController == null )
             {
-                return null;
+                InvokeInventoryUiControllerCompletedHandler( _onCompleted, null );
+                return;
             }
 
-            PopupItemInventory createdInventoryUiController = navigationController.AddPopup<PopupItemInventory>( inventoryPopupPrefabObject, true );
+            navigationController.AddPopupAsync<PopupItemInventory>(
+                eResourceKey.POPUP_ITEM_INVENTORY,
+                true,
+                ( PopupItemInventory _createdInventoryUiController ) =>
+                {
+                    if ( _createdInventoryUiController != null )
+                    {
+                        inventoryUiController = _createdInventoryUiController;
+                        inventoryUiController.BindInventoryManager( targetInventoryManager );
+                    }
 
-            if ( createdInventoryUiController == null )
-            {
-                return null;
-            }
-
-            createdInventoryUiController.BindInventoryManager( targetInventoryManager );
-            inventoryUiController = createdInventoryUiController;
-            return inventoryUiController;
+                    InvokeInventoryUiControllerCompletedHandler( _onCompleted, inventoryUiController );
+                } );
         }
 
         ///<summary>
-        /// 인벤토리 팝업 프리팹 로드
+        /// 상점 연동용 인벤토리 표시 상태 구성
         ///</summary>
-        private GameObject LoadInventoryPopupPrefabObject()
+        private void ConfigureInventoryForShop( PopupItemInventory _inventoryUiController )
         {
-            CResourceManager resourceManager = CResourceManager.Instance;
-
-            if ( resourceManager == null )
+            if ( _inventoryUiController == null )
             {
-                return null;
+                return;
             }
 
-            GameObject loadedPrefabObject = resourceManager.GetInventoryPopupPrefab();
-            return loadedPrefabObject;
+            _inventoryUiController.BindInventoryManager( targetInventoryManager );
+            _inventoryUiController.SetEquipmentStatusPanelVisible( false );
+            _inventoryUiController.SetInventoryVisible( true );
+            _inventoryUiController.SnapWindowToRightSide();
+        }
+
+        ///<summary>
+        /// 인벤토리 UI 컨트롤러 요청 완료 콜백 호출
+        ///</summary>
+        private void InvokeInventoryUiControllerCompletedHandler( Action<PopupItemInventory> _onCompleted, PopupItemInventory _inventoryUiController )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke( _inventoryUiController );
         }
     }
 }

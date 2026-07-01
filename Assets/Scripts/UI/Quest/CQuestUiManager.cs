@@ -1,3 +1,4 @@
+using System;
 using TinyHero.Core;
 using TinyHero.Player;
 using UnityEngine;
@@ -10,8 +11,6 @@ namespace TinyHero.UI
     public sealed class CQuestUiManager : CSingleTon<CQuestUiManager>
     {
         private PlayerController targetPlayerController;
-        private GameObject npcQuestPopupPrefabObject;
-        private GameObject playerQuestPopupPrefabObject;
         private PopupQuestList npcQuestUiController;
         private PopupQuestList playerQuestUiController;
 
@@ -35,34 +34,22 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool shouldCreateQuestUi = playerQuestUiController == null;
-            PopupQuestList resolvedQuestUiController = ResolveOrCreatePlayerQuestUiController();
-
-            if ( resolvedQuestUiController == null )
+            if ( playerQuestUiController != null )
             {
+                ToggleResolvedPlayerQuestListUi( playerQuestUiController, resolvedPlayerController, false );
                 return;
             }
 
-            if ( shouldCreateQuestUi )
-            {
-                resolvedQuestUiController.SetLayerVisible( false );
-            }
+            RequestPlayerQuestUiController(
+                ( PopupQuestList _createdQuestUiController ) =>
+                {
+                    if ( _createdQuestUiController == null )
+                    {
+                        return;
+                    }
 
-            bool hasVisibleQuestUi = PopupQuestList.IsAnyQuestUiVisible();
-            bool isPlayerQuestUiVisible = resolvedQuestUiController.IsQuestListVisible();
-
-            if ( isPlayerQuestUiVisible )
-            {
-                resolvedQuestUiController.TogglePlayerQuestListUi( resolvedPlayerController );
-                return;
-            }
-
-            if ( hasVisibleQuestUi )
-            {
-                return;
-            }
-
-            resolvedQuestUiController.TogglePlayerQuestListUi( resolvedPlayerController );
+                    ToggleResolvedPlayerQuestListUi( _createdQuestUiController, resolvedPlayerController, true );
+                } );
         }
 
         ///<summary>
@@ -75,105 +62,116 @@ namespace TinyHero.UI
                 return;
             }
 
-            PopupQuestList resolvedQuestUiController = ResolveOrCreateNpcQuestUiController();
+            if ( npcQuestUiController != null )
+            {
+                ShowResolvedNpcQuestListUi( npcQuestUiController, _npcObject, _playerController );
+                return;
+            }
 
-            if ( resolvedQuestUiController == null )
+            RequestNpcQuestUiController(
+                ( PopupQuestList _createdQuestUiController ) =>
+                {
+                    ShowResolvedNpcQuestListUi( _createdQuestUiController, _npcObject, _playerController );
+                } );
+        }
+
+        ///<summary>
+        /// 플레이어 퀘스트 UI 컨트롤러 비동기 요청
+        ///</summary>
+        private void RequestPlayerQuestUiController( Action<PopupQuestList> _onCompleted )
+        {
+            RequestQuestUiController( eResourceKey.POPUP_QUEST_LIST_PLAYER, ( PopupQuestList _questUiController ) =>
+            {
+                playerQuestUiController = _questUiController;
+                InvokeQuestUiControllerCompletedHandler( _onCompleted, _questUiController );
+            } );
+        }
+
+        ///<summary>
+        /// NPC 퀘스트 UI 컨트롤러 비동기 요청
+        ///</summary>
+        private void RequestNpcQuestUiController( Action<PopupQuestList> _onCompleted )
+        {
+            RequestQuestUiController( eResourceKey.POPUP_QUEST_LIST_NPC, ( PopupQuestList _questUiController ) =>
+            {
+                npcQuestUiController = _questUiController;
+                InvokeQuestUiControllerCompletedHandler( _onCompleted, _questUiController );
+            } );
+        }
+
+        ///<summary>
+        /// 퀘스트 UI 컨트롤러 공통 비동기 요청
+        ///</summary>
+        private void RequestQuestUiController( eResourceKey _resourceKey, Action<PopupQuestList> _onCompleted )
+        {
+            CUINavigationController navigationController = CUINavigationController.Instance;
+
+            if ( navigationController == null )
+            {
+                InvokeQuestUiControllerCompletedHandler( _onCompleted, null );
+                return;
+            }
+
+            navigationController.AddPopupAsync<PopupQuestList>( _resourceKey, true, _onCompleted );
+        }
+
+        ///<summary>
+        /// 준비된 플레이어 퀘스트 UI 토글
+        ///</summary>
+        private void ToggleResolvedPlayerQuestListUi( PopupQuestList _questUiController, PlayerController _playerController, bool _isNewlyCreated )
+        {
+            if ( _questUiController == null || _playerController == null )
             {
                 return;
             }
 
-            resolvedQuestUiController.SetLayerVisible( false );
-            resolvedQuestUiController.ShowQuestListUi( _npcObject, _playerController );
+            if ( _isNewlyCreated )
+            {
+                _questUiController.SetLayerVisible( false );
+            }
+
+            bool hasVisibleQuestUi = PopupQuestList.IsAnyQuestUiVisible();
+            bool isPlayerQuestUiVisible = _questUiController.IsQuestListVisible();
+
+            if ( isPlayerQuestUiVisible )
+            {
+                _questUiController.TogglePlayerQuestListUi( _playerController );
+                return;
+            }
+
+            if ( hasVisibleQuestUi )
+            {
+                return;
+            }
+
+            _questUiController.TogglePlayerQuestListUi( _playerController );
         }
 
         ///<summary>
-        /// 플레이어 퀘스트 UI 컨트롤러 결정
+        /// 준비된 NPC 퀘스트 UI 표시
         ///</summary>
-        private PopupQuestList ResolveOrCreatePlayerQuestUiController()
+        private void ShowResolvedNpcQuestListUi( PopupQuestList _questUiController, CNPCObject _npcObject, PlayerController _playerController )
         {
-            if ( playerQuestUiController != null )
+            if ( _questUiController == null || _npcObject == null || _playerController == null )
             {
-                return playerQuestUiController;
+                return;
             }
 
-            if ( playerQuestPopupPrefabObject == null )
-            {
-                CResourceManager resourceManager = CResourceManager.Instance;
-
-                if ( resourceManager == null )
-                {
-                    return null;
-                }
-
-                playerQuestPopupPrefabObject = resourceManager.GetPlayerQuestPopupPrefab();
-            }
-
-            if ( playerQuestPopupPrefabObject == null )
-            {
-                return null;
-            }
-
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                return null;
-            }
-
-            PopupQuestList createdQuestUiController = navigationController.AddPopup<PopupQuestList>( playerQuestPopupPrefabObject, true );
-
-            if ( createdQuestUiController == null )
-            {
-                return null;
-            }
-
-            playerQuestUiController = createdQuestUiController;
-            return playerQuestUiController;
+            _questUiController.SetLayerVisible( false );
+            _questUiController.ShowQuestListUi( _npcObject, _playerController );
         }
 
         ///<summary>
-        /// NPC 퀘스트 UI 컨트롤러 결정
+        /// 퀘스트 UI 컨트롤러 요청 완료 콜백 호출
         ///</summary>
-        private PopupQuestList ResolveOrCreateNpcQuestUiController()
+        private void InvokeQuestUiControllerCompletedHandler( Action<PopupQuestList> _onCompleted, PopupQuestList _questUiController )
         {
-            if ( npcQuestUiController != null )
+            if ( _onCompleted == null )
             {
-                return npcQuestUiController;
+                return;
             }
 
-            if ( npcQuestPopupPrefabObject == null )
-            {
-                CResourceManager resourceManager = CResourceManager.Instance;
-
-                if ( resourceManager == null )
-                {
-                    return null;
-                }
-
-                npcQuestPopupPrefabObject = resourceManager.GetNpcQuestPopupPrefab();
-            }
-
-            if ( npcQuestPopupPrefabObject == null )
-            {
-                return null;
-            }
-
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                return null;
-            }
-
-            PopupQuestList createdQuestUiController = navigationController.AddPopup<PopupQuestList>( npcQuestPopupPrefabObject, true );
-
-            if ( createdQuestUiController == null )
-            {
-                return null;
-            }
-
-            npcQuestUiController = createdQuestUiController;
-            return npcQuestUiController;
+            _onCompleted.Invoke( _questUiController );
         }
 
         ///<summary>

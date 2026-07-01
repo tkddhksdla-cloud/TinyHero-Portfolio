@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using TinyHero.Core;
 using TinyHero.Core.Data;
-using UnityEngine;
 
 namespace TinyHero.UI
 {
@@ -10,7 +9,8 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CRewardUiManager : CSingleTon<CRewardUiManager>
     {
-        private GameObject rewardPopupPrefabObject;
+        private readonly List<List<CRewardItemData>> pendingRewardItemDataListQueue = new List<List<CRewardItemData>>();
+
         private PopupReward rewardPopup;
 
         ///<summary>
@@ -28,63 +28,82 @@ namespace TinyHero.UI
         ///</summary>
         public void ShowItemRewardList( IReadOnlyList<CRewardItemData> _rewardItemDataList )
         {
-            if ( HasValidRewardItem( _rewardItemDataList ) == false )
+            List<CRewardItemData> validRewardItemDataList = CreateValidRewardItemDataList( _rewardItemDataList );
+
+            if ( validRewardItemDataList.Count == 0 )
             {
                 return;
             }
 
-            PopupReward resolvedRewardPopup = ResolveOrCreateRewardPopup();
-
-            if ( resolvedRewardPopup == null )
-            {
-                return;
-            }
-
-            resolvedRewardPopup.ShowRewardList( _rewardItemDataList );
-        }
-
-        ///<summary>
-        /// 보상 팝업 생성 또는 반환
-        ///</summary>
-        private PopupReward ResolveOrCreateRewardPopup()
-        {
             if ( rewardPopup != null )
             {
                 rewardPopup.SetLayerVisible( true );
                 rewardPopup.BringLayerToFront();
-                return rewardPopup;
+                rewardPopup.ShowRewardList( validRewardItemDataList );
+                return;
             }
 
-            if ( rewardPopupPrefabObject == null )
-            {
-                CResourceManager resourceManager = CResourceManager.Instance;
-                rewardPopupPrefabObject = resourceManager != null ? resourceManager.GetRewardPopupPrefab() : null;
-            }
-
-            if ( rewardPopupPrefabObject == null )
-            {
-                return null;
-            }
-
+            pendingRewardItemDataListQueue.Add( validRewardItemDataList );
             CUINavigationController navigationController = CUINavigationController.Instance;
 
             if ( navigationController == null )
             {
-                return null;
+                pendingRewardItemDataListQueue.Clear();
+                return;
             }
 
-            rewardPopup = navigationController.AddPopup<PopupReward>( rewardPopupPrefabObject, true );
-            return rewardPopup;
+            navigationController.AddPopupAsync<PopupReward>(
+                eResourceKey.POPUP_REWARD,
+                true,
+                ( PopupReward _createdRewardPopup ) =>
+                {
+                    if ( _createdRewardPopup == null )
+                    {
+                        pendingRewardItemDataListQueue.Clear();
+                        return;
+                    }
+
+                    rewardPopup = _createdRewardPopup;
+                    FlushPendingRewardItemDataListQueue();
+                } );
         }
 
         ///<summary>
-        /// 유효 보상 아이템 포함 여부 반환
+        /// 대기 중인 보상 목록 일괄 표시
         ///</summary>
-        private bool HasValidRewardItem( IReadOnlyList<CRewardItemData> _rewardItemDataList )
+        private void FlushPendingRewardItemDataListQueue()
         {
+            if ( rewardPopup == null )
+            {
+                pendingRewardItemDataListQueue.Clear();
+                return;
+            }
+
+            for ( int index = 0; index < pendingRewardItemDataListQueue.Count; index++ )
+            {
+                List<CRewardItemData> rewardItemDataList = pendingRewardItemDataListQueue[ index ];
+
+                if ( rewardItemDataList == null || rewardItemDataList.Count == 0 )
+                {
+                    continue;
+                }
+
+                rewardPopup.ShowRewardList( rewardItemDataList );
+            }
+
+            pendingRewardItemDataListQueue.Clear();
+        }
+
+        ///<summary>
+        /// 유효 보상 아이템 목록 생성
+        ///</summary>
+        private List<CRewardItemData> CreateValidRewardItemDataList( IReadOnlyList<CRewardItemData> _rewardItemDataList )
+        {
+            List<CRewardItemData> validRewardItemDataList = new List<CRewardItemData>();
+
             if ( _rewardItemDataList == null )
             {
-                return false;
+                return validRewardItemDataList;
             }
 
             for ( int index = 0; index < _rewardItemDataList.Count; index++ )
@@ -96,10 +115,10 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                return true;
+                validRewardItemDataList.Add( rewardItemData );
             }
 
-            return false;
+            return validRewardItemDataList;
         }
     }
 }

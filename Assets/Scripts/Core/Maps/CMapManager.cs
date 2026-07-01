@@ -73,6 +73,7 @@ namespace TinyHero.Maps
         private string currentMapName = string.Empty;
         private int currentMapRuntimeVersion;
         private bool isTransitionInProgress;
+        private bool isMapLoadInProgress;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -216,14 +217,14 @@ namespace TinyHero.Maps
 
             string trimmedMapId = _mapId.Trim();
             string trimmedEntryPortalId = string.IsNullOrWhiteSpace( _entryPortalId ) ? string.Empty : _entryPortalId.Trim();
-            CMapToolSaveData loadedData = LoadMapSaveData( trimmedMapId );
+            CMapToolSaveData loadedData = LoadMapSaveDataFromResources( trimmedMapId );
 
             if ( loadedData == null )
             {
                 return false;
             }
 
-            ApplyMapData( loadedData, trimmedEntryPortalId );
+            ApplyMapData( loadedData, trimmedEntryPortalId, null, null );
             return true;
         }
 
@@ -266,7 +267,7 @@ namespace TinyHero.Maps
             EnsureFadeOverlayExists();
             SetFadeAlpha( 0.0f );
             yield return IE_FadeAlpha( 0.0f, 1.0f );
-            LoadMapImmediately( _mapId, _entryPortalId );
+            yield return IE_LoadMapDataAndApply( _mapId, _entryPortalId, null );
             yield return null;
             yield return new WaitForSeconds( MapTransitionBlackHoldSeconds );
             yield return IE_FadeAlpha( 1.0f, 0.0f );
@@ -322,7 +323,7 @@ namespace TinyHero.Maps
             isTransitionInProgress = true;
             EnsureFadeOverlayExists();
             SetFadeAlpha( 1.0f );
-            LoadMapImmediately( _mapId, _entryPortalId );
+            yield return IE_LoadMapDataAndApply( _mapId, _entryPortalId, null );
             yield return null;
             yield return IE_FadeAlpha( 1.0f, 0.0f );
             ShowCurrentMapTitleLogoUi();
@@ -577,19 +578,37 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
-        /// 맵 저장 데이터 로드
+        /// 맵 저장 데이터 Resources 로드
         ///</summary>
-        private CMapToolSaveData LoadMapSaveData(string _mapId)
+        private CMapToolSaveData LoadMapSaveDataFromResources(string _mapId)
         {
-            string resourcePath = MapDataResourceFolderPath + _mapId;
+            string resourcePath = BuildMapDataResourcePath( _mapId );
             TextAsset textAsset = Resources.Load<TextAsset>( resourcePath );
+            CMapToolSaveData loadedData = CreateMapSaveDataFromTextAsset( textAsset );
+            return loadedData;
+        }
 
-            if ( textAsset == null )
+        ///<summary>
+        /// 맵 데이터 리소스 경로 구성
+        ///</summary>
+        private string BuildMapDataResourcePath( string _mapId )
+        {
+            string trimmedMapId = string.IsNullOrWhiteSpace( _mapId ) ? string.Empty : _mapId.Trim();
+            string result = MapDataResourceFolderPath + trimmedMapId;
+            return result;
+        }
+
+        ///<summary>
+        /// TextAsset 기반 맵 저장 데이터 생성
+        ///</summary>
+        private CMapToolSaveData CreateMapSaveDataFromTextAsset( TextAsset _textAsset )
+        {
+            if ( _textAsset == null )
             {
                 return null;
             }
 
-            string jsonText = textAsset.text;
+            string jsonText = _textAsset.text;
 
             if ( string.IsNullOrWhiteSpace( jsonText ) )
             {
@@ -601,9 +620,639 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 맵 데이터 비동기 로드 및 적용
+        ///</summary>
+        private IEnumerator IE_LoadMapDataAndApply( string _mapId, string _entryPortalId, System.Action<bool> _onCompleted )
+        {
+            if ( isMapLoadInProgress )
+            {
+                InvokeMapLoadCompletedHandler( _onCompleted, false );
+                yield break;
+            }
+
+            isMapLoadInProgress = true;
+            bool isLoadCompleted = false;
+            TextAsset loadedTextAsset = null;
+            LoadMapTextAssetAsync( _mapId, delegate( TextAsset _loadedTextAsset )
+            {
+                loadedTextAsset = _loadedTextAsset;
+                isLoadCompleted = true;
+            } );
+
+            while ( isLoadCompleted == false )
+            {
+                yield return null;
+            }
+
+            CMapToolSaveData loadedData = CreateMapSaveDataFromTextAsset( loadedTextAsset );
+            Sprite loadedBackgroundSprite = null;
+            GameObject loadedPortalPrefab = null;
+            bool wasApplied = loadedData != null;
+
+            if ( wasApplied )
+            {
+                bool isBackgroundLoadCompleted = false;
+                LoadBackgroundSpriteAsync( loadedData.backgroundSpriteName, delegate( Sprite _loadedBackgroundSprite )
+                {
+                    loadedBackgroundSprite = _loadedBackgroundSprite;
+                    isBackgroundLoadCompleted = true;
+                } );
+
+                while ( isBackgroundLoadCompleted == false )
+                {
+                    yield return null;
+                }
+
+                bool isPortalLoadCompleted = false;
+                LoadPortalPrefabAsync( delegate( GameObject _loadedPortalPrefab )
+                {
+                    loadedPortalPrefab = _loadedPortalPrefab;
+                    isPortalLoadCompleted = true;
+                } );
+
+                while ( isPortalLoadCompleted == false )
+                {
+                    yield return null;
+                }
+
+                bool isMonsterPrefabLoadCompleted = false;
+                LoadRequiredMonsterPrefabsAsync( loadedData.monsters, delegate
+                {
+                    isMonsterPrefabLoadCompleted = true;
+                } );
+
+                while ( isMonsterPrefabLoadCompleted == false )
+                {
+                    yield return null;
+                }
+
+                bool isNpcPrefabLoadCompleted = false;
+                LoadRequiredNpcPrefabsAsync( loadedData.npcs, delegate
+                {
+                    isNpcPrefabLoadCompleted = true;
+                } );
+
+                while ( isNpcPrefabLoadCompleted == false )
+                {
+                    yield return null;
+                }
+            }
+
+            if ( wasApplied )
+            {
+                ApplyMapData( loadedData, _entryPortalId, loadedBackgroundSprite, loadedPortalPrefab );
+            }
+            else
+            {
+                Debug.LogWarning( $"[ MapManager ] MapData load failed: {_mapId}" );
+            }
+
+            isMapLoadInProgress = false;
+            InvokeMapLoadCompletedHandler( _onCompleted, wasApplied );
+        }
+
+        ///<summary>
+        /// 맵 TextAsset 비동기 로드
+        ///</summary>
+        private void LoadMapTextAssetAsync( string _mapId, System.Action<TextAsset> _onCompleted )
+        {
+            string resourcePath = BuildMapDataResourcePath( _mapId );
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                TextAsset fallbackTextAsset = Resources.Load<TextAsset>( resourcePath );
+                InvokeMapTextAssetLoadedHandler( _onCompleted, fallbackTextAsset );
+                return;
+            }
+
+            resourceManager.LoadAssetAsync<TextAsset>( resourcePath, resourcePath, _onCompleted );
+        }
+
+        ///<summary>
+        /// 맵 TextAsset 로드 콜백 호출
+        ///</summary>
+        private void InvokeMapTextAssetLoadedHandler( System.Action<TextAsset> _onCompleted, TextAsset _textAsset )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke( _textAsset );
+        }
+
+        ///<summary>
+        /// 맵 로드 완료 콜백 호출
+        ///</summary>
+        private void InvokeMapLoadCompletedHandler( System.Action<bool> _onCompleted, bool _wasLoaded )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke( _wasLoaded );
+        }
+
+        ///<summary>
+        /// 배경 스프라이트 리소스 경로 구성
+        ///</summary>
+        private string BuildBackgroundSpriteResourcePath( string _backgroundSpriteName )
+        {
+            string trimmedBackgroundSpriteName = string.IsNullOrWhiteSpace( _backgroundSpriteName ) ? string.Empty : _backgroundSpriteName.Trim();
+            string result = BackgroundSpriteResourceFolderPath + "/" + trimmedBackgroundSpriteName;
+            return result;
+        }
+
+        ///<summary>
+        /// 배경 스프라이트 비동기 로드
+        ///</summary>
+        private void LoadBackgroundSpriteAsync( string _backgroundSpriteName, System.Action<Sprite> _onCompleted )
+        {
+            if ( string.IsNullOrWhiteSpace( _backgroundSpriteName ) )
+            {
+                InvokeBackgroundSpriteLoadedHandler( _onCompleted, null );
+                return;
+            }
+
+            string resourcePath = BuildBackgroundSpriteResourcePath( _backgroundSpriteName );
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                Sprite fallbackSprite = ResolveCachedBackgroundSprite( _backgroundSpriteName );
+                InvokeBackgroundSpriteLoadedHandler( _onCompleted, fallbackSprite );
+                return;
+            }
+
+            resourceManager.LoadAssetAsync<Sprite>( resourcePath, resourcePath, delegate( Sprite _loadedSprite )
+            {
+                Sprite resolvedSprite = _loadedSprite != null ? _loadedSprite : ResolveCachedBackgroundSprite( _backgroundSpriteName );
+                InvokeBackgroundSpriteLoadedHandler( _onCompleted, resolvedSprite );
+            } );
+        }
+
+        ///<summary>
+        /// 배경 스프라이트 로드 콜백 호출
+        ///</summary>
+        private void InvokeBackgroundSpriteLoadedHandler( System.Action<Sprite> _onCompleted, Sprite _loadedSprite )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke( _loadedSprite );
+        }
+
+        ///<summary>
+        /// 캐시된 배경 스프라이트 결정
+        ///</summary>
+        private Sprite ResolveCachedBackgroundSprite( string _backgroundSpriteName )
+        {
+            if ( string.IsNullOrWhiteSpace( _backgroundSpriteName ) )
+            {
+                return null;
+            }
+
+            string trimmedBackgroundSpriteName = _backgroundSpriteName.Trim();
+            bool hasCachedSprite = backgroundSpriteByName.TryGetValue( trimmedBackgroundSpriteName, out Sprite cachedSprite );
+            Sprite result = hasCachedSprite ? cachedSprite : null;
+            return result;
+        }
+
+        ///<summary>
+        /// 포탈 프리팹 비동기 로드
+        ///</summary>
+        private void LoadPortalPrefabAsync( System.Action<GameObject> _onCompleted )
+        {
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                GameObject fallbackPrefab = Resources.Load<GameObject>( PortalPrefabResourcePath );
+                InvokePortalPrefabLoadedHandler( _onCompleted, fallbackPrefab );
+                return;
+            }
+
+            resourceManager.LoadAssetAsync<GameObject>( PortalPrefabResourcePath, PortalPrefabResourcePath, delegate( GameObject _loadedPrefab )
+            {
+                GameObject resolvedPrefab = _loadedPrefab != null ? _loadedPrefab : Resources.Load<GameObject>( PortalPrefabResourcePath );
+                InvokePortalPrefabLoadedHandler( _onCompleted, resolvedPrefab );
+            } );
+        }
+
+        ///<summary>
+        /// 포탈 프리팹 로드 콜백 호출
+        ///</summary>
+        private void InvokePortalPrefabLoadedHandler( System.Action<GameObject> _onCompleted, GameObject _portalPrefab )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke( _portalPrefab );
+        }
+
+        ///<summary>
+        /// 필요 몬스터 프리팹 목록 비동기 로드
+        ///</summary>
+        private void LoadRequiredMonsterPrefabsAsync( List<CMapToolMonsterSaveData> _monsterSaveDataList, System.Action _onCompleted )
+        {
+            List<CMapToolMonsterSaveData> uniqueMonsterSaveDataList = CollectUniqueMonsterSaveDataList( _monsterSaveDataList );
+
+            if ( uniqueMonsterSaveDataList.Count == 0 )
+            {
+                InvokeMonsterPrefabLoadCompletedHandler( _onCompleted );
+                return;
+            }
+
+            int remainingLoadCount = uniqueMonsterSaveDataList.Count;
+
+            for ( int index = 0; index < uniqueMonsterSaveDataList.Count; index++ )
+            {
+                CMapToolMonsterSaveData monsterSaveData = uniqueMonsterSaveDataList[ index ];
+                LoadMonsterPrefabAsync( monsterSaveData, delegate
+                {
+                    remainingLoadCount--;
+
+                    if ( remainingLoadCount <= 0 )
+                    {
+                        InvokeMonsterPrefabLoadCompletedHandler( _onCompleted );
+                    }
+                } );
+            }
+        }
+
+        ///<summary>
+        /// 중복 제거된 몬스터 저장 데이터 목록 구성
+        ///</summary>
+        private List<CMapToolMonsterSaveData> CollectUniqueMonsterSaveDataList( List<CMapToolMonsterSaveData> _monsterSaveDataList )
+        {
+            List<CMapToolMonsterSaveData> uniqueMonsterSaveDataList = new List<CMapToolMonsterSaveData>();
+            HashSet<string> monsterKeySet = new HashSet<string>();
+
+            if ( _monsterSaveDataList == null )
+            {
+                return uniqueMonsterSaveDataList;
+            }
+
+            int monsterCount = _monsterSaveDataList.Count;
+
+            for ( int index = 0; index < monsterCount; index++ )
+            {
+                CMapToolMonsterSaveData monsterSaveData = _monsterSaveDataList[ index ];
+
+                if ( monsterSaveData == null )
+                {
+                    continue;
+                }
+
+                string monsterKey = ResolveMonsterPoolKey( monsterSaveData );
+
+                if ( string.IsNullOrWhiteSpace( monsterKey ) )
+                {
+                    continue;
+                }
+
+                if ( monsterKeySet.Add( monsterKey ) == false )
+                {
+                    continue;
+                }
+
+                uniqueMonsterSaveDataList.Add( monsterSaveData );
+            }
+
+            return uniqueMonsterSaveDataList;
+        }
+
+        ///<summary>
+        /// 몬스터 프리팹 비동기 로드
+        ///</summary>
+        private void LoadMonsterPrefabAsync( CMapToolMonsterSaveData _monsterSaveData, System.Action _onCompleted )
+        {
+            if ( _monsterSaveData == null )
+            {
+                InvokeMonsterPrefabLoadCompletedHandler( _onCompleted );
+                return;
+            }
+
+            string addressableKey = BuildMonsterPrefabAddressableKey( _monsterSaveData );
+            string fallbackResourcePath = ResolveMonsterFallbackResourcePath( _monsterSaveData );
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                GameObject fallbackPrefab = Resources.Load<GameObject>( fallbackResourcePath );
+                CacheLoadedMonsterPrefab( _monsterSaveData, fallbackPrefab );
+                InvokeMonsterPrefabLoadCompletedHandler( _onCompleted );
+                return;
+            }
+
+            resourceManager.LoadAssetAsync<GameObject>( addressableKey, fallbackResourcePath, delegate( GameObject _loadedPrefab )
+            {
+                GameObject resolvedPrefab = _loadedPrefab != null ? _loadedPrefab : Resources.Load<GameObject>( fallbackResourcePath );
+                CacheLoadedMonsterPrefab( _monsterSaveData, resolvedPrefab );
+                InvokeMonsterPrefabLoadCompletedHandler( _onCompleted );
+            } );
+        }
+
+        ///<summary>
+        /// 몬스터 프리팹 Addressables 키 구성
+        ///</summary>
+        private string BuildMonsterPrefabAddressableKey( CMapToolMonsterSaveData _monsterSaveData )
+        {
+            string fallbackResourcePath = ResolveMonsterFallbackResourcePath( _monsterSaveData );
+
+            if ( string.IsNullOrWhiteSpace( fallbackResourcePath ) == false )
+            {
+                return fallbackResourcePath;
+            }
+
+            string prefabName = _monsterSaveData != null && string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false ? _monsterSaveData.prefabName.Trim() : string.Empty;
+            string result = string.IsNullOrWhiteSpace( prefabName ) ? string.Empty : MonsterPrefabResourceFolderPath + "/" + prefabName;
+            return result;
+        }
+
+        ///<summary>
+        /// 몬스터 프리팹 fallback 리소스 경로 결정
+        ///</summary>
+        private string ResolveMonsterFallbackResourcePath( CMapToolMonsterSaveData _monsterSaveData )
+        {
+            if ( _monsterSaveData == null )
+            {
+                return string.Empty;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _monsterSaveData.resourcePath ) == false )
+            {
+                string resultFromResourcePath = _monsterSaveData.resourcePath.Trim();
+                return resultFromResourcePath;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false )
+            {
+                string resultFromPrefabName = MonsterPrefabResourceFolderPath + "/" + _monsterSaveData.prefabName.Trim();
+                return resultFromPrefabName;
+            }
+
+            return string.Empty;
+        }
+
+        ///<summary>
+        /// 로드된 몬스터 프리팹 캐시
+        ///</summary>
+        private void CacheLoadedMonsterPrefab( CMapToolMonsterSaveData _monsterSaveData, GameObject _monsterPrefab )
+        {
+            if ( _monsterSaveData == null || _monsterPrefab == null )
+            {
+                return;
+            }
+
+            monsterPrefabByName[ _monsterPrefab.name ] = _monsterPrefab;
+
+            if ( string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false )
+            {
+                string prefabName = _monsterSaveData.prefabName.Trim();
+                monsterPrefabByName[ prefabName ] = _monsterPrefab;
+            }
+
+            string monsterPoolKey = ResolveMonsterPoolKey( _monsterSaveData );
+
+            if ( string.IsNullOrWhiteSpace( monsterPoolKey ) == false )
+            {
+                monsterPrefabByName[ monsterPoolKey ] = _monsterPrefab;
+            }
+        }
+
+        ///<summary>
+        /// 몬스터 프리팹 로드 완료 콜백 호출
+        ///</summary>
+        private void InvokeMonsterPrefabLoadCompletedHandler( System.Action _onCompleted )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke();
+        }
+
+        ///<summary>
+        /// 필요 NPC 프리팹 목록 비동기 로드
+        ///</summary>
+        private void LoadRequiredNpcPrefabsAsync( List<CMapToolNpcSaveData> _npcSaveDataList, System.Action _onCompleted )
+        {
+            List<CMapToolNpcSaveData> uniqueNpcSaveDataList = CollectUniqueNpcSaveDataList( _npcSaveDataList );
+
+            if ( uniqueNpcSaveDataList.Count == 0 )
+            {
+                InvokeNpcPrefabLoadCompletedHandler( _onCompleted );
+                return;
+            }
+
+            int remainingLoadCount = uniqueNpcSaveDataList.Count;
+
+            for ( int index = 0; index < uniqueNpcSaveDataList.Count; index++ )
+            {
+                CMapToolNpcSaveData npcSaveData = uniqueNpcSaveDataList[ index ];
+                LoadNpcPrefabAsync( npcSaveData, delegate
+                {
+                    remainingLoadCount--;
+
+                    if ( remainingLoadCount <= 0 )
+                    {
+                        InvokeNpcPrefabLoadCompletedHandler( _onCompleted );
+                    }
+                } );
+            }
+        }
+
+        ///<summary>
+        /// 중복 제거된 NPC 저장 데이터 목록 구성
+        ///</summary>
+        private List<CMapToolNpcSaveData> CollectUniqueNpcSaveDataList( List<CMapToolNpcSaveData> _npcSaveDataList )
+        {
+            List<CMapToolNpcSaveData> uniqueNpcSaveDataList = new List<CMapToolNpcSaveData>();
+            HashSet<string> npcKeySet = new HashSet<string>();
+
+            if ( _npcSaveDataList == null )
+            {
+                return uniqueNpcSaveDataList;
+            }
+
+            int npcCount = _npcSaveDataList.Count;
+
+            for ( int index = 0; index < npcCount; index++ )
+            {
+                CMapToolNpcSaveData npcSaveData = _npcSaveDataList[ index ];
+
+                if ( npcSaveData == null )
+                {
+                    continue;
+                }
+
+                string npcKey = ResolveNpcPrefabKey( npcSaveData );
+
+                if ( string.IsNullOrWhiteSpace( npcKey ) )
+                {
+                    continue;
+                }
+
+                if ( npcKeySet.Add( npcKey ) == false )
+                {
+                    continue;
+                }
+
+                uniqueNpcSaveDataList.Add( npcSaveData );
+            }
+
+            return uniqueNpcSaveDataList;
+        }
+
+        ///<summary>
+        /// NPC 프리팹 비동기 로드
+        ///</summary>
+        private void LoadNpcPrefabAsync( CMapToolNpcSaveData _npcSaveData, System.Action _onCompleted )
+        {
+            if ( _npcSaveData == null )
+            {
+                InvokeNpcPrefabLoadCompletedHandler( _onCompleted );
+                return;
+            }
+
+            string addressableKey = BuildNpcPrefabAddressableKey( _npcSaveData );
+            string fallbackResourcePath = ResolveNpcFallbackResourcePath( _npcSaveData );
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                GameObject fallbackPrefab = Resources.Load<GameObject>( fallbackResourcePath );
+                CacheLoadedNpcPrefab( _npcSaveData, fallbackPrefab );
+                InvokeNpcPrefabLoadCompletedHandler( _onCompleted );
+                return;
+            }
+
+            resourceManager.LoadAssetAsync<GameObject>( addressableKey, fallbackResourcePath, delegate( GameObject _loadedPrefab )
+            {
+                GameObject resolvedPrefab = _loadedPrefab != null ? _loadedPrefab : Resources.Load<GameObject>( fallbackResourcePath );
+                CacheLoadedNpcPrefab( _npcSaveData, resolvedPrefab );
+                InvokeNpcPrefabLoadCompletedHandler( _onCompleted );
+            } );
+        }
+
+        ///<summary>
+        /// NPC 프리팹 Addressables 키 구성
+        ///</summary>
+        private string BuildNpcPrefabAddressableKey( CMapToolNpcSaveData _npcSaveData )
+        {
+            string fallbackResourcePath = ResolveNpcFallbackResourcePath( _npcSaveData );
+
+            if ( string.IsNullOrWhiteSpace( fallbackResourcePath ) == false )
+            {
+                return fallbackResourcePath;
+            }
+
+            string prefabName = _npcSaveData != null && string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false ? _npcSaveData.prefabName.Trim() : string.Empty;
+            string result = string.IsNullOrWhiteSpace( prefabName ) ? string.Empty : NpcPrefabResourceFolderPath + "/" + prefabName;
+            return result;
+        }
+
+        ///<summary>
+        /// NPC 프리팹 fallback 리소스 경로 결정
+        ///</summary>
+        private string ResolveNpcFallbackResourcePath( CMapToolNpcSaveData _npcSaveData )
+        {
+            if ( _npcSaveData == null )
+            {
+                return string.Empty;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _npcSaveData.resourcePath ) == false )
+            {
+                string resultFromResourcePath = _npcSaveData.resourcePath.Trim();
+                return resultFromResourcePath;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false )
+            {
+                string resultFromPrefabName = NpcPrefabResourceFolderPath + "/" + _npcSaveData.prefabName.Trim();
+                return resultFromPrefabName;
+            }
+
+            return string.Empty;
+        }
+
+        ///<summary>
+        /// NPC 프리팹 키 결정
+        ///</summary>
+        private string ResolveNpcPrefabKey( CMapToolNpcSaveData _npcSaveData )
+        {
+            if ( _npcSaveData == null )
+            {
+                return string.Empty;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false )
+            {
+                string resultFromPrefabName = _npcSaveData.prefabName.Trim();
+                return resultFromPrefabName;
+            }
+
+            if ( string.IsNullOrWhiteSpace( _npcSaveData.resourcePath ) == false )
+            {
+                string resultFromResourcePath = _npcSaveData.resourcePath.Trim();
+                return resultFromResourcePath;
+            }
+
+            return string.Empty;
+        }
+
+        ///<summary>
+        /// 로드된 NPC 프리팹 캐시
+        ///</summary>
+        private void CacheLoadedNpcPrefab( CMapToolNpcSaveData _npcSaveData, GameObject _npcPrefab )
+        {
+            if ( _npcSaveData == null || _npcPrefab == null )
+            {
+                return;
+            }
+
+            npcPrefabByName[ _npcPrefab.name ] = _npcPrefab;
+
+            if ( string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false )
+            {
+                string prefabName = _npcSaveData.prefabName.Trim();
+                npcPrefabByName[ prefabName ] = _npcPrefab;
+            }
+
+            string npcPrefabKey = ResolveNpcPrefabKey( _npcSaveData );
+
+            if ( string.IsNullOrWhiteSpace( npcPrefabKey ) == false )
+            {
+                npcPrefabByName[ npcPrefabKey ] = _npcPrefab;
+            }
+        }
+
+        ///<summary>
+        /// NPC 프리팹 로드 완료 콜백 호출
+        ///</summary>
+        private void InvokeNpcPrefabLoadCompletedHandler( System.Action _onCompleted )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke();
+        }
+
+        ///<summary>
         /// 맵 데이터 적용
         ///</summary>
-        private void ApplyMapData(CMapToolSaveData _loadedData, string _entryPortalId)
+        private void ApplyMapData(CMapToolSaveData _loadedData, string _entryPortalId, Sprite _backgroundSprite, GameObject _portalPrefab)
         {
             if ( _loadedData == null )
             {
@@ -634,9 +1283,9 @@ namespace TinyHero.Maps
             ReturnAllActivePooledWorldItemDrops();
             ClearSpawnedRuntimeObjects();
             PrepareMonsterPools( requiredMonsterPoolKeySet );
-            ApplyBackgroundSprite( _loadedData.backgroundSpriteName );
+            ApplyBackgroundSprite( _loadedData.backgroundSpriteName, _backgroundSprite );
             ApplyBackgroundRightBoundary( _loadedData );
-            SpawnPortals( _loadedData.portals );
+            SpawnPortals( _loadedData.portals, _portalPrefab );
             SpawnMonsters( _loadedData.monsters );
             SpawnNpcs( _loadedData.npcs );
             MovePlayerToEntryPortal( _entryPortalId );
@@ -646,7 +1295,7 @@ namespace TinyHero.Maps
         ///<summary>
         /// 배경 스프라이트 적용
         ///</summary>
-        private void ApplyBackgroundSprite(string _backgroundSpriteName)
+        private void ApplyBackgroundSprite(string _backgroundSpriteName, Sprite _loadedBackgroundSprite)
         {
             currentBackgroundSprite = null;
 
@@ -669,7 +1318,9 @@ namespace TinyHero.Maps
                 return;
             }
 
-            if ( backgroundSpriteByName.TryGetValue( _backgroundSpriteName, out Sprite backgroundSprite ) == false )
+            Sprite backgroundSprite = _loadedBackgroundSprite != null ? _loadedBackgroundSprite : ResolveCachedBackgroundSprite( _backgroundSpriteName );
+
+            if ( backgroundSprite == null )
             {
                 return;
             }
@@ -766,9 +1417,9 @@ namespace TinyHero.Maps
         ///<summary>
         /// 포탈 목록 생성
         ///</summary>
-        private void SpawnPortals(List<CMapToolPortalSaveData> _portalSaveDataList)
+        private void SpawnPortals(List<CMapToolPortalSaveData> _portalSaveDataList, GameObject _loadedPortalPrefab)
         {
-            GameObject portalPrefab = Resources.Load<GameObject>( PortalPrefabResourcePath );
+            GameObject portalPrefab = _loadedPortalPrefab != null ? _loadedPortalPrefab : Resources.Load<GameObject>( PortalPrefabResourcePath );
 
             if ( portalPrefab == null )
             {

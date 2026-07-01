@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
@@ -10,8 +12,8 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CShopUiManager : CSingleTon<CShopUiManager>
     {
-        private GameObject shopPopupPrefabObject;
         private PopupShop popupShopInstance;
+        private bool isShopOpening;
 
         ///<summary>
         /// 상점 UI 열기 처리
@@ -31,27 +33,12 @@ namespace TinyHero.UI
                 return false;
             }
 
-            PopupShop popupShop = ResolveOrCreatePopupShop();
-            CItemInventoryUiManager itemInventoryUiManager = CItemInventoryUiManager.Instance;
-
-            if ( popupShop == null || itemInventoryUiManager == null )
+            if ( isShopOpening )
             {
                 return false;
             }
 
-            Canvas targetCanvas = popupShop.GetComponentInParent<Canvas>();
-            popupShop.SetTargetCanvas( targetCanvas );
-
-            itemInventoryUiManager.SetInventoryToggleLocked( true );
-            PopupItemInventory inventoryUi = itemInventoryUiManager.OpenInventoryForShop( _targetInventoryManager );
-
-            if ( inventoryUi == null )
-            {
-                itemInventoryUiManager.SetInventoryToggleLocked( false );
-                return false;
-            }
-
-            popupShop.ShowShop( shopDefinition, _shopDisplayName, _targetInventoryManager, inventoryUi );
+            StartCoroutine( IE_OpenShop( shopDefinition, _shopDisplayName, _targetInventoryManager ) );
             return true;
         }
 
@@ -78,42 +65,102 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 상점 팝업 인스턴스 보장
+        /// 상점 UI 비동기 열기 코루틴
         ///</summary>
-        private PopupShop ResolveOrCreatePopupShop()
+        private IEnumerator IE_OpenShop( CShopDefinition _shopDefinition, string _shopDisplayName, CPlayerInventoryManager _targetInventoryManager )
+        {
+            isShopOpening = true;
+            PopupShop resolvedPopupShop = null;
+            bool isShopPopupResolved = false;
+            RequestPopupShop(
+                ( PopupShop _popupShop ) =>
+                {
+                    resolvedPopupShop = _popupShop;
+                    isShopPopupResolved = true;
+                } );
+
+            while ( isShopPopupResolved == false )
+            {
+                yield return null;
+            }
+
+            CItemInventoryUiManager itemInventoryUiManager = CItemInventoryUiManager.Instance;
+
+            if ( resolvedPopupShop == null || itemInventoryUiManager == null )
+            {
+                isShopOpening = false;
+                yield break;
+            }
+
+            Canvas targetCanvas = resolvedPopupShop.GetComponentInParent<Canvas>();
+            resolvedPopupShop.SetTargetCanvas( targetCanvas );
+            itemInventoryUiManager.SetInventoryToggleLocked( true );
+            PopupItemInventory inventoryUi = null;
+            bool isInventoryResolved = false;
+            itemInventoryUiManager.OpenInventoryForShopAsync(
+                _targetInventoryManager,
+                ( PopupItemInventory _inventoryUi ) =>
+                {
+                    inventoryUi = _inventoryUi;
+                    isInventoryResolved = true;
+                } );
+
+            while ( isInventoryResolved == false )
+            {
+                yield return null;
+            }
+
+            if ( inventoryUi == null )
+            {
+                itemInventoryUiManager.SetInventoryToggleLocked( false );
+                isShopOpening = false;
+                yield break;
+            }
+
+            resolvedPopupShop.ShowShop( _shopDefinition, _shopDisplayName, _targetInventoryManager, inventoryUi );
+            isShopOpening = false;
+        }
+
+        ///<summary>
+        /// 상점 팝업 인스턴스 비동기 요청
+        ///</summary>
+        private void RequestPopupShop( Action<PopupShop> _onCompleted )
         {
             if ( popupShopInstance != null )
             {
-                return popupShopInstance;
-            }
-
-            if ( shopPopupPrefabObject == null )
-            {
-                CResourceManager resourceManager = CResourceManager.Instance;
-                shopPopupPrefabObject = resourceManager != null ? resourceManager.GetShopPopupPrefab() : null;
-            }
-
-            if ( shopPopupPrefabObject == null )
-            {
-                return null;
+                InvokePopupShopCompletedHandler( _onCompleted, popupShopInstance );
+                return;
             }
 
             CUINavigationController navigationController = CUINavigationController.Instance;
 
             if ( navigationController == null )
             {
-                return null;
+                InvokePopupShopCompletedHandler( _onCompleted, null );
+                return;
             }
 
-            PopupShop createdPopupShop = navigationController.AddPopup<PopupShop>( shopPopupPrefabObject, true );
+            navigationController.AddPopupAsync<PopupShop>(
+                eResourceKey.POPUP_SHOP,
+                true,
+                ( PopupShop _createdPopupShop ) =>
+                {
+                    popupShopInstance = _createdPopupShop;
+                    InvokePopupShopCompletedHandler( _onCompleted, popupShopInstance );
+                } );
+        }
 
-            if ( createdPopupShop == null )
+        ///<summary>
+        /// 상점 팝업 요청 완료 콜백 호출
+        ///</summary>
+        private void InvokePopupShopCompletedHandler( Action<PopupShop> _onCompleted, PopupShop _popupShop )
+        {
+            if ( _onCompleted == null )
             {
-                return null;
+                return;
             }
 
-            popupShopInstance = createdPopupShop;
-            return popupShopInstance;
+            _onCompleted.Invoke( _popupShop );
         }
     }
 }

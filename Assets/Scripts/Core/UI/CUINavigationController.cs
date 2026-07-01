@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using TinyHero.Core;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace TinyHero.UI
 {
@@ -16,6 +18,8 @@ namespace TinyHero.UI
         private readonly List<CUILayer> viewLayerList = new List<CUILayer>();
         private readonly Dictionary<GameObject, CUILayer> cachedPopupDictionary = new Dictionary<GameObject, CUILayer>();
         private readonly Dictionary<GameObject, CUILayer> cachedViewDictionary = new Dictionary<GameObject, CUILayer>();
+        private readonly Dictionary<eResourceKey, List<Action<CUILayer>>> pendingPopupHandlerDictionary = new Dictionary<eResourceKey, List<Action<CUILayer>>>();
+        private readonly HashSet<eResourceKey> loadingPopupResourceKeySet = new HashSet<eResourceKey>();
 
         ///<summary>
         /// ESC 입력 감시 처리
@@ -39,6 +43,46 @@ namespace TinyHero.UI
         {
             T createdPopup = AddLayerInternal<T>( _prefabObject, popupLayerList, cachedPopupDictionary, InteractionCanvasObjectName, _shouldReuseExistingInstance );
             return createdPopup;
+        }
+
+        ///<summary>
+        /// 팝업 UI 비동기 동적 생성
+        ///</summary>
+        public void AddPopupAsync<T>( eResourceKey _resourceKey, bool _shouldReuseExistingInstance, Action<T> _onCompleted ) where T : CUIPopup
+        {
+            if ( _resourceKey == eResourceKey.NONE )
+            {
+                InvokePopupCompletedHandler( _onCompleted, null );
+                return;
+            }
+
+            AddPendingPopupHandler( _resourceKey, ( CUILayer _createdLayer ) =>
+            {
+                T typedLayer = _createdLayer as T;
+                InvokePopupCompletedHandler( _onCompleted, typedLayer );
+            } );
+
+            if ( loadingPopupResourceKeySet.Contains( _resourceKey ) )
+            {
+                return;
+            }
+
+            loadingPopupResourceKeySet.Add( _resourceKey );
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                loadingPopupResourceKeySet.Remove( _resourceKey );
+                FlushPendingPopupHandlers( _resourceKey, null );
+                return;
+            }
+
+            resourceManager.LoadPrefabAsync( _resourceKey, ( GameObject _loadedPrefabObject ) =>
+            {
+                loadingPopupResourceKeySet.Remove( _resourceKey );
+                T createdPopup = AddPopup<T>( _loadedPrefabObject, _shouldReuseExistingInstance );
+                FlushPendingPopupHandlers( _resourceKey, createdPopup );
+            } );
         }
 
         ///<summary>
@@ -310,6 +354,67 @@ namespace TinyHero.UI
                 GameObject removeKey = removeKeyList[ index ];
                 _cachedLayerDictionary.Remove( removeKey );
             }
+        }
+
+        ///<summary>
+        /// 팝업 생성 대기 콜백 등록
+        ///</summary>
+        private void AddPendingPopupHandler( eResourceKey _resourceKey, Action<CUILayer> _onCompleted )
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            bool hasHandlerList = pendingPopupHandlerDictionary.TryGetValue( _resourceKey, out List<Action<CUILayer>> handlerList );
+
+            if ( hasHandlerList == false || handlerList == null )
+            {
+                handlerList = new List<Action<CUILayer>>();
+                pendingPopupHandlerDictionary[ _resourceKey ] = handlerList;
+            }
+
+            handlerList.Add( _onCompleted );
+        }
+
+        ///<summary>
+        /// 팝업 생성 대기 콜백 일괄 호출
+        ///</summary>
+        private void FlushPendingPopupHandlers( eResourceKey _resourceKey, CUILayer _createdLayer )
+        {
+            bool hasHandlerList = pendingPopupHandlerDictionary.TryGetValue( _resourceKey, out List<Action<CUILayer>> handlerList );
+
+            if ( hasHandlerList == false || handlerList == null )
+            {
+                return;
+            }
+
+            pendingPopupHandlerDictionary.Remove( _resourceKey );
+
+            for ( int index = 0; index < handlerList.Count; index++ )
+            {
+                Action<CUILayer> handler = handlerList[ index ];
+
+                if ( handler == null )
+                {
+                    continue;
+                }
+
+                handler.Invoke( _createdLayer );
+            }
+        }
+
+        ///<summary>
+        /// 팝업 생성 완료 콜백 호출
+        ///</summary>
+        private void InvokePopupCompletedHandler<T>( Action<T> _onCompleted, T _createdPopup ) where T : CUIPopup
+        {
+            if ( _onCompleted == null )
+            {
+                return;
+            }
+
+            _onCompleted.Invoke( _createdPopup );
         }
 
         ///<summary>

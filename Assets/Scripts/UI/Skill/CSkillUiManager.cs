@@ -1,6 +1,5 @@
 using TinyHero.Core;
 using TinyHero.Skill;
-using UnityEngine;
 
 namespace TinyHero.UI
 {
@@ -10,7 +9,6 @@ namespace TinyHero.UI
     public sealed class CSkillUiManager : CSingleTon<CSkillUiManager>
     {
         private CSkillManager targetSkillManager;
-        private GameObject skillPopupPrefabObject;
         private PopupSkillList skillUiController;
 
         ///<summary>
@@ -38,67 +36,32 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool shouldCreateSkillUi = skillUiController == null;
-            PopupSkillList resolvedSkillUiController = ResolveOrCreateSkillUiController();
-
-            if ( resolvedSkillUiController == null )
-            {
-                return;
-            }
-
-            if ( shouldCreateSkillUi )
-            {
-                return;
-            }
-
-            resolvedSkillUiController.ToggleSkillWindow();
-        }
-
-        ///<summary>
-        /// 스킬 UI 컨트롤러 결정
-        ///</summary>
-        private PopupSkillList ResolveOrCreateSkillUiController()
-        {
             if ( skillUiController != null )
             {
-                skillUiController.BindSkillManager( targetSkillManager );
-                return skillUiController;
-            }
-
-            if ( skillPopupPrefabObject == null )
-            {
-                CResourceManager resourceManager = CResourceManager.Instance;
-
-                if ( resourceManager == null )
-                {
-                    return null;
-                }
-
-                skillPopupPrefabObject = resourceManager.GetSkillPopupPrefab();
-            }
-
-            if ( skillPopupPrefabObject == null )
-            {
-                return null;
+                skillUiController.ToggleSkillWindow();
+                return;
             }
 
             CUINavigationController navigationController = CUINavigationController.Instance;
 
             if ( navigationController == null )
             {
-                return null;
+                return;
             }
 
-            PopupSkillList createdSkillUiController = navigationController.AddPopup<PopupSkillList>( skillPopupPrefabObject, true );
+            navigationController.AddPopupAsync<PopupSkillList>(
+                eResourceKey.POPUP_SKILL_LIST,
+                true,
+                ( PopupSkillList _createdSkillUiController ) =>
+                {
+                    if ( _createdSkillUiController == null )
+                    {
+                        return;
+                    }
 
-            if ( createdSkillUiController == null )
-            {
-                return null;
-            }
-
-            createdSkillUiController.BindSkillManager( targetSkillManager );
-            skillUiController = createdSkillUiController;
-            return skillUiController;
+                    skillUiController = _createdSkillUiController;
+                    skillUiController.BindSkillManager( targetSkillManager );
+                } );
         }
     }
 }
