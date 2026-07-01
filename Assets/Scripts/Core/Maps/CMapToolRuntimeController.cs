@@ -28,7 +28,8 @@ namespace TinyHero.Maps
             NONE,
             PLACE_PORTAL,
             PLACE_MONSTER,
-            PLACE_NPC
+            PLACE_NPC,
+            SET_RIGHT_BOUNDARY
         }
 
         private const string BackgroundPrefabResourcePath = "Prefabs/BackgroundObject/BackgroundObject";
@@ -47,6 +48,7 @@ namespace TinyHero.Maps
         private const string NpcPanelObjectName = "NpcPanel";
         private const string PortalPanelObjectName = "PortalPanel";
         private const string SkillTestPanelObjectName = "SkillTestPanel";
+        private const string BottomMenuObjectName = "BottomMenu";
         private const string PortalIdTitleObjectName = "PortalIdTitle";
         private const string PortalTargetMapTitleObjectName = "PortalTargetMapTitle";
         private const string PortalTargetPortalTitleObjectName = "PortalTargetPortalTitle";
@@ -72,6 +74,7 @@ namespace TinyHero.Maps
         private const float ToolbarSpacing = 16.0f;
         private const float ToolbarButtonWidth = 180.0f;
         private const float ToolbarButtonHeight = 56.0f;
+        private const float BottomMenuBottomOffset = 24.0f;
         private const float ListButtonHeight = 44.0f;
         private const float PortalActionButtonHeight = 50.0f;
         private const float PortalFieldTitleFontSize = 18.0f;
@@ -92,6 +95,8 @@ namespace TinyHero.Maps
         private const float SaveConfirmButtonWidth = 150.0f;
         private const float SaveConfirmButtonHeight = 54.0f;
         private const float SkillPreviewDisplayDurationSeconds = 1.2f;
+        private const float MapOverviewCameraPaddingMultiplier = 1.04f;
+        private const float MinimumOrthographicSize = 0.1f;
         private const int MouseButtonLeft = 0;
         private const int MouseButtonRight = 1;
         private const int SortingOrderPanel = 10;
@@ -102,6 +107,7 @@ namespace TinyHero.Maps
         [SerializeField] private Camera worldCamera;
         [SerializeField] private SpriteRenderer backgroundRenderer;
         [SerializeField] private WorldSpaceBackgroundFitter backgroundFitter;
+        [SerializeField] private CMapBackgroundLayoutController backgroundLayoutController;
         [SerializeField] private CMapToolBackgroundColliderVisualizer backgroundColliderVisualizer;
         [SerializeField] private Vector3 defaultPlayerSpawnPosition = Vector3.zero;
 
@@ -109,6 +115,7 @@ namespace TinyHero.Maps
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private EventSystem targetEventSystem;
         [SerializeField] private RectTransform toolbarRoot;
+        [SerializeField] private RectTransform bottomMenuRoot;
         [SerializeField] private RectTransform backgroundPanelRoot;
         [SerializeField] private RectTransform monsterPanelRoot;
         [SerializeField] private RectTransform npcPanelRoot;
@@ -136,6 +143,10 @@ namespace TinyHero.Maps
         [SerializeField] private CButtonEx portalModeButton;
         [SerializeField] private CButtonEx skillTestModeButton;
         [SerializeField] private CButtonEx clearObjectsButton;
+        [SerializeField] private CButtonEx setRightBoundaryButton;
+        [SerializeField] private CButtonEx clearRightBoundaryButton;
+        [SerializeField] private CButtonEx showMapOverviewButton;
+        [SerializeField] private CButtonEx restoreCameraViewButton;
         [SerializeField] private CButtonEx saveMapButton;
         [SerializeField] private CButtonEx loadMapButton;
         [SerializeField] private CButtonEx confirmSaveButton;
@@ -167,6 +178,10 @@ namespace TinyHero.Maps
         private bool isMonsterBehaviorDisabledInMapTool;
         private bool isMonsterContactHitDisabledInMapTool;
         private bool isDraggingPlacedObject;
+        private bool hasCachedOriginalCameraView;
+        private bool wasCameraFollowEnabledBeforeOverview;
+        private float cachedOriginalOrthographicSize;
+        private Vector3 cachedOriginalCameraPosition;
         private CSkillDefinition hoveredSkillDefinition;
 
         ///<summary>
@@ -176,11 +191,14 @@ namespace TinyHero.Maps
         {
             ResolveSceneReferences();
             EnsureBackgroundObjectExists();
+            EnsureBackgroundLayoutControllerExists();
             EnsureBackgroundColliderVisualizerExists();
             EnsurePlayerObjectExists();
+            EnsureCameraFollowControllerExists();
             EnsureSkillManagerExists();
             EnsureUiRootExists();
             EnsureToolbarExists();
+            EnsureBottomMenuExists();
             EnsurePanelsExist();
             EnsureMapInfoPanelExists();
             EnsureLoadMapPanelExists();
@@ -257,6 +275,12 @@ namespace TinyHero.Maps
                 CMapToolBackgroundColliderVisualizer resolvedVisualizer = backgroundRenderer.GetComponent<CMapToolBackgroundColliderVisualizer>();
                 backgroundColliderVisualizer = resolvedVisualizer;
             }
+
+            if ( backgroundLayoutController == null && backgroundRenderer != null )
+            {
+                CMapBackgroundLayoutController resolvedLayoutController = backgroundRenderer.GetComponent<CMapBackgroundLayoutController>();
+                backgroundLayoutController = resolvedLayoutController;
+            }
         }
 
         ///<summary>
@@ -280,6 +304,32 @@ namespace TinyHero.Maps
             backgroundObject.name = backgroundPrefab.name;
             backgroundFitter = backgroundObject.GetComponent<WorldSpaceBackgroundFitter>();
             backgroundRenderer = backgroundObject.GetComponent<SpriteRenderer>();
+            backgroundLayoutController = backgroundObject.GetComponent<CMapBackgroundLayoutController>();
+        }
+
+        ///<summary>
+        /// 배경 레이아웃 컨트롤러 존재 보장
+        ///</summary>
+        private void EnsureBackgroundLayoutControllerExists()
+        {
+            if ( backgroundRenderer == null )
+            {
+                return;
+            }
+
+            if ( backgroundLayoutController == null )
+            {
+                CMapBackgroundLayoutController resolvedLayoutController = backgroundRenderer.GetComponent<CMapBackgroundLayoutController>();
+
+                if ( resolvedLayoutController == null )
+                {
+                    resolvedLayoutController = backgroundRenderer.gameObject.AddComponent<CMapBackgroundLayoutController>();
+                }
+
+                backgroundLayoutController = resolvedLayoutController;
+            }
+
+            backgroundLayoutController.RefreshLayout();
         }
 
         ///<summary>
@@ -339,6 +389,33 @@ namespace TinyHero.Maps
             playerObject.name = PlayerObjectName;
             PlayerController createdPlayerController = playerObject.GetComponent<PlayerController>();
             ApplyMonsterContactHitEnabledToPlayer( createdPlayerController );
+        }
+
+        ///<summary>
+        /// 카메라 플레이어 추적 컴포넌트 존재 보장
+        ///</summary>
+        private void EnsureCameraFollowControllerExists()
+        {
+            if ( worldCamera == null )
+            {
+                return;
+            }
+
+            CPlayerCameraFollowController cameraFollowController = worldCamera.GetComponent<CPlayerCameraFollowController>();
+
+            if ( cameraFollowController == null )
+            {
+                cameraFollowController = worldCamera.gameObject.AddComponent<CPlayerCameraFollowController>();
+            }
+
+            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+
+            if ( playerController == null )
+            {
+                return;
+            }
+
+            cameraFollowController.SetTarget( playerController.transform );
         }
 
         ///<summary>
@@ -517,6 +594,58 @@ namespace TinyHero.Maps
             {
                 CButtonEx createdClearObjectsButton = CreateTextButton( "ClearObjectsButton", toolbarRoot, "오브젝트 초기화", ToolbarButtonWidth, ToolbarButtonHeight );
                 clearObjectsButton = createdClearObjectsButton;
+            }
+        }
+
+        ///<summary>
+        /// 하단 메뉴 존재 보장
+        ///</summary>
+        private void EnsureBottomMenuExists()
+        {
+            if ( bottomMenuRoot != null )
+            {
+                return;
+            }
+
+            RectTransform canvasRectTransform = rootCanvas.GetComponent<RectTransform>();
+            RectTransform bottomMenuRectTransform = FindChildRectTransform( canvasRectTransform, BottomMenuObjectName );
+
+            if ( bottomMenuRectTransform == null )
+            {
+                bottomMenuRectTransform = CreatePanelRoot( BottomMenuObjectName, canvasRectTransform, new Vector2( 0.5f, 0.0f ), new Vector2( 0.5f, 0.0f ), new Vector2( 0.5f, 0.0f ) );
+                HorizontalLayoutGroup horizontalLayoutGroup = bottomMenuRectTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
+                horizontalLayoutGroup.spacing = ToolbarSpacing;
+                horizontalLayoutGroup.childControlWidth = false;
+                horizontalLayoutGroup.childControlHeight = false;
+                horizontalLayoutGroup.childForceExpandWidth = false;
+                horizontalLayoutGroup.childForceExpandHeight = false;
+                horizontalLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+                ContentSizeFitter contentSizeFitter = bottomMenuRectTransform.gameObject.AddComponent<ContentSizeFitter>();
+                contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                bottomMenuRectTransform.anchoredPosition = new Vector2( 0.0f, BottomMenuBottomOffset );
+            }
+
+            bottomMenuRoot = bottomMenuRectTransform;
+
+            if ( setRightBoundaryButton == null )
+            {
+                setRightBoundaryButton = CreateTextButton( "SetRightBoundaryButton", bottomMenuRoot, "우측 경계 지정", ToolbarButtonWidth, ToolbarButtonHeight );
+            }
+
+            if ( clearRightBoundaryButton == null )
+            {
+                clearRightBoundaryButton = CreateTextButton( "ClearRightBoundaryButton", bottomMenuRoot, "우측 경계 기본값", ToolbarButtonWidth, ToolbarButtonHeight );
+            }
+
+            if ( showMapOverviewButton == null )
+            {
+                showMapOverviewButton = CreateTextButton( "ShowMapOverviewButton", bottomMenuRoot, "맵 전체 보기", ToolbarButtonWidth, ToolbarButtonHeight );
+            }
+
+            if ( restoreCameraViewButton == null )
+            {
+                restoreCameraViewButton = CreateTextButton( "RestoreCameraViewButton", bottomMenuRoot, "카메라 원래 크기", ToolbarButtonWidth, ToolbarButtonHeight );
             }
         }
 
@@ -734,6 +863,14 @@ namespace TinyHero.Maps
             skillTestModeButton.onClick.AddListener( OnSkillTestModeButtonClicked );
             clearObjectsButton.onClick.RemoveAllListeners();
             clearObjectsButton.onClick.AddListener( OnClearObjectsButtonClicked );
+            setRightBoundaryButton.onClick.RemoveAllListeners();
+            setRightBoundaryButton.onClick.AddListener( BeginRightBoundaryPlacement );
+            clearRightBoundaryButton.onClick.RemoveAllListeners();
+            clearRightBoundaryButton.onClick.AddListener( ClearRightBoundaryOverride );
+            showMapOverviewButton.onClick.RemoveAllListeners();
+            showMapOverviewButton.onClick.AddListener( ApplyMapOverviewCameraView );
+            restoreCameraViewButton.onClick.RemoveAllListeners();
+            restoreCameraViewButton.onClick.AddListener( RestoreOriginalCameraView );
             startPortalPlacementButton.onClick.RemoveAllListeners();
             startPortalPlacementButton.onClick.AddListener( OnStartPortalPlacementButtonClicked );
             saveMapButton.onClick.RemoveAllListeners();
@@ -1162,6 +1299,7 @@ namespace TinyHero.Maps
         {
             CancelPlacementMode();
             StopPlacedObjectDrag();
+            RestoreOriginalCameraViewForMapLoad();
             string saveFilePath = GetSaveFilePath();
 
             if ( File.Exists( saveFilePath ) == false )
@@ -1223,6 +1361,8 @@ namespace TinyHero.Maps
             {
                 ApplyBackgroundSpriteByName( _loadedData.backgroundSpriteName, false );
             }
+
+            ApplyLoadedRightBoundary( _loadedData );
 
             int portalCount = _loadedData.portals.Count;
 
@@ -1437,6 +1577,12 @@ namespace TinyHero.Maps
             if ( backgroundRenderer != null && backgroundRenderer.sprite != null )
             {
                 saveData.backgroundSpriteName = backgroundRenderer.sprite.name;
+            }
+
+            if ( backgroundLayoutController != null && backgroundLayoutController.TryGetCustomRightBoundaryX( out float customRightBoundaryX ) )
+            {
+                saveData.hasCustomRightBoundary = true;
+                saveData.customRightBoundaryX = customRightBoundaryX;
             }
 
             int placedObjectCount = placedObjects.Count;
@@ -2253,6 +2399,13 @@ namespace TinyHero.Maps
                 backgroundFitter.ApplyFit();
             }
 
+            EnsureBackgroundLayoutControllerExists();
+
+            if ( backgroundLayoutController != null )
+            {
+                backgroundLayoutController.RefreshLayout();
+            }
+
             if ( backgroundColliderVisualizer != null )
             {
                 backgroundColliderVisualizer.RefreshColliderVisual();
@@ -2262,6 +2415,213 @@ namespace TinyHero.Maps
             {
                 SetPanelVisible( backgroundPanelRoot, false );
             }
+        }
+
+        ///<summary>
+        /// 저장된 우측 경계 적용
+        ///</summary>
+        private void ApplyLoadedRightBoundary( CMapToolSaveData _loadedData )
+        {
+            EnsureBackgroundLayoutControllerExists();
+
+            if ( backgroundLayoutController == null )
+            {
+                return;
+            }
+
+            if ( _loadedData != null && _loadedData.hasCustomRightBoundary )
+            {
+                backgroundLayoutController.SetCustomRightBoundaryX( _loadedData.customRightBoundaryX );
+                RefreshBackgroundColliderVisual();
+                return;
+            }
+
+            backgroundLayoutController.ClearCustomRightBoundary();
+            RefreshBackgroundColliderVisual();
+        }
+
+        ///<summary>
+        /// 우측 경계 지정 모드 시작
+        ///</summary>
+        private void BeginRightBoundaryPlacement()
+        {
+            CancelPlacementMode();
+            StopPlacedObjectDrag();
+            currentMode = eMapToolMode.SET_RIGHT_BOUNDARY;
+            SetPanelVisible( backgroundPanelRoot, false );
+            SetPanelVisible( monsterPanelRoot, false );
+            SetPanelVisible( npcPanelRoot, false );
+            SetPanelVisible( portalPanelRoot, false );
+            SetPanelVisible( loadMapPanelRoot, false );
+            SetPanelVisible( skillTestPanelRoot, false );
+        }
+
+        ///<summary>
+        /// 우측 경계 기본값 복원
+        ///</summary>
+        private void ClearRightBoundaryOverride()
+        {
+            EnsureBackgroundLayoutControllerExists();
+
+            if ( backgroundLayoutController == null )
+            {
+                return;
+            }
+
+            backgroundLayoutController.ClearCustomRightBoundary();
+            RefreshBackgroundColliderVisual();
+        }
+
+        ///<summary>
+        /// 맵 전체 너비 기준 카메라 보기 적용
+        ///</summary>
+        private void ApplyMapOverviewCameraView()
+        {
+            if ( worldCamera == null || worldCamera.orthographic == false )
+            {
+                return;
+            }
+
+            EnsureBackgroundLayoutControllerExists();
+
+            if ( backgroundLayoutController == null )
+            {
+                return;
+            }
+
+            if ( backgroundLayoutController.TryGetCombinedWorldBounds( out Bounds backgroundBounds ) == false )
+            {
+                return;
+            }
+
+            CacheOriginalCameraViewIfNeeded();
+            SetCameraFollowEnabled( false );
+            float targetOrthographicSize = CalculateOverviewOrthographicSize( backgroundBounds );
+            Vector3 targetCameraPosition = worldCamera.transform.position;
+            targetCameraPosition.x = backgroundBounds.center.x;
+            targetCameraPosition.y = backgroundBounds.center.y;
+            worldCamera.orthographicSize = targetOrthographicSize;
+            worldCamera.transform.position = targetCameraPosition;
+            SetPanelVisible( backgroundPanelRoot, false );
+        }
+
+        ///<summary>
+        /// 맵툴 카메라 원래 보기 복원
+        ///</summary>
+        private void RestoreOriginalCameraView()
+        {
+            if ( worldCamera == null || hasCachedOriginalCameraView == false )
+            {
+                return;
+            }
+
+            worldCamera.orthographicSize = cachedOriginalOrthographicSize;
+            worldCamera.transform.position = cachedOriginalCameraPosition;
+            SetCameraFollowEnabled( wasCameraFollowEnabledBeforeOverview );
+            hasCachedOriginalCameraView = false;
+            SetPanelVisible( backgroundPanelRoot, false );
+        }
+
+        ///<summary>
+        /// 맵 로드 전 맵툴 카메라 보기 복원
+        ///</summary>
+        private void RestoreOriginalCameraViewForMapLoad()
+        {
+            if ( worldCamera == null )
+            {
+                return;
+            }
+
+            if ( hasCachedOriginalCameraView )
+            {
+                worldCamera.orthographicSize = cachedOriginalOrthographicSize;
+                worldCamera.transform.position = cachedOriginalCameraPosition;
+                SetCameraFollowEnabled( wasCameraFollowEnabledBeforeOverview );
+                hasCachedOriginalCameraView = false;
+                return;
+            }
+
+            SetCameraFollowEnabled( true );
+        }
+
+        ///<summary>
+        /// 맵툴 카메라 원래 보기 캐시
+        ///</summary>
+        private void CacheOriginalCameraViewIfNeeded()
+        {
+            if ( worldCamera == null || hasCachedOriginalCameraView )
+            {
+                return;
+            }
+
+            cachedOriginalOrthographicSize = worldCamera.orthographicSize;
+            cachedOriginalCameraPosition = worldCamera.transform.position;
+            CPlayerCameraFollowController cameraFollowController = worldCamera.GetComponent<CPlayerCameraFollowController>();
+            wasCameraFollowEnabledBeforeOverview = cameraFollowController != null && cameraFollowController.IsFollowEnabled();
+            hasCachedOriginalCameraView = true;
+        }
+
+        ///<summary>
+        /// 맵 전체 보기 Orthographic 크기 계산
+        ///</summary>
+        private float CalculateOverviewOrthographicSize( Bounds _backgroundBounds )
+        {
+            float cameraAspect = Mathf.Max( MinimumOrthographicSize, worldCamera.aspect );
+            float sizeByWidth = ( _backgroundBounds.size.x * 0.5f ) / cameraAspect;
+            float result = Mathf.Max( MinimumOrthographicSize, sizeByWidth * MapOverviewCameraPaddingMultiplier );
+            return result;
+        }
+
+        ///<summary>
+        /// 맵툴 카메라 추적 활성 상태 설정
+        ///</summary>
+        private void SetCameraFollowEnabled( bool _isEnabled )
+        {
+            if ( worldCamera == null )
+            {
+                return;
+            }
+
+            CPlayerCameraFollowController cameraFollowController = worldCamera.GetComponent<CPlayerCameraFollowController>();
+
+            if ( cameraFollowController == null )
+            {
+                return;
+            }
+
+            cameraFollowController.SetFollowEnabled( _isEnabled );
+        }
+
+        ///<summary>
+        /// 마우스 위치 기준 우측 경계 적용
+        ///</summary>
+        private void ApplyRightBoundaryAtMousePosition()
+        {
+            EnsureBackgroundLayoutControllerExists();
+
+            if ( backgroundLayoutController == null )
+            {
+                currentMode = eMapToolMode.NONE;
+                return;
+            }
+
+            Vector3 mouseWorldPosition = GetMouseWorldPosition();
+            backgroundLayoutController.SetCustomRightBoundaryX( mouseWorldPosition.x );
+            RefreshBackgroundColliderVisual();
+            currentMode = eMapToolMode.NONE;
+        }
+
+        ///<summary>
+        /// 배경 콜라이더 시각화 갱신
+        ///</summary>
+        private void RefreshBackgroundColliderVisual()
+        {
+            if ( backgroundColliderVisualizer == null )
+            {
+                return;
+            }
+
+            backgroundColliderVisualizer.RefreshColliderVisual();
         }
 
         ///<summary>
@@ -2614,7 +2974,12 @@ namespace TinyHero.Maps
         ///</summary>
         private void HandlePlacementInput()
         {
-            if ( currentMode == eMapToolMode.NONE || previewInstance == null )
+            if ( currentMode == eMapToolMode.NONE )
+            {
+                return;
+            }
+
+            if ( currentMode != eMapToolMode.SET_RIGHT_BOUNDARY && previewInstance == null )
             {
                 return;
             }
@@ -2631,6 +2996,12 @@ namespace TinyHero.Maps
 
             if ( Input.GetMouseButtonDown( MouseButtonLeft ) == false )
             {
+                return;
+            }
+
+            if ( currentMode == eMapToolMode.SET_RIGHT_BOUNDARY )
+            {
+                ApplyRightBoundaryAtMousePosition();
                 return;
             }
 

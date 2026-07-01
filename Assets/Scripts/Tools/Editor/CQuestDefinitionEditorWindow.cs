@@ -54,6 +54,11 @@ namespace TinyHero.Tools
         private const int QuestIdNumberDigits = 5;
         private const float ListViewHeight = 500.0f;
         private const float ListItemHeight = 44.0f;
+        private const float DialogueLineTextAreaMinHeight = 72.0f;
+        private const float DialogueColumnMinWidth = 420.0f;
+        private const float QuestEntryColumnMinWidth = DialogueColumnMinWidth;
+        private const float QuestEditorColumnSpacing = 4.0f;
+        private const float ActionButtonSectionWidth = ( DialogueColumnMinWidth * 2.0f ) + QuestEditorColumnSpacing;
 
         [SerializeField] private List<QuestDefinitionInfo> questDefinitionInfoList = new List<QuestDefinitionInfo>();
         [SerializeField] private List<QuestNpcSelectionInfo> questNpcSelectionInfoList = new List<QuestNpcSelectionInfo>();
@@ -313,9 +318,7 @@ namespace TinyHero.Tools
             EditorGUILayout.Space();
             DrawDialogueSection();
             EditorGUILayout.Space();
-            DrawConditionSection();
-            EditorGUILayout.Space();
-            DrawRewardSection();
+            DrawConditionRewardColumnSection();
             EditorGUILayout.Space();
             DrawActionButtonSection( selectedQuestDefinition );
             EditorGUILayout.EndScrollView();
@@ -447,30 +450,194 @@ namespace TinyHero.Tools
         {
             EditorGUILayout.LabelField( "Quest Dialogue", EditorStyles.boldLabel );
             SerializedObject serializedQuestDefinition = new SerializedObject( workingQuestDefinition );
+            serializedQuestDefinition.Update();
             SerializedProperty useAcceptDialogueProperty = serializedQuestDefinition.FindProperty( "useAcceptDialogue" );
-            SerializedProperty acceptDialoguePresetProperty = serializedQuestDefinition.FindProperty( "acceptDialoguePreset" );
             SerializedProperty useCompleteDialogueProperty = serializedQuestDefinition.FindProperty( "useCompleteDialogue" );
-            SerializedProperty completeDialoguePresetProperty = serializedQuestDefinition.FindProperty( "completeDialoguePreset" );
             EditorGUILayout.PropertyField( useAcceptDialogueProperty, new GUIContent( "Use Accept Dialogue" ) );
-
-            if ( useAcceptDialogueProperty.boolValue )
-            {
-                EditorGUILayout.PropertyField( acceptDialoguePresetProperty, new GUIContent( "Accept Dialogue" ), true );
-            }
-
             EditorGUILayout.PropertyField( useCompleteDialogueProperty, new GUIContent( "Use Complete Dialogue" ) );
-
-            if ( useCompleteDialogueProperty.boolValue )
-            {
-                EditorGUILayout.PropertyField( completeDialoguePresetProperty, new GUIContent( "Complete Dialogue" ), true );
-            }
-
             serializedQuestDefinition.ApplyModifiedPropertiesWithoutUndo();
+
+            DrawDialoguePresetColumnLayout( useAcceptDialogueProperty.boolValue, useCompleteDialogueProperty.boolValue );
         }
 
         ///<summary>
-        /// 조건 설정 영역 렌더링
+        /// 퀘스트 대화 프리셋 컬럼 레이아웃 렌더링
         ///</summary>
+        private void DrawDialoguePresetColumnLayout( bool _useAcceptDialogue, bool _useCompleteDialogue )
+        {
+            if ( _useAcceptDialogue == false && _useCompleteDialogue == false )
+            {
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+
+            if ( _useAcceptDialogue )
+            {
+                EditorGUILayout.BeginVertical( GUILayout.Width( DialogueColumnMinWidth ) );
+                DrawDialoguePresetEditor( "Accept Dialogue", workingQuestDefinition.GetAcceptDialoguePreset() );
+                EditorGUILayout.EndVertical();
+            }
+
+            if ( _useCompleteDialogue )
+            {
+                EditorGUILayout.BeginVertical( GUILayout.Width( DialogueColumnMinWidth ) );
+                DrawDialoguePresetEditor( "Complete Dialogue", workingQuestDefinition.GetCompleteDialoguePreset() );
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        ///<summary>
+        /// 퀘스트 대화 프리셋 편집 UI 렌더링
+        ///</summary>
+        private void DrawDialoguePresetEditor( string _title, CNPCDialoguePreset _dialoguePreset )
+        {
+            if ( _dialoguePreset == null )
+            {
+                EditorGUILayout.HelpBox( $"{_title} 데이터가 없습니다.", MessageType.Warning );
+                return;
+            }
+
+            EditorGUILayout.BeginVertical( "box" );
+            EditorGUILayout.LabelField( _title, EditorStyles.boldLabel );
+            string presetName = EditorGUILayout.TextField( "Preset Name", _dialoguePreset.GetPresetName() );
+            _dialoguePreset.SetPresetName( presetName );
+            DrawDialogueLineListEditor( _dialoguePreset.GetDialogueLineList() );
+            EditorGUILayout.EndVertical();
+        }
+
+        ///<summary>
+        /// 퀘스트 대화 라인 목록 편집 UI 렌더링
+        ///</summary>
+        private void DrawDialogueLineListEditor( List<string> _dialogueLineList )
+        {
+            if ( _dialogueLineList == null )
+            {
+                EditorGUILayout.HelpBox( "Dialogue Line List가 없습니다.", MessageType.Warning );
+                return;
+            }
+
+            EditorGUILayout.LabelField( "Dialogue Line List", EditorStyles.boldLabel );
+
+            if ( _dialogueLineList.Count == 0 )
+            {
+                EditorGUILayout.HelpBox( "등록된 대화 라인이 없습니다.", MessageType.None );
+            }
+
+            for ( int index = 0; index < _dialogueLineList.Count; index++ )
+            {
+                bool shouldStopDrawing = DrawDialogueLineElement( _dialogueLineList, index );
+
+                if ( shouldStopDrawing )
+                {
+                    return;
+                }
+            }
+
+            if ( GUILayout.Button( "Dialogue Line 추가", GUILayout.Height( 28.0f ) ) )
+            {
+                _dialogueLineList.Add( string.Empty );
+            }
+        }
+
+        ///<summary>
+        /// 퀘스트 대화 라인 단일 항목 편집 UI 렌더링
+        ///</summary>
+        private bool DrawDialogueLineElement( List<string> _dialogueLineList, int _index )
+        {
+            EditorGUILayout.BeginVertical( "box" );
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField( $"Element {_index}", EditorStyles.boldLabel );
+
+            GUI.enabled = _index > 0;
+
+            if ( GUILayout.Button( "▲", GUILayout.Width( 28.0f ) ) )
+            {
+                MoveDialogueLine( _dialogueLineList, _index, _index - 1 );
+                GUI.enabled = true;
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                return true;
+            }
+
+            GUI.enabled = _index < _dialogueLineList.Count - 1;
+
+            if ( GUILayout.Button( "▼", GUILayout.Width( 28.0f ) ) )
+            {
+                MoveDialogueLine( _dialogueLineList, _index, _index + 1 );
+                GUI.enabled = true;
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                return true;
+            }
+
+            GUI.enabled = true;
+
+            if ( GUILayout.Button( "Copy", GUILayout.Width( 52.0f ) ) )
+            {
+                string copiedLine = _dialogueLineList[ _index ];
+                _dialogueLineList.Insert( _index + 1, copiedLine );
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                return true;
+            }
+
+            if ( GUILayout.Button( "Remove", GUILayout.Width( 68.0f ) ) )
+            {
+                _dialogueLineList.RemoveAt( _index );
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                return true;
+            }
+
+            EditorGUILayout.EndHorizontal();
+            string currentLine = _dialogueLineList[ _index ];
+            string updatedLine = EditorGUILayout.TextArea( currentLine, GUILayout.MinHeight( DialogueLineTextAreaMinHeight ), GUILayout.ExpandWidth( true ) );
+            _dialogueLineList[ _index ] = updatedLine;
+            EditorGUILayout.EndVertical();
+            return false;
+        }
+
+        ///<summary>
+        /// 퀘스트 대화 라인 순서 이동
+        ///</summary>
+        private void MoveDialogueLine( List<string> _dialogueLineList, int _sourceIndex, int _targetIndex )
+        {
+            if ( _dialogueLineList == null )
+            {
+                return;
+            }
+
+            bool isInvalidSource = _sourceIndex < 0 || _sourceIndex >= _dialogueLineList.Count;
+            bool isInvalidTarget = _targetIndex < 0 || _targetIndex >= _dialogueLineList.Count;
+
+            if ( isInvalidSource || isInvalidTarget )
+            {
+                return;
+            }
+
+            string sourceLine = _dialogueLineList[ _sourceIndex ];
+            _dialogueLineList.RemoveAt( _sourceIndex );
+            _dialogueLineList.Insert( _targetIndex, sourceLine );
+        }
+
+        ///<summary>
+        /// 조건과 보상 컬럼 영역 렌더링
+        ///</summary>
+        private void DrawConditionRewardColumnSection()
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.BeginVertical( GUILayout.Width( QuestEntryColumnMinWidth ) );
+            DrawConditionSection();
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.BeginVertical( GUILayout.Width( QuestEntryColumnMinWidth ) );
+            DrawRewardSection();
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal();
+        }
+
         ///<summary>
         /// 조건 설정 영역 렌더링
         ///</summary>
@@ -494,17 +661,17 @@ namespace TinyHero.Tools
 
             EditorGUILayout.BeginHorizontal();
 
-            if ( GUILayout.Button( "Add Kill Monster", GUILayout.Width( 160.0f ) ) )
+            if ( GUILayout.Button( "Add Kill Monster" ) )
             {
                 AddConditionEntry( eQuestConditionType.KILL_MONSTER );
             }
 
-            if ( GUILayout.Button( "Add Reach Level", GUILayout.Width( 160.0f ) ) )
+            if ( GUILayout.Button( "Add Reach Level" ) )
             {
                 AddConditionEntry( eQuestConditionType.REACH_LEVEL );
             }
 
-            if ( GUILayout.Button( "Add Turn In Item", GUILayout.Width( 160.0f ) ) )
+            if ( GUILayout.Button( "Add Turn In Item" ) )
             {
                 AddConditionEntry( eQuestConditionType.TURN_IN_ITEM );
             }
@@ -513,9 +680,6 @@ namespace TinyHero.Tools
             NormalizeConditionEntryIds();
         }
 
-        ///<summary>
-        /// 보상 설정 영역 렌더링
-        ///</summary>
         ///<summary>
         /// 보상 설정 영역 렌더링
         ///</summary>
@@ -539,12 +703,12 @@ namespace TinyHero.Tools
 
             EditorGUILayout.BeginHorizontal();
 
-            if ( GUILayout.Button( "Add EXP Reward", GUILayout.Width( 160.0f ) ) )
+            if ( GUILayout.Button( "Add EXP Reward" ) )
             {
                 AddRewardEntry( eQuestRewardType.EXP );
             }
 
-            if ( GUILayout.Button( "Add Item Reward", GUILayout.Width( 160.0f ) ) )
+            if ( GUILayout.Button( "Add Item Reward" ) )
             {
                 AddRewardEntry( eQuestRewardType.ITEM );
             }
@@ -827,6 +991,8 @@ namespace TinyHero.Tools
             }
 
             EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.BeginVertical( GUILayout.Width( ActionButtonSectionWidth ) );
+            EditorGUILayout.BeginHorizontal();
 
             if ( GUILayout.Button( "Save", GUILayout.Height( 32.0f ) ) )
             {
@@ -848,6 +1014,9 @@ namespace TinyHero.Tools
                 DeleteQuestDefinition( _selectedQuestDefinition );
             }
 
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
         }
 
@@ -1955,6 +2124,11 @@ namespace TinyHero.Tools
                 return;
             }
 
+            if ( IsTextEditingControlFocused() )
+            {
+                return;
+            }
+
             if ( currentEvent.keyCode == KeyCode.UpArrow )
             {
                 int nextIndex = Mathf.Max( 0, selectedQuestIndex - 1 );
@@ -1969,6 +2143,15 @@ namespace TinyHero.Tools
                 SelectQuestByIndex( nextIndex, nextIndex, questDefinitionInfoList.Count );
                 currentEvent.Use();
             }
+        }
+
+        ///<summary>
+        /// 텍스트 편집 컨트롤 포커스 여부 반환
+        ///</summary>
+        private bool IsTextEditingControlFocused()
+        {
+            bool result = EditorGUIUtility.editingTextField;
+            return result;
         }
 
         ///<summary>

@@ -9,6 +9,8 @@ namespace TinyHero.Maps
         public string mapId;
         public string mapName;
         public string backgroundSpriteName;
+        public bool hasCustomRightBoundary;
+        public float customRightBoundaryX;
         public List<CMapToolPortalSaveData> portals = new List<CMapToolPortalSaveData>();
         public List<CMapToolMonsterSaveData> monsters = new List<CMapToolMonsterSaveData>();
         public List<CMapToolNpcSaveData> npcs = new List<CMapToolNpcSaveData>();

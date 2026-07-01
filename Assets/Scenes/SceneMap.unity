@@ -8860,7 +8860,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6065577007530544704, guid: e698f243c28af7f4796fed4e78903741, type: 3}
       propertyPath: m_Name
-      value: BG
+      value: BackgroundObject
       objectReference: {fileID: 0}
     - target: {fileID: 6622814848415679029, guid: e698f243c28af7f4796fed4e78903741, type: 3}
       propertyPath: m_LocalPosition.x

@@ -89,6 +89,7 @@ namespace TinyHero.Maps
             CacheResourceCatalog();
             EnsureFadeOverlayExists();
             EnsureGameplayScenePlayerPrefabInstance();
+            EnsureGameplayCameraFollowController();
             SceneManager.sceneLoaded += HandleSceneLoaded;
             TryLoadPendingMapForActiveScene();
         }
@@ -141,6 +142,18 @@ namespace TinyHero.Maps
             if ( targetBackgroundFitter == null )
             {
                 return false;
+            }
+
+            CMapBackgroundLayoutController backgroundLayoutController = targetBackgroundFitter.GetComponent<CMapBackgroundLayoutController>();
+
+            if ( backgroundLayoutController != null )
+            {
+                bool hasCombinedBounds = backgroundLayoutController.TryGetCombinedWorldBounds( out _backgroundBounds );
+
+                if ( hasCombinedBounds )
+                {
+                    return true;
+                }
             }
 
             SpriteRenderer targetBackgroundRenderer = targetBackgroundFitter.GetComponent<SpriteRenderer>();
@@ -322,6 +335,7 @@ namespace TinyHero.Maps
         private void HandleSceneLoaded(Scene _scene, LoadSceneMode _loadSceneMode)
         {
             EnsureGameplayScenePlayerPrefabInstance();
+            EnsureGameplayCameraFollowController();
             TryLoadPendingMapForActiveScene();
         }
 
@@ -360,6 +374,42 @@ namespace TinyHero.Maps
 
             GameObject createdPlayerObject = Instantiate( playerPrefab, Vector3.zero, Quaternion.identity );
             createdPlayerObject.name = PlayerObjectName;
+        }
+
+        ///<summary>
+        /// 게임플레이 씬 카메라 추적 컴포넌트 보장
+        ///</summary>
+        private void EnsureGameplayCameraFollowController()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            if ( activeScene.name != GameplaySceneName )
+            {
+                return;
+            }
+
+            Camera mainCamera = Camera.main;
+
+            if ( mainCamera == null )
+            {
+                return;
+            }
+
+            CPlayerCameraFollowController cameraFollowController = mainCamera.GetComponent<CPlayerCameraFollowController>();
+
+            if ( cameraFollowController == null )
+            {
+                cameraFollowController = mainCamera.gameObject.AddComponent<CPlayerCameraFollowController>();
+            }
+
+            PlayerController playerController = ResolveActivePlayerController();
+
+            if ( playerController == null )
+            {
+                return;
+            }
+
+            cameraFollowController.SetTarget( playerController.transform );
         }
 
         ///<summary>
@@ -585,10 +635,12 @@ namespace TinyHero.Maps
             ClearSpawnedRuntimeObjects();
             PrepareMonsterPools( requiredMonsterPoolKeySet );
             ApplyBackgroundSprite( _loadedData.backgroundSpriteName );
+            ApplyBackgroundRightBoundary( _loadedData );
             SpawnPortals( _loadedData.portals );
             SpawnMonsters( _loadedData.monsters );
             SpawnNpcs( _loadedData.npcs );
             MovePlayerToEntryPortal( _entryPortalId );
+            EnsureGameplayCameraFollowController();
         }
 
         ///<summary>
@@ -625,12 +677,90 @@ namespace TinyHero.Maps
             currentBackgroundSprite = backgroundSprite;
             targetBackgroundRenderer.sprite = backgroundSprite;
             targetBackgroundFitter.ApplyFit();
+            CMapBackgroundLayoutController backgroundLayoutController = EnsureBackgroundLayoutController( targetBackgroundRenderer );
+
+            if ( backgroundLayoutController != null )
+            {
+                backgroundLayoutController.RefreshLayout();
+            }
+
             CMapToolBackgroundColliderVisualizer colliderVisualizer = targetBackgroundRenderer.GetComponent<CMapToolBackgroundColliderVisualizer>();
 
             if ( colliderVisualizer != null )
             {
                 colliderVisualizer.RefreshColliderVisual();
             }
+        }
+
+        ///<summary>
+        /// 배경 레이아웃 컨트롤러 보장
+        ///</summary>
+        private CMapBackgroundLayoutController EnsureBackgroundLayoutController( SpriteRenderer _targetBackgroundRenderer )
+        {
+            if ( _targetBackgroundRenderer == null )
+            {
+                return null;
+            }
+
+            CMapBackgroundLayoutController backgroundLayoutController = _targetBackgroundRenderer.GetComponent<CMapBackgroundLayoutController>();
+
+            if ( backgroundLayoutController == null )
+            {
+                backgroundLayoutController = _targetBackgroundRenderer.gameObject.AddComponent<CMapBackgroundLayoutController>();
+            }
+
+            return backgroundLayoutController;
+        }
+
+        ///<summary>
+        /// 저장된 배경 우측 경계 적용
+        ///</summary>
+        private void ApplyBackgroundRightBoundary( CMapToolSaveData _loadedData )
+        {
+            WorldSpaceBackgroundFitter targetBackgroundFitter = FindFirstObjectByType<WorldSpaceBackgroundFitter>();
+
+            if ( targetBackgroundFitter == null )
+            {
+                return;
+            }
+
+            SpriteRenderer targetBackgroundRenderer = targetBackgroundFitter.GetComponent<SpriteRenderer>();
+            CMapBackgroundLayoutController backgroundLayoutController = EnsureBackgroundLayoutController( targetBackgroundRenderer );
+
+            if ( backgroundLayoutController == null )
+            {
+                return;
+            }
+
+            if ( _loadedData != null && _loadedData.hasCustomRightBoundary )
+            {
+                backgroundLayoutController.SetCustomRightBoundaryX( _loadedData.customRightBoundaryX );
+                RefreshBackgroundColliderVisual( targetBackgroundRenderer );
+                return;
+            }
+
+            backgroundLayoutController.ClearCustomRightBoundary();
+            RefreshBackgroundColliderVisual( targetBackgroundRenderer );
+        }
+
+        ///<summary>
+        /// 배경 콜라이더 시각화 갱신
+        ///</summary>
+        private void RefreshBackgroundColliderVisual( SpriteRenderer _targetBackgroundRenderer )
+        {
+            if ( _targetBackgroundRenderer == null )
+            {
+                return;
+            }
+
+            CMapToolBackgroundColliderVisualizer colliderVisualizer = _targetBackgroundRenderer.GetComponent<CMapToolBackgroundColliderVisualizer>();
+
+            if ( colliderVisualizer == null )
+            {
+                return;
+            }
+
+            colliderVisualizer.RefreshColliderVisual();
         }
 
         ///<summary>
