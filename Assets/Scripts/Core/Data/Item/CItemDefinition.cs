@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LayerLab.ArtMakerUnity;
+using TinyHero.Core;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -52,6 +53,10 @@ namespace TinyHero.Core.Data
         [SerializeField] private long quantityValue;
         [SerializeField] private CEquipmentPotentialData equipmentPotentialData = new CEquipmentPotentialData();
 
+        [NonSerialized] private CSecureLong secureQuantityValue;
+        [NonSerialized] private bool hasSecureQuantityValue;
+        [NonSerialized] private bool didReportQuantityTamper;
+
         ///<summary>
         /// 아이템 ID 반환
         ///</summary>
@@ -74,7 +79,16 @@ namespace TinyHero.Core.Data
         ///</summary>
         public long GetQuantity()
         {
-            long result = Math.Max( 0L, quantityValue );
+            EnsureSecureQuantityValue();
+
+            if ( secureQuantityValue.TryGetValue( out long resolvedQuantity ) == false )
+            {
+                ReportQuantityTamper();
+                return 0L;
+            }
+
+            long result = Math.Max( 0L, resolvedQuantity );
+            quantityValue = result;
             return result;
         }
 
@@ -95,6 +109,9 @@ namespace TinyHero.Core.Data
         {
             long resolvedQuantity = Math.Max( 0L, _quantity );
             quantityValue = resolvedQuantity;
+            secureQuantityValue = new CSecureLong( resolvedQuantity );
+            hasSecureQuantityValue = true;
+            didReportQuantityTamper = false;
         }
 
         ///<summary>
@@ -122,9 +139,40 @@ namespace TinyHero.Core.Data
         public void Clear()
         {
             itemId = string.Empty;
-            quantityValue = 0L;
+            SetQuantity( 0L );
             EnsurePotentialData();
             equipmentPotentialData.Clear();
+        }
+
+        ///<summary>
+        /// 보안 수량 초기화 보장
+        ///</summary>
+        private void EnsureSecureQuantityValue()
+        {
+            if ( hasSecureQuantityValue )
+            {
+                return;
+            }
+
+            long resolvedQuantity = Math.Max( 0L, quantityValue );
+            secureQuantityValue = new CSecureLong( resolvedQuantity );
+            hasSecureQuantityValue = true;
+            didReportQuantityTamper = false;
+        }
+
+        ///<summary>
+        /// 수량 메모리 변조 경고 출력
+        ///</summary>
+        private void ReportQuantityTamper()
+        {
+            if ( didReportQuantityTamper )
+            {
+                return;
+            }
+
+            didReportQuantityTamper = true;
+            string displayItemId = string.IsNullOrWhiteSpace( itemId ) ? "EMPTY" : itemId;
+            Debug.LogWarning( $"[ Security ] Inventory quantity tamper detected. ItemId: {displayItemId}" );
         }
 
         ///<summary>

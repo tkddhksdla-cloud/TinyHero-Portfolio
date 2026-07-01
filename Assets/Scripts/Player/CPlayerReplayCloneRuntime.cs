@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Skill;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -534,7 +535,9 @@ namespace TinyHero.Player
             float rawDamage = ( _attackStatValue * damageMultiplier ) * _skillAttackPowerMultiplier - _monsterObject.GetDef();
             float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( sourceStatManager, rawDamage, out bool isCritical );
             _isCritical = isCritical;
-            long result = System.Math.Max( 0L, ( long )System.Math.Round( resolvedDamage ) );
+            long resolvedDamageValue = System.Math.Max( 0L, ( long )System.Math.Round( resolvedDamage ) );
+            CSecureLong secureDamage = new CSecureLong( resolvedDamageValue );
+            long result = secureDamage.Value;
             return result;
         }
 

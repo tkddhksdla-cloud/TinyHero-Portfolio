@@ -1,5 +1,8 @@
 using System.Collections;
+using System;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using TinyHero.Maps;
 using TinyHero.Player;
@@ -22,10 +25,22 @@ namespace TinyHero.Core
         private const string SaveFailedDescriptionText = "저장에 실패했습니다.";
         private const string ConfirmButtonText = "확인";
         private const int MaxLoadWaitFrameCount = 300;
+        private const string ProtectedSaveMagic = "TinyHeroSaveProtectedV1";
+        private const string SaveCryptoSecret = "TinyHero.Save.Security.Local.2026";
 
         private CGameSaveData pendingLoadSaveData;
         private bool isPendingLoadRequested;
         private bool isPendingLoadApplying;
+
+        [Serializable]
+        private sealed class CProtectedSavePayloadData
+        {
+            public string magic = ProtectedSaveMagic;
+            public string salt = string.Empty;
+            public string iv = string.Empty;
+            public string cipherText = string.Empty;
+            public string hmac = string.Empty;
+        }
 
         ///<summary>
         /// 저장 매니저 초기 설정
@@ -280,7 +295,15 @@ namespace TinyHero.Core
             }
 
             string serializedJsonText = JsonUtility.ToJson( _gameSaveData, true );
-            File.WriteAllText( saveFilePath, serializedJsonText );
+            bool isProtected = TryProtectSaveJsonText( serializedJsonText, out string protectedSaveText );
+
+            if ( isProtected == false )
+            {
+                Debug.LogWarning( "[ SaveDebug ] Save write failed because save protection failed.", this );
+                return false;
+            }
+
+            File.WriteAllText( saveFilePath, protectedSaveText, Encoding.UTF8 );
             Debug.Log( $"[ SaveDebug ] Save data written. Path: {saveFilePath}", this );
             return true;
         }
@@ -299,15 +322,23 @@ namespace TinyHero.Core
                 return false;
             }
 
-            string serializedJsonText = File.ReadAllText( saveFilePath );
+            string serializedSaveText = File.ReadAllText( saveFilePath, Encoding.UTF8 );
 
-            if ( string.IsNullOrWhiteSpace( serializedJsonText ) )
+            if ( string.IsNullOrWhiteSpace( serializedSaveText ) )
             {
                 Debug.LogWarning( "[ SaveDebug ] Save file existed but contents were empty.", this );
                 return false;
             }
 
-            string migratedJsonText = MigrateLegacySaveJsonText( serializedJsonText );
+            bool isUnprotected = TryResolveReadableSaveJsonText( serializedSaveText, out string readableJsonText );
+
+            if ( isUnprotected == false )
+            {
+                Debug.LogWarning( "[ SaveDebug ] Save file integrity validation failed.", this );
+                return false;
+            }
+
+            string migratedJsonText = MigrateLegacySaveJsonText( readableJsonText );
             CGameSaveData loadedSaveData = JsonUtility.FromJson<CGameSaveData>( migratedJsonText );
 
             if ( loadedSaveData == null )
@@ -319,6 +350,220 @@ namespace TinyHero.Core
             Debug.Log( $"[ SaveDebug ] Save file read succeeded. Path: {saveFilePath}", this );
             _gameSaveData = loadedSaveData;
             return true;
+        }
+
+        ///<summary>
+        /// 저장 JSON 보호 문자열 생성
+        ///</summary>
+        private bool TryProtectSaveJsonText( string _serializedJsonText, out string _protectedSaveText )
+        {
+            _protectedSaveText = string.Empty;
+
+            if ( string.IsNullOrWhiteSpace( _serializedJsonText ) )
+            {
+                return false;
+            }
+
+            try
+            {
+                byte[] saltByteArray = CreateRandomByteArray( 16 );
+                byte[] ivByteArray = CreateRandomByteArray( 16 );
+                byte[] encryptionKeyByteArray = DeriveSaveKey( "AES", saltByteArray );
+                byte[] hmacKeyByteArray = DeriveSaveKey( "HMAC", saltByteArray );
+                byte[] plainByteArray = Encoding.UTF8.GetBytes( _serializedJsonText );
+                byte[] cipherByteArray = EncryptSaveByteArray( plainByteArray, encryptionKeyByteArray, ivByteArray );
+
+                CProtectedSavePayloadData payloadData = new CProtectedSavePayloadData();
+                payloadData.magic = ProtectedSaveMagic;
+                payloadData.salt = Convert.ToBase64String( saltByteArray );
+                payloadData.iv = Convert.ToBase64String( ivByteArray );
+                payloadData.cipherText = Convert.ToBase64String( cipherByteArray );
+                payloadData.hmac = CalculatePayloadHmac( payloadData, hmacKeyByteArray );
+                _protectedSaveText = JsonUtility.ToJson( payloadData, true );
+                return true;
+            }
+            catch ( Exception exception )
+            {
+                Debug.LogWarning( $"[ SaveDebug ] Save protection exception. Message: {exception.Message}", this );
+                return false;
+            }
+        }
+
+        ///<summary>
+        /// 읽기 가능한 저장 JSON 문자열 결정
+        ///</summary>
+        private bool TryResolveReadableSaveJsonText( string _serializedSaveText, out string _readableJsonText )
+        {
+            _readableJsonText = string.Empty;
+
+            if ( string.IsNullOrWhiteSpace( _serializedSaveText ) )
+            {
+                return false;
+            }
+
+            if ( IsProtectedSaveText( _serializedSaveText ) == false )
+            {
+                _readableJsonText = _serializedSaveText;
+                return true;
+            }
+
+            return TryUnprotectSaveJsonText( _serializedSaveText, out _readableJsonText );
+        }
+
+        ///<summary>
+        /// 보호 저장 문자열 여부 반환
+        ///</summary>
+        private bool IsProtectedSaveText( string _serializedSaveText )
+        {
+            bool result = _serializedSaveText.Contains( ProtectedSaveMagic );
+            return result;
+        }
+
+        ///<summary>
+        /// 보호 저장 문자열 복호화
+        ///</summary>
+        private bool TryUnprotectSaveJsonText( string _protectedSaveText, out string _serializedJsonText )
+        {
+            _serializedJsonText = string.Empty;
+
+            try
+            {
+                CProtectedSavePayloadData payloadData = JsonUtility.FromJson<CProtectedSavePayloadData>( _protectedSaveText );
+
+                if ( payloadData == null || string.Equals( payloadData.magic, ProtectedSaveMagic, StringComparison.Ordinal ) == false )
+                {
+                    return false;
+                }
+
+                byte[] saltByteArray = Convert.FromBase64String( payloadData.salt );
+                byte[] ivByteArray = Convert.FromBase64String( payloadData.iv );
+                byte[] cipherByteArray = Convert.FromBase64String( payloadData.cipherText );
+                byte[] encryptionKeyByteArray = DeriveSaveKey( "AES", saltByteArray );
+                byte[] hmacKeyByteArray = DeriveSaveKey( "HMAC", saltByteArray );
+                string expectedHmac = CalculatePayloadHmac( payloadData, hmacKeyByteArray );
+
+                if ( IsSameText( expectedHmac, payloadData.hmac ) == false )
+                {
+                    return false;
+                }
+
+                byte[] plainByteArray = DecryptSaveByteArray( cipherByteArray, encryptionKeyByteArray, ivByteArray );
+                _serializedJsonText = Encoding.UTF8.GetString( plainByteArray );
+                return string.IsNullOrWhiteSpace( _serializedJsonText ) == false;
+            }
+            catch ( Exception exception )
+            {
+                Debug.LogWarning( $"[ SaveDebug ] Save unprotect exception. Message: {exception.Message}", this );
+                return false;
+            }
+        }
+
+        ///<summary>
+        /// 저장 보호 난수 바이트 배열 생성
+        ///</summary>
+        private byte[] CreateRandomByteArray( int _byteCount )
+        {
+            byte[] byteArray = new byte[ Mathf.Max( 1, _byteCount ) ];
+
+            using ( RNGCryptoServiceProvider randomProvider = new RNGCryptoServiceProvider() )
+            {
+                randomProvider.GetBytes( byteArray );
+            }
+
+            return byteArray;
+        }
+
+        ///<summary>
+        /// 저장 보호 키 생성
+        ///</summary>
+        private byte[] DeriveSaveKey( string _purpose, byte[] _saltByteArray )
+        {
+            string applicationIdentifier = string.IsNullOrWhiteSpace( Application.identifier ) ? "TinyHero" : Application.identifier;
+            string seedText = $"{SaveCryptoSecret}|{applicationIdentifier}|{_purpose}|{Convert.ToBase64String( _saltByteArray )}";
+            byte[] seedByteArray = Encoding.UTF8.GetBytes( seedText );
+
+            using ( SHA256 sha256 = SHA256.Create() )
+            {
+                byte[] result = sha256.ComputeHash( seedByteArray );
+                return result;
+            }
+        }
+
+        ///<summary>
+        /// 저장 바이트 배열 암호화
+        ///</summary>
+        private byte[] EncryptSaveByteArray( byte[] _plainByteArray, byte[] _keyByteArray, byte[] _ivByteArray )
+        {
+            using ( Aes aes = Aes.Create() )
+            {
+                aes.Key = _keyByteArray;
+                aes.IV = _ivByteArray;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+
+                using ( ICryptoTransform encryptor = aes.CreateEncryptor() )
+                {
+                    byte[] result = encryptor.TransformFinalBlock( _plainByteArray, 0, _plainByteArray.Length );
+                    return result;
+                }
+            }
+        }
+
+        ///<summary>
+        /// 저장 바이트 배열 복호화
+        ///</summary>
+        private byte[] DecryptSaveByteArray( byte[] _cipherByteArray, byte[] _keyByteArray, byte[] _ivByteArray )
+        {
+            using ( Aes aes = Aes.Create() )
+            {
+                aes.Key = _keyByteArray;
+                aes.IV = _ivByteArray;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+
+                using ( ICryptoTransform decryptor = aes.CreateDecryptor() )
+                {
+                    byte[] result = decryptor.TransformFinalBlock( _cipherByteArray, 0, _cipherByteArray.Length );
+                    return result;
+                }
+            }
+        }
+
+        ///<summary>
+        /// 보호 저장 페이로드 HMAC 생성
+        ///</summary>
+        private string CalculatePayloadHmac( CProtectedSavePayloadData _payloadData, byte[] _hmacKeyByteArray )
+        {
+            string signedText = $"{_payloadData.magic}|{_payloadData.salt}|{_payloadData.iv}|{_payloadData.cipherText}";
+            byte[] signedByteArray = Encoding.UTF8.GetBytes( signedText );
+
+            using ( HMACSHA256 hmac = new HMACSHA256( _hmacKeyByteArray ) )
+            {
+                byte[] hmacByteArray = hmac.ComputeHash( signedByteArray );
+                string result = Convert.ToBase64String( hmacByteArray );
+                return result;
+            }
+        }
+
+        ///<summary>
+        /// 문자열 고정 시간 비교 결과 반환
+        ///</summary>
+        private bool IsSameText( string _leftText, string _rightText )
+        {
+            if ( _leftText == null || _rightText == null || _leftText.Length != _rightText.Length )
+            {
+                return false;
+            }
+
+            int difference = 0;
+
+            for ( int index = 0; index < _leftText.Length; index++ )
+            {
+                difference |= _leftText[ index ] ^ _rightText[ index ];
+            }
+
+            bool result = difference == 0;
+            return result;
         }
 
         ///<summary>
@@ -388,7 +633,7 @@ namespace TinyHero.Core
         ///</summary>
         private PlayerController ResolveActivePlayerController()
         {
-            PlayerController[] playerControllerArray = Object.FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
+            PlayerController[] playerControllerArray = UnityEngine.Object.FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
             int playerControllerCount = playerControllerArray.Length;
 
             for ( int index = 0; index < playerControllerCount; index++ )

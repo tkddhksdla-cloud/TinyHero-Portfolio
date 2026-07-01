@@ -2,6 +2,7 @@ using System;
 using TinyHero.Core;
 using TinyHero.Core.Data;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TinyHero.Player
 {
@@ -29,16 +30,22 @@ namespace TinyHero.Player
         [Header( "Runtime" )]
         [SerializeField] private bool restoreResourceOnAwake = true;
         [SerializeField] private bool enableAutoRecovery = true;
-        [SerializeField] private int unspentStatPoint;
-        [SerializeField] private int currentLevel = 1;
-        [SerializeField] private float currentExp;
+        [FormerlySerializedAs( "unspentStatPoint" )]
+        [SerializeField] private int initialUnspentStatPoint;
+        [FormerlySerializedAs( "currentLevel" )]
+        [SerializeField] private int initialCurrentLevel = 1;
+        [FormerlySerializedAs( "currentExp" )]
+        [SerializeField] private float initialCurrentExp;
         [SerializeField] private float maxExp = 100.0f;
 
         private static CPlayerDefaultStatTableData cachedPlayerDefaultStatTableData;
         private static CPlayerLevelStatTableData cachedPlayerLevelStatTableData;
 
-        private float currentHp;
-        private float currentMp;
+        private CSecureInt unspentStatPoint;
+        private CSecureInt currentLevel;
+        private CSecureFloat currentExp;
+        private CSecureFloat currentHp;
+        private CSecureFloat currentMp;
         private bool isRuntimeInitialized;
 
         public event Action<CPlayerStatManager> OnStatChanged;
@@ -563,7 +570,8 @@ namespace TinyHero.Player
             }
 
             levelStatBonus.AddStatValue( _statType, _valuePerPoint );
-            unspentStatPoint--;
+            int nextStatPoint = unspentStatPoint - 1;
+            unspentStatPoint = Mathf.Max( 0, nextStatPoint );
             NotifyStatChanged();
             return true;
         }
@@ -731,6 +739,7 @@ namespace TinyHero.Player
             }
 
             isRuntimeInitialized = true;
+            InitializeSecureProgressionState();
             RefreshProgressionFromExperience( false );
 
             if ( restoreResourceOnAwake )
@@ -741,6 +750,19 @@ namespace TinyHero.Player
             }
 
             ClampCurrentResourcesToMax();
+        }
+
+        ///<summary>
+        /// Secure 진행 상태 초기값 구성
+        ///</summary>
+        private void InitializeSecureProgressionState()
+        {
+            int resolvedInitialLevel = Mathf.Max( 1, initialCurrentLevel );
+            float resolvedInitialExp = Mathf.Max( 0.0f, initialCurrentExp );
+            int resolvedInitialStatPoint = Mathf.Max( 0, initialUnspentStatPoint );
+            currentLevel = resolvedInitialLevel;
+            currentExp = resolvedInitialExp;
+            unspentStatPoint = resolvedInitialStatPoint;
         }
 
         ///<summary>

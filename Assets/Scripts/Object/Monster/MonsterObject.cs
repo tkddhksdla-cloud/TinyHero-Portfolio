@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Maps;
 using TinyHero.Player;
@@ -607,7 +608,8 @@ public sealed class MonsterObject : MonoBehaviour
             return;
         }
 
-        long appliedDamage = _damage;
+        CSecureLong secureDamage = new CSecureLong( _damage );
+        long appliedDamage = secureDamage.Value;
 
         if ( appliedDamage < 0 )
         {

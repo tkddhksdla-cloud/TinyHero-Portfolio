@@ -2409,8 +2409,10 @@ namespace TinyHero.Player
             float rawDamage = playerAtk * skillAttackPowerMultiplier - monsterDef;
             float resolvedDamage = CPlayerCombatStatUtility.ResolveCombatDamage( targetStatManager, rawDamage, out bool isCritical );
             _isCritical = isCritical;
-            long damage = System.Math.Max( 0L, ( long )System.Math.Round( resolvedDamage ) );
-            return damage;
+            long resolvedDamageValue = System.Math.Max( 0L, ( long )System.Math.Round( resolvedDamage ) );
+            CSecureLong secureDamage = new CSecureLong( resolvedDamageValue );
+            long result = secureDamage.Value;
+            return result;
         }
 
         ///<summary>
@@ -2461,7 +2463,9 @@ namespace TinyHero.Player
 
             float playerDef = targetStatManager.GetFinalStatValue( ePlayerStatType.DEF );
             float rawDamage = _monsterObject.GetAtk() - playerDef;
-            long damage = System.Math.Max( 0L, ( long )System.Math.Round( Mathf.Max( 0.0f, rawDamage ) ) );
+            long resolvedDamageValue = System.Math.Max( 0L, ( long )System.Math.Round( Mathf.Max( 0.0f, rawDamage ) ) );
+            CSecureLong secureDamage = new CSecureLong( resolvedDamageValue );
+            long damage = secureDamage.Value;
             targetStatManager.ConsumeHp( damage );
 
             if ( damage > 0L && CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager ) )

@@ -31,6 +31,12 @@ namespace TinyHero.Skill
         [SerializeField] private int skillPointPerLevelUp = 1;
         [SerializeField] private int lastGrantedPlayerLevel = 1;
 
+        [NonSerialized] private CSecureInt secureCurrentSkillPoint;
+        [NonSerialized] private CSecureInt secureLastGrantedPlayerLevel;
+        [NonSerialized] private bool hasSecureSkillProgressionState;
+        [NonSerialized] private bool didReportSkillPointTamper;
+        [NonSerialized] private bool didReportGrantedLevelTamper;
+
         private readonly Dictionary<string, CSkillRuntimeData> skillRuntimeDataById = new Dictionary<string, CSkillRuntimeData>();
         private readonly CPlayerStatRuntimeData aggregatedPassiveStatBonus = new CPlayerStatRuntimeData();
         private readonly List<ScriptableObject> runtimeGeneratedScriptableObjectList = new List<ScriptableObject>();
@@ -215,7 +221,7 @@ namespace TinyHero.Skill
         ///</summary>
         public int GetCurrentSkillPoint()
         {
-            int result = Mathf.Max( 0, currentSkillPoint );
+            int result = GetSecureCurrentSkillPoint();
             return result;
         }
 
@@ -485,8 +491,8 @@ namespace TinyHero.Skill
         {
             EnsureRuntimeDataIntegrity();
             CSkillSnapshotData snapshotData = new CSkillSnapshotData();
-            snapshotData.currentSkillPoint = currentSkillPoint;
-            snapshotData.lastGrantedPlayerLevel = lastGrantedPlayerLevel;
+            snapshotData.currentSkillPoint = GetSecureCurrentSkillPoint();
+            snapshotData.lastGrantedPlayerLevel = GetSecureLastGrantedPlayerLevel();
             int runtimeDataCount = skillRuntimeDataList.Count;
 
             for ( int index = 0; index < runtimeDataCount; index++ )
@@ -522,8 +528,10 @@ namespace TinyHero.Skill
         public void LoadSnapshotData( CSkillSnapshotData _snapshotData )
         {
             EnsureRuntimeDataIntegrity();
-            currentSkillPoint = _snapshotData != null ? Mathf.Max( 0, _snapshotData.currentSkillPoint ) : 0;
-            lastGrantedPlayerLevel = _snapshotData != null ? Mathf.Max( 1, _snapshotData.lastGrantedPlayerLevel ) : 1;
+            int snapshotSkillPoint = _snapshotData != null ? Mathf.Max( 0, _snapshotData.currentSkillPoint ) : 0;
+            int snapshotGrantedLevel = _snapshotData != null ? Mathf.Max( 1, _snapshotData.lastGrantedPlayerLevel ) : 1;
+            SetSecureCurrentSkillPoint( snapshotSkillPoint );
+            SetSecureLastGrantedPlayerLevel( snapshotGrantedLevel );
             Dictionary<string, CSkillRuntimeSnapshotEntryData> snapshotEntryBySkillId = new Dictionary<string, CSkillRuntimeSnapshotEntryData>();
 
             if ( _snapshotData != null && _snapshotData.skillRuntimeEntryList != null )
@@ -1027,16 +1035,128 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
         }
 
         ///<summary>
+        /// 스킬 진행 보안 상태 초기화 보장
+        ///</summary>
+        private void EnsureSecureSkillProgressionState()
+        {
+            if ( hasSecureSkillProgressionState )
+            {
+                return;
+            }
+
+            int resolvedSkillPoint = Mathf.Max( 0, currentSkillPoint );
+            int resolvedGrantedLevel = Mathf.Max( 1, lastGrantedPlayerLevel );
+            secureCurrentSkillPoint = new CSecureInt( resolvedSkillPoint );
+            secureLastGrantedPlayerLevel = new CSecureInt( resolvedGrantedLevel );
+            currentSkillPoint = resolvedSkillPoint;
+            lastGrantedPlayerLevel = resolvedGrantedLevel;
+            hasSecureSkillProgressionState = true;
+            didReportSkillPointTamper = false;
+            didReportGrantedLevelTamper = false;
+        }
+
+        ///<summary>
+        /// 보안 스킬 포인트 반환
+        ///</summary>
+        private int GetSecureCurrentSkillPoint()
+        {
+            EnsureSecureSkillProgressionState();
+
+            if ( secureCurrentSkillPoint.TryGetValue( out int resolvedSkillPoint ) == false )
+            {
+                ReportSkillProgressionTamper( "SkillPoint" );
+                return 0;
+            }
+
+            int result = Mathf.Max( 0, resolvedSkillPoint );
+            currentSkillPoint = result;
+            return result;
+        }
+
+        ///<summary>
+        /// 보안 스킬 포인트 설정
+        ///</summary>
+        private void SetSecureCurrentSkillPoint( int _skillPoint )
+        {
+            int resolvedSkillPoint = Mathf.Max( 0, _skillPoint );
+            currentSkillPoint = resolvedSkillPoint;
+            secureCurrentSkillPoint = new CSecureInt( resolvedSkillPoint );
+            hasSecureSkillProgressionState = true;
+            didReportSkillPointTamper = false;
+        }
+
+        ///<summary>
+        /// 보안 지급 완료 레벨 반환
+        ///</summary>
+        private int GetSecureLastGrantedPlayerLevel()
+        {
+            EnsureSecureSkillProgressionState();
+
+            if ( secureLastGrantedPlayerLevel.TryGetValue( out int resolvedGrantedLevel ) == false )
+            {
+                ReportSkillProgressionTamper( "LastGrantedPlayerLevel" );
+                return 1;
+            }
+
+            int result = Mathf.Max( 1, resolvedGrantedLevel );
+            lastGrantedPlayerLevel = result;
+            return result;
+        }
+
+        ///<summary>
+        /// 보안 지급 완료 레벨 설정
+        ///</summary>
+        private void SetSecureLastGrantedPlayerLevel( int _lastGrantedLevel )
+        {
+            int resolvedGrantedLevel = Mathf.Max( 1, _lastGrantedLevel );
+            lastGrantedPlayerLevel = resolvedGrantedLevel;
+            secureLastGrantedPlayerLevel = new CSecureInt( resolvedGrantedLevel );
+            hasSecureSkillProgressionState = true;
+            didReportGrantedLevelTamper = false;
+        }
+
+        ///<summary>
+        /// 스킬 진행 메모리 변조 경고 출력
+        ///</summary>
+        private void ReportSkillProgressionTamper( string _fieldName )
+        {
+            bool isSkillPointField = string.Equals( _fieldName, "SkillPoint", StringComparison.Ordinal );
+
+            if ( isSkillPointField && didReportSkillPointTamper )
+            {
+                return;
+            }
+
+            if ( isSkillPointField == false && didReportGrantedLevelTamper )
+            {
+                return;
+            }
+
+            if ( isSkillPointField )
+            {
+                didReportSkillPointTamper = true;
+            }
+            else
+            {
+                didReportGrantedLevelTamper = true;
+            }
+
+            Debug.LogWarning( $"[ Security ] Skill progression tamper detected. Field: {_fieldName}", this );
+        }
+
+        ///<summary>
         /// 해금 상태 갱신
         ///</summary>
         private void InitializeSkillProgression()
         {
-            currentSkillPoint = Mathf.Max( currentSkillPoint, initialSkillPoint );
+            EnsureSecureSkillProgressionState();
+            int normalizedSkillPoint = Mathf.Max( GetSecureCurrentSkillPoint(), initialSkillPoint );
+            SetSecureCurrentSkillPoint( normalizedSkillPoint );
             int currentLevel = targetStatManager != null ? targetStatManager.GetCurrentLevel() : 1;
 
-            if ( lastGrantedPlayerLevel <= 0 )
+            if ( GetSecureLastGrantedPlayerLevel() <= 0 )
             {
-                lastGrantedPlayerLevel = 1;
+                SetSecureLastGrantedPlayerLevel( 1 );
             }
 
             GrantSkillPointsForLevelProgress( currentLevel );
@@ -1048,18 +1168,19 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
         private void GrantSkillPointsForLevelProgress( int _currentLevel )
         {
             int normalizedLevel = Mathf.Max( 1, _currentLevel );
-            int normalizedGrantedLevel = Mathf.Max( 1, lastGrantedPlayerLevel );
+            int normalizedGrantedLevel = Mathf.Max( 1, GetSecureLastGrantedPlayerLevel() );
 
             if ( normalizedLevel <= normalizedGrantedLevel )
             {
-                lastGrantedPlayerLevel = normalizedGrantedLevel;
+                SetSecureLastGrantedPlayerLevel( normalizedGrantedLevel );
                 return;
             }
 
             int grantedLevelCount = normalizedLevel - normalizedGrantedLevel;
             int grantedSkillPoint = grantedLevelCount * Mathf.Max( 0, skillPointPerLevelUp );
-            currentSkillPoint = Mathf.Max( 0, currentSkillPoint + grantedSkillPoint );
-            lastGrantedPlayerLevel = normalizedLevel;
+            int nextSkillPoint = Mathf.Max( 0, GetSecureCurrentSkillPoint() + grantedSkillPoint );
+            SetSecureCurrentSkillPoint( nextSkillPoint );
+            SetSecureLastGrantedPlayerLevel( normalizedLevel );
         }
 
         ///<summary>
@@ -1087,7 +1208,7 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
                 return false;
             }
 
-            bool result = currentSkillPoint >= skillDefinition.GetLearnSpCost();
+            bool result = GetSecureCurrentSkillPoint() >= skillDefinition.GetLearnSpCost();
             return result;
         }
 
@@ -1115,7 +1236,7 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
                 return false;
             }
 
-            bool result = currentSkillPoint >= skillDefinition.GetLevelUpSpCost();
+            bool result = GetSecureCurrentSkillPoint() >= skillDefinition.GetLevelUpSpCost();
             return result;
         }
 
@@ -1143,8 +1264,8 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
 
             if ( _ignoreConditionAndCost == false )
             {
-                int nextSkillPoint = currentSkillPoint - skillDefinition.GetLearnSpCost();
-                currentSkillPoint = Mathf.Max( 0, nextSkillPoint );
+                int nextSkillPoint = GetSecureCurrentSkillPoint() - skillDefinition.GetLearnSpCost();
+                SetSecureCurrentSkillPoint( Mathf.Max( 0, nextSkillPoint ) );
             }
 
             _runtimeData.SetUnlocked( true );
@@ -1175,9 +1296,9 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             }
 
             CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
-            int nextSkillPoint = currentSkillPoint - skillDefinition.GetLevelUpSpCost();
+            int nextSkillPoint = GetSecureCurrentSkillPoint() - skillDefinition.GetLevelUpSpCost();
             int nextSkillLevel = _runtimeData.GetSkillLevel() + 1;
-            currentSkillPoint = Mathf.Max( 0, nextSkillPoint );
+            SetSecureCurrentSkillPoint( Mathf.Max( 0, nextSkillPoint ) );
             _runtimeData.SetSkillLevel( nextSkillLevel );
 
             if ( skillDefinition.GetSkillType() == eSkillType.PASSIVE )
