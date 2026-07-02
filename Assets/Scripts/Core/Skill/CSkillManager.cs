@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TinyHero.Core;
+using TinyHero.HotfixContracts;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -1417,6 +1418,13 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             }
 
             CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
+            bool didHotfixExecute = TryExecuteSkillUseHotfix( skillDefinition, _runtimeData, out eSkillUseResult hotfixUseResult );
+
+            if ( didHotfixExecute )
+            {
+                return hotfixUseResult;
+            }
+
             CActiveSkillEffectBase activeSkillEffect = skillDefinition.GetActiveSkillEffect();
             CSkillActionBase activeAction = skillDefinition.GetActiveAction();
             CSkillContext skillContext = CreateSkillContext( skillDefinition, _runtimeData );
@@ -1461,6 +1469,54 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             _runtimeData.MarkUsed( currentTime );
             NotifySkillUse( skillDefinition );
             return eSkillUseResult.SUCCESS;
+        }
+
+        ///<summary>
+        /// 스킬 사용 Hotfix 실행 시도
+        ///</summary>
+        private bool TryExecuteSkillUseHotfix( CSkillDefinition _skillDefinition, CSkillRuntimeData _runtimeData, out eSkillUseResult _result )
+        {
+            _result = eSkillUseResult.BLOCKED;
+            CHotfixExecutionContext hotfixContext = CreateSkillUseHotfixContext( _skillDefinition, _runtimeData );
+            CHotfixExecutionResult hotfixResult = CHotfixModuleRegistry.ExecuteOrFallback( hotfixContext );
+
+            if ( hotfixResult == null )
+            {
+                return false;
+            }
+
+            if ( hotfixResult.GetStatus() == eHotfixExecutionStatus.FALLBACK )
+            {
+                return false;
+            }
+
+            if ( hotfixResult.GetStatus() == eHotfixExecutionStatus.SUCCESS )
+            {
+                float currentTime = Time.time;
+                _runtimeData.MarkUsed( currentTime );
+                NotifySkillUse( _skillDefinition );
+                NotifySkillExecuted( CreateSkillContext( _skillDefinition, _runtimeData ) );
+                _result = eSkillUseResult.SUCCESS;
+                return true;
+            }
+
+            _result = eSkillUseResult.BLOCKED;
+            return true;
+        }
+
+        ///<summary>
+        /// 스킬 사용 Hotfix 문맥 생성
+        ///</summary>
+        private CHotfixExecutionContext CreateSkillUseHotfixContext( CSkillDefinition _skillDefinition, CSkillRuntimeData _runtimeData )
+        {
+            CHotfixExecutionContext context = new CHotfixExecutionContext( "skill", "try_use_skill", 1 );
+            string skillId = _skillDefinition != null ? _skillDefinition.GetSkillId() : string.Empty;
+            int skillLevel = _runtimeData != null ? Mathf.Max( 1, _runtimeData.GetSkillLevel() ) : 1;
+            int quickSlotIndex = _runtimeData != null ? _runtimeData.GetAssignedQuickSlotIndex() : -1;
+            context.SetStringValue( "skillId", skillId );
+            context.SetIntValue( "skillLevel", skillLevel );
+            context.SetIntValue( "quickSlotIndex", quickSlotIndex );
+            return context;
         }
 
         ///<summary>

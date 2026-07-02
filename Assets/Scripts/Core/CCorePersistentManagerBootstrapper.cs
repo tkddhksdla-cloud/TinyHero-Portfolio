@@ -17,6 +17,7 @@ namespace TinyHero.Core
         private static void Bootstrap()
         {
             CResourceManager.Instance.PreloadCoreResources();
+            _ = CHotfixRuntimeLoader.Instance;
             _ = CObjectPoolManager.Instance;
             CInputManager inputManager = CInputManager.Instance;
             CDataManager dataManager = CDataManager.Instance;

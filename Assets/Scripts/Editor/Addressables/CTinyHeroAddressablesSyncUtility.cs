@@ -37,34 +37,51 @@ namespace TinyHero.Tools
         [MenuItem( MenuPath )]
         public static void SyncRuntimeResources()
         {
+            List<string> issueList = new List<string>();
+            bool isSynced = TrySyncRuntimeResources( issueList, out int registeredCount );
+
+            if ( isSynced )
+            {
+                Debug.Log( $"[ Addressables Sync ] Runtime resources synced. Count: {registeredCount}" );
+                return;
+            }
+
+            LogIssues( issueList );
+        }
+
+        ///<summary>
+        /// 런타임 리소스 Addressables 동기화 시도
+        ///</summary>
+        public static bool TrySyncRuntimeResources( List<string> _issueList, out int _registeredCount )
+        {
+            _registeredCount = 0;
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
 
             if ( settings == null )
             {
-                Debug.LogError( "[ Addressables Sync ] AddressableAssetSettings not found." );
-                return;
+                AddIssue( _issueList, "AddressableAssetSettings를 찾을 수 없습니다." );
+                return false;
             }
 
             AddressableAssetGroup group = settings.FindGroup( AddressableGroupName );
 
             if ( group == null )
             {
-                Debug.LogError( $"[ Addressables Sync ] Addressables group not found: {AddressableGroupName}" );
-                return;
+                AddIssue( _issueList, $"Addressables 그룹을 찾을 수 없습니다. Group: {AddressableGroupName}" );
+                return false;
             }
 
             List<CAddressableSyncRule> syncRuleList = CreateSyncRuleList();
-            int registeredCount = 0;
 
             for ( int index = 0; index < syncRuleList.Count; index++ )
             {
                 CAddressableSyncRule syncRule = syncRuleList[ index ];
-                registeredCount += SyncRule( settings, group, syncRule );
+                _registeredCount += SyncRule( settings, group, syncRule, _issueList );
             }
 
             settings.SetDirty( AddressableAssetSettings.ModificationEvent.EntryMoved, null, true, true );
             AssetDatabase.SaveAssets();
-            Debug.Log( $"[ Addressables Sync ] Runtime resources synced. Count: {registeredCount}" );
+            return true;
         }
 
         ///<summary>
@@ -77,15 +94,17 @@ namespace TinyHero.Tools
             syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/RawImages/BG", "t:Texture2D" ) );
             syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/Prefabs/UI/Popup", "t:Prefab" ) );
             syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/Prefabs/Portal", "t:Prefab" ) );
+            syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/Prefabs/Character/Player", "t:Prefab" ) );
             syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/Prefabs/Character/Monster", "t:Prefab" ) );
             syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/Prefabs/Character/NPC", "t:Prefab" ) );
+            syncRuleList.Add( new CAddressableSyncRule( "Assets/Resources/Hotfix", "t:TextAsset" ) );
             return syncRuleList;
         }
 
         ///<summary>
         /// 단일 규칙 기준 Addressables 엔트리 동기화
         ///</summary>
-        private static int SyncRule( AddressableAssetSettings _settings, AddressableAssetGroup _group, CAddressableSyncRule _syncRule )
+        private static int SyncRule( AddressableAssetSettings _settings, AddressableAssetGroup _group, CAddressableSyncRule _syncRule, List<string> _issueList )
         {
             if ( _settings == null || _group == null || _syncRule == null )
             {
@@ -94,7 +113,7 @@ namespace TinyHero.Tools
 
             if ( AssetDatabase.IsValidFolder( _syncRule.searchRootPath ) == false )
             {
-                Debug.LogWarning( $"[ Addressables Sync ] Folder not found: {_syncRule.searchRootPath}" );
+                AddIssue( _issueList, $"동기화 대상 폴더를 찾을 수 없습니다. Path: {_syncRule.searchRootPath}" );
                 return 0;
             }
 
@@ -128,6 +147,36 @@ namespace TinyHero.Tools
             }
 
             return registeredCount;
+        }
+
+        ///<summary>
+        /// 동기화 이슈 추가
+        ///</summary>
+        private static void AddIssue( List<string> _issueList, string _issue )
+        {
+            if ( _issueList == null )
+            {
+                return;
+            }
+
+            _issueList.Add( _issue );
+        }
+
+        ///<summary>
+        /// 동기화 이슈 출력
+        ///</summary>
+        private static void LogIssues( List<string> _issueList )
+        {
+            if ( _issueList == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < _issueList.Count; index++ )
+            {
+                string issue = _issueList[ index ];
+                Debug.LogError( $"[ Addressables Sync ] {issue}" );
+            }
         }
 
         ///<summary>

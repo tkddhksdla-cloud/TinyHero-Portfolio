@@ -1,0 +1,16 @@
+{
+    "name": "TinyHero.Hotfix",
+    "rootNamespace": "TinyHero.Hotfix",
+    "references": [
+        "GUID:7cdb999e5bb87534bb4a9aa014b6144b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
