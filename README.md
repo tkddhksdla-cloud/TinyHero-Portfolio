@@ -18,6 +18,7 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 - Cinemachine
 - ScriptableObject
 - Resources + Addressables Hybrid Loading
+- HybridCLR Hotfix Assembly
 - AES/HMAC Protected Save Data
 - Unity EditorWindow Tooling
 
@@ -42,6 +43,7 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 - Resources Fallback Compatibility
 - Snapshot-based Save / Load
 - Secure Runtime Numeric Values
+- HybridCLR-based Hotfix Module
 - AES Save Encryption + HMAC Integrity Check
 - Excel-driven Data Pipeline
 - EditorWindow-based Data Tooling
@@ -55,6 +57,12 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 ### Resource Loading Abstraction
 
 `CResourceManager`와 `CUINavigationController`를 중심으로 리소스 로딩 진입점을 통합했습니다. UI 매니저가 Addressables API를 직접 호출하지 않고 공통 로더를 경유하도록 정리해, 로딩 방식 변경과 fallback 정책을 한 곳에서 관리할 수 있습니다.
+
+### HybridCLR Hotfix Module
+
+`TinyHero.Hotfix` 어셈블리를 별도 Hot Update Assembly로 구성하고, `CHotfixRuntimeLoader`가 Addressables 우선 로딩과 `Resources` fallback을 통해 Hotfix DLL을 로드합니다. 메인 빌드의 `MonoBehaviour`와 매니저는 안정적인 Unity Adapter로 유지하고, 스킬 사용, 데미지 계산, 보상 계산, 조건 판정처럼 변경 가능성이 높은 로직은 `IHotfixModule` 기반 모듈로 우회할 수 있도록 설계합니다.
+
+핫픽스 실행은 `CHotfixExecutionContext`와 `CHotfixExecutionResult`를 통해 요청/응답 계약을 유지합니다. Hotfix 모듈이 `SUCCESS`를 반환하면 기존 로직을 대체하고, `FALLBACK`을 반환하면 메인 빌드의 기본 로직이 그대로 실행됩니다. 현재 스킬 사용 흐름은 `CSkillManager`에서 Hotfix 모듈을 먼저 확인한 뒤, 처리 대상이 아니면 기존 Active Skill 로직으로 이어지는 구조입니다.
 
 ### Runtime Map Loading
 
@@ -95,6 +103,8 @@ Assets/
   Scenes/                 # 주요 씬
   Scripts/
     Core/                 # 공용 매니저, 저장, 맵, 스킬, UI 기반
+    Hotfix/               # HybridCLR Hot Update Assembly
+    HotfixContracts/      # Hotfix 요청/응답 계약
     Player/               # 플레이어 관련 시스템
     Object/               # 몬스터, NPC, 포탈, 월드 아이템
     UI/                   # 도메인별 UI
