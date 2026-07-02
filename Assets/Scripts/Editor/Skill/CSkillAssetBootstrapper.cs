@@ -12,15 +12,15 @@ namespace TinyHero.Skill.Editor
     ///</summary>
     public static class CSkillAssetBootstrapper
     {
-        private const string RootFolderPath = "Assets/Data/Skill";
-        private const string DefinitionFolderPath = "Assets/Data/Skill/Definitions";
-        private const string EffectFolderPath = "Assets/Data/Skill/Effects";
-        private const string ActiveEffectFolderPath = "Assets/Data/Skill/Effects/Active";
-        private const string BuffEffectFolderPath = "Assets/Data/Skill/Effects/Buff";
-        private const string DebuffEffectFolderPath = "Assets/Data/Skill/Effects/Debuff";
-        private const string PassiveEffectFolderPath = "Assets/Data/Skill/Effects/Passive";
-        private const string ConditionFolderPath = "Assets/Data/Skill/Conditions";
-        private const string IconFolderPath = "Assets/Data/Skill/Icons";
+        private const string RootFolderPath = "Assets/Resources/Data/Skill";
+        private const string DefinitionFolderPath = "Assets/Resources/Data/Skill/Definitions";
+        private const string EffectFolderPath = "Assets/Resources/Data/Skill/Effects";
+        private const string ActiveEffectFolderPath = "Assets/Resources/Data/Skill/Effects/Active";
+        private const string BuffEffectFolderPath = "Assets/Resources/Data/Skill/Effects/Buff";
+        private const string DebuffEffectFolderPath = "Assets/Resources/Data/Skill/Effects/Debuff";
+        private const string PassiveEffectFolderPath = "Assets/Resources/Data/Skill/Effects/Passive";
+        private const string ConditionFolderPath = "Assets/Resources/Data/Skill/Conditions";
+        private const string IconFolderPath = "Assets/Resources/Data/Skill/Icons";
         private const string PlayerObjectName = "PlayerObject";
         private const int IconTextureSize = 64;
 

@@ -8,7 +8,7 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CPopupCommonNoticeManager : CSingleTon<CPopupCommonNoticeManager>
     {
-        private const string PopupPrefabResourcePath = "Prefabs/UI/Common/PopupCommonNotice";
+        private const string PopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCommonNotice";
 
         private GameObject popupPrefabObject;
         private CPopupCommonNotice popupCommonNoticeInstance;

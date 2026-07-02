@@ -11,10 +11,10 @@ namespace TinyHero.Skill.Editor
     ///</summary>
     public static class CDoubleJumpSkillBootstrapper
     {
-        private const string RootFolderPath = "Assets/Data/Skill";
-        private const string DefinitionFolderPath = "Assets/Data/Skill/Definitions";
-        private const string ConditionFolderPath = "Assets/Data/Skill/Conditions";
-        private const string IconFolderPath = "Assets/Data/Skill/Icons";
+        private const string RootFolderPath = "Assets/Resources/Data/Skill";
+        private const string DefinitionFolderPath = "Assets/Resources/Data/Skill/Definitions";
+        private const string ConditionFolderPath = "Assets/Resources/Data/Skill/Conditions";
+        private const string IconFolderPath = "Assets/Resources/Data/Skill/Icons";
         private const string PlayerObjectName = "PlayerObject";
         private const int IconTextureSize = 64;
 

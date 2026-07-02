@@ -53,7 +53,6 @@ namespace TinyHero.Tools
         private Vector2 sourceListScrollPosition;
         private string statusMessage = "몬스터 소스 프리팹을 불러오세요.";
         private MessageType statusMessageType = MessageType.Info;
-        private bool isPendingScrollToSelection;
         private bool isPendingFocusToSelection;
 
         ///<summary>
@@ -162,7 +161,6 @@ namespace TinyHero.Tools
             if ( isClicked )
             {
                 selectedSourceIndex = sourceIndex;
-                isPendingScrollToSelection = true;
                 isPendingFocusToSelection = true;
                 List<SourceMonsterPrefabInfo> filteredInfos = GetFilteredSourcePrefabInfos();
                 int filteredSelectedIndex = filteredInfos.IndexOf( _sourcePrefabInfo );
@@ -196,7 +194,6 @@ namespace TinyHero.Tools
             EditorGUILayout.BeginVertical();
             EditorGUILayout.LabelField( "Preview", EditorStyles.boldLabel );
             SourceMonsterPrefabInfo selectedInfo = GetSelectedSourcePrefabInfo();
-            bool isCreated = false;
 
             if ( selectedInfo == null )
             {
@@ -913,7 +910,6 @@ namespace TinyHero.Tools
             int nextFilteredIndex = Mathf.Clamp( filteredSelectedIndex + _direction, 0, lastIndex );
             SourceMonsterPrefabInfo nextInfo = filteredInfos[ nextFilteredIndex ];
             selectedSourceIndex = sourcePrefabInfos.IndexOf( nextInfo );
-            isPendingScrollToSelection = true;
             isPendingFocusToSelection = true;
             EnsureSelectionVisibleByIndex( nextFilteredIndex, filteredInfos.Count );
             Repaint();
@@ -940,7 +936,6 @@ namespace TinyHero.Tools
             }
 
             sourceListScrollPosition.y = Mathf.Clamp( sourceListScrollPosition.y, 0.0f, maxScrollY );
-            isPendingScrollToSelection = false;
         }
 
         ///<summary>
