@@ -21,7 +21,6 @@ namespace TinyHero.Tools
         private const string ShopDefinitionSearchRootPath = "Assets/Resources/Data/Shop/Definitions";
         private const string SkillDefinitionSearchRootPath = "Assets/Resources/Data/Skill/Definitions";
         private const string RandomBoxRewardTableSearchRootPath = "Assets/Resources/Data/Item/RandomBoxes";
-        private const string AddressableGroupName = "TinyHero_Local";
         private const float SummaryBoxHeight = 58.0f;
         private const float ResultRowMinHeight = 52.0f;
 
@@ -569,15 +568,15 @@ namespace TinyHero.Tools
                 return;
             }
 
-            AddressableAssetGroup group = settings.FindGroup( AddressableGroupName );
+            AddressableAssetGroup group = settings.FindGroup( CTinyHeroDataValidationRules.AddressableGroupName );
 
             if ( group == null )
             {
-                AddResult( eValidationSeverity.ERROR, "Addressables", "Missing group", $"Addressables 그룹을 찾을 수 없습니다. Group: {AddressableGroupName}", string.Empty );
+                AddResult( eValidationSeverity.ERROR, "Addressables", "Missing group", $"Addressables 그룹을 찾을 수 없습니다. Group: {CTinyHeroDataValidationRules.AddressableGroupName}", string.Empty );
                 return;
             }
 
-            List<string> syncTargetAssetPathList = FindAddressableSyncTargetAssetPaths();
+            List<string> syncTargetAssetPathList = CTinyHeroDataValidationRules.FindAddressableSyncTargetAssetPaths();
 
             for ( int index = 0; index < syncTargetAssetPathList.Count; index++ )
             {
@@ -596,51 +595,6 @@ namespace TinyHero.Tools
                 {
                     AddResult( eValidationSeverity.ERROR, "Addressables", "Address mismatch", $"Addressables key가 예상값과 다릅니다. Current: {entry.address}, Expected: {expectedAddress}", assetPath );
                 }
-            }
-        }
-
-        ///<summary>
-        /// Addressables 동기화 대상 에셋 경로 목록 반환
-        ///</summary>
-        private List<string> FindAddressableSyncTargetAssetPaths()
-        {
-            List<string> assetPathList = new List<string>();
-            AddAssetPaths( assetPathList, "Assets/Resources/MapData", "t:TextAsset" );
-            AddAssetPaths( assetPathList, "Assets/Resources/RawImages/BG", "t:Texture2D" );
-            AddAssetPaths( assetPathList, "Assets/Resources/Prefabs/UI/Popup", "t:Prefab" );
-            AddAssetPaths( assetPathList, "Assets/Resources/Prefabs/Portal", "t:Prefab" );
-            AddAssetPaths( assetPathList, "Assets/Resources/Prefabs/Character/Monster", "t:Prefab" );
-            AddAssetPaths( assetPathList, "Assets/Resources/Prefabs/Character/NPC", "t:Prefab" );
-            assetPathList.Sort( StringComparer.Ordinal );
-            return assetPathList;
-        }
-
-        ///<summary>
-        /// 특정 경로의 에셋 경로 추가
-        ///</summary>
-        private void AddAssetPaths( List<string> _assetPathList, string _searchRootPath, string _searchFilter )
-        {
-            if ( _assetPathList == null || AssetDatabase.IsValidFolder( _searchRootPath ) == false )
-            {
-                return;
-            }
-
-            string[] searchRootPathArray = new string[]
-            {
-                _searchRootPath
-            };
-            string[] guidArray = AssetDatabase.FindAssets( _searchFilter, searchRootPathArray );
-
-            for ( int index = 0; index < guidArray.Length; index++ )
-            {
-                string assetPath = AssetDatabase.GUIDToAssetPath( guidArray[ index ] );
-
-                if ( string.IsNullOrWhiteSpace( assetPath ) || assetPath.EndsWith( ".meta", StringComparison.OrdinalIgnoreCase ) )
-                {
-                    continue;
-                }
-
-                _assetPathList.Add( assetPath );
             }
         }
 

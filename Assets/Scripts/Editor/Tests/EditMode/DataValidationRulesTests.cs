@@ -34,6 +34,33 @@ namespace TinyHero.Tests
         }
 
         ///<summary>
+        /// Resources 프리팹 루트 자동 동기화 규칙 검증
+        ///</summary>
+        [Test]
+        public void CreateAddressableSyncRuleList_IncludesPrefabRoot()
+        {
+            List<CTinyHeroDataValidationRules.CAddressableSyncRule> syncRuleList = CTinyHeroDataValidationRules.CreateAddressableSyncRuleList();
+            bool hasPrefabRootRule = HasSyncRule( syncRuleList, "Assets/Resources/Prefabs", "t:Prefab" );
+
+            Assert.IsTrue( hasPrefabRootRule );
+        }
+
+        ///<summary>
+        /// Addressables 동기화 대상 경로 판정 검증
+        ///</summary>
+        [Test]
+        public void IsAddressableSyncTargetAssetPath_FiltersNonResourcesPaths()
+        {
+            bool isResourcesPath = CTinyHeroDataValidationRules.IsAddressableSyncTargetAssetPath( "Assets/Resources/Prefabs/UI/Popup/PopupShop.prefab" );
+            bool isNonResourcesPath = CTinyHeroDataValidationRules.IsAddressableSyncTargetAssetPath( "Assets/Prefabs/UI/Popup/PopupShop.prefab" );
+            bool isMetaPath = CTinyHeroDataValidationRules.IsAddressableSyncTargetAssetPath( "Assets/Resources/Prefabs/UI/Popup/PopupShop.prefab.meta" );
+
+            Assert.IsTrue( isResourcesPath );
+            Assert.IsFalse( isNonResourcesPath );
+            Assert.IsFalse( isMetaPath );
+        }
+
+        ///<summary>
         /// 빈 ID와 중복 ID 검증 결과 생성 검증
         ///</summary>
         [Test]
@@ -114,6 +141,34 @@ namespace TinyHero.Tests
         {
             string result = _itemDefinition != null ? _itemDefinition.name : string.Empty;
             return result;
+        }
+
+        ///<summary>
+        /// 테스트용 Addressables 동기화 규칙 존재 여부 반환
+        ///</summary>
+        private static bool HasSyncRule( List<CTinyHeroDataValidationRules.CAddressableSyncRule> _syncRuleList, string _searchRootPath, string _searchFilter )
+        {
+            if ( _syncRuleList == null )
+            {
+                return false;
+            }
+
+            for ( int index = 0; index < _syncRuleList.Count; index++ )
+            {
+                CTinyHeroDataValidationRules.CAddressableSyncRule syncRule = _syncRuleList[ index ];
+
+                if ( syncRule == null )
+                {
+                    continue;
+                }
+
+                if ( syncRule.searchRootPath == _searchRootPath && syncRule.searchFilter == _searchFilter )
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

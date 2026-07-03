@@ -11,7 +11,91 @@ namespace TinyHero.Tools
     ///</summary>
     public static class CTinyHeroDataValidationRules
     {
+        public const string AddressableGroupName = "TinyHero_Local";
+        public const string RuntimeAddressableLabel = "TinyHero.RuntimeResource";
+
         private const string ResourcesRootPath = "Assets/Resources/";
+        private const string MapDataSearchRootPath = "Assets/Resources/MapData";
+        private const string BackgroundImageSearchRootPath = "Assets/Resources/RawImages/BG";
+        private const string PrefabSearchRootPath = "Assets/Resources/Prefabs";
+        private const string HotfixSearchRootPath = "Assets/Resources/Hotfix";
+
+        ///<summary>
+        /// Addressables 자동 동기화 규칙 데이터
+        ///</summary>
+        public sealed class CAddressableSyncRule
+        {
+            public string searchRootPath;
+            public string searchFilter;
+            public bool isRequiredFolder;
+
+            ///<summary>
+            /// Addressables 자동 동기화 규칙 초기화
+            ///</summary>
+            public CAddressableSyncRule( string _searchRootPath, string _searchFilter, bool _isRequiredFolder )
+            {
+                searchRootPath = _searchRootPath;
+                searchFilter = _searchFilter;
+                isRequiredFolder = _isRequiredFolder;
+            }
+        }
+
+        ///<summary>
+        /// Addressables 자동 동기화 규칙 목록 생성
+        ///</summary>
+        public static List<CAddressableSyncRule> CreateAddressableSyncRuleList()
+        {
+            List<CAddressableSyncRule> syncRuleList = new List<CAddressableSyncRule>();
+            syncRuleList.Add( new CAddressableSyncRule( MapDataSearchRootPath, "t:TextAsset", true ) );
+            syncRuleList.Add( new CAddressableSyncRule( BackgroundImageSearchRootPath, "t:Texture2D", true ) );
+            syncRuleList.Add( new CAddressableSyncRule( PrefabSearchRootPath, "t:Prefab", true ) );
+            syncRuleList.Add( new CAddressableSyncRule( HotfixSearchRootPath, "t:TextAsset", true ) );
+            return syncRuleList;
+        }
+
+        ///<summary>
+        /// Addressables 자동 동기화 대상 에셋 경로 목록 반환
+        ///</summary>
+        public static List<string> FindAddressableSyncTargetAssetPaths()
+        {
+            List<string> assetPathList = new List<string>();
+            HashSet<string> assetPathSet = new HashSet<string>();
+            List<CAddressableSyncRule> syncRuleList = CreateAddressableSyncRuleList();
+
+            for ( int index = 0; index < syncRuleList.Count; index++ )
+            {
+                CAddressableSyncRule syncRule = syncRuleList[ index ];
+                AddAddressableSyncTargetAssetPaths( assetPathList, assetPathSet, syncRule );
+            }
+
+            assetPathList.Sort( StringComparer.Ordinal );
+            return assetPathList;
+        }
+
+        ///<summary>
+        /// Addressables 자동 동기화 대상 에셋 경로 여부 반환
+        ///</summary>
+        public static bool IsAddressableSyncTargetAssetPath( string _assetPath )
+        {
+            if ( string.IsNullOrWhiteSpace( _assetPath ) )
+            {
+                return false;
+            }
+
+            string normalizedAssetPath = _assetPath.Replace( "\\", "/" );
+
+            if ( normalizedAssetPath.EndsWith( ".meta", StringComparison.OrdinalIgnoreCase ) )
+            {
+                return false;
+            }
+
+            if ( normalizedAssetPath.StartsWith( ResourcesRootPath, StringComparison.Ordinal ) == false )
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         ///<summary>
         /// Resources 기준 Addressables 키 구성
@@ -34,6 +118,42 @@ namespace TinyHero.Tools
             string addressableKey = Path.ChangeExtension( resourcesRelativePath, null );
             string result = addressableKey.Replace( "\\", "/" );
             return result;
+        }
+
+        ///<summary>
+        /// 단일 규칙의 Addressables 동기화 대상 에셋 경로 추가
+        ///</summary>
+        private static void AddAddressableSyncTargetAssetPaths( List<string> _assetPathList, HashSet<string> _assetPathSet, CAddressableSyncRule _syncRule )
+        {
+            if ( _assetPathList == null || _assetPathSet == null || _syncRule == null )
+            {
+                return;
+            }
+
+            if ( AssetDatabase.IsValidFolder( _syncRule.searchRootPath ) == false )
+            {
+                return;
+            }
+
+            string[] searchRootPathArray = new string[]
+            {
+                _syncRule.searchRootPath
+            };
+            string[] guidArray = AssetDatabase.FindAssets( _syncRule.searchFilter, searchRootPathArray );
+
+            for ( int index = 0; index < guidArray.Length; index++ )
+            {
+                string guid = guidArray[ index ];
+                string assetPath = AssetDatabase.GUIDToAssetPath( guid );
+
+                if ( IsAddressableSyncTargetAssetPath( assetPath ) == false || _assetPathSet.Contains( assetPath ) )
+                {
+                    continue;
+                }
+
+                _assetPathSet.Add( assetPath );
+                _assetPathList.Add( assetPath );
+            }
         }
 
         ///<summary>

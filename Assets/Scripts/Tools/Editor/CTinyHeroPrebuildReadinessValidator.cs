@@ -15,7 +15,6 @@ namespace TinyHero.Tools
     public static class CTinyHeroPrebuildReadinessValidator
     {
         private const string MenuPath = "TinyHero/Build/Validate Prebuild Readiness";
-        private const string AddressableGroupName = "TinyHero_Local";
         private const string HybridClrPackageName = "com.code-philosophy.hybridclr";
         private const string PackageManifestPath = "Packages/manifest.json";
         private const string HybridClrSettingsPath = "ProjectSettings/HybridCLRSettings.asset";
@@ -35,11 +34,7 @@ namespace TinyHero.Tools
         {
             "Assets/Resources/MapData",
             "Assets/Resources/RawImages/BG",
-            "Assets/Resources/Prefabs/UI/Popup",
-            "Assets/Resources/Prefabs/Portal",
-            "Assets/Resources/Prefabs/Character/Player",
-            "Assets/Resources/Prefabs/Character/Monster",
-            "Assets/Resources/Prefabs/Character/NPC",
+            "Assets/Resources/Prefabs",
             "Assets/Resources/Hotfix"
         };
 
@@ -267,17 +262,20 @@ namespace TinyHero.Tools
                 return;
             }
 
-            AddressableAssetGroup group = settings.FindGroup( AddressableGroupName );
+            AddressableAssetGroup group = settings.FindGroup( CTinyHeroDataValidationRules.AddressableGroupName );
 
             if ( group == null )
             {
-                _errorList.Add( $"Addressables 그룹을 찾을 수 없습니다. Group: {AddressableGroupName}" );
+                _errorList.Add( $"Addressables 그룹을 찾을 수 없습니다. Group: {CTinyHeroDataValidationRules.AddressableGroupName}" );
                 return;
             }
 
-            for ( int index = 0; index < RequiredAddressableKeys.Length; index++ )
+            List<string> syncTargetAssetPathList = CTinyHeroDataValidationRules.FindAddressableSyncTargetAssetPaths();
+
+            for ( int index = 0; index < syncTargetAssetPathList.Count; index++ )
             {
-                string addressableKey = RequiredAddressableKeys[ index ];
+                string assetPath = syncTargetAssetPathList[ index ];
+                string addressableKey = CTinyHeroDataValidationRules.BuildAddressableKey( assetPath );
                 AddressableAssetEntry entry = FindAddressableEntryByAddress( settings, addressableKey );
 
                 if ( entry != null )
@@ -286,6 +284,32 @@ namespace TinyHero.Tools
                 }
 
                 _errorList.Add( $"Addressables 키를 찾을 수 없습니다. Key: {addressableKey}. Menu: TinyHero/Addressables/Sync Runtime Resources" );
+            }
+
+            ValidateRequiredAddressableKeys( settings, _errorList );
+        }
+
+        ///<summary>
+        /// 필수 Addressables 키 상태 검증
+        ///</summary>
+        private static void ValidateRequiredAddressableKeys( AddressableAssetSettings _settings, List<string> _errorList )
+        {
+            if ( _settings == null || _errorList == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < RequiredAddressableKeys.Length; index++ )
+            {
+                string addressableKey = RequiredAddressableKeys[ index ];
+                AddressableAssetEntry entry = FindAddressableEntryByAddress( _settings, addressableKey );
+
+                if ( entry != null )
+                {
+                    continue;
+                }
+
+                _errorList.Add( $"필수 Addressables 키를 찾을 수 없습니다. Key: {addressableKey}. Menu: TinyHero/Addressables/Sync Runtime Resources" );
             }
         }
 
