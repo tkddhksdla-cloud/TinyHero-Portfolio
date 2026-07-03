@@ -32,11 +32,27 @@ namespace TinyHero.Maps
         private const string GameplaySceneName = "SceneMap";
         private const string DefaultGameplayMapId = "MAP_STARTER_000_VILLAGE";
         private const string MapTitleLogoUiPrefabResourcePath = "Prefabs/UI/Map/MapTitleLogoUI";
+        private const string MapLoadingUiObjectName = "MapLoadingUI";
         private const string MapTitleLogoUiPoolObjectName = "MapTitleLogoUIPool";
         private const string TempUiCanvasObjectName = "Canvas_TempUI";
         private const string MapTitleLogoUiPoolKey = "Maps.MapTitleLogoUI";
         private const string MonsterPoolKeyPrefix = "Maps.Monster";
         private const string WorldItemDropPoolKeyPrefix = "Maps.WorldItemDrop";
+        private const string LoadingMapDataText = "Loading Map Data...";
+        private const string LoadingBackgroundText = "Loading Background...";
+        private const string LoadingPortalText = "Loading Portals...";
+        private const string LoadingMonsterText = "Loading Monsters...";
+        private const string LoadingNpcText = "Loading NPCs...";
+        private const string ApplyingMapText = "Applying Map...";
+        private const string LoadingCompleteText = "Loading Complete";
+        private const string LoadingFailedText = "Map Load Failed";
+        private const float LoadingMapDataProgress = 0.1f;
+        private const float LoadingBackgroundProgress = 0.28f;
+        private const float LoadingPortalProgress = 0.44f;
+        private const float LoadingMonsterProgress = 0.62f;
+        private const float LoadingNpcProgress = 0.78f;
+        private const float ApplyingMapProgress = 0.92f;
+        private const float LoadingCompleteProgress = 1.0f;
 
         private sealed class CMapMonsterRespawnContext
         {
@@ -66,6 +82,7 @@ namespace TinyHero.Maps
         private Canvas fadeCanvas;
         private Image fadeImage;
         private GraphicRaycaster fadeGraphicRaycaster;
+        private CMapLoadingUI mapLoadingUi;
         private RectTransform mapTitleLogoUiPoolRectTransform;
         private GameObject mapTitleLogoUiPrefab;
         private Sprite currentBackgroundSprite;
@@ -270,6 +287,7 @@ namespace TinyHero.Maps
             yield return IE_LoadMapDataAndApply( _mapId, _entryPortalId, null );
             yield return null;
             yield return new WaitForSeconds( MapTransitionBlackHoldSeconds );
+            HideMapLoadingProgress();
             yield return IE_FadeAlpha( 1.0f, 0.0f );
             ShowCurrentMapTitleLogoUi();
             isTransitionInProgress = false;
@@ -325,6 +343,7 @@ namespace TinyHero.Maps
             SetFadeAlpha( 1.0f );
             yield return IE_LoadMapDataAndApply( _mapId, _entryPortalId, null );
             yield return null;
+            HideMapLoadingProgress();
             yield return IE_FadeAlpha( 1.0f, 0.0f );
             ShowCurrentMapTitleLogoUi();
             isTransitionInProgress = false;
@@ -525,6 +544,7 @@ namespace TinyHero.Maps
         {
             if ( fadeCanvas != null && fadeImage != null )
             {
+                EnsureMapLoadingUiExists();
                 return;
             }
 
@@ -533,7 +553,8 @@ namespace TinyHero.Maps
             if ( existingCanvasObject != null )
             {
                 Canvas existingCanvas = existingCanvasObject.GetComponent<Canvas>();
-                Image existingFadeImage = existingCanvasObject.GetComponentInChildren<Image>( true );
+                Transform existingFadeImageTransform = existingCanvasObject.transform.Find( FadeImageObjectName );
+                Image existingFadeImage = existingFadeImageTransform != null ? existingFadeImageTransform.GetComponent<Image>() : existingCanvasObject.GetComponentInChildren<Image>( true );
                 GraphicRaycaster existingGraphicRaycaster = existingCanvasObject.GetComponent<GraphicRaycaster>();
                 fadeCanvas = existingCanvas;
                 fadeImage = existingFadeImage;
@@ -547,6 +568,7 @@ namespace TinyHero.Maps
                 }
 
                 UpdateFadeRaycastState( 0.0f );
+                EnsureMapLoadingUiExists();
 
                 return;
             }
@@ -575,6 +597,93 @@ namespace TinyHero.Maps
             fadeImage = createdFadeImage;
             fadeGraphicRaycaster = createdGraphicRaycaster;
             UpdateFadeRaycastState( 0.0f );
+            EnsureMapLoadingUiExists();
+        }
+
+        ///<summary>
+        /// 맵 로딩 UI 존재 보장
+        ///</summary>
+        private void EnsureMapLoadingUiExists()
+        {
+            if ( mapLoadingUi != null )
+            {
+                return;
+            }
+
+            if ( fadeCanvas == null )
+            {
+                return;
+            }
+
+            RectTransform fadeCanvasRectTransform = fadeCanvas.transform as RectTransform;
+
+            if ( fadeCanvasRectTransform == null )
+            {
+                return;
+            }
+
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                Debug.LogWarning( "[ MapManager ] ResourceManager is not ready for MapLoadingUI." );
+                return;
+            }
+
+            GameObject mapLoadingUiPrefab = resourceManager.GetMapLoadingUiPrefab();
+
+            if ( mapLoadingUiPrefab == null )
+            {
+                return;
+            }
+
+            GameObject createdUiObject = Instantiate( mapLoadingUiPrefab, fadeCanvasRectTransform );
+            createdUiObject.name = MapLoadingUiObjectName;
+            mapLoadingUi = createdUiObject.GetComponent<CMapLoadingUI>();
+
+            if ( mapLoadingUi == null )
+            {
+                Debug.LogWarning( "[ MapManager ] MapLoadingUI prefab is missing CMapLoadingUI component." );
+                Destroy( createdUiObject );
+                return;
+            }
+
+            RectTransform createdUiRectTransform = createdUiObject.transform as RectTransform;
+
+            if ( createdUiRectTransform != null )
+            {
+                createdUiRectTransform.SetAsLastSibling();
+            }
+
+            mapLoadingUi.Hide();
+        }
+
+        ///<summary>
+        /// 맵 로딩 진행 상태 표시
+        ///</summary>
+        private void ShowMapLoadingProgress( string _statusText, float _progress )
+        {
+            EnsureMapLoadingUiExists();
+
+            if ( mapLoadingUi == null )
+            {
+                return;
+            }
+
+            mapLoadingUi.Show( _statusText, _progress );
+        }
+
+        ///<summary>
+        /// 맵 로딩 진행 상태 숨김
+        ///</summary>
+        private void HideMapLoadingProgress()
+        {
+            if ( mapLoadingUi == null )
+            {
+                return;
+            }
+
+            mapLoadingUi.Hide();
         }
 
         ///<summary>
@@ -633,6 +742,7 @@ namespace TinyHero.Maps
             isMapLoadInProgress = true;
             bool isLoadCompleted = false;
             TextAsset loadedTextAsset = null;
+            ShowMapLoadingProgress( LoadingMapDataText, LoadingMapDataProgress );
             LoadMapTextAssetAsync( _mapId, delegate( TextAsset _loadedTextAsset )
             {
                 loadedTextAsset = _loadedTextAsset;
@@ -652,6 +762,7 @@ namespace TinyHero.Maps
             if ( wasApplied )
             {
                 bool isBackgroundLoadCompleted = false;
+                ShowMapLoadingProgress( LoadingBackgroundText, LoadingBackgroundProgress );
                 LoadBackgroundSpriteAsync( loadedData.backgroundSpriteName, delegate( Sprite _loadedBackgroundSprite )
                 {
                     loadedBackgroundSprite = _loadedBackgroundSprite;
@@ -664,6 +775,7 @@ namespace TinyHero.Maps
                 }
 
                 bool isPortalLoadCompleted = false;
+                ShowMapLoadingProgress( LoadingPortalText, LoadingPortalProgress );
                 LoadPortalPrefabAsync( delegate( GameObject _loadedPortalPrefab )
                 {
                     loadedPortalPrefab = _loadedPortalPrefab;
@@ -676,6 +788,7 @@ namespace TinyHero.Maps
                 }
 
                 bool isMonsterPrefabLoadCompleted = false;
+                ShowMapLoadingProgress( LoadingMonsterText, LoadingMonsterProgress );
                 LoadRequiredMonsterPrefabsAsync( loadedData.monsters, delegate
                 {
                     isMonsterPrefabLoadCompleted = true;
@@ -687,6 +800,7 @@ namespace TinyHero.Maps
                 }
 
                 bool isNpcPrefabLoadCompleted = false;
+                ShowMapLoadingProgress( LoadingNpcText, LoadingNpcProgress );
                 LoadRequiredNpcPrefabsAsync( loadedData.npcs, delegate
                 {
                     isNpcPrefabLoadCompleted = true;
@@ -700,10 +814,13 @@ namespace TinyHero.Maps
 
             if ( wasApplied )
             {
+                ShowMapLoadingProgress( ApplyingMapText, ApplyingMapProgress );
                 ApplyMapData( loadedData, _entryPortalId, loadedBackgroundSprite, loadedPortalPrefab );
+                ShowMapLoadingProgress( LoadingCompleteText, LoadingCompleteProgress );
             }
             else
             {
+                ShowMapLoadingProgress( LoadingFailedText, LoadingCompleteProgress );
                 Debug.LogWarning( $"[ MapManager ] MapData load failed: {_mapId}" );
             }
 

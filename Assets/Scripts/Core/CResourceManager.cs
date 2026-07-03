@@ -26,6 +26,7 @@ namespace TinyHero.Core
         private const string LegacyCubePopupPrefabResourcePath = "Prefabs/UI/Inventory/CubeUI";
         private const string ItemTooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
+        private const string MapLoadingUiPrefabResourcePath = "Prefabs/UI/Map/MapLoadingUI";
         private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
         private const string ShopDefinitionResourcePath = "Data/Shop/Definitions";
         private const string QuestDefinitionResourcePath = "Data/Quest/Definitions";
@@ -115,6 +116,7 @@ namespace TinyHero.Core
             LoadResource<GameObject>( RewardPopupPrefabResourcePath );
             LoadResource<GameObject>( ItemTooltipPrefabResourcePath );
             LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
+            LoadResource<GameObject>( MapLoadingUiPrefabResourcePath );
             LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
             LoadResourceAll<CShopDefinition>( ShopDefinitionResourcePath );
             LoadResourceAll<CQuestDefinition>( QuestDefinitionResourcePath );
@@ -243,6 +245,15 @@ namespace TinyHero.Core
         public GameObject GetSkillTooltipPrefab()
         {
             GameObject result = LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 맵 로딩 UI 프리팹 반환
+        ///</summary>
+        public GameObject GetMapLoadingUiPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( MapLoadingUiPrefabResourcePath );
             return result;
         }
 
