@@ -8,7 +8,7 @@ pipeline {
 
     parameters {
         string(name: 'UNITY_EXE', defaultValue: 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.15f1\\Editor\\Unity.exe', description: 'Unity Editor executable path')
-        string(name: 'BUILD_OUTPUT_PATH', defaultValue: 'Builds/Windows/TinyHero.exe', description: 'Windows player output path')
+        string(name: 'BUILD_OUTPUT_PATH', defaultValue: '', description: 'Optional Windows player output path. Empty value uses Builds/Windows/<BUILD_NUMBER>/TinyHero.exe')
     }
 
     stages {
@@ -16,7 +16,13 @@ pipeline {
             steps {
                 powershell """
                     \$env:UNITY_EXE = '${params.UNITY_EXE}'
-                    ./Tools/CI/Invoke-TinyHeroCustomBuild.ps1 -BuildOutputPath '${params.BUILD_OUTPUT_PATH}'
+                    \$buildOutputPath = '${params.BUILD_OUTPUT_PATH}'
+
+                    if ([string]::IsNullOrWhiteSpace(\$buildOutputPath)) {
+                        \$buildOutputPath = 'Builds/Windows/${env.BUILD_NUMBER}/TinyHero.exe'
+                    }
+
+                    ./Tools/CI/Invoke-TinyHeroCustomBuild.ps1 -BuildOutputPath \$buildOutputPath
                 """
             }
         }
@@ -25,6 +31,11 @@ pipeline {
             steps {
                 powershell """
                     \$buildOutputPath = '${params.BUILD_OUTPUT_PATH}'
+
+                    if ([string]::IsNullOrWhiteSpace(\$buildOutputPath)) {
+                        \$buildOutputPath = 'Builds/Windows/${env.BUILD_NUMBER}/TinyHero.exe'
+                    }
+
                     \$resolvedBuildOutputPath = [System.IO.Path]::GetFullPath((Join-Path \$env:WORKSPACE \$buildOutputPath))
                     \$resolvedBuildOutputDirectory = Split-Path -Path \$resolvedBuildOutputPath -Parent
 

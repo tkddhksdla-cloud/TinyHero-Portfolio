@@ -113,6 +113,7 @@ namespace TinyHero.Tools
             }
 
             EditorUserBuildSettings.development = false;
+            EditorUserBuildSettings.createSolution = false;
 #if UNITY_6000_0_OR_NEWER
             NamedBuildTarget namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup( buildTargetGroup );
             PlayerSettings.SetScriptingBackend( namedBuildTarget, ScriptingImplementation.IL2CPP );
@@ -442,6 +443,12 @@ namespace TinyHero.Tools
 
             if ( summary.result == BuildResult.Succeeded )
             {
+                if ( File.Exists( _outputPath ) == false )
+                {
+                    Debug.LogError( $"[TinyHero Build] Build reported success, but output executable was not found. Path: {_outputPath}" );
+                    return false;
+                }
+
                 Debug.Log( $"[TinyHero Build] Build succeeded. Path: {_outputPath}, Size: {summary.totalSize}, Time: {summary.totalTime}" );
                 return true;
             }
