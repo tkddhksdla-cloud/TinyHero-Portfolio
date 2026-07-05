@@ -1,0 +1,175 @@
+<linker>
+  <assembly fullname="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="CAutoPoolReturnObject" preserve="all" />
+    <type fullname="CItemSlot" preserve="all" />
+    <type fullname="CNPCInteractionRange" preserve="all" />
+    <type fullname="CNPCObject" preserve="all" />
+    <type fullname="CRewardSlot" preserve="all" />
+    <type fullname="CWorldItemDropObject" preserve="all" />
+    <type fullname="MapTitleLogoUI" preserve="all" />
+    <type fullname="MonsterContactHitbox" preserve="all" />
+    <type fullname="MonsterObject" preserve="all" />
+    <type fullname="PortalObject" preserve="all" />
+    <type fullname="TinyHero.Core.Data.CItemDefinition" preserve="all" />
+    <type fullname="TinyHero.Core.Data.CMonsterBehaviorPatternData" preserve="all" />
+    <type fullname="TinyHero.Core.Data.CNPCInteractionData" preserve="all" />
+    <type fullname="TinyHero.Maps.CMapLoadingUI" preserve="all" />
+    <type fullname="TinyHero.Player.CPlayerEquipmentManager" preserve="all" />
+    <type fullname="TinyHero.Player.CPlayerEquipmentPartsSync" preserve="all" />
+    <type fullname="TinyHero.Player.CPlayerInventoryManager" preserve="all" />
+    <type fullname="TinyHero.Player.CPlayerStatManager" preserve="all" />
+    <type fullname="TinyHero.Player.PlayerController" preserve="all" />
+    <type fullname="TinyHero.Quest.CQuestManager" preserve="all" />
+    <type fullname="TinyHero.Skill.CAirborneCrowdControlEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CAtkReductionDebuffEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CBuffActiveSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CCloneReplayActiveSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CDefReductionDebuffEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CFinalAttackPercentBuffEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CInstantActiveSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CInvincibleBuffEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CKnockbackCrowdControlEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CLevelUnlockCondition" preserve="all" />
+    <type fullname="TinyHero.Skill.CPassiveStatSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CPhaseStrikeActiveSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CPlaceActiveSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CProjectileActiveSkillEffect" preserve="all" />
+    <type fullname="TinyHero.Skill.CQuestStateProvider" preserve="all" />
+    <type fullname="TinyHero.Skill.CQuestUnlockCondition" preserve="all" />
+    <type fullname="TinyHero.Skill.CSkillDefinition" preserve="all" />
+    <type fullname="TinyHero.Skill.CSkillManager" preserve="all" />
+    <type fullname="TinyHero.Skill.CStunCrowdControlEffect" preserve="all" />
+    <type fullname="TinyHero.Tools.WorldSpaceBackgroundFitter" preserve="all" />
+    <type fullname="TinyHero.UI.CAnimationEventController" preserve="all" />
+    <type fullname="TinyHero.UI.CButtonEx" preserve="all" />
+    <type fullname="TinyHero.UI.CDamageFontObject" preserve="all" />
+    <type fullname="TinyHero.UI.CItemInventoryWindowDragHandle" preserve="all" />
+    <type fullname="TinyHero.UI.CItemTooltipUI" preserve="all" />
+    <type fullname="TinyHero.UI.CPlayerEquipmentSlotDropTarget" preserve="all" />
+    <type fullname="TinyHero.UI.CPlayerEquipmentSlotView" preserve="all" />
+    <type fullname="TinyHero.UI.CPlayerEquipmentStatusPanelUI" preserve="all" />
+    <type fullname="TinyHero.UI.CPlayerStatTooltipTrigger" preserve="all" />
+    <type fullname="TinyHero.UI.CPlayerStatView" preserve="all" />
+    <type fullname="TinyHero.UI.CPopupCommonNotice" preserve="all" />
+    <type fullname="TinyHero.UI.CQuestListSlotView" preserve="all" />
+    <type fullname="TinyHero.UI.CShopSlot" preserve="all" />
+    <type fullname="TinyHero.UI.CSkillListSlotView" preserve="all" />
+    <type fullname="TinyHero.UI.CSkillSlotTooltipTrigger" preserve="all" />
+    <type fullname="TinyHero.UI.CSkillTooltipUI" preserve="all" />
+    <type fullname="TinyHero.UI.CToastMessage" preserve="all" />
+    <type fullname="TinyHero.UI.CToastMessageSystem" preserve="all" />
+    <type fullname="TinyHero.UI.PopupCube" preserve="all" />
+    <type fullname="TinyHero.UI.PopupItemInventory" preserve="all" />
+    <type fullname="TinyHero.UI.PopupQuestList" preserve="all" />
+    <type fullname="TinyHero.UI.PopupReward" preserve="all" />
+    <type fullname="TinyHero.UI.PopupShop" preserve="all" />
+    <type fullname="TinyHero.UI.PopupSkillList" preserve="all" />
+    <type fullname="UVscroll" preserve="all" />
+    <type fullname="TinyHero.Core.Data.CEquipmentPotentialData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CEquipmentPotentialLineData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CMonsterAlwaysPatternData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CMonsterAttackPatternData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CMonsterBehaviorActionEntry" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CMonsterItemDropEntry" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CMonsterPlayerDistancePatternData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CNPCDialoguePreset" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Core.Data.CNPCInteractionActionEntry" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Player.CPlayerEquipmentSlotEntryData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Player.CPlayerModifierRuntimeData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Player.CPlayerStatDefinition" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.Player.CPlayerStatRuntimeData" preserve="nothing" serialized="true" />
+    <type fullname="TinyHero.UI.PopupItemInventory/CInventoryTabReference" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="LayerLab.ArtMakerUnity, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="LayerLab.ArtMakerUnity.AnimationEventReceiver" preserve="all" />
+    <type fullname="LayerLab.ArtMakerUnity.CharacterPrefabData" preserve="all" />
+    <type fullname="LayerLab.ArtMakerUnity.PartsManager" preserve="all" />
+    <type fullname="LayerLab.ArtMakerUnity.PartRenderer" preserve="nothing" serialized="true" />
+    <type fullname="LayerLab.ArtMakerUnity.PartsCategory" preserve="nothing" serialized="true" />
+    <type fullname="LayerLab.ArtMakerUnity.PresetData/ColorEntry" preserve="nothing" serialized="true" />
+    <type fullname="LayerLab.ArtMakerUnity.PresetData/PartsEntry" preserve="nothing" serialized="true" />
+    <type fullname="LayerLab.ArtMakerUnity.PresetData/VisibilityEntry" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="Unity.Addressables, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
+    <type fullname="UnityEngine.AddressableAssets.Addressables" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.InstanceProvider" preserve="all" />
+    <type fullname="UnityEngine.ResourceManagement.ResourceProviders.SceneProvider" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.TextMeshPro, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="TMPro.TextMeshProUGUI" preserve="all" />
+    <type fullname="TMPro.TMP_FontAsset" preserve="all" />
+    <type fullname="TMPro.FaceInfo_Legacy" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.FontAssetCreationSettings" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.KerningTable" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.TMP_Character" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.TMP_FontFeatureTable" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.TMP_FontWeightPair" preserve="nothing" serialized="true" />
+    <type fullname="TMPro.VertexGradient" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.AnimationClip" preserve="all" />
+    <type fullname="UnityEngine.Animator" preserve="all" />
+    <type fullname="UnityEngine.RuntimeAnimatorController" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.GameObject" preserve="all" />
+    <type fullname="UnityEngine.Material" preserve="all" />
+    <type fullname="UnityEngine.Mesh" preserve="all" />
+    <type fullname="UnityEngine.Object" preserve="all" />
+    <type fullname="UnityEngine.RectTransform" preserve="all" />
+    <type fullname="UnityEngine.Rendering.SortingGroup" preserve="all" />
+    <type fullname="UnityEngine.Shader" preserve="all" />
+    <type fullname="UnityEngine.Sprite" preserve="all" />
+    <type fullname="UnityEngine.SpriteRenderer" preserve="all" />
+    <type fullname="UnityEngine.TextAsset" preserve="all" />
+    <type fullname="UnityEngine.Texture2D" preserve="all" />
+    <type fullname="UnityEngine.TrailRenderer" preserve="all" />
+    <type fullname="UnityEngine.Transform" preserve="all" />
+    <type fullname="UnityEngine.Events.PersistentCallGroup" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.RectOffset" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.ParticleSystemModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.ParticleSystem" preserve="all" />
+    <type fullname="UnityEngine.ParticleSystemRenderer" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.Physics2DModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.BoxCollider2D" preserve="all" />
+    <type fullname="UnityEngine.CircleCollider2D" preserve="all" />
+    <type fullname="UnityEngine.Rigidbody2D" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.UI.CanvasScaler" preserve="all" />
+    <type fullname="UnityEngine.UI.ContentSizeFitter" preserve="all" />
+    <type fullname="UnityEngine.UI.GridLayoutGroup" preserve="all" />
+    <type fullname="UnityEngine.UI.HorizontalLayoutGroup" preserve="all" />
+    <type fullname="UnityEngine.UI.Image" preserve="all" />
+    <type fullname="UnityEngine.UI.LayoutElement" preserve="all" />
+    <type fullname="UnityEngine.UI.Mask" preserve="all" />
+    <type fullname="UnityEngine.UI.Outline" preserve="all" />
+    <type fullname="UnityEngine.UI.RawImage" preserve="all" />
+    <type fullname="UnityEngine.UI.ScrollRect" preserve="all" />
+    <type fullname="UnityEngine.UI.VerticalLayoutGroup" preserve="all" />
+    <type fullname="UnityEngine.UI.AnimationTriggers" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.UI.Button/ButtonClickedEvent" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.UI.ColorBlock" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.UI.MaskableGraphic/CullStateChangedEvent" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.UI.Navigation" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.UI.ScrollRect/ScrollRectEvent" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.UI.SpriteState" preserve="nothing" serialized="true" />
+  </assembly>
+  <assembly fullname="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <type fullname="UnityEngine.Canvas" preserve="all" />
+    <type fullname="UnityEngine.CanvasGroup" preserve="all" />
+    <type fullname="UnityEngine.CanvasRenderer" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.TextCoreFontEngineModule">
+    <type fullname="UnityEngine.TextCore.FaceInfo" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.TextCore.Glyph" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.TextCore.GlyphMetrics" preserve="nothing" serialized="true" />
+    <type fullname="UnityEngine.TextCore.GlyphRect" preserve="nothing" serialized="true" />
+  </assembly>
+</linker>

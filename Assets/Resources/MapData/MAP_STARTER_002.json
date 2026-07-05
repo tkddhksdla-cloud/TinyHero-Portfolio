@@ -1,0 +1,177 @@
+{
+    "mapId": "MAP_STARTER_002",
+    "mapName": "허니버블의 들판",
+    "backgroundSpriteName": "BG_StarterVillage_02",
+    "portals": [
+        {
+            "prefabName": "PortalObject",
+            "resourcePath": "Prefabs/Portal/PortalObject",
+            "portalId": "Portal_003",
+            "targetMapId": "MAP_STARTER_003",
+            "targetPortalId": "Portal_004",
+            "transform": {
+                "position": [
+                    32.22791290283203,
+                    -2.596442222595215,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.550000011920929,
+                    0.550000011920929,
+                    0.550000011920929
+                ]
+            }
+        },
+        {
+            "prefabName": "PortalObject",
+            "resourcePath": "Prefabs/Portal/PortalObject",
+            "portalId": "Portal_002",
+            "targetMapId": "MAP_STARTER_001",
+            "targetPortalId": "Portal_002",
+            "transform": {
+                "position": [
+                    -9.408332824707032,
+                    -2.616666555404663,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.550000011920929,
+                    0.550000011920929,
+                    0.550000011920929
+                ]
+            }
+        }
+    ],
+    "monsters": [
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    22.384765625,
+                    -2.482085704803467,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    18.808746337890626,
+                    -2.479435920715332,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    15.046963691711426,
+                    -2.482085704803467,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    10.774322509765625,
+                    -2.482085704803467,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    7.4108452796936039,
+                    -2.482085704803467,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    3.9250001907348635,
+                    -2.482085704803467,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0002",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0002",
+            "transform": {
+                "position": [
+                    0.05833396315574646,
+                    -2.478938102722168,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        }
+    ],
+    "npcs": []
+}

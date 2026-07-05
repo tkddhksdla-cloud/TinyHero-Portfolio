@@ -352,6 +352,7 @@ namespace TinyHero.Tools
                 if ( dialoguePreset == null )
                 {
                     dialoguePreset = new CNPCDialoguePreset();
+                    dialoguePreset.SetPresetName( BuildDefaultDialoguePresetName( index ) );
                     _dialoguePresetList[ index ] = dialoguePreset;
                 }
 
@@ -361,7 +362,7 @@ namespace TinyHero.Tools
             if ( GUILayout.Button( "대화 프리셋 추가" ) )
             {
                 CNPCDialoguePreset createdPreset = new CNPCDialoguePreset();
-                createdPreset.SetPresetName( $"Preset {_dialoguePresetList.Count + 1}" );
+                createdPreset.SetPresetName( BuildDefaultDialoguePresetName( _dialoguePresetList.Count ) );
                 _dialoguePresetList.Add( createdPreset );
             }
         }
@@ -602,11 +603,21 @@ namespace TinyHero.Tools
             defaultEntry.SetActionType( eNPCInteractionAction.DIALOGUE );
             defaultEntry.SetUseDialogue( true );
             CNPCDialoguePreset defaultPreset = new CNPCDialoguePreset();
-            defaultPreset.SetPresetName( "기본 대화" );
+            defaultPreset.SetPresetName( BuildDefaultDialoguePresetName( 0 ) );
             List<string> dialogueLineList = defaultPreset.GetDialogueLineList();
             dialogueLineList.Add( "안녕하세요." );
             defaultEntry.GetDialoguePresetList().Add( defaultPreset );
             actionEntryList.Add( defaultEntry );
+        }
+
+        ///<summary>
+        /// 기본 대화 프리셋 이름 반환
+        ///</summary>
+        private string BuildDefaultDialoguePresetName( int _presetIndex )
+        {
+            int presetNumber = Mathf.Max( 0, _presetIndex ) + 1;
+            string result = $"PRESET_{presetNumber}";
+            return result;
         }
 
         ///<summary>

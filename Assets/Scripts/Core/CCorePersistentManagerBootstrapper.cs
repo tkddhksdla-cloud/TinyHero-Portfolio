@@ -21,6 +21,7 @@ namespace TinyHero.Core
             _ = CObjectPoolManager.Instance;
             CInputManager inputManager = CInputManager.Instance;
             CDataManager dataManager = CDataManager.Instance;
+            _ = CGameSettingManager.Instance;
             CUINavigationController uiNavigationController = CUINavigationController.Instance;
             CItemInventoryUiManager itemInventoryUiManager = CItemInventoryUiManager.Instance;
             CShopUiManager shopUiManager = CShopUiManager.Instance;

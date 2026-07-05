@@ -118,7 +118,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public string GetShopName()
         {
-            string result = shopName;
+            string result = CDataManager.GetText( shopName );
             return result;
         }
 

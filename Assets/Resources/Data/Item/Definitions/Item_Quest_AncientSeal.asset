@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7698db6904da0bc4f8e7a1cfade82f24, type: 3}
+  m_Name: Item_Quest_AncientSeal
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
+  itemId: ITEM_QUEST_ANCIENT_SEAL
+  itemName: Ancient Seal
+  itemType: 4
+  description: KEY_TEXT_ITEM_QUEST_ANCIENTSEAL_DESCRIPTION_26
+  iconSprite: {fileID: 21300000, guid: 4411ec51bcba99d4c84610219a9e19b7, type: 3}
+  worldDropPrefab: {fileID: 1638333555315690385, guid: 7fb16aa11ceedcb4981a0829655517a1, type: 3}
+  isStackable: 1
+  maxStackCountValue: 99
+  sellPriceItemId: GOLD
+  sellPriceValue: 0
+  equipmentType: 0
+  consumableType: 0
+  linkedSkillId: 
+  randomBoxRewardTable: {fileID: 0}
+  equipmentStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  equipmentPartsType: 4
+  equipmentPartsIndex: -1

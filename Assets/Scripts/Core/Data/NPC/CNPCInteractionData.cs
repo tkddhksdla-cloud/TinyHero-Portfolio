@@ -20,7 +20,9 @@ namespace TinyHero.Core.Data
     [Serializable]
     public sealed class CNPCDialoguePreset
     {
-        [SerializeField] private string presetName = "Preset";
+        private const string DefaultPresetName = "PRESET_0";
+
+        [SerializeField] private string presetName = DefaultPresetName;
         [SerializeField] private List<string> dialogueLineList = new List<string>();
 
         ///<summary>
@@ -28,7 +30,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public string GetPresetName()
         {
-            string result = presetName;
+            string result = CDataManager.GetText( presetName );
             return result;
         }
 
@@ -37,7 +39,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public void SetPresetName( string _presetName )
         {
-            presetName = string.IsNullOrWhiteSpace( _presetName ) ? "Preset" : _presetName.Trim();
+            presetName = string.IsNullOrWhiteSpace( _presetName ) ? DefaultPresetName : _presetName.Trim();
         }
 
         ///<summary>
@@ -46,6 +48,21 @@ namespace TinyHero.Core.Data
         public List<string> GetDialogueLineList()
         {
             List<string> result = dialogueLineList;
+            return result;
+        }
+
+        ///<summary>
+        /// 대화 라인 텍스트 반환
+        ///</summary>
+        public string GetDialogueText( int _lineIndex )
+        {
+            if ( dialogueLineList == null || _lineIndex < 0 || _lineIndex >= dialogueLineList.Count )
+            {
+                return string.Empty;
+            }
+
+            string dialogueLine = dialogueLineList[ _lineIndex ];
+            string result = CDataManager.GetText( dialogueLine );
             return result;
         }
     }
@@ -172,7 +189,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public string GetNpcName()
         {
-            string result = npcName;
+            string result = CDataManager.GetText( npcName );
             return result;
         }
 

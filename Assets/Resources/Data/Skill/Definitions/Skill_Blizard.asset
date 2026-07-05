@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5341f4954fb99545b66ed3565cb8095, type: 3}
+  m_Name: Skill_Blizard
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
+  skillId: skill_frost_field
+  skillName: KEY_TEXT_SKILL_BLIZARD_SKILLNAME_62
+  skillIcon: {fileID: 21300000, guid: de6ac577e65438d4091383ae7112b53c, type: 3}
+  skillType: 1
+  activeSkillType: 3
+  quickSlotIndex: 1
+  cooldownSeconds: 5
+  mpCost: 50
+  mpCostReductionPerLevel: 0
+  learnSpCost: 1
+  levelUpSpCost: 1
+  maxSkillLevel: 5
+  assignableToQuickSlot: 1
+  cooldownReductionPerLevel: 0.25
+  damageMultiplierBonusPerLevel: 0.08
+  flatDamageBonusPerLevel: 0
+  castLockDurationSeconds: 0.5
+  castAnimation: 5
+  castAnimationName: Skill
+  castAnimationSpeed: 2.5
+  description: KEY_TEXT_SKILL_BLIZARD_DESCRIPTION_63
+  castVfxPrefab: {fileID: 0}
+  castVfxOffset: {x: 0, y: 0, z: 0}
+  castVfxReturnDelay: 1
+  hitVfxPrefab: {fileID: 8260617210669617129, guid: 5ebe2034595c94f41a8e89907c5be9a5, type: 3}
+  hitVfxOffset: {x: 0, y: 0, z: 0}
+  hitVfxReturnDelay: 3
+  projectileVfxPrefab: {fileID: 0}
+  projectileVfxOffset: {x: 0, y: 0, z: 0}
+  projectileVfxReturnDelay: 1
+  loopVfxPrefab: {fileID: 1810327722803731069, guid: e01dcf85697f90243a9cf140f3c5f09a, type: 3}
+  loopVfxOffset: {x: 0, y: 0, z: 0}
+  loopVfxReturnDelay: 3
+  passiveStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  activeAction: {fileID: 0}
+  activeSkillEffect: {fileID: 11400000, guid: 17d2ceac084855a4ca391906a4306b5e, type: 2}
+  passiveSkillEffectList: []
+  unlockConditionList:
+  - {fileID: 11400000, guid: 5b336950798bbfa4eb4747999989ebaf, type: 2}

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core.Data;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -63,7 +64,8 @@ namespace TinyHero.Skill
         ///</summary>
         public string GetSkillName()
         {
-            string result = string.IsNullOrWhiteSpace( skillName ) ? name : skillName;
+            string resolvedSkillName = string.IsNullOrWhiteSpace( skillName ) ? name : skillName;
+            string result = CDataManager.GetText( resolvedSkillName );
             return result;
         }
 
@@ -261,7 +263,7 @@ namespace TinyHero.Skill
         ///</summary>
         public string GetDescription()
         {
-            string result = description;
+            string result = CDataManager.GetText( description );
             return result;
         }
 

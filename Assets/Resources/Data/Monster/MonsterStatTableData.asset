@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b16ae403afffae74bb9bed47d390bfe1, type: 3}
+  m_Name: MonsterStatTableData
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CMonsterStatTableData
+  sourceExcelAssetPath: Assets/RawData/Excel/Monster/MonsterStatData.xlsx
+  rowList:
+  - id: Monster_0001
+    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_0_NAME_27
+    hp: 100
+    lv: 1
+    atk: 50
+    def: 0
+    ats: 50
+    mvs: 100
+    exp: 2
+    atAvailable: 1
+  - id: Monster_0002
+    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_1_NAME_28
+    hp: 150
+    lv: 2
+    atk: 100
+    def: 10
+    ats: 90
+    mvs: 130
+    exp: 3
+    atAvailable: 1
+  - id: Monster_0003
+    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_2_NAME_29
+    hp: 500
+    lv: 5
+    atk: 200
+    def: 20
+    ats: 100
+    mvs: 150
+    exp: 5
+    atAvailable: 1
+  - id: Monster_0004
+    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_3_NAME_30
+    hp: 1000
+    lv: 8
+    atk: 400
+    def: 30
+    ats: 150
+    mvs: 220
+    exp: 10
+    atAvailable: 0

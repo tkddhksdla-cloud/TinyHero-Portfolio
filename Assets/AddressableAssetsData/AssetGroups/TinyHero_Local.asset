@@ -1,0 +1,426 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: TinyHero_Local
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: TinyHero_Local
+  m_GUID: a98aa92c2b988644aa62eea983e221a6
+  m_SerializeEntries:
+  - m_GUID: 0284b2cf062de6c4eb5535e7d5977cf2
+    m_Address: Prefabs/UI/Skill/SkillSlot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 051974dea3aa31c4db5b7b42f6ae4b4b
+    m_Address: Prefabs/Item/Drops/Drop_Item_EQUIPMENT_HELMET_GOLD_KNIGHT
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0d9d2a1d06eb74f4083ee74dd467847f
+    m_Address: Prefabs/UI/Popup/PopupQuestList
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 155c92be42b617048bb6028d3283b5b0
+    m_Address: Prefabs/UI/Common/ToastMessage
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 24595c41791b1b04d9dba4fe50a0d707
+    m_Address: Prefabs/Portal/PortalObject
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2537f2196e8725e4b9a18075afa5efab
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_SWORD_IGNITION
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 259d2f47a9d516d41849d7c9a3a2d99e
+    m_Address: RawImages/BG/BG_StarterVillage_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 266e3211864f54a4da45d563a1f9df7e
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_BRONZE_SWORD
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2dbfe91b3ba540942b2978c78051cd39
+    m_Address: Prefabs/Character/Player/PlayerObject
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2ef1af04871d71040b5ef333c6945835
+    m_Address: Prefabs/UI/Button/ButtonClose
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 32e9aebcae5c9a8409343d58acb7ba09
+    m_Address: Prefabs/UI/NameTag/NpcNameTag
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33cb58073bf30624e86d2ea8e1143ed7
+    m_Address: Prefabs/UI/Damage/DamageFontObject
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 399c3351381bcc545b2eff8ac240c2e0
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_HELMET_DREX
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ae4f170f7111cd4387b7256edf50a23
+    m_Address: RawImages/BG/BG_StarterVillage_06
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3eaea9cdcff196f499f083ab6a00e03b
+    m_Address: Prefabs/UI/Quest/RewardSlot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 495fc84b9ed89ba46a81c3c1e89d7cdf
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_CONSUMABLE_SKILL_BOOK_skill_shadow_partner
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 521508f190f64b440a041ec3df343e71
+    m_Address: Prefabs/Character/NPC/NPC_0004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 527afcbbb6cbaca4c8ff0b2df6dedc58
+    m_Address: Prefabs/UI/Map/MapTitleLogoUI
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5bdd216f044313349b6f0184f2ba260b
+    m_Address: Prefabs/UI/Popup/PopupQuestList_Mine
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5c3d15663001130468fda65ed0677546
+    m_Address: MapData/MAP_STARTER_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 665138131a20dba45b356c11078af67c
+    m_Address: Prefabs/Character/Monster/Monster_0003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 68358d8979bb5eb40a1d6b25dc33c045
+    m_Address: MapData/MAP_STARTER_000_VILLAGE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69f027874b718244a932437a6453e161
+    m_Address: Prefabs/UI/Popup/PopupReward
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6bc0c598f8c9aaf49be82c180885eca7
+    m_Address: Prefabs/UI/Popup/PopupCube
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 748fb53b79ad92046ad8e1f19a5da98d
+    m_Address: Prefabs/Character/Monster/Monster_0004
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7490a1f685ee1ca49b5f37b63a1231d1
+    m_Address: Prefabs/UI/Inventory/ItemSlot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 76b2690cbd52cfb46a42f2e074dacff3
+    m_Address: Prefabs/FX/FX_DefaultAttack_Slash
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 794b34ea311dbd342bca2af1ba62716b
+    m_Address: Prefabs/UI/Shop/ShopSlot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a7a7cd62ed41ff409c3373fe5bbd0d4
+    m_Address: RawImages/BG/BG_StarterVillage_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b70b4bb64aa61343a05ed87e594285c
+    m_Address: Prefabs/UI/Map/MapLoadingUI
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c2bd12729a5f0242b55a70db8b0b45c
+    m_Address: Prefabs/UI/Inventory/ItemTooltipUI
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c6ab78f846ed42419e3fcb26c6c33a3
+    m_Address: Prefabs/FX/WindDance
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c924f00a3a3f0540acdffe7bda0fe90
+    m_Address: Prefabs/UI/Inventory/CTabUI
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7def547ef44b2274dbafd5f37825fb5b
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_CURRENCY_GOLD
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7fb16aa11ceedcb4981a0829655517a1
+    m_Address: Prefabs/Item/Drops/Drop_Item_Quest_AncientSeal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 856396f1c3e3aeb4c941a80b22aab5c5
+    m_Address: Prefabs/UI/Popup/PopupItemInventory
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8eb6ed0006325aa418f6df5d5b75b176
+    m_Address: Prefabs/UI/Popup/PopupCommonNotice
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93c0ffda6df6f6b47bc0e30db1a2085f
+    m_Address: MapData/MAP_STARTER_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94a2eea3dfbaa7c4086a769cf6a18909
+    m_Address: RawImages/BG/BG_StarterVillage_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a9ab0c2a09b4024a8b3663a5348dfad
+    m_Address: Prefabs/Item/Drops/Drop_Item_Consumable_Apple
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9d7886058ed12e34b901240a31cb5a8e
+    m_Address: Prefabs/FX/Projectiles_MoonBlade
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a6f2cff5e4b4aa1479f42c5826c8375f
+    m_Address: Prefabs/Character/Monster/Monster_0002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a9160139c3afc114b8212edc220514ad
+    m_Address: Prefabs/UI/Popup/PopupSkillList
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ad18eb44924cafd46b8b97227cf0553c
+    m_Address: Prefabs/UI/Inventory/RewardSlot_Animation
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b141a94ee622a614ab454a034311d518
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_MATERIAL_HONEYJELLY
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b348898725de93d4a8c7f8da81903b7f
+    m_Address: Prefabs/Character/Player/Player
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b9d391f69a115fa42861c9782673f5e7
+    m_Address: Prefabs/UI/Quest/QuestSlot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba811c1c5ca7f554cb3801721dc0d6b7
+    m_Address: Prefabs/Character/NPC/NPC_0003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bc95a401c3236324399fa317a30cc7b8
+    m_Address: Prefabs/Item/Drops/Drop_Item_Material_SlimeGel
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1964584651b7e343ba769f038d63ca6
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_CONSUMABLE_CUBE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c31f3d3153ad9e349a9566b6d511c80b
+    m_Address: Hotfix/TinyHero.Hotfix.dll
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4bbe7539beb5d54e9a5b405fbbe5016
+    m_Address: Prefabs/UI/HpBar/MonsterInfo
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4d8af5d271ec1647ad765f08371357c
+    m_Address: RawImages/BG/BG_StarterVillage_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c952a4d7f527f8e4d85577c90a495407
+    m_Address: Prefabs/Character/NPC/NPC_0002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ceb29dab61cdf3443adb4e31f6cc36ac
+    m_Address: Prefabs/Item/Drops/Drop_Item_Material_TurtleSnailWater
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d29623103da69674599fe88b86fc1a16
+    m_Address: Prefabs/FX/FX_DoubleJump
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dfaee30c609a3d9419aa7e518512aa00
+    m_Address: MapData/SceneMapTool
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e1a027f621767df428b079b32fe88769
+    m_Address: RawImages/BG/BG_StarterVillage_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e53b4e53510c6c6408ce48d24f580eed
+    m_Address: Prefabs/UI/Popup/PopupShop
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    - UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e698f243c28af7f4796fed4e78903741
+    m_Address: Prefabs/BackgroundObject/BackgroundObject
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e9e12c684bb4a6b459277cf4a45fd247
+    m_Address: Prefabs/UI/Skill/SkillTooltipUI
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ec631276739b341469de8cfc5e70d851
+    m_Address: Prefabs/Character/Monster/Monster_0001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee9d5e184f630db4fb6b32506e1af221
+    m_Address: Prefabs/UI/Common/CToastMessageSystem
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f4f7384544bfe584184c35abe6df58ac
+    m_Address: Prefabs/Character/NPC/NPC_0001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f96d4a17e089ef149adf5735b36f793a
+    m_Address: Prefabs/Item/Drops/Drop_Item_Equipment_BronzeSword
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd2789d34a02ac84b88d862726c6f5d3
+    m_Address: Prefabs/Item/WorldItemDropObject
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: bca4858ae8452974895f5c99decf5998, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 9334083b675fa6f41bd3550b487708f8, type: 2}
+    - {fileID: 11400000, guid: 82c1b2f539a734a46b13d043543b0d2e, type: 2}

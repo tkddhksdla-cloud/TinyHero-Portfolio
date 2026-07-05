@@ -544,7 +544,7 @@ namespace TinyHero.Quest
         public string GetQuestName()
         {
             string resolvedQuestName = string.IsNullOrWhiteSpace( questName ) ? questId : questName;
-            string result = resolvedQuestName;
+            string result = CDataManager.GetText( resolvedQuestName );
             return result;
         }
 
@@ -561,7 +561,7 @@ namespace TinyHero.Quest
         ///</summary>
         public string GetDescription()
         {
-            string result = description;
+            string result = CDataManager.GetText( description );
             return result;
         }
 

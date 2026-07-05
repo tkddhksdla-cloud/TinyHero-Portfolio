@@ -1,0 +1,5397 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba48c32835d6a8b4695e1fb29d4948b2, type: 3}
+  m_Name: EquipmentPotentialTableData
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CEquipmentPotentialTableData
+  commonToRareChance: 0.12
+  rareToUniqueChance: 0.04
+  uniqueToLegendaryChance: 0.01
+  rareAdditionalCurrentRankChance: 0.15
+  uniqueAdditionalCurrentRankChance: 0.1
+  legendaryAdditionalCurrentRankChance: 0.08
+  optionEntryList:
+  - optionKey: WEAPON_COMMON_HP_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_COMMON_HP_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_COMMON_HP_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 25
+    weight: 2
+  - optionKey: WEAPON_COMMON_HP_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: WEAPON_COMMON_HR_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_HR_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_HR_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_HR_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_MP_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_COMMON_MP_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_COMMON_MP_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: WEAPON_COMMON_MP_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: WEAPON_COMMON_MR_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_MR_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_MR_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_MR_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_ATK_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_ATK_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_ATK_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_ATK_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_DEF_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_DEF_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_DEF_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_DEF_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRT_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRT_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRT_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRT_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRD_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRD_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRD_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_CRD_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_ACC_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_ACC_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_ACC_VALUE_01
+    equipmentType: 1
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_COMMON_ACC_VALUE_02
+    equipmentType: 1
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_COMMON_ATS_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_ATS_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_MOVE_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_MOVE_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_RANGE_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_RANGE_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_COMMON_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: WEAPON_COMMON_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: WEAPON_RARE_HP_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_RARE_HP_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_RARE_HP_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: WEAPON_RARE_HP_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: WEAPON_RARE_HR_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_HR_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_HR_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_HR_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_MP_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: WEAPON_RARE_MP_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: WEAPON_RARE_MP_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: WEAPON_RARE_MP_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: WEAPON_RARE_MR_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_MR_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_MR_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_MR_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_ATK_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_ATK_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_ATK_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_ATK_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_DEF_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_DEF_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_DEF_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_DEF_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_CRT_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_CRT_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_CRT_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_CRT_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_CRD_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_CRD_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_CRD_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_CRD_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_ACC_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_ACC_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_ACC_VALUE_01
+    equipmentType: 1
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: WEAPON_RARE_ACC_VALUE_02
+    equipmentType: 1
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: WEAPON_RARE_ATS_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_ATS_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_MOVE_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_MOVE_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_RANGE_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_RANGE_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_RARE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: WEAPON_RARE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HP_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HP_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HP_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HP_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HR_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HR_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HR_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_HR_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MP_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MP_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MP_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MP_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MR_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MR_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MR_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MR_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ATK_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ATK_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ATK_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ATK_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_DEF_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_DEF_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_DEF_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_DEF_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRT_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRT_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRT_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRT_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRD_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRD_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRD_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_CRD_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ACC_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ACC_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ACC_VALUE_01
+    equipmentType: 1
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ACC_VALUE_02
+    equipmentType: 1
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ATS_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_ATS_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MOVE_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_MOVE_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_RANGE_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_RANGE_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: WEAPON_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HP_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HP_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HP_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HP_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HR_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HR_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HR_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_HR_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MP_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MP_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MP_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MP_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MR_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MR_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MR_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MR_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ATK_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ATK_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ATK_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ATK_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_DEF_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_DEF_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_DEF_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_DEF_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRT_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRT_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRT_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRT_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRD_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRD_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRD_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_CRD_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ACC_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ACC_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ACC_VALUE_01
+    equipmentType: 1
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ACC_VALUE_02
+    equipmentType: 1
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ATS_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_ATS_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MOVE_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_MOVE_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_RANGE_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_RANGE_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 1
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: WEAPON_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 1
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_COMMON_HP_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_COMMON_HP_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_COMMON_HP_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: HELMET_COMMON_HP_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: HELMET_COMMON_HR_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_HR_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_HR_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_HR_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_MP_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_COMMON_MP_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_COMMON_MP_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: HELMET_COMMON_MP_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: HELMET_COMMON_MR_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_MR_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_MR_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_MR_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_ATK_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_ATK_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_ATK_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_ATK_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_DEF_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_DEF_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_DEF_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_DEF_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_CRT_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_CRT_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_CRT_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_CRT_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_CRD_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_CRD_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_CRD_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_CRD_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_ACC_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_ACC_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_ACC_VALUE_01
+    equipmentType: 2
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: HELMET_COMMON_ACC_VALUE_02
+    equipmentType: 2
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_COMMON_ATS_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_ATS_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_MOVE_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_MOVE_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_RANGE_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_RANGE_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_COMMON_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: HELMET_COMMON_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: HELMET_RARE_HP_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: HELMET_RARE_HP_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_RARE_HP_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: HELMET_RARE_HP_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: HELMET_RARE_HR_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_HR_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_HR_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_HR_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_MP_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: HELMET_RARE_MP_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: HELMET_RARE_MP_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: HELMET_RARE_MP_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: HELMET_RARE_MR_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_MR_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_MR_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_MR_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_ATK_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_ATK_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_ATK_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_ATK_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_DEF_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_DEF_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_DEF_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_DEF_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_CRT_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_CRT_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_CRT_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_CRT_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_CRD_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_CRD_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_CRD_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_CRD_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_ACC_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_ACC_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_ACC_VALUE_01
+    equipmentType: 2
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: HELMET_RARE_ACC_VALUE_02
+    equipmentType: 2
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: HELMET_RARE_ATS_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_ATS_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_MOVE_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_MOVE_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_RANGE_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_RANGE_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_RARE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: HELMET_RARE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HP_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HP_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HP_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HP_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HR_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HR_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HR_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_HR_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MP_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MP_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MP_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MP_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MR_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MR_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MR_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MR_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ATK_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ATK_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ATK_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ATK_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_DEF_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_DEF_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_DEF_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_DEF_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRT_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRT_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRT_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRT_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRD_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRD_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRD_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_CRD_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ACC_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ACC_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ACC_VALUE_01
+    equipmentType: 2
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ACC_VALUE_02
+    equipmentType: 2
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ATS_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_ATS_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MOVE_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_MOVE_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_RANGE_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_RANGE_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: HELMET_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HP_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HP_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HP_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HP_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HR_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HR_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HR_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_HR_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MP_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MP_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MP_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MP_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MR_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MR_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MR_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MR_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ATK_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ATK_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ATK_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ATK_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_DEF_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_DEF_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_DEF_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_DEF_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRT_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRT_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRT_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRT_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRD_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRD_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRD_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_CRD_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ACC_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ACC_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ACC_VALUE_01
+    equipmentType: 2
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ACC_VALUE_02
+    equipmentType: 2
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ATS_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_ATS_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MOVE_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_MOVE_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_RANGE_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_RANGE_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 2
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: HELMET_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 2
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_COMMON_HP_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_COMMON_HP_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_COMMON_HP_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: ARMOR_COMMON_HP_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: ARMOR_COMMON_HR_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_HR_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_HR_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_HR_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_MP_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_COMMON_MP_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_COMMON_MP_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: ARMOR_COMMON_MP_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: ARMOR_COMMON_MR_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_MR_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_MR_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_MR_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_ATK_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_ATK_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_ATK_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_ATK_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_DEF_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_DEF_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_DEF_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_DEF_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRT_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRT_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRT_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRT_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRD_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRD_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRD_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_CRD_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_ACC_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_ACC_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_ACC_VALUE_01
+    equipmentType: 3
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_COMMON_ACC_VALUE_02
+    equipmentType: 3
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_COMMON_ATS_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_ATS_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_MOVE_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_MOVE_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_RANGE_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_RANGE_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_COMMON_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: ARMOR_COMMON_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: ARMOR_RARE_HP_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_RARE_HP_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_RARE_HP_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: ARMOR_RARE_HP_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: ARMOR_RARE_HR_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_HR_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_HR_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_HR_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_MP_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: ARMOR_RARE_MP_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: ARMOR_RARE_MP_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: ARMOR_RARE_MP_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: ARMOR_RARE_MR_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_MR_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_MR_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_MR_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_ATK_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_ATK_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_ATK_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_ATK_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_DEF_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_DEF_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_DEF_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_DEF_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_CRT_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_CRT_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_CRT_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_CRT_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_CRD_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_CRD_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_CRD_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_CRD_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_ACC_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_ACC_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_ACC_VALUE_01
+    equipmentType: 3
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: ARMOR_RARE_ACC_VALUE_02
+    equipmentType: 3
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: ARMOR_RARE_ATS_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_ATS_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_MOVE_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_MOVE_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_RANGE_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_RANGE_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_RARE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: ARMOR_RARE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HP_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HP_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HP_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HP_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HR_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HR_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HR_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_HR_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MP_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MP_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MP_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MP_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MR_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MR_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MR_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MR_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ATK_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ATK_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ATK_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ATK_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_DEF_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_DEF_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_DEF_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_DEF_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRT_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRT_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRT_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRT_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRD_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRD_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRD_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_CRD_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ACC_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ACC_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ACC_VALUE_01
+    equipmentType: 3
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ACC_VALUE_02
+    equipmentType: 3
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ATS_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_ATS_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MOVE_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_MOVE_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_RANGE_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_RANGE_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: ARMOR_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HP_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HP_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HP_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HP_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HR_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HR_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HR_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_HR_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MP_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MP_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MP_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MP_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MR_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MR_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MR_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MR_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ATK_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ATK_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ATK_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ATK_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_DEF_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_DEF_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_DEF_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_DEF_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRT_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRT_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRT_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRT_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRD_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRD_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRD_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_CRD_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ACC_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ACC_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ACC_VALUE_01
+    equipmentType: 3
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ACC_VALUE_02
+    equipmentType: 3
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ATS_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_ATS_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MOVE_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_MOVE_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_RANGE_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_RANGE_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 3
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: ARMOR_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 3
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_COMMON_HP_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_COMMON_HP_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 1
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_COMMON_HP_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: SHIELD_COMMON_HP_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 1
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: SHIELD_COMMON_HR_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_HR_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 2
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_HR_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_HR_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 2
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_MP_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_COMMON_MP_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 3
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_COMMON_MP_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 25
+    weight: 1
+  - optionKey: SHIELD_COMMON_MP_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 3
+    valueType: 0
+    value: 19.23077
+    weight: 1
+  - optionKey: SHIELD_COMMON_MR_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_MR_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 4
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_MR_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_MR_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 4
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_ATK_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_ATK_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 5
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_ATK_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_ATK_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 5
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_DEF_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_DEF_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 6
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_DEF_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_DEF_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 6
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRT_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRT_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 7
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRT_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRT_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 7
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRD_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRD_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 8
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRD_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_CRD_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 8
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_ACC_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_ACC_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 9
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_ACC_VALUE_01
+    equipmentType: 4
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_COMMON_ACC_VALUE_02
+    equipmentType: 4
+    rank: 0
+    optionType: 9
+    valueType: 0
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_COMMON_ATS_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_ATS_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 10
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_MOVE_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_MOVE_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 11
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_RANGE_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_RANGE_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 15
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 12
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 13
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_COMMON_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 1
+    weight: 1
+  - optionKey: SHIELD_COMMON_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 0
+    optionType: 14
+    valueType: 1
+    value: 0.7692308
+    weight: 1
+  - optionKey: SHIELD_RARE_HP_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_RARE_HP_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 1
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_RARE_HP_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: SHIELD_RARE_HP_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 1
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: SHIELD_RARE_HR_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_HR_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 2
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_HR_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_HR_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 2
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_MP_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 3
+    weight: 1
+  - optionKey: SHIELD_RARE_MP_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 3
+    valueType: 1
+    value: 2.3076923
+    weight: 1
+  - optionKey: SHIELD_RARE_MP_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 28
+    weight: 1
+  - optionKey: SHIELD_RARE_MP_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 3
+    valueType: 0
+    value: 21.538462
+    weight: 1
+  - optionKey: SHIELD_RARE_MR_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_MR_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 4
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_MR_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_MR_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 4
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_ATK_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_ATK_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 5
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_ATK_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_ATK_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 5
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_DEF_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_DEF_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 6
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_DEF_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_DEF_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 6
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_CRT_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_CRT_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 7
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_CRT_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_CRT_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 7
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_CRD_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_CRD_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 8
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_CRD_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_CRD_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 8
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_ACC_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_ACC_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 9
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_ACC_VALUE_01
+    equipmentType: 4
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 6
+    weight: 1
+  - optionKey: SHIELD_RARE_ACC_VALUE_02
+    equipmentType: 4
+    rank: 1
+    optionType: 9
+    valueType: 0
+    value: 4.6153846
+    weight: 1
+  - optionKey: SHIELD_RARE_ATS_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_ATS_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 10
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_MOVE_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_MOVE_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 11
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_RANGE_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_RANGE_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 15
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 12
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 13
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_RARE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 2
+    weight: 1
+  - optionKey: SHIELD_RARE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 1
+    optionType: 14
+    valueType: 1
+    value: 1.5384616
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HP_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HP_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 1
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HP_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HP_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 1
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HR_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HR_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 2
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HR_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_HR_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 2
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MP_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 5
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MP_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 3
+    valueType: 1
+    value: 3.846154
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MP_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 33
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MP_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 3
+    valueType: 0
+    value: 25.384617
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MR_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MR_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 4
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MR_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MR_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 4
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ATK_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ATK_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 5
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ATK_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ATK_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 5
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_DEF_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_DEF_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 6
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_DEF_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_DEF_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 6
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRT_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRT_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 7
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRT_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRT_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 7
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRD_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRD_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 8
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRD_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_CRD_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 8
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ACC_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ACC_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 9
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ACC_VALUE_01
+    equipmentType: 4
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 11
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ACC_VALUE_02
+    equipmentType: 4
+    rank: 2
+    optionType: 9
+    valueType: 0
+    value: 8.461538
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ATS_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_ATS_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 10
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MOVE_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_MOVE_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 11
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_RANGE_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_RANGE_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 15
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 12
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 13
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 4
+    weight: 1
+  - optionKey: SHIELD_UNIQUE_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 2
+    optionType: 14
+    valueType: 1
+    value: 3.0769231
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HP_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HP_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 1
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HP_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HP_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 1
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HR_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HR_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 2
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HR_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_HR_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 2
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MP_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 8
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MP_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 3
+    valueType: 1
+    value: 6.1538463
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MP_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 40
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MP_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 3
+    valueType: 0
+    value: 30.769232
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MR_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MR_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 4
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MR_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MR_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 4
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ATK_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ATK_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 5
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ATK_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ATK_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 5
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_DEF_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_DEF_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 6
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_DEF_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_DEF_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 6
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRT_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRT_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 7
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRT_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRT_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 7
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRD_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRD_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 8
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRD_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_CRD_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 8
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ACC_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ACC_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 9
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ACC_VALUE_01
+    equipmentType: 4
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 18
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ACC_VALUE_02
+    equipmentType: 4
+    rank: 3
+    optionType: 9
+    valueType: 0
+    value: 13.846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ATS_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_ATS_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 10
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MOVE_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_MOVE_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 11
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_RANGE_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_RANGE_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 15
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_EXP_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 12
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_GOLD_GAIN_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 13
+    valueType: 1
+    value: 5.3846154
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_01
+    equipmentType: 4
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 7
+    weight: 1
+  - optionKey: SHIELD_LEGENDARY_FINAL_ATTACK_PERCENT_PERCENT_02
+    equipmentType: 4
+    rank: 3
+    optionType: 14
+    valueType: 1
+    value: 5.3846154
+    weight: 1

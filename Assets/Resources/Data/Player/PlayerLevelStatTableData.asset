@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b649c314ee3c2b449b0d9c5e5137f174, type: 3}
+  m_Name: PlayerLevelStatTableData
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CPlayerLevelStatTableData
+  sourceExcelAssetPath: Assets/RawData/Excel/Player/PlayerStatData.xlsx
+  rowList:
+  - lv: 1
+    needExp: 0
+    hp: 100
+    mp: 100
+    atk: 30
+    def: 0
+    hr: 10
+    mr: 5
+  - lv: 2
+    needExp: 5
+    hp: 150
+    mp: 100
+    atk: 35
+    def: 0
+    hr: 10
+    mr: 5
+  - lv: 3
+    needExp: 20
+    hp: 200
+    mp: 100
+    atk: 40
+    def: 0
+    hr: 10
+    mr: 5
+  - lv: 4
+    needExp: 50
+    hp: 250
+    mp: 150
+    atk: 45
+    def: 10
+    hr: 10
+    mr: 10
+  - lv: 5
+    needExp: 100
+    hp: 300
+    mp: 150
+    atk: 50
+    def: 10
+    hr: 10
+    mr: 10
+  - lv: 6
+    needExp: 150
+    hp: 350
+    mp: 150
+    atk: 55
+    def: 10
+    hr: 10
+    mr: 10
+  - lv: 7
+    needExp: 200
+    hp: 400
+    mp: 200
+    atk: 60
+    def: 20
+    hr: 10
+    mr: 15
+  - lv: 8
+    needExp: 250
+    hp: 450
+    mp: 200
+    atk: 65
+    def: 20
+    hr: 10
+    mr: 15
+  - lv: 9
+    needExp: 300
+    hp: 500
+    mp: 200
+    atk: 70
+    def: 20
+    hr: 10
+    mr: 15
+  - lv: 10
+    needExp: 400
+    hp: 600
+    mp: 300
+    atk: 80
+    def: 30
+    hr: 10
+    mr: 15

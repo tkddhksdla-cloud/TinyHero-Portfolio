@@ -63,7 +63,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public string GetName()
         {
-            string result = name;
+            string result = CDataManager.GetText( name );
             return result;
         }
 

@@ -461,7 +461,8 @@ namespace TinyHero.Core.Data
         ///</summary>
         public string GetItemName()
         {
-            string result = itemName;
+            string resolvedItemName = string.IsNullOrWhiteSpace( itemName ) ? itemId : itemName;
+            string result = CDataManager.GetText( resolvedItemName );
             return result;
         }
 
@@ -479,7 +480,7 @@ namespace TinyHero.Core.Data
         ///</summary>
         public string GetDescription()
         {
-            string result = description;
+            string result = CDataManager.GetText( description );
             return result;
         }
 

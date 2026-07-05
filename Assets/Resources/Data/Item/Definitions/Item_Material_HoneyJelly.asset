@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7698db6904da0bc4f8e7a1cfade82f24, type: 3}
+  m_Name: Item_Material_HoneyJelly
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
+  itemId: ITEM_MATERIAL_HONEYJELLY
+  itemName: KEY_TEXT_ITEM_MATERIAL_HONEYJELLY_ITEMNAME_19
+  itemType: 3
+  description: KEY_TEXT_ITEM_MATERIAL_HONEYJELLY_DESCRIPTION_20
+  iconSprite: {fileID: 21300000, guid: 38fd0449331bb0f42a9d3f26aa72023e, type: 3}
+  worldDropPrefab: {fileID: 8207004084870608954, guid: b141a94ee622a614ab454a034311d518, type: 3}
+  isStackable: 1
+  maxStackCountValue: 9999
+  sellPriceItemId: ITEM_CURRENCY_GOLD
+  sellPriceValue: 50
+  equipmentType: 0
+  consumableType: 0
+  linkedSkillId: 
+  randomBoxRewardTable: {fileID: 0}
+  equipmentStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  equipmentPartsType: 4
+  equipmentPartsIndex: -1

@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5341f4954fb99545b66ed3565cb8095, type: 3}
+  m_Name: Skill_WarCry
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
+  skillId: skill_war_cry
+  skillName: War Cry
+  skillIcon: {fileID: 21300000, guid: 8a053b18aebc1114b9cb68afdafa5f73, type: 3}
+  skillType: 1
+  activeSkillType: 4
+  quickSlotIndex: 7
+  cooldownSeconds: 10
+  mpCost: 10
+  mpCostReductionPerLevel: 0
+  learnSpCost: 2
+  levelUpSpCost: 2
+  maxSkillLevel: 5
+  assignableToQuickSlot: 1
+  cooldownReductionPerLevel: 0.5
+  damageMultiplierBonusPerLevel: 0
+  flatDamageBonusPerLevel: 0
+  castLockDurationSeconds: 0.5
+  castAnimation: 5
+  castAnimationName: Skill
+  castAnimationSpeed: 2.5
+  description: KEY_TEXT_SKILL_WARCRY_DESCRIPTION_73
+  castVfxPrefab: {fileID: 0}
+  castVfxOffset: {x: 0, y: 0, z: 0}
+  castVfxReturnDelay: 1
+  hitVfxPrefab: {fileID: 0}
+  hitVfxOffset: {x: 0, y: 0, z: 0}
+  hitVfxReturnDelay: 1
+  projectileVfxPrefab: {fileID: 0}
+  projectileVfxOffset: {x: 0, y: 0, z: 0}
+  projectileVfxReturnDelay: 1
+  loopVfxPrefab: {fileID: 4631137236932131032, guid: fc9d2d55dc8168c48b7c5483555d92f9, type: 3}
+  loopVfxOffset: {x: 0, y: 0, z: 0}
+  loopVfxReturnDelay: 5
+  passiveStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  activeAction: {fileID: 0}
+  activeSkillEffect: {fileID: 11400000, guid: f48c83c8b5132fa438b986dd44be64c0, type: 2}
+  passiveSkillEffectList: []
+  unlockConditionList:
+  - {fileID: 11400000, guid: 9247ef94ad7a3c34984db2c839a83dcd, type: 2}

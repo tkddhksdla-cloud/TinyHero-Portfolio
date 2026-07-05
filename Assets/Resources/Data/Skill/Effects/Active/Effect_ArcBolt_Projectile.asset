@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ee0409711886244f9789b3dfe61ead0, type: 3}
+  m_Name: Effect_ArcBolt_Projectile
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CProjectileActiveSkillEffect
+  simultaneousTargetCount: 100
+  damageStartDelaySeconds: 0
+  spawnOffset: {x: 0.15, y: 0.3}
+  collisionRadius: 0.45
+  travelDistance: 6
+  travelSpeed: 8
+  damageMultiplier: 1.5
+  flatDamageBonus: 1
+  destroyOnFirstHit: 1
+  maxTargetCount: 100
+  debuffEffectList: []

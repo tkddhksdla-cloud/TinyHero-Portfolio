@@ -1,0 +1,99 @@
+{
+    "mapId": "MAP_STARTER_000_VILLAGE",
+    "mapName": "포레스트 빌리지",
+    "backgroundSpriteName": "BG_StarterVillage_06",
+    "hasCustomRightBoundary": true,
+    "customRightBoundaryX": 14.248127937316895,
+    "portals": [
+        {
+            "prefabName": "PortalObject",
+            "resourcePath": "Prefabs/Portal/PortalObject",
+            "portalId": "Portal_000",
+            "targetMapId": "MAP_STARTER_001",
+            "targetPortalId": "Portal_001",
+            "transform": {
+                "position": [
+                    12.986234664916993,
+                    -2.576815128326416,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.550000011920929,
+                    0.550000011920929,
+                    0.550000011920929
+                ]
+            }
+        }
+    ],
+    "monsters": [],
+    "npcs": [
+        {
+            "prefabName": "NPC_0002",
+            "resourcePath": "Prefabs/Character/NPC/NPC_0002",
+            "transform": {
+                "position": [
+                    6.6750006675720219,
+                    -1.9249999523162842,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    -1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "prefabName": "NPC_0001",
+            "resourcePath": "Prefabs/Character/NPC/NPC_0001",
+            "transform": {
+                "position": [
+                    -5.5836358070373539,
+                    -1.9853718280792237,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "prefabName": "NPC_0003",
+            "resourcePath": "Prefabs/Character/NPC/NPC_0003",
+            "transform": {
+                "position": [
+                    2.1223552227020265,
+                    -1.9759865999221802,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    -1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        }
+    ]
+}

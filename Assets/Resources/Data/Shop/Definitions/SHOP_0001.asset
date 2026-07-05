@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b79dc90e21c808469837058d7b93858, type: 3}
+  m_Name: SHOP_0001
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CShopDefinition
+  shopId: SHOP_0001
+  shopName: KEY_TEXT_SHOP_0001_SHOPNAME_59
+  shopEntryDataList:
+  - itemId: ITEM_CONSUMABLE_CUBE
+    itemCount: 10
+    itemCountValue: 1
+    priceItemId: ITEM_CURRENCY_GOLD
+    priceAmount: 10
+    priceAmountValue: 5000
+  - itemId: ITEM_MATERIAL_TURTLE_SNAIL_WATER
+    itemCount: 1
+    itemCountValue: 1
+    priceItemId: ITEM_CURRENCY_GOLD
+    priceAmount: 20
+    priceAmountValue: 100
+  - itemId: ITEM_MATERIAL_HONEYJELLY
+    itemCount: 1
+    itemCountValue: 1
+    priceItemId: ITEM_CURRENCY_GOLD
+    priceAmount: 20
+    priceAmountValue: 200
+  - itemId: ITEM_EQUIPMENT_SWORD_IGNITION 1_COPY
+    itemCount: 1
+    itemCountValue: 1
+    priceItemId: ITEM_CURRENCY_GOLD
+    priceAmount: 20
+    priceAmountValue: 1
+  - itemId: ITEM_CONSUMABLE_SKILL_BOOK_skill_shadow_partner
+    itemCount: 1
+    itemCountValue: 1
+    priceItemId: ITEM_CURRENCY_GOLD
+    priceAmount: 20
+    priceAmountValue: 100

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c21a512076f66945ae474bca91e41ec, type: 3}
+  m_Name: Effect_WarCry_Buff
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CBuffActiveSkillEffect
+  simultaneousTargetCount: 1
+  damageStartDelaySeconds: 0
+  playerBuffEffectList:
+  - {fileID: 11400000, guid: 26b1d90b5609be947a7ec9197c96a9b6, type: 2}
+  - {fileID: 11400000, guid: 4f28359b516b0484fa17141e73075ccf, type: 2}

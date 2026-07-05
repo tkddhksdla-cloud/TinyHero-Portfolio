@@ -473,7 +473,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            string rawDialogueLine = dialogueLineList[ currentDialogueLineIndex ];
+            string rawDialogueLine = activeDialoguePreset.GetDialogueText( currentDialogueLineIndex );
             string resolvedDialogueLine = string.IsNullOrWhiteSpace( rawDialogueLine ) ? string.Empty : rawDialogueLine;
             currentFullDialogueLine = resolvedDialogueLine;
             isDialogueLineFullyRevealed = false;

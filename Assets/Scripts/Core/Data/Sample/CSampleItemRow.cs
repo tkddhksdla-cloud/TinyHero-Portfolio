@@ -27,7 +27,7 @@ namespace TinyHero.Core.Data.Sample
         ///</summary>
         public string GetItemName()
         {
-            string result = itemName;
+            string result = CDataManager.GetText( itemName );
             return result;
         }
 

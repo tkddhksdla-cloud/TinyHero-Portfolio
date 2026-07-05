@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5341f4954fb99545b66ed3565cb8095, type: 3}
+  m_Name: Skill_HotfixTest
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
+  skillId: skill_hotfix_test
+  skillName: Hotfix Test
+  skillIcon: {fileID: 21300000, guid: 4df537a2338059549858ceaeab0a5eba, type: 3}
+  skillType: 1
+  activeSkillType: 1
+  quickSlotIndex: 5
+  cooldownSeconds: 0
+  mpCost: 0
+  mpCostReductionPerLevel: 0
+  learnSpCost: 1
+  levelUpSpCost: 1
+  maxSkillLevel: 5
+  assignableToQuickSlot: 1
+  cooldownReductionPerLevel: 0
+  damageMultiplierBonusPerLevel: 0.1
+  flatDamageBonusPerLevel: 0
+  castLockDurationSeconds: 0
+  castAnimation: 1
+  castAnimationName: Idle
+  castAnimationSpeed: 1
+  description: KEY_TEXT_SKILL_HOTFIXTEST_DESCRIPTION_67
+  castVfxPrefab: {fileID: 0}
+  castVfxOffset: {x: 0, y: 0, z: 0}
+  castVfxReturnDelay: 1
+  hitVfxPrefab: {fileID: 0}
+  hitVfxOffset: {x: 0, y: 0, z: 0}
+  hitVfxReturnDelay: 1
+  projectileVfxPrefab: {fileID: 0}
+  projectileVfxOffset: {x: 0, y: 0, z: 0}
+  projectileVfxReturnDelay: 1
+  loopVfxPrefab: {fileID: 0}
+  loopVfxOffset: {x: 0, y: 0, z: 0}
+  loopVfxReturnDelay: 1
+  passiveStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  activeAction: {fileID: 0}
+  activeSkillEffect: {fileID: 11400000, guid: 4be437e99879e9248b43a015f381bce6, type: 2}
+  passiveSkillEffectList: []
+  unlockConditionList:
+  - {fileID: 11400000, guid: 10f45ad8d5d45fa4fb6eee2d568909cd, type: 2}

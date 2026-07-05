@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5341f4954fb99545b66ed3565cb8095, type: 3}
+  m_Name: Skill_ArcBolt
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
+  skillId: skill_arc_bolt
+  skillName: KEY_TEXT_SKILL_ARCBOLT_SKILLNAME_60
+  skillIcon: {fileID: 21300000, guid: af4ab18f78653444e9f0ddfcf74e3c43, type: 3}
+  skillType: 1
+  activeSkillType: 2
+  quickSlotIndex: 2
+  cooldownSeconds: 1
+  mpCost: 0
+  mpCostReductionPerLevel: 0
+  learnSpCost: 2
+  levelUpSpCost: 1
+  maxSkillLevel: 5
+  assignableToQuickSlot: 1
+  cooldownReductionPerLevel: 0.05
+  damageMultiplierBonusPerLevel: 0.15
+  flatDamageBonusPerLevel: 0
+  castLockDurationSeconds: 0.25
+  castAnimation: 0
+  castAnimationName: Attack
+  castAnimationSpeed: 8
+  description: KEY_TEXT_SKILL_ARCBOLT_DESCRIPTION_61
+  castVfxPrefab: {fileID: 0}
+  castVfxOffset: {x: 0, y: 0, z: 0}
+  castVfxReturnDelay: 1
+  hitVfxPrefab: {fileID: 8307689965681055727, guid: 3b1e3989a7cf9e64e854b992919c16b7, type: 3}
+  hitVfxOffset: {x: 0, y: 0.5, z: 0}
+  hitVfxReturnDelay: 3
+  projectileVfxPrefab: {fileID: 8251054824596030187, guid: 9fc9ecc9ee97f644a80e287f1c5ac74e, type: 3}
+  projectileVfxOffset: {x: 0, y: 0, z: 0}
+  projectileVfxReturnDelay: 5
+  loopVfxPrefab: {fileID: 0}
+  loopVfxOffset: {x: 0, y: 0, z: 0}
+  loopVfxReturnDelay: 1
+  passiveStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  activeAction: {fileID: 0}
+  activeSkillEffect: {fileID: 11400000, guid: cd825e05fa604f34282f21bef7790887, type: 2}
+  passiveSkillEffectList: []
+  unlockConditionList:
+  - {fileID: 11400000, guid: c05e65d8cf2518d488c46f1a37cde335, type: 2}

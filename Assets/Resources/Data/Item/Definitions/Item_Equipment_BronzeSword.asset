@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7698db6904da0bc4f8e7a1cfade82f24, type: 3}
+  m_Name: Item_Equipment_BronzeSword
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
+  itemId: ITEM_EQUIPMENT_BRONZE_SWORD
+  itemName: Bronze Sword
+  itemType: 0
+  description: KEY_TEXT_ITEM_EQUIPMENT_BRONZESWORD_DESCRIPTION_6
+  iconSprite: {fileID: 21300000, guid: 7fb8e15cb25cefb49836ebc21d28c697, type: 3}
+  worldDropPrefab: {fileID: 0}
+  isStackable: 0
+  maxStackCountValue: 1
+  sellPriceItemId: GOLD
+  sellPriceValue: 0
+  equipmentType: 1
+  consumableType: 0
+  linkedSkillId: 
+  randomBoxRewardTable: {fileID: 0}
+  equipmentStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 5
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  equipmentPartsType: 5
+  equipmentPartsIndex: 0
