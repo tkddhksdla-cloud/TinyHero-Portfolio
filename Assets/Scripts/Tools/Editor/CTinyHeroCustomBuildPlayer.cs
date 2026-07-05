@@ -21,6 +21,8 @@ namespace TinyHero.Tools
         private const string DefaultBuildOutputPath = "Builds/Windows/TinyHero.exe";
         private const string MethodBridgeGeneratedPath = "HybridCLRData/LocalIl2CppData-WindowsEditor/il2cpp/libil2cpp/hybridclr/generated/MethodBridge.cpp";
         private const string VisualStudioVcToolsComponentId = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
+        private const string StandalonePlatformName = "Standalone";
+        private const string CreateSolutionPlatformSettingName = "CreateSolution";
         private const BuildTarget WindowsBuildTarget = BuildTarget.StandaloneWindows64;
 
         ///<summary>
@@ -113,7 +115,7 @@ namespace TinyHero.Tools
             }
 
             EditorUserBuildSettings.development = false;
-            EditorUserBuildSettings.createSolution = false;
+            EditorUserBuildSettings.SetPlatformSettings( StandalonePlatformName, CreateSolutionPlatformSettingName, bool.FalseString );
 #if UNITY_6000_0_OR_NEWER
             NamedBuildTarget namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup( buildTargetGroup );
             PlayerSettings.SetScriptingBackend( namedBuildTarget, ScriptingImplementation.IL2CPP );

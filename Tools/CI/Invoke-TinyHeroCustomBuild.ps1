@@ -24,6 +24,7 @@ function ConvertTo-UnityProcessArgument {
 function Write-TinyHeroColoredLine {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Value,
         [bool]$IsErrorLine = $false
     )
@@ -41,8 +42,13 @@ function Write-TinyHeroColoredLine {
 function Test-TinyHeroErrorLogLine {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Value
     )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $false
+    }
 
     $result = $Value -match "error CS|Error|Exception|failed|Failed|Scripts have compiler errors|TinyHero Build|return code"
     return $result
