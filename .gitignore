@@ -31,6 +31,3 @@ Recordings/
 Assets/AssetStoreTools*
 
 Assets/Temp/*
-!Assets/Temp/
-!Assets/Temp/Button_Default.prefab
-!Assets/Temp/Button_Default.prefab.meta
