@@ -21,6 +21,33 @@ function ConvertTo-UnityProcessArgument {
     return '"' + $escapedValue + '"'
 }
 
+function Write-TinyHeroColoredLine {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value,
+        [bool]$IsErrorLine = $false
+    )
+
+    if ($IsErrorLine -eq $false) {
+        Write-Host $Value
+        return
+    }
+
+    $escapeCharacter = [char]27
+    $redText = "$escapeCharacter[31m$Value$escapeCharacter[0m"
+    Write-Host $redText
+}
+
+function Test-TinyHeroErrorLogLine {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $result = $Value -match "error CS|Error|Exception|failed|Failed|Scripts have compiler errors|TinyHero Build|return code"
+    return $result
+}
+
 function Write-TinyHeroBuildFailureSummary {
     param(
         [Parameter(Mandatory = $true)]
@@ -47,13 +74,19 @@ function Write-TinyHeroBuildFailureSummary {
     }
     else {
         foreach ($errorLine in $errorLines) {
-            Write-Host $errorLine.Line
+            Write-TinyHeroColoredLine -Value $errorLine.Line -IsErrorLine $true
         }
     }
 
     Write-Host ""
     Write-Host "[ Last 120 Log Lines ]"
-    Get-Content -Path $TargetLogFile -Tail 120
+    $tailLines = Get-Content -Path $TargetLogFile -Tail 120
+
+    foreach ($tailLine in $tailLines) {
+        $isErrorLine = Test-TinyHeroErrorLogLine -Value $tailLine
+        Write-TinyHeroColoredLine -Value $tailLine -IsErrorLine $isErrorLine
+    }
+
     Write-Host "===================================================="
     Write-Host ""
 }

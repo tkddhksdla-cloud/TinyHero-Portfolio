@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using HybridCLR.Editor.Installer;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
@@ -47,6 +48,14 @@ namespace TinyHero.Tools
             if ( isBuildSettingsPrepared == false )
             {
                 Debug.LogError( "[TinyHero Build] Windows Player build stopped. Windows IL2CPP build settings preparation failed." );
+                return false;
+            }
+
+            bool isHybridClrInstalled = EnsureHybridClrInstalled();
+
+            if ( isHybridClrInstalled == false )
+            {
+                Debug.LogError( "[TinyHero Build] Windows Player build stopped. HybridCLR installer preparation failed." );
                 return false;
             }
 
@@ -119,6 +128,40 @@ namespace TinyHero.Tools
 
             Debug.Log( "[TinyHero Build] Windows IL2CPP build settings prepared." );
             return true;
+        }
+
+        ///<summary>
+        /// HybridCLR Installer 초기화 보장
+        ///</summary>
+        private static bool EnsureHybridClrInstalled()
+        {
+            try
+            {
+                InstallerController installerController = new InstallerController();
+
+                if ( installerController.HasInstalledHybridCLR() && string.Equals( installerController.PackageVersion, installerController.InstalledLibil2cppVersion, StringComparison.Ordinal ) )
+                {
+                    Debug.Log( "[TinyHero Build] HybridCLR installer state is already prepared." );
+                    return true;
+                }
+
+                Debug.Log( "[TinyHero Build] HybridCLR installer state is missing or outdated. Running default installer." );
+                installerController.InstallDefaultHybridCLR();
+                InstallerController refreshedInstallerController = new InstallerController();
+                bool result = refreshedInstallerController.HasInstalledHybridCLR() && string.Equals( refreshedInstallerController.PackageVersion, refreshedInstallerController.InstalledLibil2cppVersion, StringComparison.Ordinal );
+
+                if ( result == false )
+                {
+                    Debug.LogError( "[TinyHero Build] HybridCLR installer did not complete with a valid installed state." );
+                }
+
+                return result;
+            }
+            catch ( Exception exception )
+            {
+                Debug.LogError( $"[TinyHero Build] HybridCLR installer preparation failed. {exception.Message}" );
+                return false;
+            }
         }
 
         ///<summary>
