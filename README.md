@@ -47,6 +47,7 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 - AES Save Encryption + HMAC Integrity Check
 - Excel-driven Data Pipeline
 - EditorWindow-based Data Tooling
+- Jenkins-based Windows Custom Build
 
 ## Details
 
@@ -87,6 +88,12 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 ### Object Pooling
 
 반복 생성되는 런타임 오브젝트와 UI 효과는 풀링 구조를 우선 적용합니다. 전투, 드랍, 데미지 폰트, 스킬 VFX처럼 빈번하게 생성되는 대상의 인스턴스 비용을 줄이고 맵 전환 시 정리 흐름을 관리합니다.
+
+### Jenkins-based Windows Custom Build
+
+`Jenkinsfile`과 `Tools/CI/Invoke-TinyHeroCustomBuild.ps1`를 통해 PC Windows 빌드를 Unity batchmode에서 실행할 수 있도록 구성했습니다. 빌드 파이프라인은 HybridCLR 준비, Hotfix DLL 준비, Addressables 콘텐츠 빌드, Windows Player 빌드를 순차적으로 수행합니다.
+
+빌드 산출물은 Jenkins build number 기준으로 분리된 `Builds/Windows/<BUILD_NUMBER>` 경로에 생성되며, `Logs/TinyHeroCustomBuild.log`를 통해 Unity 빌드 로그를 추적할 수 있습니다.
 
 ## Scenes
 
