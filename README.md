@@ -11,16 +11,12 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 
 ## Tech Stack
 
-- Unity 6 `6000.3.15f1`
-- C#
-- Universal Render Pipeline 2D
-- UGUI / TextMeshPro
-- Cinemachine
-- ScriptableObject
-- Resources + Addressables Hybrid Loading
-- HybridCLR Hotfix Assembly
-- AES/HMAC Protected Save Data
-- Unity EditorWindow Tooling
+- Engine: Unity 6 `6000.3.15f1`
+- Language: C#
+- Rendering: Universal Render Pipeline 2D
+- Runtime Content Loading: Addressables
+- Hot Update: HybridCLR
+- CI/CD: Jenkins Pipeline, PowerShell
 
 ## Core Systems
 
