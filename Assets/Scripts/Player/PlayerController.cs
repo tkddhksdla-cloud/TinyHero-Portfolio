@@ -35,6 +35,8 @@ namespace TinyHero.Player
         private const float DefaultGravityScale = 1.0f;
         private const float GroundDetachVelocityThreshold = 0.01f;
         private const string DefaultAttackSlashFxResourcePath = "Prefabs/FX/FX_DefaultAttack_Slash";
+        private const string DefaultAttackSwingSfxClipName = "SFX_PLAYER_ATTACK_SWING_NORMAL";
+        private const string JumpSfxClipName = "SFX_PLAYER_JUMP";
         private const string IdleAnimationStateName = "Idle";
         private const string MoveAnimationStateName = "Move";
         private const string AttackAnimationStateName = "Attack";
@@ -106,6 +108,7 @@ namespace TinyHero.Player
         private float attackHitColliderBaseCircleRadius;
         private int currentJumpCount;
         private Color[] defaultSpriteColors;
+        private SpriteRenderer[] defaultSpriteColorRendererArray;
         private GameObject attackSlashFxPrefab;
         private string attackSlashFxPoolKey = string.Empty;
         private Coroutine hitReactionRoutine;
@@ -302,6 +305,7 @@ namespace TinyHero.Player
         ///</summary>
         private void Start()
         {
+            PreloadCombatSfx();
             currentState = ePlayerState.Die;
             ChangeState( ePlayerState.Idle );
         }
@@ -348,7 +352,7 @@ namespace TinyHero.Player
             ClearSkillBuffState();
             isPhaseStrikeActive = false;
             SetSpriteRendererVisible( true );
-            RestoreSpriteColors();
+            StopInvincibilityVisual();
         }
 
         ///<summary>
@@ -406,13 +410,13 @@ namespace TinyHero.Player
         private void OnDestroy()
         {
             StopHitReaction();
+            StopInvincibilityVisual();
             RestoreAnimatorSpeed();
             SetAttackHitColliderActive( false );
             ReleaseAllPooledEffects();
             CObjectPoolManager.TryClearPool( attackSlashFxPoolKey );
 
             SetSpriteRendererVisible( true );
-            RestoreSpriteColors();
         }
 
         ///<summary>
@@ -977,6 +981,7 @@ namespace TinyHero.Player
             ApplyAttackHitColliderRange();
             SetAttackHorizontalVelocity( 0.0f );
             SetAttackHitColliderActive( false );
+            PlayDefaultAttackSwingSfx();
             nextAttackAvailableTime = Time.time + ResolveAttackIntervalSeconds();
         }
 
@@ -1266,13 +1271,30 @@ namespace TinyHero.Player
             }
             else
             {
+                currentVelocity.x = ResolveGroundJumpHorizontalVelocity();
                 currentVelocity.y = jumpPower;
                 targetRigidbody.linearVelocity = currentVelocity;
             }
 
             currentJumpCount++;
             isGrounded = false;
+            PlayJumpSfx();
             return true;
+        }
+
+        ///<summary>
+        /// 지상 점프 수평 속도 반환
+        ///</summary>
+        private float ResolveGroundJumpHorizontalVelocity()
+        {
+            if ( HasHorizontalInput() == false )
+            {
+                return 0.0f;
+            }
+
+            float resolvedMoveSpeed = ResolveMoveSpeed();
+            float result = horizontalInput * resolvedMoveSpeed;
+            return result;
         }
 
         ///<summary>
@@ -1685,6 +1707,21 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 무적 시각 효과 중단 및 색상 복원
+        ///</summary>
+        private void StopInvincibilityVisual()
+        {
+            if ( invincibilityRoutine != null )
+            {
+                StopCoroutine( invincibilityRoutine );
+                invincibilityRoutine = null;
+            }
+
+            isInvincible = false;
+            RestoreSpriteColors();
+        }
+
+        ///<summary>
         /// 스킬 버프 지속시간 갱신
         ///</summary>
         private void TickSkillBuffState()
@@ -1966,16 +2003,53 @@ namespace TinyHero.Player
             if ( targetSpriteRenderers == null || targetSpriteRenderers.Length == 0 )
             {
                 defaultSpriteColors = new Color[ 0 ];
+                defaultSpriteColorRendererArray = new SpriteRenderer[ 0 ];
+                return;
+            }
+
+            if ( IsDefaultSpriteColorCacheValid() )
+            {
                 return;
             }
 
             defaultSpriteColors = new Color[ targetSpriteRenderers.Length ];
+            defaultSpriteColorRendererArray = new SpriteRenderer[ targetSpriteRenderers.Length ];
 
             for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
             {
                 SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
+                defaultSpriteColorRendererArray[ index ] = spriteRenderer;
                 defaultSpriteColors[ index ] = spriteRenderer != null ? spriteRenderer.color : Color.white;
             }
+        }
+
+        ///<summary>
+        /// 기본 스프라이트 색상 캐시 유효 여부 반환
+        ///</summary>
+        private bool IsDefaultSpriteColorCacheValid()
+        {
+            if ( defaultSpriteColors == null || defaultSpriteColorRendererArray == null )
+            {
+                return false;
+            }
+
+            if ( defaultSpriteColors.Length != targetSpriteRenderers.Length || defaultSpriteColorRendererArray.Length != targetSpriteRenderers.Length )
+            {
+                return false;
+            }
+
+            for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
+            {
+                SpriteRenderer cachedSpriteRenderer = defaultSpriteColorRendererArray[ index ];
+                SpriteRenderer currentSpriteRenderer = targetSpriteRenderers[ index ];
+
+                if ( cachedSpriteRenderer != currentSpriteRenderer )
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         ///<summary>
@@ -1993,6 +2067,11 @@ namespace TinyHero.Player
                 SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
 
                 if ( spriteRenderer == null )
+                {
+                    continue;
+                }
+
+                if ( index >= defaultSpriteColors.Length )
                 {
                     continue;
                 }
@@ -2019,6 +2098,11 @@ namespace TinyHero.Player
                 SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
 
                 if ( spriteRenderer == null )
+                {
+                    continue;
+                }
+
+                if ( index >= defaultSpriteColors.Length )
                 {
                     continue;
                 }
@@ -2436,6 +2520,52 @@ namespace TinyHero.Player
 
             float result = targetStatManager.GetAttackIntervalSeconds();
             return result;
+        }
+
+        ///<summary>
+        /// 전투 효과음 선로딩
+        ///</summary>
+        private void PreloadCombatSfx()
+        {
+            CAudioManager audioManager = CAudioManager.Instance;
+
+            if ( audioManager == null )
+            {
+                return;
+            }
+
+            audioManager.PreloadSfx( DefaultAttackSwingSfxClipName );
+            audioManager.PreloadSfx( JumpSfxClipName );
+        }
+
+        ///<summary>
+        /// 기본 공격 휘두름 효과음 재생
+        ///</summary>
+        private void PlayDefaultAttackSwingSfx()
+        {
+            CAudioManager audioManager = CAudioManager.Instance;
+
+            if ( audioManager == null )
+            {
+                return;
+            }
+
+            audioManager.PlaySfx( DefaultAttackSwingSfxClipName );
+        }
+
+        ///<summary>
+        /// 점프 효과음 재생
+        ///</summary>
+        private void PlayJumpSfx()
+        {
+            CAudioManager audioManager = CAudioManager.Instance;
+
+            if ( audioManager == null )
+            {
+                return;
+            }
+
+            audioManager.PlaySfx( JumpSfxClipName );
         }
 
         ///<summary>

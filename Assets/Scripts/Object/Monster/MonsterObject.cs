@@ -16,6 +16,7 @@ using UnityEngine;
 public sealed class MonsterObject : MonoBehaviour
 {
     private const string WorldItemDropPrefabResourcePath = "Prefabs/Item/WorldItemDropObject";
+    private const string MonsterHurtSfxClipName = "SFX_MONSTER_HURT_01";
     private enum eMonsterBehaviorSelectionContext
     {
         NONE,
@@ -151,6 +152,8 @@ public sealed class MonsterObject : MonoBehaviour
     ///</summary>
     private void Start()
     {
+        PreloadMonsterSfx();
+
         bool hasMonsterId = string.IsNullOrWhiteSpace( monsterId ) == false;
 
         if ( hasMonsterId )
@@ -623,6 +626,11 @@ public sealed class MonsterObject : MonoBehaviour
         long nextHp = currentHp - appliedDamage;
         SetCurrentHp( nextHp );
 
+        if ( previousCurrentHp > 0 )
+        {
+            PlayMonsterHurtSfx();
+        }
+
         if ( appliedDamage > 0 && CDamageFontManager.TryGetInstance( out CDamageFontManager damageFontManager ) )
         {
             damageFontManager.ShowMonsterDamage( this, appliedDamage, _isCritical );
@@ -640,6 +648,36 @@ public sealed class MonsterObject : MonoBehaviour
         }
 
         ChangeState( eMonsterState.HIT );
+    }
+
+    ///<summary>
+    /// 몬스터 효과음 선로딩
+    ///</summary>
+    private void PreloadMonsterSfx()
+    {
+        CAudioManager audioManager = CAudioManager.Instance;
+
+        if ( audioManager == null )
+        {
+            return;
+        }
+
+        audioManager.PreloadSfx( MonsterHurtSfxClipName );
+    }
+
+    ///<summary>
+    /// 몬스터 피격 효과음 재생
+    ///</summary>
+    private void PlayMonsterHurtSfx()
+    {
+        CAudioManager audioManager = CAudioManager.Instance;
+
+        if ( audioManager == null )
+        {
+            return;
+        }
+
+        audioManager.PlaySfx( MonsterHurtSfxClipName );
     }
 
     ///<summary>

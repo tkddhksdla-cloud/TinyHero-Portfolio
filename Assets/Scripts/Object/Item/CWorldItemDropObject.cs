@@ -1,3 +1,4 @@
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Maps;
 using TinyHero.Player;
@@ -11,6 +12,7 @@ using UnityEngine;
 public sealed class CWorldItemDropObject : MonoBehaviour
 {
     private const string GroundLayerName = "Ground";
+    private const string ItemAcquireSfxClipName = "SFX_ITEM_ACQUIRE";
     private const float DropGravityScale = 3.0f;
     private const float DropLinearDamping = 1.5f;
 
@@ -34,6 +36,7 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         ResolveReferences();
         ConfigureCollider();
         RefreshVisual();
+        PreloadItemAcquireSfx();
     }
 
     ///<summary>
@@ -144,7 +147,38 @@ public sealed class CWorldItemDropObject : MonoBehaviour
             return;
         }
 
+        PlayItemAcquireSfx();
         ReleaseToPoolOrDeactivate();
+    }
+
+    ///<summary>
+    /// 아이템 획득 효과음 선로딩
+    ///</summary>
+    private void PreloadItemAcquireSfx()
+    {
+        CAudioManager audioManager = CAudioManager.Instance;
+
+        if ( audioManager == null )
+        {
+            return;
+        }
+
+        audioManager.PreloadSfx( ItemAcquireSfxClipName );
+    }
+
+    ///<summary>
+    /// 아이템 획득 효과음 재생
+    ///</summary>
+    private void PlayItemAcquireSfx()
+    {
+        CAudioManager audioManager = CAudioManager.Instance;
+
+        if ( audioManager == null )
+        {
+            return;
+        }
+
+        audioManager.PlaySfx( ItemAcquireSfxClipName );
     }
 
     ///<summary>
