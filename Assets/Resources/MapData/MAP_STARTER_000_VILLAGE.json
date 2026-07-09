@@ -2,6 +2,7 @@
     "mapId": "MAP_STARTER_000_VILLAGE",
     "mapName": "포레스트 빌리지",
     "backgroundSpriteName": "BG_StarterVillage_06",
+    "bgmClipName": "",
     "hasCustomRightBoundary": true,
     "customRightBoundaryX": 14.248127937316895,
     "portals": [
@@ -33,12 +34,33 @@
     "monsters": [],
     "npcs": [
         {
-            "prefabName": "NPC_0002",
-            "resourcePath": "Prefabs/Character/NPC/NPC_0002",
+            "prefabName": "NPC_0004",
+            "resourcePath": "Prefabs/Character/NPC/NPC_0004",
             "transform": {
                 "position": [
-                    6.6750006675720219,
-                    -1.9249999523162842,
+                    11.098127365112305,
+                    -1.9583333730697632,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.4000000059604645,
+                    0.4000000059604645,
+                    0.4000000059604645
+                ]
+            }
+        },
+        {
+            "prefabName": "NPC_0003",
+            "resourcePath": "Prefabs/Character/NPC/NPC_0003",
+            "transform": {
+                "position": [
+                    2.1223552227020265,
+                    -1.9759865999221802,
                     0.0
                 ],
                 "rotation": [
@@ -75,12 +97,12 @@
             }
         },
         {
-            "prefabName": "NPC_0003",
-            "resourcePath": "Prefabs/Character/NPC/NPC_0003",
+            "prefabName": "NPC_0002",
+            "resourcePath": "Prefabs/Character/NPC/NPC_0002",
             "transform": {
                 "position": [
-                    2.1223552227020265,
-                    -1.9759865999221802,
+                    6.6750006675720219,
+                    -1.9249999523162842,
                     0.0
                 ],
                 "rotation": [

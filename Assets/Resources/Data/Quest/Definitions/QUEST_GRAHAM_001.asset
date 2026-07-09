@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: QUEST_GRAHAM_001(Clone)
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Quest.CQuestDefinition
   questId: QUEST_GRAHAM_001
-  questName: "\uADF8\uB77C\uD568\uC758 \uACE0\uBBFC"
-  description: "\uADF8\uC758 \uC5BC\uAD74\uC5D4 \uADFC\uC2EC\uC774 \uAC00\uB4DD\uD558\uB2E4.\n\uBB34\uC2A8
-    \uC77C\uC778\uC9C0 \uBB3C\uC5B4\uBCFC\uAE4C?"
+  questName: KEY_TEXT_QUEST_GRAHAM_001_QUEST_NAME
+  description: KEY_TEXT_QUEST_GRAHAM_001_DESCRIPTION
   questType: 1
   giverNpcId: NPC_0001
   completerNpcId: NPC_0001
@@ -23,22 +22,17 @@ MonoBehaviour:
   acceptDialoguePreset:
     presetName: Preset
     dialogueLineList:
-    - "\uC7A1\uC544\uB3C4 \uC7A1\uC544\uB3C4 \uB05D\uC774 \uC5C6\uAD70.."
-    - "\uC624, \uADF8\uB798 \uC790\uB124\uC778\uAC00?\n\uD639\uC2DC \uB9C8\uC744\uC744
-      \uC704\uD574 \uBD80\uD0C1\uC744 \uC880 \uB4E4\uC5B4\uC904 \uC218 \uC788\uACA0\uB098?"
-    - "\uC694\uC0C8 \uB9C8\uC744 \uC8FC\uBCC0\uC5D0 \uB3CC\uC544\uB2E4\uB2C8\uB294
-      \uBAAC\uC2A4\uD130 \uB54C\uBB38\uC77C\uC138.\n\uC7A1\uC544\uB3C4 \uC7A1\uC544\uB3C4
-      \uB05D\uC774 \uC5C6\uB2E4\uB124.."
-    - "\uADF8 \uB188\uB4E4 \uC880 \uCC98\uCE58\uD574\uC8FC\uAC8C.\n\uC790\uB124\uB9CC
-      \uBBFF\uACA0\uB124."
+    - KEY_TEXT_QUEST_GRAHAM_001_DIALOGUE_LINE_LIST_01
+    - KEY_TEXT_QUEST_GRAHAM_001_DIALOGUE_LINE_LIST_02
+    - KEY_TEXT_QUEST_GRAHAM_001_DIALOGUE_LINE_LIST_03
+    - KEY_TEXT_QUEST_GRAHAM_001_DIALOGUE_LINE_LIST_04
   useCompleteDialogue: 1
   completeDialoguePreset:
     presetName: Preset
     dialogueLineList:
     - KEY_TEXT_QUEST_GRAHAM_001_COMPLETEDIALOGUEPRESET_DIALOGUELINELIST_ARRAY_DATA_0_46
-    - "\uC815\uB9D0 \uACE0\uB9D9\uB124."
-    - "\uC774\uC820 \uADF8 \uB188\uB4E4 \uC218\uAC00 \uC880 \uC904\uC5C8\uACA0\uC9C0..\n\uC790\uB124\uB294
-      \uC5ED\uC2DC \uBBFF\uACE0 \uB9E1\uAE38 \uC218 \uC788\uC5B4\uC11C \uC88B\uAD70."
+    - KEY_TEXT_QUEST_GRAHAM_001_DIALOGUE_LINE_LIST_02_02
+    - KEY_TEXT_QUEST_GRAHAM_001_DIALOGUE_LINE_LIST_03_02
   conditionEntryList:
   - conditionId: COND_01
     conditionType: 0

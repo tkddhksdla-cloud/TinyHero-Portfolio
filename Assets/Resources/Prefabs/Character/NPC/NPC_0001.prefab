@@ -3986,7 +3986,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CNPCObject
   npcId: NPC_0001
-  npcName: "\uCD0C\uC7A5 \uADF8\uB77C\uD568"
+  npcName: "\uADF8\uB77C\uD568"
   interactionData: {fileID: 11400000, guid: 0e96ba165bc4a7245ba1d3b1d3272de9, type: 2}
   bodyCollider: {fileID: -7534973798189566195}
   interactionRangeCollider: {fileID: 6342526702156462552}

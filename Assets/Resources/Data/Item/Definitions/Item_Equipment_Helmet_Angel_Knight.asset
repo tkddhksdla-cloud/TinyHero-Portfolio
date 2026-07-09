@@ -13,12 +13,9 @@ MonoBehaviour:
   m_Name: Item_Equipment_Helmet_Angel_Knight
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_EQUIPMENT_HELMET_ANGEL_KNIGHT
-  itemName: "\uC5D4\uC824\uB098\uC774\uD2B8 \uD5EC\uBA67"
+  itemName: KEY_TEXT_ITEM_EQUIPMENT_HELMET_ANGEL_KNIG_ITEM_NAME
   itemType: 0
-  description: "\uCC9C\uC0C1\uC758 \uAE30\uC0AC\uB2E8\uC7A5\uC774 \uCC29\uC6A9\uD588\uB2E4\uACE0
-    \uC54C\uB824\uC9C4 \uC7A5\uBE44 \uC911 \uD558\uB098.\n\uBCF4\uACE0 \uC788\uAE30\uB9CC
-    \uD574\uB3C4 \uC2E0\uC131\uD55C \uD798\uC774 \uB290\uAEF4\uC9C0\uB294 \uB4EF
-    \uD558\uB2E4."
+  description: KEY_TEXT_ITEM_EQUIPMENT_HELMET_ANGEL_KNIG_DESCRIPTION
   iconSprite: {fileID: 21300000, guid: 8f7a39fde31994ac98db5238b0e4a57d, type: 3}
   worldDropPrefab: {fileID: 195316652170265812, guid: 051974dea3aa31c4db5b7b42f6ae4b4b, type: 3}
   isStackable: 0

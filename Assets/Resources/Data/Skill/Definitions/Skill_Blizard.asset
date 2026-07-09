@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Skill_Blizard
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
   skillId: skill_frost_field
-  skillName: "\uBE14\uB9AC\uC790\uB4DC"
+  skillName: KEY_TEXT_SKILL_BLIZARD_SKILL_NAME
   skillIcon: {fileID: 21300000, guid: de6ac577e65438d4091383ae7112b53c, type: 3}
   skillType: 1
   activeSkillType: 3
@@ -32,8 +32,7 @@ MonoBehaviour:
   castAnimation: 5
   castAnimationName: Skill
   castAnimationSpeed: 2.5
-  description: "\uD558\uB298\uAE38\uC744 \uC5F4\uC5B4 \uC5BC\uC74C \uACB0\uC815\uC744
-    \uC218\uC5CE\uC774 \uC3DF\uC544\uBD87\uB294\uB2E4."
+  description: KEY_TEXT_SKILL_BLIZARD_DESCRIPTION
   castVfxPrefab: {fileID: 0}
   castVfxOffset: {x: 0, y: 0, z: 0}
   castVfxReturnDelay: 1

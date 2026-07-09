@@ -15,7 +15,7 @@ MonoBehaviour:
   sourceExcelAssetPath: Assets/RawData/Excel/Monster/MonsterStatData.xlsx
   rowList:
   - id: Monster_0001
-    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_0_NAME_27
+    name: "\uAC70\uBD81 \uB2EC\uD33D\uC774"
     hp: 100
     lv: 1
     atk: 50
@@ -25,7 +25,7 @@ MonoBehaviour:
     exp: 2
     atAvailable: 1
   - id: Monster_0002
-    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_1_NAME_28
+    name: "\uD5C8\uB2C8\uBC84\uBE14"
     hp: 150
     lv: 2
     atk: 100
@@ -35,7 +35,7 @@ MonoBehaviour:
     exp: 3
     atAvailable: 1
   - id: Monster_0003
-    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_2_NAME_29
+    name: "\uCE75\uD22C\uC2A4"
     hp: 500
     lv: 5
     atk: 200
@@ -45,7 +45,7 @@ MonoBehaviour:
     exp: 5
     atAvailable: 1
   - id: Monster_0004
-    name: KEY_TEXT_MONSTERSTATTABLEDATA_ROWLIST_ARRAY_DATA_3_NAME_30
+    name: "\uC2A4\uB124\uD0A4"
     hp: 1000
     lv: 8
     atk: 400

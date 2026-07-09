@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: Item_Currency_Gold
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_CURRENCY_GOLD
-  itemName: "\uACE8\uB4DC"
+  itemName: KEY_TEXT_ITEM_CURRENCY_GOLD_ITEM_NAME
   itemType: 2
-  description: "\uBC18\uC9DD\uAC70\uB9AC\uB294 \uC7AC\uD654\uC774\uB2E4.\n\uC5B4\uB51C\uAC00\uB4E0
-    \uACF5\uC6A9\uC7AC\uD654\uB85C \uCDE8\uAE09\uB41C\uB2E4."
+  description: KEY_TEXT_ITEM_CURRENCY_GOLD_DESCRIPTION
   iconSprite: {fileID: 21300000, guid: f57b1ad6bfed449f6a63642e8c38691c, type: 3}
   worldDropPrefab: {fileID: 8195400276765466546, guid: 7def547ef44b2274dbafd5f37825fb5b, type: 3}
   isStackable: 1

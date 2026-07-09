@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: Item_Consumable_Skillbook_ShadowPartner
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_CONSUMABLE_SKILL_BOOK_skill_shadow_partner
-  itemName: "\uC100\uB3C4\uC6B0 \uD30C\uD2B8\uB108 \uC2A4\uD0AC\uBD81"
+  itemName: KEY_TEXT_ITEM_CONSUMABLE_SKILLBOOK_SHADOW_ITEM_NAME
   itemType: 1
-  description: "\uC100\uB3C4\uC6B0 \uD30C\uD2B8\uB108\uB97C \uBC30\uC6B8 \uC218 \uC788\uB294
-    \uC2A4\uD0AC\uBD81\uC774\uB2E4."
+  description: KEY_TEXT_ITEM_CONSUMABLE_SKILLBOOK_SHADOW_DESCRIPTION
   iconSprite: {fileID: 21300000, guid: 4b08c7838d76e468ea67908f34173b9a, type: 3}
   worldDropPrefab: {fileID: 1529287114779096656, guid: 495fc84b9ed89ba46a81c3c1e89d7cdf, type: 3}
   isStackable: 1

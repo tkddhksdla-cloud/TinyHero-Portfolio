@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: QUEST_DREX_001(Clone)(Clone)(Clone)(Clone)(Clone)
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Quest.CQuestDefinition
   questId: QUEST_DREX_001
-  questName: "\uC78A\uC9C0 \uBABB\uD55C \uD5A5\uAE30"
-  description: "\uB4DC\uB809\uC2A4\uC5D0\uAC8C \uACE0\uBBFC\uC774 \uC788\uB294 \uAC83\uC77C\uAE4C?\n\uBB34\uC2A8
-    \uC77C\uC778\uC9C0 \uBB3C\uC5B4\uBCF4\uC790."
+  questName: KEY_TEXT_QUEST_DREX_001_QUEST_NAME
+  description: KEY_TEXT_QUEST_DREX_001_DESCRIPTION
   questType: 0
   giverNpcId: NPC_0002
   completerNpcId: NPC_0002
@@ -23,20 +22,17 @@ MonoBehaviour:
   acceptDialoguePreset:
     presetName: Preset
     dialogueLineList:
-    - "\uBD84\uBA85 \uD558\uB098 \uCBE4\uC740 \uB5A8\uC5B4\uC838 \uC788\uC744\uD150\uB370..."
-    - "\uC624, \uC790\uB124\uC778\uAC00?\n\uB9C8\uCE68 \uC798 \uC654\uB124."
-    - "\uCD5C\uADFC\uC5D0 \uBB34\uC2A8 \uAE08\uC0C9 \uC824\uB9AC\uAC19\uC740 \uAC83\uC744
-      \uBA39\uC5C8\uB294\uB370\n\uB108\uBB34 \uB9DB\uC788\uC5B4\uC11C \uC78A\uC744
-      \uC218\uAC00 \uC5C6\uB2E4\uB124.\n\uD5A5\uB3C4 \uC544\uC8FC \uC88B\uC558\uC9C0."
-    - "\uADFC\uCC98 \uBAAC\uC2A4\uD130\uB97C \uC7A1\uC73C\uBA74 \uB098\uC628\uB2E4\uB358\uB370,\n\uBA87
-      \uAC1C\uB9CC \uAC00\uC838\uB2E4 \uC904 \uC218 \uC788\uACA0\uB098?"
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_01
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_02
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_03
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_04
   useCompleteDialogue: 1
   completeDialoguePreset:
     presetName: Preset
     dialogueLineList:
-    - "\uD638\uC624 \uADF8\uB798, \uC774 \uD5A5\uAE30\uC57C."
-    - "\uC815\uB9D0 \uACE0\uB9D9\uB124."
-    - "\uC88B\uC740 \uD558\uB8E8 \uBCF4\uB0B4\uAC8C."
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_01_02
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_02_02
+    - KEY_TEXT_QUEST_DREX_001_DIALOGUE_LINE_LIST_03_02
   conditionEntryList:
   - conditionId: COND_01
     conditionType: 2

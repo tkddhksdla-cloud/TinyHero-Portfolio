@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2a166f061383b646a797fb3088bf621, type: 3}
+  m_Name: TextTableImportProfile
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::TinyHero.DataEditor.CExcelImportProfile
+  sourceExcelFile: {fileID: 102900000, guid: 8d6d2ee6619b3904aaecea444786ac88, type: 3}
+  worksheetName: TextTableData
+  targetTableData: {fileID: 11400000, guid: 5b7d03f02d02e2f42864348f1570e1db, type: 2}

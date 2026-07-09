@@ -2482,7 +2482,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CNPCObject
   npcId: NPC_0003
-  npcName: "\uC54C\uD504\uB808\uB3C4"
+  npcName: "\uC54C\uD504\uB808\uB4DC"
   interactionData: {fileID: 11400000, guid: 32c745d3bb8df974c957d402b271c9b2, type: 2}
   bodyCollider: {fileID: 7944667057951635845}
   interactionRangeCollider: {fileID: 1621861291037685247}
