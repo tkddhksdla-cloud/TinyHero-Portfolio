@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Item_Material_HoneyJelly
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_MATERIAL_HONEYJELLY
-  itemName: KEY_TEXT_ITEM_MATERIAL_HONEYJELLY_ITEMNAME_19
+  itemName: "\uD5C8\uB2C8\uC824\uB9AC"
   itemType: 3
-  description: KEY_TEXT_ITEM_MATERIAL_HONEYJELLY_DESCRIPTION_20
+  description: "\uB2EC\uCF64\uD55C \uD5A5\uC774 \uB098\uB294 \uD5C8\uB2C8 \uC824\uB9AC\uB2E4."
   iconSprite: {fileID: 21300000, guid: 38fd0449331bb0f42a9d3f26aa72023e, type: 3}
   worldDropPrefab: {fileID: 8207004084870608954, guid: b141a94ee622a614ab454a034311d518, type: 3}
   isStackable: 1

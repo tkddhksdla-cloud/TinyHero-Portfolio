@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Item_Equipment_Sword_Ignition
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_EQUIPMENT_SWORD_IGNITION
-  itemName: KEY_TEXT_ITEM_EQUIPMENT_SWORD_IGNITION_ITEMNAME_17
+  itemName: "\uC774\uADF8\uB2C8\uC158 \uC18C\uB4DC"
   itemType: 0
-  description: KEY_TEXT_ITEM_EQUIPMENT_SWORD_IGNITION_DESCRIPTION_18
+  description: "\uBD88\uAF43\uC758 \uD798\uC774 \uAE43\uB4E0 \uAC80\uC774\uB2E4.\n\uC8FC\uC704\uC5D0
+    \uB450\uAE30\uB9CC \uD574\uB3C4 \uB728\uAC70\uC6B4 \uC5F4\uAE30\uAC00 \uB290\uAEF4\uC9C4\uB2E4."
   iconSprite: {fileID: 21300000, guid: 0c9a1ca0d08c5d64083f0eb6522385f9, type: 3}
   worldDropPrefab: {fileID: 1364958857425170546, guid: 2537f2196e8725e4b9a18075afa5efab, type: 3}
   isStackable: 0

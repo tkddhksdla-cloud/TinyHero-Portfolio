@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Skill_FlameSlash
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
   skillId: skill_flame_slash
-  skillName: KEY_TEXT_SKILL_FLAMESLASH_SKILLNAME_65
+  skillName: "\uD50C\uB808\uC784 \uC2AC\uB798\uC2DC"
   skillIcon: {fileID: 21300000, guid: dead3d6134e65874a93f10e181521dfd, type: 3}
   skillType: 1
   activeSkillType: 1
@@ -32,7 +32,8 @@ MonoBehaviour:
   castAnimation: 0
   castAnimationName: Attack
   castAnimationSpeed: 4
-  description: KEY_TEXT_SKILL_FLAMESLASH_DESCRIPTION_66
+  description: "\uAC80\uB0A0\uC5D0 \uBD88\uAF43\uC744 \uC785\uD600 \uC804\uBC29\uC5D0
+    \uD718\uB450\uB978\uB2E4."
   castVfxPrefab: {fileID: 3724192508554018546, guid: 498b54ff0b2200846836986d0c22bd85, type: 3}
   castVfxOffset: {x: 1.5, y: 0.3, z: 0}
   castVfxReturnDelay: 3

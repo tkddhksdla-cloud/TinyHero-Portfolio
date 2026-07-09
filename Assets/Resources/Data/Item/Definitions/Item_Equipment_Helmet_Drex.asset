@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Item_Equipment_Helmet_Drex
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_EQUIPMENT_HELMET_DREX
-  itemName: KEY_TEXT_ITEM_EQUIPMENT_HELMET_DREX_ITEMNAME_9
+  itemName: "\uB4DC\uB809\uC2A4\uC758 \uD22C\uAD6C"
   itemType: 0
-  description: KEY_TEXT_ITEM_EQUIPMENT_HELMET_DREX_DESCRIPTION_10
+  description: "\uB4DC\uB809\uC2A4\uAC00 \uD56D\uC0C1 \uCC29\uC6A9 \uC911\uC778 \uD22C\uAD6C\uC774\uB2E4.\n\uB611\uAC19\uC774
+    \uC0DD\uAE34 \uD22C\uAD6C\uAC00 \uC5EC\uB7EC\uAC1C \uC788\uC74C\uC774 \uD2C0\uB9BC\uC5C6\uB2E4."
   iconSprite: {fileID: 21300000, guid: 27690874ac54843068e154902da8f5e8, type: 3}
   worldDropPrefab: {fileID: 7608124266848993729, guid: 399c3351381bcc545b2eff8ac240c2e0, type: 3}
   isStackable: 0

@@ -10,21 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7698db6904da0bc4f8e7a1cfade82f24, type: 3}
-  m_Name: Item_Material_SlimeGel
+  m_Name: Item_Consumable_Skillbook_ShadowPartner
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
-  itemId: ITEM_MATERIAL_SLIME_GEL
-  itemName: Slime Gel
-  itemType: 3
-  description: KEY_TEXT_ITEM_MATERIAL_SLIMEGEL_DESCRIPTION_21
-  iconSprite: {fileID: 21300000, guid: 46bdacb5b5c790547ac4f12c1ca24c15, type: 3}
-  worldDropPrefab: {fileID: 0}
+  itemId: ITEM_CONSUMABLE_SKILL_BOOK_skill_shadow_partner
+  itemName: "\uC100\uB3C4\uC6B0 \uD30C\uD2B8\uB108 \uC2A4\uD0AC\uBD81"
+  itemType: 1
+  description: "\uC100\uB3C4\uC6B0 \uD30C\uD2B8\uB108\uB97C \uBC30\uC6B8 \uC218 \uC788\uB294
+    \uC2A4\uD0AC\uBD81\uC774\uB2E4."
+  iconSprite: {fileID: 21300000, guid: 4b08c7838d76e468ea67908f34173b9a, type: 3}
+  worldDropPrefab: {fileID: 1529287114779096656, guid: 495fc84b9ed89ba46a81c3c1e89d7cdf, type: 3}
   isStackable: 1
-  maxStackCountValue: 999
-  sellPriceItemId: GOLD
-  sellPriceValue: 0
+  maxStackCountValue: 9999
+  sellPriceItemId: ITEM_CURRENCY_GOLD
+  sellPriceValue: 10000000
   equipmentType: 0
-  consumableType: 0
-  linkedSkillId: 
+  consumableType: 2
+  linkedSkillId: skill_shadow_partner
   randomBoxRewardTable: {fileID: 0}
   equipmentStatBonus:
     hp: 0

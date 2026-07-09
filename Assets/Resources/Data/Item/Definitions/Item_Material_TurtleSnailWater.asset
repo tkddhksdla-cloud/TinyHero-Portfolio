@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Item_Material_TurtleSnailWater
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_MATERIAL_TURTLE_SNAIL_WATER
-  itemName: KEY_TEXT_ITEM_MATERIAL_TURTLESNAILWATER_ITEMNAME_24
+  itemName: "\uAC70\uBD81 \uB2EC\uD33D\uC774\uC758 \uC810\uC561"
   itemType: 3
-  description: KEY_TEXT_ITEM_MATERIAL_TURTLESNAILWATER_DESCRIPTION_25
+  description: "\uB048\uC801\uB048\uC801\uD55C \uC810\uC561\uC774\uB2E4."
   iconSprite: {fileID: 21300000, guid: 8775c860757cdf7408f5307e5249efd9, type: 3}
   worldDropPrefab: {fileID: 9128922786641820110, guid: ceb29dab61cdf3443adb4e31f6cc36ac, type: 3}
   isStackable: 1

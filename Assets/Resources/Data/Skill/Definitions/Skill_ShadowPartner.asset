@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Skill_ShadowPartner
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
   skillId: skill_shadow_partner
-  skillName: KEY_TEXT_SKILL_SHADOWPARTNER_SKILLNAME_71
+  skillName: "\uC100\uB3C4\uC6B0 \uD30C\uD2B8\uB108"
   skillIcon: {fileID: 21300000, guid: 797dccceea24bf443b1d32d68b2ec081, type: 3}
   skillType: 1
   activeSkillType: 5
@@ -32,7 +32,9 @@ MonoBehaviour:
   castAnimation: 5
   castAnimationName: Skill
   castAnimationSpeed: 2.5
-  description: KEY_TEXT_SKILL_SHADOWPARTNER_DESCRIPTION_72
+  description: "\uC5B4\uB460\uC758 \uD798\uC744 \uADF8\uB9BC\uC790\uC5D0 \uAE43\uB4E4\uAC8C\uD55C\uB2E4.\n\uB098\uC758
+    \uD589\uB3D9\uC744 \uBCF5\uC81C\uD558\uB294 \uADF8\uB9BC\uC790 \uBD84\uC2E0\uC744
+    \uC0DD\uC131\uD55C\uB2E4."
   castVfxPrefab: {fileID: 0}
   castVfxOffset: {x: 0, y: 0, z: 0}
   castVfxReturnDelay: 1

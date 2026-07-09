@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Item_Equipment_Helmet_Gold_Knight
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
   itemId: ITEM_EQUIPMENT_HELMET_GOLD_KNIGHT
-  itemName: KEY_TEXT_ITEM_EQUIPMENT_HELMET_GOLD_KNIGHT_ITEMNAME_11
+  itemName: "\uACE8\uB4DC\uB098\uC774\uD2B8 \uD5EC\uBA67"
   itemType: 0
-  description: KEY_TEXT_ITEM_EQUIPMENT_HELMET_GOLD_KNIGHT_DESCRIPTION_12
+  description: "\uAE08\uBE5B\uC73C\uB85C \uBE5B\uB098\uB294 \uAE30\uC0AC\uC758 \uD22C\uAD6C\uC774\uB2E4.\n\uD574\uAC00
+    \uBE44\uCD94\uBA74 \uB208\uC774 \uB108\uBB34 \uC544\uD508 \uAC83 \uAC19\uAE30\uB3C4..?"
   iconSprite: {fileID: 21300000, guid: 8f7a39fde31994ac98db5238b0e4a57d, type: 3}
   worldDropPrefab: {fileID: 195316652170265812, guid: 051974dea3aa31c4db5b7b42f6ae4b4b, type: 3}
   isStackable: 0

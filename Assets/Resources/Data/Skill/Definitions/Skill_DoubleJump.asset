@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Skill_DoubleJump
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillDefinition
   skillId: skill_double_jump
-  skillName: Double Jump
+  skillName: "\uB354\uBE14 \uC810\uD504"
   skillIcon: {fileID: 21300000, guid: 1599dd24b86179f4c83e44b9ab6aa992, type: 3}
   skillType: 1
   activeSkillType: 0
@@ -32,7 +32,8 @@ MonoBehaviour:
   castAnimation: 0
   castAnimationName: Attack
   castAnimationSpeed: 1
-  description: KEY_TEXT_SKILL_DOUBLEJUMP_DESCRIPTION_64
+  description: "\uC2E0\uC131\uD55C \uD798\uC744 \uC751\uCD95 \uC2DC\uD0A8 \uD6C4,
+    \uC810\uD504 \uD6C4 \uACF5\uC911\uC5D0\uC11C \uD55C \uBC88 \uB354 \uB3C4\uC57D\uD55C\uB2E4."
   castVfxPrefab: {fileID: 185424289494172251, guid: d29623103da69674599fe88b86fc1a16, type: 3}
   castVfxOffset: {x: 0, y: 0.75, z: 0}
   castVfxReturnDelay: 3
