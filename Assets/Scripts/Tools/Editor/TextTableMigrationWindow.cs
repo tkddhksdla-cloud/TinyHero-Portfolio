@@ -37,9 +37,10 @@ namespace TinyHero.Tools
         private const string HeaderKr = "KR";
         private const string HeaderEn = "EN";
         private const float CandidateRowHeight = 118.0f;
-        private const int MaxAutoKeySegmentLength = 18;
-        private const int HashSeed = 5381;
+        private const int MaxAutoKeySegmentLength = 32;
         private const string ExcelTempExtension = ".tmp";
+        private const int MaxUniqueKeySuffix = 9999;
+        private const string UnityCloneSuffix = "(Clone)";
 
         private static readonly Regex KoreanRegex = new Regex( "[가-힣]", RegexOptions.Compiled );
         private static readonly Regex InvalidKeyCharacterRegex = new Regex( "[^A-Z0-9_]", RegexOptions.Compiled );
@@ -213,6 +214,7 @@ namespace TinyHero.Tools
             candidateList.Clear();
             string[] searchRootPathArray = ResolveSearchRootPathArray();
             HashSet<string> candidateIdentitySet = new HashSet<string>();
+            HashSet<string> reservedTextKeySet = LoadExistingTextKeySet();
             int scannedAssetCount = 0;
 
             for ( int rootIndex = 0; rootIndex < searchRootPathArray.Length; rootIndex++ )
@@ -241,7 +243,7 @@ namespace TinyHero.Tools
                     }
 
                     scannedAssetCount++;
-                    AddAssetCandidates( assetObject, assetPath, candidateIdentitySet );
+                    AddAssetCandidates( assetObject, assetPath, candidateIdentitySet, reservedTextKeySet );
                 }
             }
 
@@ -251,7 +253,7 @@ namespace TinyHero.Tools
         ///<summary>
         /// 에셋 내 후보 추가
         ///</summary>
-        private void AddAssetCandidates( UnityEngine.Object _assetObject, string _assetPath, HashSet<string> _candidateIdentitySet )
+        private void AddAssetCandidates( UnityEngine.Object _assetObject, string _assetPath, HashSet<string> _candidateIdentitySet, HashSet<string> _reservedTextKeySet )
         {
             if ( _assetObject == null || string.IsNullOrWhiteSpace( _assetPath ) || _candidateIdentitySet == null )
             {
@@ -287,11 +289,13 @@ namespace TinyHero.Tools
 
                 _candidateIdentitySet.Add( identity );
                 TextTableMigrationCandidate candidate = new TextTableMigrationCandidate();
+                string displayAssetName = NormalizeUnityObjectName( _assetObject.name );
                 candidate.assetPath = _assetPath;
-                candidate.assetName = _assetObject.name;
+                candidate.assetName = displayAssetName;
                 candidate.propertyPath = property.propertyPath;
                 candidate.originalText = currentText;
-                candidate.textKey = BuildDefaultTextKey( _assetObject.name, property.propertyPath, candidateList.Count + 1 );
+                int candidateSequence = candidateList.Count + 1;
+                candidate.textKey = BuildDefaultTextKey( displayAssetName, property.propertyPath, candidateSequence, _reservedTextKeySet );
                 candidateList.Add( candidate );
             }
         }
@@ -806,14 +810,50 @@ namespace TinyHero.Tools
         ///<summary>
         /// 기본 TextKey 생성
         ///</summary>
-        private string BuildDefaultTextKey( string _assetName, string _propertyPath, int _sequence )
+        private string BuildDefaultTextKey( string _assetName, string _propertyPath, int _sequence, HashSet<string> _reservedTextKeySet )
         {
             string assetSegment = BuildShortKeySegment( _assetName );
             string propertySegment = BuildShortPropertySegment( _propertyPath );
-            string hashSegment = BuildStableHashText( $"{_assetName}|{_propertyPath}|{_sequence}" );
-            string rawKey = $"{assetSegment}_{propertySegment}_{hashSegment}";
-            string result = NormalizeTextKey( rawKey, _assetName, _propertyPath, _sequence );
+            string rawKey = $"{assetSegment}_{propertySegment}";
+            string normalizedKey = NormalizeTextKey( rawKey, _assetName, _propertyPath, _sequence );
+            string result = BuildUniqueTextKey( normalizedKey, _reservedTextKeySet );
             return result;
+        }
+
+        ///<summary>
+        /// 중복되지 않는 TextKey 생성
+        ///</summary>
+        private string BuildUniqueTextKey( string _baseTextKey, HashSet<string> _reservedTextKeySet )
+        {
+            string normalizedBaseTextKey = string.IsNullOrWhiteSpace( _baseTextKey ) ? $"{TextKeyPrefix}TEXT" : _baseTextKey.Trim();
+
+            if ( _reservedTextKeySet == null )
+            {
+                return normalizedBaseTextKey;
+            }
+
+            if ( _reservedTextKeySet.Contains( normalizedBaseTextKey ) == false )
+            {
+                _reservedTextKeySet.Add( normalizedBaseTextKey );
+                return normalizedBaseTextKey;
+            }
+
+            for ( int suffix = 2; suffix <= MaxUniqueKeySuffix; suffix++ )
+            {
+                string candidateTextKey = $"{normalizedBaseTextKey}_{suffix:00}";
+
+                if ( _reservedTextKeySet.Contains( candidateTextKey ) )
+                {
+                    continue;
+                }
+
+                _reservedTextKeySet.Add( candidateTextKey );
+                return candidateTextKey;
+            }
+
+            string fallbackTextKey = $"{normalizedBaseTextKey}_{_reservedTextKeySet.Count + 1}";
+            _reservedTextKeySet.Add( fallbackTextKey );
+            return fallbackTextKey;
         }
 
         ///<summary>
@@ -826,7 +866,8 @@ namespace TinyHero.Tools
                 return "TEXT";
             }
 
-            string upperText = _sourceText.Trim().ToUpperInvariant();
+            string keySourceText = ConvertToKeySourceText( _sourceText.Trim() );
+            string upperText = keySourceText.ToUpperInvariant();
             string sanitizedText = InvalidKeyCharacterRegex.Replace( upperText, "_" );
             string collapsedText = CollapseUnderscores( sanitizedText ).Trim( '_' );
 
@@ -841,6 +882,27 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
+        /// Unity 오브젝트 이름 표시용 정규화
+        ///</summary>
+        private string NormalizeUnityObjectName( string _objectName )
+        {
+            if ( string.IsNullOrWhiteSpace( _objectName ) )
+            {
+                return string.Empty;
+            }
+
+            string result = _objectName.Trim();
+
+            while ( result.EndsWith( UnityCloneSuffix, StringComparison.Ordinal ) )
+            {
+                int cloneSuffixIndex = result.Length - UnityCloneSuffix.Length;
+                result = result.Substring( 0, cloneSuffixIndex ).TrimEnd();
+            }
+
+            return result;
+        }
+
+        ///<summary>
         /// 프로퍼티 경로 기반 짧은 키 세그먼트 생성
         ///</summary>
         private string BuildShortPropertySegment( string _propertyPath )
@@ -851,36 +913,102 @@ namespace TinyHero.Tools
             }
 
             string[] pathPartArray = _propertyPath.Split( '.' );
-            string lastPathPart = pathPartArray.Length > 0 ? pathPartArray[ pathPartArray.Length - 1 ] : _propertyPath;
-            string cleanedPathPart = lastPathPart.Replace( "Array", string.Empty ).Replace( "data", string.Empty );
-            string result = BuildShortKeySegment( cleanedPathPart );
+            string semanticPathPart = string.Empty;
+            int arrayIndex = -1;
+
+            for ( int index = pathPartArray.Length - 1; index >= 0; index-- )
+            {
+                string pathPart = pathPartArray[ index ];
+
+                if ( string.Equals( pathPart, "Array", StringComparison.Ordinal ) )
+                {
+                    continue;
+                }
+
+                if ( TryResolveArrayDataIndex( pathPart, out int resolvedArrayIndex ) )
+                {
+                    if ( arrayIndex < 0 )
+                    {
+                        arrayIndex = resolvedArrayIndex;
+                    }
+
+                    continue;
+                }
+
+                semanticPathPart = pathPart;
+                break;
+            }
+
+            string result = BuildShortKeySegment( semanticPathPart );
 
             if ( string.IsNullOrWhiteSpace( result ) )
             {
                 return "VALUE";
             }
 
+            if ( arrayIndex >= 0 )
+            {
+                result = $"{result}_{arrayIndex + 1:00}";
+            }
+
             return result;
         }
 
         ///<summary>
-        /// 안정 해시 문자열 생성
+        /// 배열 데이터 인덱스 반환 여부
         ///</summary>
-        private string BuildStableHashText( string _sourceText )
+        private bool TryResolveArrayDataIndex( string _pathPart, out int _arrayIndex )
         {
-            unchecked
-            {
-                uint hashValue = HashSeed;
-                string resolvedSourceText = _sourceText ?? string.Empty;
+            _arrayIndex = -1;
 
-                for ( int index = 0; index < resolvedSourceText.Length; index++ )
+            if ( string.IsNullOrWhiteSpace( _pathPart ) )
+            {
+                return false;
+            }
+
+            if ( _pathPart.StartsWith( "data[", StringComparison.Ordinal ) == false || _pathPart.EndsWith( "]", StringComparison.Ordinal ) == false )
+            {
+                return false;
+            }
+
+            int indexTextLength = _pathPart.Length - 6;
+            string indexText = _pathPart.Substring( 5, indexTextLength );
+            bool result = int.TryParse( indexText, out _arrayIndex );
+            return result;
+        }
+
+        ///<summary>
+        /// 키 소스 문자열 변환
+        ///</summary>
+        private string ConvertToKeySourceText( string _sourceText )
+        {
+            if ( string.IsNullOrWhiteSpace( _sourceText ) )
+            {
+                return string.Empty;
+            }
+
+            string normalizedSourceText = NormalizeUnityObjectName( _sourceText );
+            StringBuilder builder = new StringBuilder();
+
+            for ( int index = 0; index < normalizedSourceText.Length; index++ )
+            {
+                char character = normalizedSourceText[ index ];
+
+                if ( index > 0 && char.IsUpper( character ) )
                 {
-                    hashValue = ( hashValue * 33 ) ^ resolvedSourceText[ index ];
+                    char previousCharacter = normalizedSourceText[ index - 1 ];
+
+                    if ( char.IsLower( previousCharacter ) || char.IsDigit( previousCharacter ) )
+                    {
+                        builder.Append( '_' );
+                    }
                 }
 
-                string result = hashValue.ToString( "X6" );
-                return result;
+                builder.Append( character );
             }
+
+            string result = builder.ToString();
+            return result;
         }
 
         ///<summary>
@@ -895,9 +1023,16 @@ namespace TinyHero.Tools
                 sourceText = sourceText.Substring( TextKeyPrefix.Length );
             }
 
-            string upperText = sourceText.ToUpperInvariant();
+            string keySourceText = ConvertToKeySourceText( sourceText );
+            string upperText = keySourceText.ToUpperInvariant();
             string sanitizedText = InvalidKeyCharacterRegex.Replace( upperText, "_" );
             string collapsedText = CollapseUnderscores( sanitizedText ).Trim( '_' );
+
+            if ( string.IsNullOrWhiteSpace( collapsedText ) )
+            {
+                collapsedText = "TEXT";
+            }
+
             string result = $"{TextKeyPrefix}{collapsedText}";
             return result;
         }
