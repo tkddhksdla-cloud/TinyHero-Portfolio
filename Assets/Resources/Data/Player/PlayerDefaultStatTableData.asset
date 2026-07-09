@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CPlayerDefaultStatTableData
   sourceExcelAssetPath: Assets/RawData/Excel/Player/PlayerStatData.xlsx
   rowList:
-  - ats: 0.5
+  - ats: 1
     mov: 4.5
     crt: 10
     crd: 50
