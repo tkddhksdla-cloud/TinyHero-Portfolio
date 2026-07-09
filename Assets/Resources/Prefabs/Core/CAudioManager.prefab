@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8105385111914489786
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5524476376460106605}
+  - component: {fileID: 358897910839222893}
+  m_Layer: 0
+  m_Name: CAudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5524476376460106605
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8105385111914489786}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &358897910839222893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8105385111914489786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0d210d0e8dc0f14a80cb2bedc960a80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.CAudioManager
+  audioMixer: {fileID: 24100000, guid: 6c54ae18e1f10d349a687a345f72d445, type: 2}
+  masterMixerGroup: {fileID: 24300002, guid: 6c54ae18e1f10d349a687a345f72d445, type: 2}
+  bgmMixerGroup: {fileID: 5077005170541642549, guid: 6c54ae18e1f10d349a687a345f72d445, type: 2}
+  sfxMixerGroup: {fileID: 1542250861118400438, guid: 6c54ae18e1f10d349a687a345f72d445, type: 2}
+  masterVolume: 1
+  bgmVolume: 1
+  sfxVolume: 1
+  defaultBgmFadeDuration: 0.75

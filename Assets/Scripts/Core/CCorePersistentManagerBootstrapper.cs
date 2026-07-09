@@ -10,6 +10,8 @@ namespace TinyHero.Core
     ///</summary>
     public static class CCorePersistentManagerBootstrapper
     {
+        private const string AudioManagerPrefabResourcePath = "Prefabs/Core/CAudioManager";
+
         ///<summary>
         /// 영속 매니저 선생성 처리
         ///</summary>
@@ -19,6 +21,7 @@ namespace TinyHero.Core
             CResourceManager.Instance.PreloadCoreResources();
             _ = CHotfixRuntimeLoader.Instance;
             _ = CObjectPoolManager.Instance;
+            EnsureAudioManagerExists();
             CInputManager inputManager = CInputManager.Instance;
             CDataManager dataManager = CDataManager.Instance;
             _ = CGameSettingManager.Instance;
@@ -35,6 +38,30 @@ namespace TinyHero.Core
             CNPCInteractionManager npcInteractionManager = CNPCInteractionManager.Instance;
             CMonsterInfoManager monsterInfoManager = CMonsterInfoManager.Instance;
             CNPCNameTagManager npcNameTagManager = CNPCNameTagManager.Instance;
+        }
+
+        ///<summary>
+        /// 오디오 매니저 프리팹 인스턴스 보장
+        ///</summary>
+        private static void EnsureAudioManagerExists()
+        {
+            bool hasExistingAudioManager = CAudioManager.TryGetExistingInstance( out CAudioManager existingAudioManager );
+
+            if ( hasExistingAudioManager && existingAudioManager != null )
+            {
+                return;
+            }
+
+            GameObject audioManagerPrefab = Resources.Load<GameObject>( AudioManagerPrefabResourcePath );
+
+            if ( audioManagerPrefab == null )
+            {
+                _ = CAudioManager.Instance;
+                return;
+            }
+
+            GameObject audioManagerObject = Object.Instantiate( audioManagerPrefab );
+            audioManagerObject.name = audioManagerPrefab.name;
         }
     }
 }

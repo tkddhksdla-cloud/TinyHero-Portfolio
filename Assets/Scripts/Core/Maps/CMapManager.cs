@@ -1400,6 +1400,7 @@ namespace TinyHero.Maps
             ReturnAllActivePooledWorldItemDrops();
             ClearSpawnedRuntimeObjects();
             PrepareMonsterPools( requiredMonsterPoolKeySet );
+            ApplyMapBgm( _loadedData.bgmClipName );
             ApplyBackgroundSprite( _loadedData.backgroundSpriteName, _backgroundSprite );
             ApplyBackgroundRightBoundary( _loadedData );
             SpawnPortals( _loadedData.portals, _portalPrefab );
@@ -1407,6 +1408,27 @@ namespace TinyHero.Maps
             SpawnNpcs( _loadedData.npcs );
             MovePlayerToEntryPortal( _entryPortalId );
             EnsureGameplayCameraFollowController();
+        }
+
+        ///<summary>
+        /// 맵 BGM 적용
+        ///</summary>
+        private void ApplyMapBgm( string _bgmClipName )
+        {
+            if ( string.IsNullOrWhiteSpace( _bgmClipName ) )
+            {
+                return;
+            }
+
+            CAudioManager audioManager = CAudioManager.Instance;
+
+            if ( audioManager == null )
+            {
+                return;
+            }
+
+            string trimmedBgmClipName = _bgmClipName.Trim();
+            audioManager.PlayBgm( trimmedBgmClipName );
         }
 
         ///<summary>

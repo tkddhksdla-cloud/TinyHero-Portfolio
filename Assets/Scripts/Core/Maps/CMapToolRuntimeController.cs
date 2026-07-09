@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using TMPro;
+using TinyHero.Core;
 using TinyHero.Player;
 using TinyHero.Skill;
 using TinyHero.Tools;
@@ -54,6 +55,7 @@ namespace TinyHero.Maps
         private const string PortalTargetPortalTitleObjectName = "PortalTargetPortalTitle";
         private const string MapIdTitleObjectName = "MapIdTitle";
         private const string MapNameTitleObjectName = "MapNameTitle";
+        private const string BgmClipNameTitleObjectName = "BgmClipNameTitle";
         private const string MapInfoPanelObjectName = "MapInfoPanel";
         private const string LoadMapPanelObjectName = "LoadMapPanel";
         private const string SaveConfirmPopupObjectName = "SaveConfirmPopup";
@@ -81,9 +83,9 @@ namespace TinyHero.Maps
         private const float PanelPadding = 14.0f;
         private const float ItemSpacing = 8.0f;
         private const float MapInfoPanelWidth = 360.0f;
-        private const float MapInfoPanelHeight = 388.0f;
-        private const float MapInfoInputWidth = 300.0f;
-        private const float MapInfoButtonWidth = 142.0f;
+        private const float MapInfoPanelHeight = 494.0f;
+        private const float MapInfoInputWidth = MapInfoPanelWidth - ( PanelPadding * 2.0f );
+        private const float MapInfoButtonWidth = ( MapInfoInputWidth - 12.0f ) * 0.5f;
         private const float MapInfoPanelLeftOffset = 20.0f;
         private const float MapInfoPanelTopOffset = -20.0f;
         private const float LoadPanelWidth = 360.0f;
@@ -132,6 +134,7 @@ namespace TinyHero.Maps
         [SerializeField] private TMP_Text saveConfirmMessageText;
         [SerializeField] private TMP_InputField mapIdInputField;
         [SerializeField] private TMP_InputField mapNameInputField;
+        [SerializeField] private TMP_InputField bgmClipNameInputField;
         [SerializeField] private TMP_InputField portalIdInputField;
         [SerializeField] private TMP_InputField portalTargetMapIdInputField;
         [SerializeField] private TMP_InputField portalTargetPortalIdInputField;
@@ -717,6 +720,21 @@ namespace TinyHero.Maps
             EnsureInputFieldTitle( MapNameTitleObjectName, mapInfoPanelRoot, "Map Name", new Vector2( 0.0f, -126.0f ) );
             UpdateInputFieldPlaceholder( mapNameInputField, "맵 이름" );
 
+            if ( bgmClipNameInputField == null )
+            {
+                TMP_InputField createdBgmClipNameInputField = CreateInputField( "BgmClipNameInputField", mapInfoPanelRoot, "BGM 클립 이름", string.Empty );
+                RectTransform bgmClipNameRectTransform = createdBgmClipNameInputField.GetComponent<RectTransform>();
+                bgmClipNameRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
+                bgmClipNameRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
+                bgmClipNameRectTransform.pivot = new Vector2( 0.0f, 1.0f );
+                bgmClipNameRectTransform.sizeDelta = new Vector2( MapInfoInputWidth, 54.0f );
+                bgmClipNameRectTransform.anchoredPosition = new Vector2( PanelPadding, -264.0f );
+                bgmClipNameInputField = createdBgmClipNameInputField;
+            }
+
+            EnsureInputFieldTitle( BgmClipNameTitleObjectName, mapInfoPanelRoot, "BGM Clip Name", new Vector2( 0.0f, -232.0f ) );
+            UpdateInputFieldPlaceholder( bgmClipNameInputField, "Audio/BGM 클립 이름" );
+
             if ( saveMapButton == null )
             {
                 CButtonEx createdSaveMapButton = CreateTextButton( "SaveMapButton", mapInfoPanelRoot, "맵 저장", MapInfoButtonWidth, ToolbarButtonHeight );
@@ -724,7 +742,7 @@ namespace TinyHero.Maps
                 saveButtonRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 saveButtonRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 saveButtonRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                saveButtonRectTransform.anchoredPosition = new Vector2( PanelPadding, -236.0f );
+                saveButtonRectTransform.anchoredPosition = new Vector2( PanelPadding, -342.0f );
                 saveMapButton = createdSaveMapButton;
             }
 
@@ -735,7 +753,7 @@ namespace TinyHero.Maps
                 loadButtonRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 loadButtonRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 loadButtonRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                loadButtonRectTransform.anchoredPosition = new Vector2( PanelPadding + MapInfoButtonWidth + 12.0f, -236.0f );
+                loadButtonRectTransform.anchoredPosition = new Vector2( PanelPadding + MapInfoButtonWidth + 12.0f, -342.0f );
                 loadMapButton = createdLoadMapButton;
             }
 
@@ -746,7 +764,7 @@ namespace TinyHero.Maps
                 toggleRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 toggleRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 toggleRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -300.0f );
+                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -406.0f );
                 disableMonsterBehaviorToggle = createdDisableMonsterBehaviorToggle;
             }
 
@@ -759,7 +777,7 @@ namespace TinyHero.Maps
                 toggleRectTransform.anchorMin = new Vector2( 0.0f, 1.0f );
                 toggleRectTransform.anchorMax = new Vector2( 0.0f, 1.0f );
                 toggleRectTransform.pivot = new Vector2( 0.0f, 1.0f );
-                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -334.0f );
+                toggleRectTransform.anchoredPosition = new Vector2( PanelPadding, -440.0f );
                 disableMonsterContactHitToggle = createdDisableMonsterContactHitToggle;
             }
 
@@ -821,6 +839,11 @@ namespace TinyHero.Maps
             {
                 string generatedPortalId = GenerateNextPortalId();
                 portalIdInputField.text = generatedPortalId;
+            }
+
+            if ( bgmClipNameInputField != null && string.IsNullOrWhiteSpace( bgmClipNameInputField.text ) )
+            {
+                bgmClipNameInputField.text = string.Empty;
             }
 
             if ( portalTargetMapIdInputField != null && string.IsNullOrWhiteSpace( portalTargetMapIdInputField.text ) )
@@ -1357,6 +1380,13 @@ namespace TinyHero.Maps
                 mapNameInputField.text = resolvedMapName;
             }
 
+            if ( bgmClipNameInputField != null )
+            {
+                string resolvedBgmClipName = string.IsNullOrWhiteSpace( _loadedData.bgmClipName ) ? string.Empty : _loadedData.bgmClipName.Trim();
+                bgmClipNameInputField.text = resolvedBgmClipName;
+                PreviewLoadedBgm( resolvedBgmClipName );
+            }
+
             if ( string.IsNullOrEmpty( _loadedData.backgroundSpriteName ) == false )
             {
                 ApplyBackgroundSpriteByName( _loadedData.backgroundSpriteName, false );
@@ -1573,6 +1603,7 @@ namespace TinyHero.Maps
             CMapToolSaveData saveData = new CMapToolSaveData();
             saveData.mapId = ResolveMapId();
             saveData.mapName = ResolveMapName();
+            saveData.bgmClipName = ResolveBgmClipName();
 
             if ( backgroundRenderer != null && backgroundRenderer.sprite != null )
             {
@@ -1616,6 +1647,48 @@ namespace TinyHero.Maps
             }
 
             return saveData;
+        }
+
+        ///<summary>
+        /// BGM 클립 이름 반환
+        ///</summary>
+        private string ResolveBgmClipName()
+        {
+            if ( bgmClipNameInputField == null )
+            {
+                return string.Empty;
+            }
+
+            string inputBgmClipName = bgmClipNameInputField.text;
+
+            if ( string.IsNullOrWhiteSpace( inputBgmClipName ) )
+            {
+                return string.Empty;
+            }
+
+            string result = inputBgmClipName.Trim();
+            bgmClipNameInputField.text = result;
+            return result;
+        }
+
+        ///<summary>
+        /// 로드된 BGM 미리듣기 처리
+        ///</summary>
+        private void PreviewLoadedBgm( string _bgmClipName )
+        {
+            if ( string.IsNullOrWhiteSpace( _bgmClipName ) )
+            {
+                return;
+            }
+
+            CAudioManager audioManager = CAudioManager.Instance;
+
+            if ( audioManager == null )
+            {
+                return;
+            }
+
+            audioManager.PlayBgm( _bgmClipName );
         }
 
         ///<summary>
