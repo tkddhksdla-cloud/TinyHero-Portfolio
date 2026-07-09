@@ -10,6 +10,16 @@
 [Uu]ser[Ss]ettings/
 MemoryCaptures/
 Recordings/
+HybridCLRData/
+tmp/
+Assets/_Recovery/
+Assets/Screenshots/
+Tools/**/bin/
+Tools/**/obj/
+Tools/**/*.deps.json
+Tools/**/*.dll
+Tools/**/*.exe
+Tools/**/*.runtimeconfig.json
 
 *.csproj
 *.sln
