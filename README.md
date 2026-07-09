@@ -26,6 +26,7 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 - Quest System
 - Inventory / Equipment / Shop
 - Active / Passive Skill System
+- Audio Management
 - Popup / View UI Navigation
 - Save / Load Snapshot System
 - Object Pooling
@@ -37,6 +38,7 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 - Data-driven Gameplay
 - Addressables-first Resource Loading
 - Resources Fallback Compatibility
+- AudioMixer-based BGM / SFX Routing
 - Snapshot-based Save / Load
 - Secure Runtime Numeric Values
 - HybridCLR-based Hotfix Module
@@ -54,6 +56,16 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 ### Resource Loading Abstraction
 
 `CResourceManager`와 `CUINavigationController`를 중심으로 리소스 로딩 진입점을 통합했습니다. UI 매니저가 Addressables API를 직접 호출하지 않고 공통 로더를 경유하도록 정리해, 로딩 방식 변경과 fallback 정책을 한 곳에서 관리할 수 있습니다.
+
+### Audio Management
+
+`CAudioManager`는 전역 싱글톤 오디오 매니저로, `CCorePersistentManagerBootstrapper`가 `Assets/Resources/Prefabs/Core/CAudioManager.prefab`을 통해 게임 시작 전에 보장합니다. 매니저 오브젝트는 `DontDestroyOnLoad` 기반으로 유지되며, 씬마다 별도 오디오 매니저를 배치하지 않는 구조입니다.
+
+BGM과 SFX는 `TinyHeroAudioMixer`의 `Master`, `BGM`, `SFX` 그룹으로 분리됩니다. 볼륨은 `MasterVolume`, `BGMVolume`, `SFXVolume` 노출 파라미터를 통해 제어하며, BGM은 2개의 AudioSource를 교차 사용해 페이드 인/아웃 전환을 처리합니다. 같은 BGM이 다시 요청되면 중복 재생하지 않습니다.
+
+런타임 오디오 리소스는 `Assets/Resources/Audio/BGM` 또는 `Assets/Resources/Audio/SFX`에 넣고, 확장자를 제외한 파일 이름으로 호출합니다. 예를 들어 `Assets/Resources/Audio/SFX/SFX_CLICK_00.wav`는 `CAudioManager.Instance.PlaySfx( "SFX_CLICK_00" )`로 재생합니다. 자주 쓰는 SFX는 첫 재생 지연을 줄이기 위해 `PreloadSfx`로 미리 캐시할 수 있습니다.
+
+맵 BGM은 맵툴의 맵 데이터에서 지정하는 흐름을 기본으로 하며, 타이틀 씬은 `SceneTitleBgmRoot`가 시작 BGM을 요청합니다. UI 클릭음은 `CButtonEx` 인스펙터의 SFX 이름을 사용하고 기본값은 `SFX_CLICK_00`입니다.
 
 ### HybridCLR Hotfix Module
 
@@ -103,9 +115,11 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 Assets/
   AddressableAssetsData/  # Addressables 설정
   Resources/              # 런타임 로드 리소스
+    Audio/                # BGM, SFX, AudioMixer
   Scenes/                 # 주요 씬
   Scripts/
     Core/                 # 공용 매니저, 저장, 맵, 스킬, UI 기반
+      Audio/              # 전역 오디오 매니저
     Hotfix/               # HybridCLR Hot Update Assembly
     HotfixContracts/      # Hotfix 요청/응답 계약
     Player/               # 플레이어 관련 시스템
