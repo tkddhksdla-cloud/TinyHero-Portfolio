@@ -65,6 +65,9 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty hitVfxPrefabProperty;
         private SerializedProperty hitVfxOffsetProperty;
         private SerializedProperty hitVfxReturnDelayProperty;
+        private SerializedProperty castSfxClipNameProperty;
+        private SerializedProperty hitSfxClipNameProperty;
+        private SerializedProperty loopSfxClipNameProperty;
         private SerializedProperty projectileVfxPrefabProperty;
         private SerializedProperty projectileVfxOffsetProperty;
         private SerializedProperty projectileVfxReturnDelayProperty;
@@ -243,6 +246,7 @@ namespace TinyHero.Skill.Editor
             DrawProgressionPropertySection();
             DrawExecutionPropertySection();
             DrawPassivePropertySection();
+            DrawAudioPropertySection();
             DrawVfxPropertySection();
             DrawUnlockPropertySection();
             DrawActiveEffectPropertySection();
@@ -432,6 +436,30 @@ namespace TinyHero.Skill.Editor
         }
 
         ///<summary>
+        /// 오디오 속성 섹션 렌더링
+        ///</summary>
+        private void DrawAudioPropertySection()
+        {
+            if ( CSkillEditorPreviewUtility.IsActiveSkill( skillTypeProperty ) == false )
+            {
+                return;
+            }
+
+            EditorGUILayout.BeginVertical( EditorStyles.helpBox );
+            EditorGUILayout.LabelField( "오디오 설정", EditorStyles.boldLabel );
+            EditorGUILayout.PropertyField( castSfxClipNameProperty, new GUIContent( "시전 SFX" ) );
+            EditorGUILayout.PropertyField( hitSfxClipNameProperty, new GUIContent( "타격 SFX" ) );
+
+            if ( IsSelectedSkillPlaceType() )
+            {
+                EditorGUILayout.PropertyField( loopSfxClipNameProperty, new GUIContent( "설치형 Loop SFX" ) );
+                EditorGUILayout.HelpBox( "설치형 스킬 지속시간 동안 반복 재생할 SFX 이름입니다. 확장자를 제외한 파일 이름을 입력합니다.", MessageType.None );
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        ///<summary>
         /// 해금 속성 섹션 렌더링
         ///</summary>
         private void DrawUnlockPropertySection()
@@ -614,6 +642,9 @@ namespace TinyHero.Skill.Editor
             hitVfxPrefabProperty = selectedSkillSerializedObject.FindProperty( "hitVfxPrefab" );
             hitVfxOffsetProperty = selectedSkillSerializedObject.FindProperty( "hitVfxOffset" );
             hitVfxReturnDelayProperty = selectedSkillSerializedObject.FindProperty( "hitVfxReturnDelay" );
+            castSfxClipNameProperty = selectedSkillSerializedObject.FindProperty( "castSfxClipName" );
+            hitSfxClipNameProperty = selectedSkillSerializedObject.FindProperty( "hitSfxClipName" );
+            loopSfxClipNameProperty = selectedSkillSerializedObject.FindProperty( "loopSfxClipName" );
             projectileVfxPrefabProperty = selectedSkillSerializedObject.FindProperty( "projectileVfxPrefab" );
             projectileVfxOffsetProperty = selectedSkillSerializedObject.FindProperty( "projectileVfxOffset" );
             projectileVfxReturnDelayProperty = selectedSkillSerializedObject.FindProperty( "projectileVfxReturnDelay" );
@@ -948,6 +979,20 @@ namespace TinyHero.Skill.Editor
         {
             System.Collections.Generic.IReadOnlyList<string> supportedTokenList = CSkillDescriptionFormatter.GetSupportedTokenList();
             string result = string.Join( ", ", supportedTokenList );
+            return result;
+        }
+
+        ///<summary>
+        /// 선택 스킬 설치형 여부 반환
+        ///</summary>
+        private bool IsSelectedSkillPlaceType()
+        {
+            if ( selectedSkillDefinition == null )
+            {
+                return false;
+            }
+
+            bool result = selectedSkillDefinition.GetActiveSkillType() == eActiveSkillType.PLACE;
             return result;
         }
 

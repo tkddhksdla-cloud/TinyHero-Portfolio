@@ -73,6 +73,7 @@ namespace TinyHero.Skill
             ContactFilter2D contactFilter = CreateMonsterContactFilter();
             float scaledAreaRadius = ResolveScaledAreaRadius( _skillContext );
             int hitCount = Physics2D.OverlapCircle( attackCenter, scaledAreaRadius, contactFilter, overlapBuffer );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             ApplyDamageToTargets( _skillContext, hitCount );
             return true;
         }
@@ -184,6 +185,7 @@ namespace TinyHero.Skill
                 bool wasAliveBeforeHit = monsterObject.GetCurrentHp() > 0;
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( _skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );
+                CSkillAudioUtility.PlayHitSfx( _skillContext );
                 CSkillDamageUtility.TryAwardMonsterExp( _skillContext, monsterObject, wasAliveBeforeHit );
                 processedTargetCount++;
                 didHitAnyTarget = true;

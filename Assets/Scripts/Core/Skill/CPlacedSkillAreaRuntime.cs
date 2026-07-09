@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core;
 using UnityEngine;
 
 namespace TinyHero.Skill
@@ -26,6 +27,7 @@ namespace TinyHero.Skill
         private float elapsedTime;
         private float tickElapsedTime;
         private CSkillPooledVfxHandle loopVfxHandle;
+        private CAudioLoopSfxHandle loopSfxHandle;
 
         ///<summary>
         /// 활성 설치형 스킬 영역 일괄 정리
@@ -66,6 +68,7 @@ namespace TinyHero.Skill
             elapsedTime = 0.0f;
             tickElapsedTime = -damageStartDelaySeconds;
             loopVfxHandle = CSkillVfxUtility.PlayLoopVfx( skillContext, transform, durationSeconds );
+            loopSfxHandle = CSkillAudioUtility.PlayLoopSfx( skillContext, transform );
         }
 
         ///<summary>
@@ -74,6 +77,7 @@ namespace TinyHero.Skill
         public void ReleaseRuntimeObject()
         {
             ReturnLoopVfx();
+            StopLoopSfx();
             Destroy( gameObject );
         }
 
@@ -168,6 +172,7 @@ namespace TinyHero.Skill
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( skillContext, monsterObject.transform );
+                CSkillAudioUtility.PlayHitSfx( skillContext );
                 ApplyDebuffs( monsterObject );
                 ApplyCrowdControls( monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( skillContext, monsterObject, wasAliveBeforeHit );
@@ -187,6 +192,20 @@ namespace TinyHero.Skill
 
             loopVfxHandle.ForceReturn();
             loopVfxHandle = null;
+        }
+
+        ///<summary>
+        /// 설치형 스킬 루프 효과음 정지
+        ///</summary>
+        private void StopLoopSfx()
+        {
+            if ( loopSfxHandle == null )
+            {
+                return;
+            }
+
+            loopSfxHandle.Stop();
+            loopSfxHandle = null;
         }
 
         ///<summary>
@@ -252,6 +271,7 @@ namespace TinyHero.Skill
         private void OnDestroy()
         {
             ReturnLoopVfx();
+            StopLoopSfx();
         }
     }
 }

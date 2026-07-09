@@ -79,6 +79,7 @@ namespace TinyHero.Skill
 
             SetSimultaneousTargetCount( BuffTargetCount );
             CSkillVfxUtility.PlayCastVfx( _skillContext );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             bool didApplyAnyBuff = false;
 
             for ( int index = 0; index < playerBuffEffectList.Count; index++ )

@@ -159,6 +159,7 @@ namespace TinyHero.Skill
             Vector3 spawnPosition = ownerTransform.position + ( Vector3 ) resolvedOffset;
             float scaledAreaRadius = ResolveScaledAreaRadius( _skillContext );
             CSkillVfxUtility.PlayCastVfx( _skillContext );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             GameObject placedSkillObject = new GameObject( "PlacedSkillAreaRuntime" );
             placedSkillObject.transform.position = spawnPosition;
             CPlacedSkillAreaRuntime placedSkillAreaRuntime = placedSkillObject.AddComponent<CPlacedSkillAreaRuntime>();

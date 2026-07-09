@@ -37,6 +37,9 @@ namespace TinyHero.Skill.Editor
         private SerializedProperty hitVfxPrefabProperty;
         private SerializedProperty hitVfxOffsetProperty;
         private SerializedProperty hitVfxReturnDelayProperty;
+        private SerializedProperty castSfxClipNameProperty;
+        private SerializedProperty hitSfxClipNameProperty;
+        private SerializedProperty loopSfxClipNameProperty;
         private SerializedProperty projectileVfxPrefabProperty;
         private SerializedProperty projectileVfxOffsetProperty;
         private SerializedProperty projectileVfxReturnDelayProperty;
@@ -53,6 +56,7 @@ namespace TinyHero.Skill.Editor
         private bool isExecutionFoldoutOpen = true;
         private bool isProgressionFoldoutOpen = true;
         private bool isRangePreviewFoldoutOpen = true;
+        private bool isAudioFoldoutOpen = true;
         private bool isVfxFoldoutOpen;
         private bool isPassiveFoldoutOpen = true;
         private bool isUnlockFoldoutOpen = true;
@@ -90,6 +94,9 @@ namespace TinyHero.Skill.Editor
             hitVfxPrefabProperty = serializedObject.FindProperty( "hitVfxPrefab" );
             hitVfxOffsetProperty = serializedObject.FindProperty( "hitVfxOffset" );
             hitVfxReturnDelayProperty = serializedObject.FindProperty( "hitVfxReturnDelay" );
+            castSfxClipNameProperty = serializedObject.FindProperty( "castSfxClipName" );
+            hitSfxClipNameProperty = serializedObject.FindProperty( "hitSfxClipName" );
+            loopSfxClipNameProperty = serializedObject.FindProperty( "loopSfxClipName" );
             projectileVfxPrefabProperty = serializedObject.FindProperty( "projectileVfxPrefab" );
             projectileVfxOffsetProperty = serializedObject.FindProperty( "projectileVfxOffset" );
             projectileVfxReturnDelayProperty = serializedObject.FindProperty( "projectileVfxReturnDelay" );
@@ -128,6 +135,7 @@ namespace TinyHero.Skill.Editor
             DrawExecutionSection();
             DrawRangePreviewSection();
             DrawPassiveSection();
+            DrawAudioSection();
             DrawVfxSection();
             DrawUnlockSection();
             DrawEffectInspectorSection();
@@ -396,6 +404,33 @@ namespace TinyHero.Skill.Editor
         }
 
         ///<summary>
+        /// 오디오 설정 섹션 렌더링
+        ///</summary>
+        private void DrawAudioSection()
+        {
+            if ( CSkillEditorPreviewUtility.IsActiveSkill( skillTypeProperty ) == false )
+            {
+                return;
+            }
+
+            isAudioFoldoutOpen = EditorGUILayout.BeginFoldoutHeaderGroup( isAudioFoldoutOpen, "오디오 설정" );
+
+            if ( isAudioFoldoutOpen )
+            {
+                EditorGUILayout.PropertyField( castSfxClipNameProperty, new GUIContent( "시전 SFX" ) );
+                EditorGUILayout.PropertyField( hitSfxClipNameProperty, new GUIContent( "타격 SFX" ) );
+
+                if ( IsCurrentSkillPlaceType() )
+                {
+                    EditorGUILayout.PropertyField( loopSfxClipNameProperty, new GUIContent( "설치형 Loop SFX" ) );
+                    EditorGUILayout.HelpBox( "설치형 스킬 지속시간 동안 반복 재생할 SFX 이름입니다. 확장자를 제외한 파일 이름을 입력합니다.", MessageType.None );
+                }
+            }
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        ///<summary>
         /// 해금 조건 섹션 렌더링
         ///</summary>
         private void DrawUnlockSection()
@@ -481,6 +516,22 @@ namespace TinyHero.Skill.Editor
             string maxLevelDescription = skillDefinition.GetFormattedDescription( maxSkillLevel );
             string previewText = $"Level 1: {levelOneDescription}\nMax Level: {maxLevelDescription}\nTokens: {supportedTokenText}";
             EditorGUILayout.HelpBox( previewText, MessageType.None );
+        }
+
+        ///<summary>
+        /// 현재 스킬 설치형 여부 반환
+        ///</summary>
+        private bool IsCurrentSkillPlaceType()
+        {
+            CSkillDefinition skillDefinition = target as CSkillDefinition;
+
+            if ( skillDefinition == null )
+            {
+                return false;
+            }
+
+            bool result = skillDefinition.GetActiveSkillType() == eActiveSkillType.PLACE;
+            return result;
         }
     }
 }

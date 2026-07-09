@@ -125,6 +125,7 @@ namespace TinyHero.Skill
             }
 
             CSkillVfxUtility.PlayCastVfx( _skillContext );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             GameObject cloneRuntimeObject = new GameObject( "ReplayCloneRuntime" );
             CPlayerReplayCloneRuntime cloneRuntime = cloneRuntimeObject.AddComponent<CPlayerReplayCloneRuntime>();
             cloneRuntime.Initialize( playerController, cloneRecorder, durationSeconds, followDelaySeconds, replayOffset, cloneDamageMultiplier );

@@ -38,6 +38,9 @@ namespace TinyHero.Skill
         [SerializeField] private GameObject hitVfxPrefab;
         [SerializeField] private Vector3 hitVfxOffset;
         [SerializeField] private float hitVfxReturnDelay = 1.0f;
+        [SerializeField] private string castSfxClipName = string.Empty;
+        [SerializeField] private string hitSfxClipName = string.Empty;
+        [SerializeField] private string loopSfxClipName = string.Empty;
         [SerializeField] private GameObject projectileVfxPrefab;
         [SerializeField] private Vector3 projectileVfxOffset;
         [SerializeField] private float projectileVfxReturnDelay = 1.0f;
@@ -331,6 +334,33 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 시전 효과음 클립 이름 반환
+        ///</summary>
+        public string GetCastSfxClipName()
+        {
+            string result = NormalizeAudioClipName( castSfxClipName );
+            return result;
+        }
+
+        ///<summary>
+        /// 타격 효과음 클립 이름 반환
+        ///</summary>
+        public string GetHitSfxClipName()
+        {
+            string result = NormalizeAudioClipName( hitSfxClipName );
+            return result;
+        }
+
+        ///<summary>
+        /// 지속 루프 효과음 클립 이름 반환
+        ///</summary>
+        public string GetLoopSfxClipName()
+        {
+            string result = NormalizeAudioClipName( loopSfxClipName );
+            return result;
+        }
+
+        ///<summary>
         /// 발사체 이펙트 프리팹 반환
         ///</summary>
         public GameObject GetProjectileVfxPrefab()
@@ -537,6 +567,16 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 스킬 오디오 설정 구성
+        ///</summary>
+        public void ConfigureAudioSetting( string _castSfxClipName, string _hitSfxClipName, string _loopSfxClipName )
+        {
+            castSfxClipName = NormalizeAudioClipName( _castSfxClipName );
+            hitSfxClipName = NormalizeAudioClipName( _hitSfxClipName );
+            loopSfxClipName = NormalizeAudioClipName( _loopSfxClipName );
+        }
+
+        ///<summary>
         /// MP 소모 강화 수치 설정
         ///</summary>
         public void ConfigureMpScaling( float _mpCostReductionPerLevel )
@@ -578,6 +618,15 @@ namespace TinyHero.Skill
                 default:
                     return string.IsNullOrWhiteSpace( _castAnimationName ) ? "Attack" : _castAnimationName.Trim();
             }
+        }
+
+        ///<summary>
+        /// 오디오 클립 이름 정규화
+        ///</summary>
+        private string NormalizeAudioClipName( string _clipName )
+        {
+            string result = string.IsNullOrWhiteSpace( _clipName ) ? string.Empty : _clipName.Trim();
+            return result;
         }
 
         ///<summary>

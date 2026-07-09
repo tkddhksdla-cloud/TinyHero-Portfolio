@@ -158,6 +158,7 @@ namespace TinyHero.Skill
             float scaledCollisionRadius = ResolveScaledCollisionRadius( _skillContext );
             float scaledTravelDistance = ResolveScaledTravelDistance( _skillContext, scaledCollisionRadius );
             CSkillVfxUtility.PlayCastVfx( _skillContext );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             GameObject projectileObject = new GameObject( "ProjectileSkillRuntime" );
             projectileObject.transform.position = spawnPosition;
             CProjectileSkillRuntime projectileSkillRuntime = projectileObject.AddComponent<CProjectileSkillRuntime>();

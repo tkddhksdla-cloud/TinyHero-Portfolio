@@ -188,6 +188,7 @@ namespace TinyHero.Skill
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( skillContext, monsterObject.transform );
+                CSkillAudioUtility.PlayHitSfx( skillContext );
                 ApplyDebuffs( monsterObject );
                 ApplyCrowdControls( monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( skillContext, monsterObject, wasAliveBeforeHit );

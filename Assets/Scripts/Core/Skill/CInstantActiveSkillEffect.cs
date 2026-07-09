@@ -119,6 +119,7 @@ namespace TinyHero.Skill
             }
 
             CSkillVfxUtility.PlayCastVfx( _skillContext );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             float damageStartDelaySeconds = GetDamageStartDelaySeconds();
 
             if ( damageStartDelaySeconds <= 0.0f )
@@ -297,6 +298,7 @@ namespace TinyHero.Skill
                 long damage = CSkillDamageUtility.ResolvePlayerSkillDamage( _skillContext, monsterObject, damageMultiplier, flatDamageBonus, out bool isCritical );
                 monsterObject.TakeDamage( damage, isCritical );
                 CSkillVfxUtility.PlayHitVfx( _skillContext, monsterObject.transform );
+                CSkillAudioUtility.PlayHitSfx( _skillContext );
                 ApplyDebuffs( _skillContext, monsterObject );
                 ApplyCrowdControls( _skillContext, monsterObject );
                 CSkillDamageUtility.TryAwardMonsterExp( _skillContext, monsterObject, wasAliveBeforeHit );

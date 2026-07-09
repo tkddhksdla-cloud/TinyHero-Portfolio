@@ -180,6 +180,7 @@ namespace TinyHero.Skill
             }
 
             CSkillVfxUtility.PlayCastVfx( _skillContext );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             GameObject runtimeObject = new GameObject( "PhaseStrikeSkillRuntime" );
             CPhaseStrikeSkillRuntime phaseStrikeSkillRuntime = runtimeObject.AddComponent<CPhaseStrikeSkillRuntime>();
             phaseStrikeSkillRuntime.Initialize( _skillContext, GetHitCount(), GetHitIntervalSeconds(), damageMultiplier, flatDamageBonus, debuffEffectList, crowdControlEffectList );

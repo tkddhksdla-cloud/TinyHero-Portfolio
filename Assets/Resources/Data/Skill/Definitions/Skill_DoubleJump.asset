@@ -39,6 +39,9 @@ MonoBehaviour:
   hitVfxPrefab: {fileID: 0}
   hitVfxOffset: {x: 0, y: 0, z: 0}
   hitVfxReturnDelay: 1
+  castSfxClipName: SFX_JUMP_DOUBLE
+  hitSfxClipName: 
+  loopSfxClipName: 
   projectileVfxPrefab: {fileID: 0}
   projectileVfxOffset: {x: 0, y: 0, z: 0}
   projectileVfxReturnDelay: 1

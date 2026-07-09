@@ -50,6 +50,7 @@ namespace TinyHero.Skill
             CSkillRenderUtility.ApplyForegroundSorting( createdSkillObject );
             ApplyFacingScale( createdSkillObject.transform, facingDirection );
             DestroySkillObjectAfterLifetime( createdSkillObject );
+            CSkillAudioUtility.PlayCastSfx( _skillContext );
             return true;
         }
 
