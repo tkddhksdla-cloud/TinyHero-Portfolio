@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: TinyHero_Local
   m_GUID: a98aa92c2b988644aa62eea983e221a6
   m_SerializeEntries:
+  - m_GUID: 01f3d315fda805d4f9fb473850abb96e
+    m_Address: Audio/BGM/BGM_TITLE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0284b2cf062de6c4eb5535e7d5977cf2
     m_Address: Prefabs/UI/Skill/SkillSlot
     m_ReadOnly: 0
@@ -36,6 +42,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 155c92be42b617048bb6028d3283b5b0
     m_Address: Prefabs/UI/Common/ToastMessage
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1730fcfcec9cb5d43b59a8c2e3ad4974
+    m_Address: Audio/BGM/BGM_FORSEST_VILLAGE
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -163,6 +175,12 @@ MonoBehaviour:
     - TinyHero.RuntimeResource
     - UI
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c54ae18e1f10d349a687a345f72d445
+    m_Address: Audio/Mixers/TinyHeroAudioMixer
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 748fb53b79ad92046ad8e1f19a5da98d
     m_Address: Prefabs/Character/Monster/Monster_0004
     m_ReadOnly: 0
@@ -225,6 +243,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7fb16aa11ceedcb4981a0829655517a1
     m_Address: Prefabs/Item/Drops/Drop_Item_Quest_AncientSeal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 80a37763544eb1f4b80e625cf9a926e3
+    m_Address: Prefabs/UI/Common/Button_Default
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -408,6 +432,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f96d4a17e089ef149adf5735b36f793a
     m_Address: Prefabs/Item/Drops/Drop_Item_Equipment_BronzeSword
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fad7f756013fbef469d56e88a5b9eebe
+    m_Address: Prefabs/Core/CAudioManager
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource

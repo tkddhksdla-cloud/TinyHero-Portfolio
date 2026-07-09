@@ -19,6 +19,7 @@ namespace TinyHero.Tools
         private const string BackgroundImageSearchRootPath = "Assets/Resources/RawImages/BG";
         private const string PrefabSearchRootPath = "Assets/Resources/Prefabs";
         private const string HotfixSearchRootPath = "Assets/Resources/Hotfix";
+        private const string AudioSearchRootPath = "Assets/Resources/Audio";
 
         ///<summary>
         /// Addressables 자동 동기화 규칙 데이터
@@ -50,6 +51,8 @@ namespace TinyHero.Tools
             syncRuleList.Add( new CAddressableSyncRule( BackgroundImageSearchRootPath, "t:Texture2D", true ) );
             syncRuleList.Add( new CAddressableSyncRule( PrefabSearchRootPath, "t:Prefab", true ) );
             syncRuleList.Add( new CAddressableSyncRule( HotfixSearchRootPath, "t:TextAsset", true ) );
+            syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioClip", true ) );
+            syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioMixer", true ) );
             return syncRuleList;
         }
 

@@ -5,6 +5,7 @@ using TinyHero.Core.Data;
 using TinyHero.Quest;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -356,6 +357,23 @@ namespace TinyHero.Core
         ///</summary>
         private IEnumerator IE_LoadAddressableResourceWithFallback<T>( string _addressableKey, string[] _fallbackResourcePathArray, Action<T> _onCompleted ) where T : Object
         {
+            AsyncOperationHandle<IList<IResourceLocation>> locationHandle = Addressables.LoadResourceLocationsAsync( _addressableKey, typeof( T ) );
+            yield return locationHandle;
+
+            bool hasAddressableLocation = locationHandle.Status == AsyncOperationStatus.Succeeded && locationHandle.Result != null && locationHandle.Result.Count > 0;
+
+            if ( locationHandle.IsValid() )
+            {
+                Addressables.Release( locationHandle );
+            }
+
+            if ( hasAddressableLocation == false )
+            {
+                T locationFallbackResource = LoadFirstAvailableResource<T>( _fallbackResourcePathArray );
+                InvokeLoadCompletedHandler( _onCompleted, locationFallbackResource );
+                yield break;
+            }
+
             AsyncOperationHandle<T> loadHandle = Addressables.LoadAssetAsync<T>( _addressableKey );
             yield return loadHandle;
 

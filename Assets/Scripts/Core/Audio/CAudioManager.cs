@@ -6,6 +6,56 @@ using UnityEngine.Audio;
 namespace TinyHero.Core
 {
     ///<summary>
+    /// 루프 SFX 재생 핸들
+    ///</summary>
+    public sealed class CAudioLoopSfxHandle
+    {
+        private AudioSource audioSource;
+        private bool isStopped;
+
+        ///<summary>
+        /// 정지 여부 반환
+        ///</summary>
+        public bool IsStopped()
+        {
+            bool result = isStopped;
+            return result;
+        }
+
+        ///<summary>
+        /// 오디오 소스 연결
+        ///</summary>
+        internal void SetAudioSource( AudioSource _audioSource )
+        {
+            audioSource = _audioSource;
+
+            if ( isStopped )
+            {
+                Stop();
+            }
+        }
+
+        ///<summary>
+        /// 루프 SFX 정지
+        ///</summary>
+        public void Stop()
+        {
+            isStopped = true;
+
+            if ( audioSource == null )
+            {
+                return;
+            }
+
+            GameObject sourceObject = audioSource.gameObject;
+            audioSource.Stop();
+            audioSource.clip = null;
+            Object.Destroy( sourceObject );
+            audioSource = null;
+        }
+    }
+
+    ///<summary>
     /// 전역 오디오 재생 관리 컴포넌트
     ///</summary>
     public sealed class CAudioManager : CSingleTon<CAudioManager>
@@ -154,10 +204,38 @@ namespace TinyHero.Core
                 return;
             }
 
+            AudioClip immediateClip = LoadSfxClipImmediately( normalizedClipName );
+
+            if ( immediateClip != null )
+            {
+                PlaySfx( immediateClip, _volumeScale );
+                return;
+            }
+
             LoadAudioClipAsync( SfxClipResourceFolderPath, normalizedClipName, cachedSfxClipDictionary, delegate( AudioClip _loadedClip )
             {
                 PlaySfx( _loadedClip, _volumeScale );
             } );
+        }
+
+        ///<summary>
+        /// SFX 클립 선로딩 요청 처리
+        ///</summary>
+        public void PreloadSfx( string _clipName )
+        {
+            string normalizedClipName = NormalizeClipName( _clipName );
+
+            if ( string.IsNullOrWhiteSpace( normalizedClipName ) )
+            {
+                return;
+            }
+
+            AudioClip immediateClip = LoadSfxClipImmediately( normalizedClipName );
+
+            if ( immediateClip != null )
+            {
+                return;
+            }
         }
 
         ///<summary>
@@ -187,6 +265,87 @@ namespace TinyHero.Core
 
             float clampedVolumeScale = Mathf.Clamp01( _volumeScale );
             sfxSource.PlayOneShot( _audioClip, clampedVolumeScale );
+        }
+
+        ///<summary>
+        /// 루프 SFX 재생 요청 처리
+        ///</summary>
+        public CAudioLoopSfxHandle PlayLoopSfx( string _clipName, Transform _parentTransform, float _volumeScale = DefaultVolume )
+        {
+            string normalizedClipName = NormalizeClipName( _clipName );
+
+            if ( string.IsNullOrWhiteSpace( normalizedClipName ) )
+            {
+                return null;
+            }
+
+            CAudioLoopSfxHandle loopSfxHandle = new CAudioLoopSfxHandle();
+            AudioClip immediateClip = LoadSfxClipImmediately( normalizedClipName );
+
+            if ( immediateClip != null )
+            {
+                StartLoopSfx( loopSfxHandle, immediateClip, _parentTransform, _volumeScale );
+                return loopSfxHandle;
+            }
+
+            LoadAudioClipAsync( SfxClipResourceFolderPath, normalizedClipName, cachedSfxClipDictionary, delegate( AudioClip _loadedClip )
+            {
+                StartLoopSfx( loopSfxHandle, _loadedClip, _parentTransform, _volumeScale );
+            } );
+
+            return loopSfxHandle;
+        }
+
+        ///<summary>
+        /// SFX 클립 즉시 로드 반환
+        ///</summary>
+        private AudioClip LoadSfxClipImmediately( string _clipName )
+        {
+            if ( string.IsNullOrWhiteSpace( _clipName ) )
+            {
+                return null;
+            }
+
+            if ( cachedSfxClipDictionary.TryGetValue( _clipName, out AudioClip cachedClip ) && cachedClip != null )
+            {
+                return cachedClip;
+            }
+
+            string resourcePath = SfxClipResourceFolderPath + "/" + _clipName;
+            AudioClip loadedClip = Resources.Load<AudioClip>( resourcePath );
+
+            if ( loadedClip != null )
+            {
+                cachedSfxClipDictionary[ _clipName ] = loadedClip;
+            }
+
+            return loadedClip;
+        }
+
+        ///<summary>
+        /// 루프 SFX 소스 생성 및 재생
+        ///</summary>
+        private void StartLoopSfx( CAudioLoopSfxHandle _loopSfxHandle, AudioClip _audioClip, Transform _parentTransform, float _volumeScale )
+        {
+            if ( _loopSfxHandle == null || _loopSfxHandle.IsStopped() || _audioClip == null )
+            {
+                return;
+            }
+
+            EnsureAudioSources();
+
+            GameObject loopSourceObject = new GameObject( "LoopSFXSource_" + _audioClip.name );
+            Transform parentTransform = _parentTransform != null ? _parentTransform : transform;
+            loopSourceObject.transform.SetParent( parentTransform, false );
+
+            AudioSource loopSource = loopSourceObject.AddComponent<AudioSource>();
+            loopSource.playOnAwake = false;
+            loopSource.loop = true;
+            loopSource.clip = _audioClip;
+            loopSource.volume = Mathf.Clamp01( _volumeScale );
+            loopSource.outputAudioMixerGroup = sfxMixerGroup;
+            _loopSfxHandle.SetAudioSource( loopSource );
+            loopSource.Play();
         }
 
         ///<summary>
