@@ -584,6 +584,7 @@ namespace TinyHero.UI
 
             if ( descriptionText != null )
             {
+                descriptionText.richText = true;
                 descriptionText.text = questDefinition.GetDescription();
             }
 

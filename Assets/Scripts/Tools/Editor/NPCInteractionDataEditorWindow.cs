@@ -397,6 +397,7 @@ namespace TinyHero.Tools
         private void DrawDialogueLineList( List<string> _dialogueLineList )
         {
             EditorGUILayout.LabelField( "Dialogue Lines", EditorStyles.boldLabel );
+            EditorGUILayout.HelpBox( "사용 가능 심볼: {NPC} (현재 대화 중인 NPC 이름)", MessageType.None );
 
             if ( _dialogueLineList.Count == 0 )
             {

@@ -237,6 +237,11 @@ namespace TinyHero.Tools
                     string assetPath = AssetDatabase.GUIDToAssetPath( guidArray[ guidIndex ] );
                     UnityEngine.Object assetObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>( assetPath );
 
+                    if ( ShouldSkipAssetForMigration( assetObject, assetPath ) )
+                    {
+                        continue;
+                    }
+
                     if ( assetObject == null )
                     {
                         continue;
@@ -248,6 +253,32 @@ namespace TinyHero.Tools
             }
 
             SetStatus( $"스캔 완료. Asset: {scannedAssetCount}, Candidate: {candidateList.Count}", MessageType.Info );
+        }
+
+        ///<summary>
+        /// 텍스트 키 변환 스캔 제외 에셋 여부 반환
+        ///</summary>
+        private bool ShouldSkipAssetForMigration( UnityEngine.Object _assetObject, string _assetPath )
+        {
+            if ( string.IsNullOrWhiteSpace( _assetPath ) )
+            {
+                return true;
+            }
+
+            string normalizedPath = _assetPath.Replace( '\\', '/' );
+
+            if ( normalizedPath.IndexOf( "/Data/Text/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return true;
+            }
+
+            if ( string.Equals( Path.GetFileNameWithoutExtension( normalizedPath ), "TextTableData", StringComparison.OrdinalIgnoreCase ) )
+            {
+                return true;
+            }
+
+            bool result = _assetObject != null && string.Equals( _assetObject.GetType().Name, "CTextTableData", StringComparison.Ordinal );
+            return result;
         }
 
         ///<summary>
@@ -295,7 +326,7 @@ namespace TinyHero.Tools
                 candidate.propertyPath = property.propertyPath;
                 candidate.originalText = currentText;
                 int candidateSequence = candidateList.Count + 1;
-                candidate.textKey = BuildDefaultTextKey( displayAssetName, property.propertyPath, candidateSequence, _reservedTextKeySet );
+                candidate.textKey = BuildDefaultTextKey( displayAssetName, _assetPath, property.propertyPath, candidateSequence, _reservedTextKeySet );
                 candidateList.Add( candidate );
             }
         }
@@ -322,18 +353,16 @@ namespace TinyHero.Tools
                 return;
             }
 
-            bool isConfirmed = EditorUtility.DisplayDialog( "Apply Text Table Migration", $"선택된 {selectedCandidateList.Count}개 항목을 TextKey로 치환하고 Excel에 추가합니다.", "Apply", "Cancel" );
+            bool isConfirmed = EditorUtility.DisplayDialog( "Apply Text Table Migration", $"선택된 {selectedCandidateList.Count}개 항목을 TextKey로 치환하고 Excel에 추가 또는 갱신합니다.", "Apply", "Cancel" );
 
             if ( isConfirmed == false )
             {
                 return;
             }
 
-            HashSet<string> existingTextKeySet = LoadExistingTextKeySet();
-            List<TextTableMigrationCandidate> appendCandidateList = BuildAppendCandidateList( selectedCandidateList, existingTextKeySet );
-            bool didAppend = AppendCandidatesToExcel( appendCandidateList );
+            bool didApplyExcel = ApplyCandidatesToExcel( selectedCandidateList, out int addedCount, out int updatedCount );
 
-            if ( didAppend == false )
+            if ( didApplyExcel == false )
             {
                 SetStatus( "TextTableData.xlsx 갱신에 실패했습니다.", MessageType.Error );
                 return;
@@ -342,7 +371,7 @@ namespace TinyHero.Tools
             int replacedCount = ReplaceAssetTextValues( selectedCandidateList );
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            SetStatus( $"적용 완료. Replaced: {replacedCount}, Excel Added: {appendCandidateList.Count}", MessageType.Info );
+            SetStatus( $"적용 완료. Replaced: {replacedCount}, Excel Added: {addedCount}, Excel Updated: {updatedCount}", MessageType.Info );
             ScanKoreanTextCandidates();
         }
 
@@ -386,10 +415,13 @@ namespace TinyHero.Tools
         }
 
         ///<summary>
-        /// 후보 목록 Excel 추가
+        /// 후보 목록 Excel 추가 또는 갱신
         ///</summary>
-        private bool AppendCandidatesToExcel( List<TextTableMigrationCandidate> _candidateList )
+        private bool ApplyCandidatesToExcel( List<TextTableMigrationCandidate> _candidateList, out int _addedCount, out int _updatedCount )
         {
+            _addedCount = 0;
+            _updatedCount = 0;
+
             if ( _candidateList == null || _candidateList.Count == 0 )
             {
                 EnsureTextTableExcelExists();
@@ -415,12 +447,41 @@ namespace TinyHero.Tools
 
                 ISheet sheet = ResolveTextTableSheet( workbook );
                 EnsureHeaderRow( sheet );
+                Dictionary<string, int> textKeyRowIndexDictionary = BuildTextKeyRowIndexDictionary( sheet );
                 int nextRowIndex = ResolveNextRowIndex( sheet );
 
                 for ( int index = 0; index < _candidateList.Count; index++ )
                 {
                     TextTableMigrationCandidate candidate = _candidateList[ index ];
-                    IRow row = sheet.CreateRow( nextRowIndex + index );
+
+                    if ( candidate == null )
+                    {
+                        continue;
+                    }
+
+                    string normalizedTextKey = string.IsNullOrWhiteSpace( candidate.textKey ) ? string.Empty : candidate.textKey.Trim();
+
+                    if ( string.IsNullOrWhiteSpace( normalizedTextKey ) )
+                    {
+                        continue;
+                    }
+
+                    bool hasExistingRow = textKeyRowIndexDictionary.TryGetValue( normalizedTextKey, out int existingRowIndex );
+                    IRow row = null;
+
+                    if ( hasExistingRow )
+                    {
+                        row = sheet.GetRow( existingRowIndex ) ?? sheet.CreateRow( existingRowIndex );
+                        _updatedCount++;
+                    }
+                    else
+                    {
+                        row = sheet.CreateRow( nextRowIndex );
+                        textKeyRowIndexDictionary.Add( normalizedTextKey, nextRowIndex );
+                        nextRowIndex++;
+                        _addedCount++;
+                    }
+
                     SetCellText( row, 0, candidate.textKey );
                     SetCellText( row, 1, candidate.originalText );
                     SetCellText( row, 2, candidate.textKey );
@@ -431,9 +492,44 @@ namespace TinyHero.Tools
             }
             catch ( Exception exception )
             {
-                Debug.LogError( $"TextTableData.xlsx append failed. {exception.Message}" );
+                Debug.LogError( $"TextTableData.xlsx apply failed. {exception.Message}" );
                 return false;
             }
+        }
+
+        ///<summary>
+        /// 텍스트 키별 행 인덱스 맵 생성
+        ///</summary>
+        private Dictionary<string, int> BuildTextKeyRowIndexDictionary( ISheet _sheet )
+        {
+            Dictionary<string, int> rowIndexDictionary = new Dictionary<string, int>( StringComparer.Ordinal );
+
+            if ( _sheet == null )
+            {
+                return rowIndexDictionary;
+            }
+
+            for ( int rowIndex = 1; rowIndex <= _sheet.LastRowNum; rowIndex++ )
+            {
+                IRow row = _sheet.GetRow( rowIndex );
+                string textKey = GetCellText( row, 0 );
+
+                if ( string.IsNullOrWhiteSpace( textKey ) )
+                {
+                    continue;
+                }
+
+                string normalizedTextKey = textKey.Trim();
+
+                if ( rowIndexDictionary.ContainsKey( normalizedTextKey ) )
+                {
+                    continue;
+                }
+
+                rowIndexDictionary.Add( normalizedTextKey, rowIndex );
+            }
+
+            return rowIndexDictionary;
         }
 
         ///<summary>
@@ -810,14 +906,66 @@ namespace TinyHero.Tools
         ///<summary>
         /// 기본 TextKey 생성
         ///</summary>
-        private string BuildDefaultTextKey( string _assetName, string _propertyPath, int _sequence, HashSet<string> _reservedTextKeySet )
+        private string BuildDefaultTextKey( string _assetName, string _assetPath, string _propertyPath, int _sequence, HashSet<string> _reservedTextKeySet )
         {
+            string categorySegment = ResolveCategorySegment( _assetPath );
             string assetSegment = BuildShortKeySegment( _assetName );
             string propertySegment = BuildShortPropertySegment( _propertyPath );
+
+            if ( string.IsNullOrWhiteSpace( categorySegment ) == false && assetSegment.StartsWith( $"{categorySegment}_", StringComparison.Ordinal ) == false )
+            {
+                assetSegment = $"{categorySegment}_{assetSegment}";
+            }
+
             string rawKey = $"{assetSegment}_{propertySegment}";
             string normalizedKey = NormalizeTextKey( rawKey, _assetName, _propertyPath, _sequence );
             string result = BuildUniqueTextKey( normalizedKey, _reservedTextKeySet );
             return result;
+        }
+
+        ///<summary>
+        /// 에셋 경로 기반 텍스트 키 카테고리 세그먼트 반환
+        ///</summary>
+        private string ResolveCategorySegment( string _assetPath )
+        {
+            if ( string.IsNullOrWhiteSpace( _assetPath ) )
+            {
+                return string.Empty;
+            }
+
+            string normalizedPath = _assetPath.Replace( '\\', '/' );
+
+            if ( normalizedPath.IndexOf( "/Data/Item/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return "ITEM";
+            }
+
+            if ( normalizedPath.IndexOf( "/Data/Skill/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return "SKILL";
+            }
+
+            if ( normalizedPath.IndexOf( "/Data/Quest/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return "QUEST";
+            }
+
+            if ( normalizedPath.IndexOf( "/Data/NPC/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return "NPC";
+            }
+
+            if ( normalizedPath.IndexOf( "/Data/Shop/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return "SHOP";
+            }
+
+            if ( normalizedPath.IndexOf( "/Data/Monster/", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            {
+                return "MONSTER";
+            }
+
+            return string.Empty;
         }
 
         ///<summary>
@@ -940,6 +1088,7 @@ namespace TinyHero.Tools
             }
 
             string result = BuildShortKeySegment( semanticPathPart );
+            result = ResolvePropertyAliasSegment( result );
 
             if ( string.IsNullOrWhiteSpace( result ) )
             {
@@ -952,6 +1101,44 @@ namespace TinyHero.Tools
             }
 
             return result;
+        }
+
+        ///<summary>
+        /// 프로퍼티 이름 기반 텍스트 키 별칭 세그먼트 반환
+        ///</summary>
+        private string ResolvePropertyAliasSegment( string _propertySegment )
+        {
+            if ( string.IsNullOrWhiteSpace( _propertySegment ) )
+            {
+                return "VALUE";
+            }
+
+            switch ( _propertySegment )
+            {
+                case "ITEM_NAME":
+                case "SKILL_NAME":
+                case "QUEST_NAME":
+                case "NPC_NAME":
+                case "SHOP_NAME":
+                    return "NAME";
+
+                case "DESCRIPTION":
+                    return "DESC";
+
+                case "ACCEPT_DIALOGUE":
+                    return "ACCEPT_DIALOGUE";
+
+                case "COMPLETE_DIALOGUE":
+                    return "COMPLETE_DIALOGUE";
+
+                case "DIALOGUE":
+                case "DIALOGUE_TEXT":
+                case "DIALOGUE_LINE":
+                    return "DIALOGUE";
+
+                default:
+                    return _propertySegment;
+            }
         }
 
         ///<summary>

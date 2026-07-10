@@ -561,7 +561,17 @@ namespace TinyHero.Quest
         ///</summary>
         public string GetDescription()
         {
-            string result = CDataManager.GetText( description );
+            string descriptionTemplate = CDataManager.GetText( description );
+            string result = CQuestDescriptionFormatter.Format( this, descriptionTemplate );
+            return result;
+        }
+
+        ///<summary>
+        /// 퀘스트 설명 원문 반환
+        ///</summary>
+        public string GetDescriptionTemplate()
+        {
+            string result = description;
             return result;
         }
 

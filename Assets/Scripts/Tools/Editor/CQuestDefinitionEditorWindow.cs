@@ -51,6 +51,7 @@ namespace TinyHero.Tools
         private const string MonsterStatTableAssetPath = "Assets/Resources/Data/Monster/MonsterStatTableData.asset";
         private const string NormalQuestIdPrefix = "QUEST_NORMAL_";
         private const string RepeatableQuestIdPrefix = "QUEST_REPEATABLE_";
+        private const string DefaultQuestDescriptionTemplate = "{GIVER}의 의뢰";
         private const int QuestIdNumberDigits = 5;
         private const float ListViewHeight = 500.0f;
         private const float ListItemHeight = 44.0f;
@@ -368,11 +369,36 @@ namespace TinyHero.Tools
             string questName = EditorGUILayout.TextField( "Quest Name", workingQuestDefinition.GetQuestName() );
             workingQuestDefinition.SetQuestName( questName );
             EditorGUILayout.LabelField( "Description" );
-            string description = EditorGUILayout.TextArea( workingQuestDefinition.GetDescription(), GUILayout.MinHeight( 80.0f ) );
+            string description = EditorGUILayout.TextArea( workingQuestDefinition.GetDescriptionTemplate(), GUILayout.MinHeight( 80.0f ) );
             workingQuestDefinition.SetDescription( description );
+            DrawQuestDescriptionSymbolGuide();
             eQuestType questType = ( eQuestType )EditorGUILayout.EnumPopup( "Quest Type", workingQuestDefinition.GetQuestType() );
             workingQuestDefinition.SetQuestType( questType );
             EditorGUILayout.HelpBox( $"Recommended Prefix: {ResolveQuestIdPrefix( questType )}", MessageType.None );
+        }
+
+        ///<summary>
+        /// 퀘스트 설명 심볼 안내 렌더링
+        ///</summary>
+        private void DrawQuestDescriptionSymbolGuide()
+        {
+            string supportedTokenText = string.Join( ", ", CQuestDescriptionFormatter.GetQuestTokenList() );
+            string previewText = BuildQuestDescriptionPreviewText();
+            EditorGUILayout.HelpBox( $"사용 가능 심볼: {supportedTokenText}\nPreview: {previewText}", MessageType.None );
+        }
+
+        ///<summary>
+        /// 퀘스트 설명 미리보기 문자열 생성
+        ///</summary>
+        private string BuildQuestDescriptionPreviewText()
+        {
+            if ( workingQuestDefinition == null )
+            {
+                return string.Empty;
+            }
+
+            string result = workingQuestDefinition.GetDescription();
+            return result;
         }
 
         ///<summary>
@@ -1222,6 +1248,7 @@ namespace TinyHero.Tools
             createdQuestDefinition.SetQuestType( newQuestType );
             createdQuestDefinition.SetQuestId( nextQuestId );
             createdQuestDefinition.SetQuestName( nextQuestId );
+            createdQuestDefinition.SetDescription( DefaultQuestDescriptionTemplate );
             AssetDatabase.CreateAsset( createdQuestDefinition, assetPath );
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -1316,6 +1343,7 @@ namespace TinyHero.Tools
             CQuestDefinition createdQuestDefinition = CreateInstance<CQuestDefinition>();
             createdQuestDefinition.SetQuestId( sanitizedQuestId );
             createdQuestDefinition.SetQuestName( sanitizedQuestId );
+            createdQuestDefinition.SetDescription( DefaultQuestDescriptionTemplate );
             createdQuestDefinition.SetQuestType( ResolveQuestTypeFromQuestId( sanitizedQuestId ) );
             createdQuestDefinition.SetGiverNpcId( _npcId );
             createdQuestDefinition.SetCompleterNpcId( _npcId );

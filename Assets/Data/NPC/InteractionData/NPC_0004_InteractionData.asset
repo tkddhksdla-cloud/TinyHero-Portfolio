@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: NPC_0004_InteractionData
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CNPCInteractionData
   npcId: NPC_0004
-  npcName: "\uC564\uD2B8\uB9AC"
+  npcName: KEY_TEXT_NPC_0004_INTERACTION_DATA_NAME
   actionEntryList:
   - actionType: 0
     useDialogue: 1
     dialoguePresetList:
     - presetName: PRESET 1
       dialogueLineList:
-      - "\uAFB8\uC774\uC774\uC789.."
+      - KEY_TEXT_NPC_0004_INTERACTION_DATA_DIALOGUE_LINE_LIST_01
     - presetName: PRESET 2
       dialogueLineList:
-      - "\uAFB8\uC789.."
+      - KEY_TEXT_NPC_0004_INTERACTION_DATA_DIALOGUE_LINE_LIST_01_02
     linkedQuestId: 
     linkedShopId: 

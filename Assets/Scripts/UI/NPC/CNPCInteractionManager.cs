@@ -474,10 +474,50 @@ namespace TinyHero.UI
             }
 
             string rawDialogueLine = activeDialoguePreset.GetDialogueText( currentDialogueLineIndex );
+            rawDialogueLine = FormatActiveQuestDialogueLine( rawDialogueLine );
             string resolvedDialogueLine = string.IsNullOrWhiteSpace( rawDialogueLine ) ? string.Empty : rawDialogueLine;
             currentFullDialogueLine = resolvedDialogueLine;
             isDialogueLineFullyRevealed = false;
             StartRevealDialogueRoutine( currentFullDialogueLine );
+        }
+
+        ///<summary>
+        /// 진행 중인 퀘스트 대화 라인 심볼 치환
+        ///</summary>
+        private string FormatActiveQuestDialogueLine( string _dialogueLine )
+        {
+            if ( string.IsNullOrWhiteSpace( _dialogueLine ) )
+            {
+                return string.Empty;
+            }
+
+            TryResolveActiveDialogueQuestDefinition( out CQuestDefinition questDefinition );
+            string activeNpcName = activeNpcObject != null ? activeNpcObject.GetDisplayName() : string.Empty;
+
+            string result = CQuestDescriptionFormatter.Format( questDefinition, _dialogueLine, activeNpcName );
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 대화에 연결된 퀘스트 정의 조회 시도
+        ///</summary>
+        private bool TryResolveActiveDialogueQuestDefinition( out CQuestDefinition _questDefinition )
+        {
+            _questDefinition = null;
+            string questId = pendingQuestInteractionQuestId;
+
+            if ( string.IsNullOrWhiteSpace( questId ) && activeActionEntry != null )
+            {
+                questId = activeActionEntry.GetLinkedQuestId();
+            }
+
+            if ( string.IsNullOrWhiteSpace( questId ) )
+            {
+                return false;
+            }
+
+            bool result = CQuestDefinitionDatabase.TryGetQuestDefinition( questId, out _questDefinition );
+            return result;
         }
 
         ///<summary>
@@ -790,7 +830,9 @@ namespace TinyHero.UI
                 return;
             }
 
+            dialogueText.richText = true;
             dialogueText.text = string.Empty;
+            dialogueText.maxVisibleCharacters = 0;
             revealDialogueRoutine = StartCoroutine( IE_RevealDialogueText( _dialogueLine ) );
         }
 
@@ -818,6 +860,7 @@ namespace TinyHero.UI
             if ( dialogueText != null )
             {
                 dialogueText.text = currentFullDialogueLine;
+                dialogueText.maxVisibleCharacters = int.MaxValue;
             }
 
             isDialogueLineFullyRevealed = true;
@@ -835,17 +878,60 @@ namespace TinyHero.UI
 
             string resolvedDialogueLine = _dialogueLine ?? string.Empty;
             float revealInterval = Mathf.Max( 0.001f, characterRevealInterval );
+            int visibleCharacterCount = CountVisibleRichTextCharacters( resolvedDialogueLine );
+            dialogueText.richText = true;
+            dialogueText.text = resolvedDialogueLine;
 
-            for ( int index = 0; index < resolvedDialogueLine.Length; index++ )
+            for ( int index = 0; index <= visibleCharacterCount; index++ )
             {
-                string currentText = resolvedDialogueLine.Substring( 0, index + 1 );
-                dialogueText.text = currentText;
+                dialogueText.maxVisibleCharacters = index;
                 yield return new WaitForSeconds( revealInterval );
             }
 
-            dialogueText.text = resolvedDialogueLine;
+            dialogueText.maxVisibleCharacters = int.MaxValue;
             revealDialogueRoutine = null;
             isDialogueLineFullyRevealed = true;
+        }
+
+        ///<summary>
+        /// TMP 리치 텍스트 태그를 제외한 표시 문자 수 계산
+        ///</summary>
+        private int CountVisibleRichTextCharacters( string _sourceText )
+        {
+            if ( string.IsNullOrEmpty( _sourceText ) )
+            {
+                return 0;
+            }
+
+            int visibleCharacterCount = 0;
+            bool isInsideRichTextTag = false;
+
+            for ( int index = 0; index < _sourceText.Length; index++ )
+            {
+                char currentCharacter = _sourceText[ index ];
+
+                if ( currentCharacter == '<' )
+                {
+                    isInsideRichTextTag = true;
+                    continue;
+                }
+
+                if ( currentCharacter == '>' && isInsideRichTextTag )
+                {
+                    isInsideRichTextTag = false;
+                    continue;
+                }
+
+                if ( isInsideRichTextTag )
+                {
+                    continue;
+                }
+
+                visibleCharacterCount++;
+            }
+
+            int result = visibleCharacterCount;
+            return result;
         }
 
         ///<summary>
