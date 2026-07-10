@@ -107,7 +107,7 @@ namespace TinyHero.Maps
             CacheResourceCatalog();
             EnsureFadeOverlayExists();
             EnsureGameplayScenePlayerPrefabInstance();
-            EnsureGameplayCameraFollowController();
+            EnsureGameplayCameraFollowController( false );
             SceneManager.sceneLoaded += HandleSceneLoaded;
             TryLoadPendingMapForActiveScene();
         }
@@ -355,7 +355,7 @@ namespace TinyHero.Maps
         private void HandleSceneLoaded(Scene _scene, LoadSceneMode _loadSceneMode)
         {
             EnsureGameplayScenePlayerPrefabInstance();
-            EnsureGameplayCameraFollowController();
+            EnsureGameplayCameraFollowController( false );
             TryLoadPendingMapForActiveScene();
         }
 
@@ -392,14 +392,15 @@ namespace TinyHero.Maps
                 return;
             }
 
-            GameObject createdPlayerObject = Instantiate( playerPrefab, Vector3.zero, Quaternion.identity );
+            Vector3 spawnPosition = ResolveInitialPlayerSpawnPosition();
+            GameObject createdPlayerObject = Instantiate( playerPrefab, spawnPosition, Quaternion.identity );
             createdPlayerObject.name = PlayerObjectName;
         }
 
         ///<summary>
         /// 게임플레이 씬 카메라 추적 컴포넌트 보장
         ///</summary>
-        private void EnsureGameplayCameraFollowController()
+        private void EnsureGameplayCameraFollowController( bool _shouldSnapImmediately )
         {
             Scene activeScene = SceneManager.GetActiveScene();
 
@@ -430,6 +431,11 @@ namespace TinyHero.Maps
             }
 
             cameraFollowController.SetTarget( playerController.transform );
+
+            if ( _shouldSnapImmediately )
+            {
+                cameraFollowController.SnapToTargetImmediate();
+            }
         }
 
         ///<summary>
@@ -1407,7 +1413,8 @@ namespace TinyHero.Maps
             SpawnMonsters( _loadedData.monsters );
             SpawnNpcs( _loadedData.npcs );
             MovePlayerToEntryPortal( _entryPortalId );
-            EnsureGameplayCameraFollowController();
+            ApplyPendingPlayerSaveDataIfNeeded();
+            EnsureGameplayCameraFollowController( true );
         }
 
         ///<summary>
@@ -2403,7 +2410,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            Vector3 spawnPosition = Vector3.zero;
+            Vector3 spawnPosition = ResolveInitialPlayerSpawnPosition();
 
             if ( string.IsNullOrWhiteSpace( _entryPortalId ) == false )
             {
@@ -2425,6 +2432,43 @@ namespace TinyHero.Maps
             InitializeItemInventoryUi( playerController );
             InitializeSkillUi( playerController );
             InitializeQuestUi( playerController );
+        }
+
+        ///<summary>
+        /// 초기 플레이어 생성 위치 결정
+        ///</summary>
+        private Vector3 ResolveInitialPlayerSpawnPosition()
+        {
+            CSaveManager saveManager = CSaveManager.Instance;
+
+            if ( saveManager != null && saveManager.TryGetPendingLoadPlayerWorldPosition( out Vector3 pendingPlayerWorldPosition ) )
+            {
+                return pendingPlayerWorldPosition;
+            }
+
+            return Vector3.zero;
+        }
+
+        ///<summary>
+        /// 대기 저장 데이터 플레이어 적용 처리
+        ///</summary>
+        private void ApplyPendingPlayerSaveDataIfNeeded()
+        {
+            CSaveManager saveManager = CSaveManager.Instance;
+
+            if ( saveManager == null )
+            {
+                return;
+            }
+
+            PlayerController playerController = ResolveActivePlayerController();
+
+            if ( playerController == null )
+            {
+                return;
+            }
+
+            saveManager.TryApplyPendingLoadToPlayer( playerController );
         }
 
         ///<summary>

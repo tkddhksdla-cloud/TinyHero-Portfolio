@@ -79,6 +79,32 @@ namespace TinyHero.Maps
         }
 
         ///<summary>
+        /// 추적 대상 위치로 카메라 즉시 이동
+        ///</summary>
+        public void SnapToTargetImmediate()
+        {
+            if ( targetCamera == null )
+            {
+                targetCamera = GetComponent<Camera>();
+            }
+
+            if ( targetTransform == null )
+            {
+                ResolveTargetTransform();
+            }
+
+            if ( targetTransform == null )
+            {
+                return;
+            }
+
+            Vector3 desiredPosition = BuildDesiredCameraPosition();
+            Vector3 clampedPosition = ClampPositionToBackgroundBounds( desiredPosition );
+            transform.position = clampedPosition;
+            followVelocity = Vector3.zero;
+        }
+
+        ///<summary>
         /// 카메라 추적 활성 상태 설정
         ///</summary>
         public void SetFollowEnabled( bool _isEnabled )
