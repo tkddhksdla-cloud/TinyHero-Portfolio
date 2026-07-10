@@ -1197,6 +1197,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  useClickSfx: 1
+  clickSfxClipName: SFX_CLICK_00
+  clickSfxVolumeScale: 1
 --- !u!114 &7345742632311486510 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8345902431104463209, guid: 2ef1af04871d71040b5ef333c6945835, type: 3}
@@ -1221,6 +1224,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5232674534661434798}
     m_Modifications:
+    - target: {fileID: 257623990540261979, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: -218.3202
+      objectReference: {fileID: 0}
+    - target: {fileID: 257623990540261979, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 67.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 314640515010120885, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_Color.a
+      value: 0.40392157
+      objectReference: {fileID: 0}
     - target: {fileID: 739912210266994349, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4294964203
@@ -1317,6 +1332,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4413303873835509801, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -16.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4413303873835509801, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 47.8
+      objectReference: {fileID: 0}
     - target: {fileID: 5098755265726087459, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
       propertyPath: m_Name
       value: SkillSlot
@@ -1328,6 +1351,14 @@ PrefabInstance:
     - target: {fileID: 7712965236249987884, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463569863442170139, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -12.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8463569863442170139, guid: 0284b2cf062de6c4eb5535e7d5977cf2, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 9.41
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
