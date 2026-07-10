@@ -26,9 +26,9 @@ namespace TinyHero.UI
             ePlayerStatType.CRT,
             ePlayerStatType.CRD,
             ePlayerStatType.ACC,
-            ePlayerStatType.ATS,
             ePlayerStatType.MOVE,
-            ePlayerStatType.RANGE
+            ePlayerStatType.RANGE,
+            ePlayerStatType.CDR
         };
 
         [SerializeField] private RectTransform rootRectTransform;
@@ -401,14 +401,14 @@ namespace TinyHero.UI
                 case ePlayerStatType.ACC:
                     return "ACC";
 
-                case ePlayerStatType.ATS:
-                    return "ATS";
-
                 case ePlayerStatType.MOVE:
                     return "MOV";
 
                 case ePlayerStatType.RANGE:
                     return "RNG";
+
+                case ePlayerStatType.CDR:
+                    return "CDR";
             }
 
             string result = _statType.ToString();
@@ -433,9 +433,9 @@ namespace TinyHero.UI
         {
             bool result = _statType == ePlayerStatType.CRT
                 || _statType == ePlayerStatType.CRD
-                || _statType == ePlayerStatType.ATS
                 || _statType == ePlayerStatType.MOVE
-                || _statType == ePlayerStatType.RANGE;
+                || _statType == ePlayerStatType.RANGE
+                || _statType == ePlayerStatType.CDR;
             return result;
         }
 

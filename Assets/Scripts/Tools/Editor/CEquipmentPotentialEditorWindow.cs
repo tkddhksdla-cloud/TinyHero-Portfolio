@@ -737,9 +737,9 @@ namespace TinyHero.Tools.Editor
                 eEquipmentPotentialOptionType.CRT,
                 eEquipmentPotentialOptionType.CRD,
                 eEquipmentPotentialOptionType.ACC,
-                eEquipmentPotentialOptionType.ATS,
                 eEquipmentPotentialOptionType.MOVE,
                 eEquipmentPotentialOptionType.RANGE,
+                eEquipmentPotentialOptionType.CDR,
                 eEquipmentPotentialOptionType.EXP_GAIN_PERCENT,
                 eEquipmentPotentialOptionType.GOLD_GAIN_PERCENT,
                 eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT

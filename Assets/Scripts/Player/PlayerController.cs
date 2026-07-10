@@ -88,6 +88,7 @@ namespace TinyHero.Player
         [SerializeField] private float invincibilityDuration = 1.25f;
         [SerializeField] private float invincibilityBlinkInterval = 0.1f;
         [SerializeField] private Color invincibilityTintColor = new Color( 0.35f, 0.35f, 0.35f, 1.0f );
+        [SerializeField] private Color skillInvincibilityTintColor = new Color( 1.0f, 0.88f, 0.3f, 1.0f );
         [SerializeField] private SpriteRenderer[] targetSpriteRenderers;
 
         private const float DefaultAnimatorSpeed = 1.0f;
@@ -101,6 +102,7 @@ namespace TinyHero.Player
         private float nextAttackAvailableTime;
         private float skillCastElapsedTime;
         private float skillCastDuration;
+        private int superArmorCount;
         private float skillCastAnimationSpeedMultiplier = DefaultAnimatorSpeed;
         private float skillFinalAttackPercentBonus;
         private float skillFinalAttackBuffRemaining;
@@ -480,7 +482,27 @@ namespace TinyHero.Player
         ///</summary>
         public void Hit()
         {
+            if ( IsSuperArmorActive() )
+            {
+                return;
+            }
+
             ChangeState( ePlayerState.Hit );
+        }
+
+        public void BeginSuperArmor()
+        {
+            superArmorCount++;
+        }
+
+        public void EndSuperArmor()
+        {
+            superArmorCount = Mathf.Max( 0, superArmorCount - 1 );
+        }
+
+        public bool IsSuperArmorActive()
+        {
+            return superArmorCount > 0;
         }
 
         ///<summary>
@@ -517,6 +539,11 @@ namespace TinyHero.Player
             return true;
         }
 
+        public bool IsGrounded()
+        {
+            return isGrounded;
+        }
+
         ///<summary>
         /// 페이즈 스트라이크 상태 시작
         ///</summary>
@@ -527,6 +554,7 @@ namespace TinyHero.Player
             CacheDefaultSpriteColors();
             RestoreSpriteColors();
             SetSpriteRendererVisible( false );
+            SetPlayerNameTagVisible( false );
             ApplyPhaseStrikeControlLock();
         }
 
@@ -539,6 +567,7 @@ namespace TinyHero.Player
             isPhaseStrikeActive = false;
             RestoreSpriteColors();
             SetSpriteRendererVisible( true );
+            SetPlayerNameTagVisible( true );
             ApplyPhaseStrikeControlLock();
             EvaluateMonsterContactOverlap();
         }
@@ -1773,6 +1802,16 @@ namespace TinyHero.Player
             if ( skillInvincibilityRemaining > 0.0f )
             {
                 skillInvincibilityRemaining = Mathf.Max( 0.0f, skillInvincibilityRemaining - deltaTime );
+
+                if ( isPhaseStrikeActive == false )
+                {
+                    ApplySkillInvincibilityTint();
+                }
+
+                if ( skillInvincibilityRemaining <= 0.0f && isInvincible == false && isPhaseStrikeActive == false )
+                {
+                    RestoreSpriteColors();
+                }
             }
         }
 
@@ -1793,6 +1832,35 @@ namespace TinyHero.Player
         {
             bool result = isInvincible || skillInvincibilityRemaining > 0.0f || isPhaseStrikeActive;
             return result;
+        }
+
+        private void SetPlayerNameTagVisible( bool _isVisible )
+        {
+            if ( CPlayerNameTagManager.TryGetExistingInstance( out CPlayerNameTagManager playerNameTagManager ) == false || playerNameTagManager == null )
+            {
+                return;
+            }
+
+            playerNameTagManager.SetPlayerNameTagVisible( _isVisible );
+        }
+
+        private void ApplySkillInvincibilityTint()
+        {
+            if ( targetSpriteRenderers == null || defaultSpriteColors == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < targetSpriteRenderers.Length; index++ )
+            {
+                SpriteRenderer spriteRenderer = targetSpriteRenderers[ index ];
+
+                if ( spriteRenderer != null )
+                {
+                    Color defaultColor = defaultSpriteColors[ index ];
+                    spriteRenderer.color = Color.Lerp( defaultColor, skillInvincibilityTintColor, 0.5f );
+                }
+            }
         }
 
         ///<summary>

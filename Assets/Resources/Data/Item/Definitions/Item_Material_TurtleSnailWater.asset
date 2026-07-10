@@ -17,7 +17,7 @@ MonoBehaviour:
   itemType: 3
   description: KEY_TEXT_ITEM_MATERIAL_TURTLE_SNAIL_WATER_DESCRIPTION
   iconSprite: {fileID: 21300000, guid: 8775c860757cdf7408f5307e5249efd9, type: 3}
-  worldDropPrefab: {fileID: 9128922786641820110, guid: ceb29dab61cdf3443adb4e31f6cc36ac, type: 3}
+  worldDropPrefab: {fileID: 3470593242911930689, guid: 173d23eb5997f914dafcfdf66ed3b5cf, type: 3}
   isStackable: 1
   maxStackCountValue: 9999
   sellPriceItemId: ITEM_CURRENCY_GOLD
@@ -39,5 +39,6 @@ MonoBehaviour:
     ats: 0
     move: 0
     range: 0
+    cdr: 0
   equipmentPartsType: 4
   equipmentPartsIndex: -1

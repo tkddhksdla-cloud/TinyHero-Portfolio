@@ -17,7 +17,7 @@ MonoBehaviour:
   itemType: 0
   description: KEY_TEXT_ITEM_EQUIPMENT_SWORD_ANGEL_KNIGH_DESCRIPTION
   iconSprite: {fileID: 21300000, guid: 398943ac0f5d012448e7ff657ae397dc, type: 3}
-  worldDropPrefab: {fileID: 1364958857425170546, guid: 2537f2196e8725e4b9a18075afa5efab, type: 3}
+  worldDropPrefab: {fileID: 8820323410487813010, guid: 402ef90793b406d49a40daf15a5dfc0b, type: 3}
   isStackable: 0
   maxStackCountValue: 1
   sellPriceItemId: ITEM_CURRENCY_GOLD
@@ -39,5 +39,6 @@ MonoBehaviour:
     ats: 0
     move: 0
     range: 50
+    cdr: 80
   equipmentPartsType: 5
   equipmentPartsIndex: 33

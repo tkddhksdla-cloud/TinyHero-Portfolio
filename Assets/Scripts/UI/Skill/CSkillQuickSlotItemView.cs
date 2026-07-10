@@ -160,8 +160,7 @@ namespace TinyHero.UI
             }
 
             float remainingCooldown = targetSkillManager.GetSkillCooldownRemaining( skillDefinition.GetSkillId() );
-            int skillLevel = targetSkillManager.GetSkillLevel( skillDefinition.GetSkillId() );
-            float cooldownSeconds = skillDefinition.GetCooldownSeconds( skillLevel );
+            float cooldownSeconds = targetSkillManager.GetSkillCooldownDuration( skillDefinition.GetSkillId() );
             ApplyCooldownState( remainingCooldown, cooldownSeconds );
         }
 

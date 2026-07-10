@@ -25,7 +25,7 @@ namespace TinyHero.UI
         [SerializeField] private TextMeshProUGUI crtText;
         [SerializeField] private TextMeshProUGUI crdText;
         [SerializeField] private TextMeshProUGUI accText;
-        [SerializeField] private TextMeshProUGUI atsText;
+        [SerializeField] private TextMeshProUGUI cdrText;
         [SerializeField] private TextMeshProUGUI moveText;
         [SerializeField] private TextMeshProUGUI hrText;
         [SerializeField] private TextMeshProUGUI mrText;
@@ -92,7 +92,7 @@ namespace TinyHero.UI
             ApplyFlatPercentText( crtText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRT ) );
             ApplyCriticalDamagePercentText( crdText, targetStatManager.GetFinalStatValue( ePlayerStatType.CRD ) );
             ApplyValueText( accText, targetStatManager.GetFinalStatValue( ePlayerStatType.ACC ) );
-            ApplyValueText( atsText, targetStatManager.GetFinalStatValue( ePlayerStatType.ATS ) );
+            ApplyFlatPercentText( cdrText, targetStatManager.GetFinalStatValue( ePlayerStatType.CDR ) );
             ApplyFlatPercentText( moveText, targetStatManager.GetFinalStatValue( ePlayerStatType.MOVE ) );
             ApplyValueText( hrText, targetStatManager.GetFinalStatValue( ePlayerStatType.HR ) );
             ApplyValueText( mrText, targetStatManager.GetFinalStatValue( ePlayerStatType.MR ) );
@@ -131,7 +131,7 @@ namespace TinyHero.UI
             crtText = ResolveTextReference( crtText, "CrtText" );
             crdText = ResolveTextReference( crdText, "CrdText" );
             accText = ResolveTextReference( accText, "AccText" );
-            atsText = ResolveTextReference( atsText, "AtsText" );
+            cdrText = ResolveTextReference( cdrText, "CdrText" );
             moveText = ResolveTextReference( moveText, "MoveText" );
             hrText = ResolveTextReference( hrText, "HrText" );
             mrText = ResolveTextReference( mrText, "MrText" );

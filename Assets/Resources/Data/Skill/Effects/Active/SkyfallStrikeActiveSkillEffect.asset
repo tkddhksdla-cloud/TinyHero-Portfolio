@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a92fef674e2dace48b6d47518cdfa640, type: 3}
+  m_Name: SkyfallStrikeActiveSkillEffect
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkyfallStrikeActiveSkillEffect
+  simultaneousTargetCount: 12
+  damageStartDelaySeconds: 0
+  launchDurationSeconds: 0.22
+  plungeDurationSeconds: 0.08
+  launchDistance: 2.06
+  launchHeight: 3.93
+  landingDistance: 3.1
+  areaRadius: 4
+  damageMultiplier: 3
+  flatDamageBonus: 0
+  airborneRangeIncreasePercent: 0.3
+  airborneDamageIncreasePercent: 0.25
+  landingVfxPrefab: {fileID: 1835174905073365006, guid: f8cbad8e755644042b3494381e54793b, type: 3}
+  landingVfxOffset: {x: 0, y: 0, z: 0}
+  landingVfxReturnDelay: 2
+  crowdControlEffectList:
+  - {fileID: 11400000, guid: 40a6132b427a2e24f96a82ca6bd3ee90, type: 2}

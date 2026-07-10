@@ -14,6 +14,7 @@ namespace TinyHero.Skill
         [SerializeField] private int skillLevel = 1;
         [SerializeField] private int assignedQuickSlotIndex = -1;
         [SerializeField] private float lastUsedTime = -9999.0f;
+        [SerializeField] private float cooldownDurationSecondsAtLastUse = -1.0f;
 
         ///<summary>
         /// 스킬 정의 반환
@@ -99,6 +100,16 @@ namespace TinyHero.Skill
         public void MarkUsed( float _time )
         {
             lastUsedTime = _time;
+            cooldownDurationSecondsAtLastUse = -1.0f;
+        }
+
+        ///<summary>
+        /// 쿨타임 감소가 반영된 사용 시간 기록
+        ///</summary>
+        public void MarkUsed( float _time, float _cooldownDurationSeconds )
+        {
+            lastUsedTime = _time;
+            cooldownDurationSecondsAtLastUse = Mathf.Max( 0.0f, _cooldownDurationSeconds );
         }
 
         ///<summary>
@@ -111,7 +122,9 @@ namespace TinyHero.Skill
                 return 0.0f;
             }
 
-            float cooldownSeconds = skillDefinition.GetCooldownSeconds( skillLevel );
+            float cooldownSeconds = cooldownDurationSecondsAtLastUse >= 0.0f
+                ? cooldownDurationSecondsAtLastUse
+                : skillDefinition.GetCooldownSeconds( skillLevel );
             float elapsedTime = _currentTime - lastUsedTime;
             float remainingCooldown = cooldownSeconds - elapsedTime;
             float result = Mathf.Max( 0.0f, remainingCooldown );
@@ -125,6 +138,15 @@ namespace TinyHero.Skill
         {
             float remainingCooldown = GetRemainingCooldown( _currentTime );
             bool result = remainingCooldown > 0.0f;
+            return result;
+        }
+
+        ///<summary>
+        /// 현재 적용된 전체 쿨타임 반환
+        ///</summary>
+        public float GetAppliedCooldownDurationSeconds()
+        {
+            float result = cooldownDurationSecondsAtLastUse;
             return result;
         }
     }

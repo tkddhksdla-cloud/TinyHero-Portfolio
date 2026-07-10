@@ -14,6 +14,8 @@ namespace TinyHero.Skill
     [RequireComponent( typeof( CPlayerStatManager ) )]
     public sealed class CSkillManager : MonoBehaviour
     {
+        private const int VfxWarmupCountPerFrame = 10;
+
         [Header( "References" )]
         [SerializeField] private PlayerController targetPlayerController;
         [SerializeField] private CPlayerStatManager targetStatManager;
@@ -72,6 +74,11 @@ namespace TinyHero.Skill
             RaiseSkillStateChanged();
         }
 
+        private void Start()
+        {
+            StartCoroutine( IE_WarmupSkillVfxPools() );
+        }
+
         ///<summary>
         /// 해금 조건 이벤트 구독 해제
         ///</summary>
@@ -86,6 +93,62 @@ namespace TinyHero.Skill
         private void OnDestroy()
         {
             ReleaseRuntimeGeneratedObjects();
+        }
+
+        private IEnumerator IE_WarmupSkillVfxPools()
+        {
+            HashSet<int> warmedPrefabIdSet = new HashSet<int>();
+            List<GameObject> vfxPrefabList = new List<GameObject>();
+
+            for ( int index = 0; index < skillDefinitionList.Count; index++ )
+            {
+                CSkillDefinition skillDefinition = skillDefinitionList[ index ];
+
+                if ( skillDefinition == null )
+                {
+                    continue;
+                }
+
+                TryAddVfxPrefab( skillDefinition.GetCastVfxPrefab(), warmedPrefabIdSet, vfxPrefabList );
+                TryAddVfxPrefab( skillDefinition.GetHitVfxPrefab(), warmedPrefabIdSet, vfxPrefabList );
+                TryAddVfxPrefab( skillDefinition.GetProjectileVfxPrefab(), warmedPrefabIdSet, vfxPrefabList );
+                TryAddVfxPrefab( skillDefinition.GetLoopVfxPrefab(), warmedPrefabIdSet, vfxPrefabList );
+
+                CSkyfallStrikeActiveSkillEffect skyfallStrikeEffect = skillDefinition.GetActiveSkillEffect() as CSkyfallStrikeActiveSkillEffect;
+
+                if ( skyfallStrikeEffect != null )
+                {
+                    TryAddVfxPrefab( skyfallStrikeEffect.GetLandingVfxPrefab(), warmedPrefabIdSet, vfxPrefabList );
+                }
+            }
+
+            for ( int index = 0; index < vfxPrefabList.Count; index++ )
+            {
+                GameObject vfxPrefab = vfxPrefabList[ index ];
+                CSkillVfxPoolManager.TryWarmup( vfxPrefab );
+
+                if ( ( index + 1 ) % VfxWarmupCountPerFrame == 0 )
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        private void TryAddVfxPrefab( GameObject _vfxPrefab, HashSet<int> _warmedPrefabIdSet, List<GameObject> _vfxPrefabList )
+        {
+            if ( _vfxPrefab == null )
+            {
+                return;
+            }
+
+            int prefabInstanceId = _vfxPrefab.GetInstanceID();
+
+            if ( _warmedPrefabIdSet.Add( prefabInstanceId ) == false )
+            {
+                return;
+            }
+
+            _vfxPrefabList.Add( _vfxPrefab );
         }
 
         ///<summary>
@@ -441,6 +504,37 @@ namespace TinyHero.Skill
 
             float currentTime = Time.time;
             float result = runtimeData.GetRemainingCooldown( currentTime );
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬의 현재 적용 쿨타임 반환
+        ///</summary>
+        public float GetSkillCooldownDuration( string _skillId )
+        {
+            CSkillRuntimeData runtimeData = GetSkillRuntimeData( _skillId );
+
+            if ( runtimeData == null )
+            {
+                return 0.0f;
+            }
+
+            float appliedCooldownDurationSeconds = runtimeData.GetAppliedCooldownDurationSeconds();
+
+            if ( appliedCooldownDurationSeconds >= 0.0f )
+            {
+                return appliedCooldownDurationSeconds;
+            }
+
+            CSkillDefinition skillDefinition = runtimeData.GetSkillDefinition();
+
+            if ( skillDefinition == null )
+            {
+                return 0.0f;
+            }
+
+            int skillLevel = Mathf.Max( 1, runtimeData.GetSkillLevel() );
+            float result = ResolveCooldownDurationSeconds( skillDefinition, skillLevel );
             return result;
         }
 
@@ -1451,7 +1545,23 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
                 }
 
                 float acceptedTime = Time.time;
-                _runtimeData.MarkUsed( acceptedTime );
+
+                if ( activeSkillEffect != null && activeSkillEffect.ShouldExecuteDuringCast() )
+                {
+                    bool didExecuteDuringCast = ExecuteSkillContents( activeSkillEffect, activeAction, skillContext );
+
+                    if ( didExecuteDuringCast == false )
+                    {
+                        targetStatManager.RecoverMp( mpCost );
+                        return eSkillUseResult.BLOCKED;
+                    }
+
+                    MarkSkillUsed( _runtimeData, acceptedTime );
+                    NotifySkillUse( skillDefinition );
+                    return eSkillUseResult.SUCCESS;
+                }
+
+                MarkSkillUsed( _runtimeData, acceptedTime );
                 NotifySkillUse( skillDefinition );
                 StartCoroutine( IE_ExecuteSkillAfterCastDelay( activeSkillEffect, activeAction, skillContext, castLockDurationSeconds ) );
                 return eSkillUseResult.SUCCESS;
@@ -1466,7 +1576,7 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             }
 
             float currentTime = Time.time;
-            _runtimeData.MarkUsed( currentTime );
+            MarkSkillUsed( _runtimeData, currentTime );
             NotifySkillUse( skillDefinition );
             return eSkillUseResult.SUCCESS;
         }
@@ -1493,7 +1603,7 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
             if ( hotfixResult.GetStatus() == eHotfixExecutionStatus.SUCCESS )
             {
                 float currentTime = Time.time;
-                _runtimeData.MarkUsed( currentTime );
+                MarkSkillUsed( _runtimeData, currentTime );
                 NotifySkillUse( _skillDefinition );
                 NotifySkillExecuted( CreateSkillContext( _skillDefinition, _runtimeData ) );
                 _result = eSkillUseResult.SUCCESS;
@@ -1502,6 +1612,39 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
 
             _result = eSkillUseResult.BLOCKED;
             return true;
+        }
+
+        ///<summary>
+        /// 쿨타임 감소가 반영된 스킬 사용 기록
+        ///</summary>
+        private void MarkSkillUsed( CSkillRuntimeData _runtimeData, float _usedTime )
+        {
+            if ( _runtimeData == null )
+            {
+                return;
+            }
+
+            CSkillDefinition skillDefinition = _runtimeData.GetSkillDefinition();
+            int skillLevel = Mathf.Max( 1, _runtimeData.GetSkillLevel() );
+            float cooldownDurationSeconds = ResolveCooldownDurationSeconds( skillDefinition, skillLevel );
+            _runtimeData.MarkUsed( _usedTime, cooldownDurationSeconds );
+        }
+
+        ///<summary>
+        /// 쿨타임 감소가 반영된 쿨타임 반환
+        ///</summary>
+        private float ResolveCooldownDurationSeconds( CSkillDefinition _skillDefinition, int _skillLevel )
+        {
+            if ( _skillDefinition == null )
+            {
+                return 0.0f;
+            }
+
+            float baseCooldownSeconds = _skillDefinition.GetCooldownSeconds( _skillLevel );
+            float cooldownReductionPercent = targetStatManager != null ? targetStatManager.GetCooldownReductionPercent() : 0.0f;
+            float cooldownMultiplier = 1.0f - cooldownReductionPercent * 0.01f;
+            float result = Mathf.Max( 0.0f, baseCooldownSeconds * cooldownMultiplier );
+            return result;
         }
 
         ///<summary>

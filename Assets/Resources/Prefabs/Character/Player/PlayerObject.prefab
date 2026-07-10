@@ -272,10 +272,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: be34c12bfb9051b4db229b8ca5c3a53e, type: 2}
   - {fileID: 11400000, guid: ff6d683b879db984c878cf3d47d1afdc, type: 2}
   - {fileID: 11400000, guid: ef937572343ad8442b292e7685adb322, type: 2}
-  - {fileID: 11400000, guid: d3070cc082dbc954faaf166969402ff3, type: 2}
-  - {fileID: 11400000, guid: b1886cad1fe66174e8f6b307326a7143, type: 2}
   - {fileID: 11400000, guid: a5715b0f89b01e149955104e88301c59, type: 2}
-  - {fileID: 11400000, guid: 6081309d1ad0f3f44b3e0dfdf030c4ce, type: 2}
+  - {fileID: 11400000, guid: 14eda11401939c34aa3ebb50466cf4aa, type: 2}
   skillRuntimeDataList: []
   useDefaultSampleSkills: 0
   currentSkillPoint: 0

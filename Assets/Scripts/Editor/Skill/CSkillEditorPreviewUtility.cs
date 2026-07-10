@@ -23,6 +23,7 @@ namespace TinyHero.Skill.Editor
         public eSkillRangePreviewShape shapeType;
         public Vector2 offset;
         public float radius;
+        public Vector2[] trajectoryPointArray;
         public string title;
         public string detail;
     }
@@ -164,6 +165,12 @@ namespace TinyHero.Skill.Editor
                 return previewData;
             }
 
+            if ( effectTypeName == nameof( CSkyfallStrikeActiveSkillEffect ) )
+            {
+                previewData = BuildSkyfallStrikeRangePreviewData( activeEffectSerializedObject );
+                return previewData;
+            }
+
             return previewData;
         }
 
@@ -211,6 +218,7 @@ namespace TinyHero.Skill.Editor
                 PreviewAxisColor
             );
             Handles.BeginGUI();
+            DrawTrajectoryPreview( _previewData, worldBounds, mappedBoundsRect, pixelPerUnit );
             Handles.color = PreviewRangeFillColor;
             Handles.DrawSolidDisc( targetCenter, Vector3.forward, radius );
             Handles.color = PreviewRangeWireColor;
@@ -224,7 +232,7 @@ namespace TinyHero.Skill.Editor
             );
             EditorGUI.LabelField(
                 new Rect( _previewRect.x + 8.0f, _previewRect.y + 6.0f, _previewRect.width - 16.0f, 18.0f ),
-                "Player sprite: world scale / Yellow: pivot / Blue: attack area",
+                "Yellow: pivot / White: trajectory / Blue: landing damage area",
                 EditorStyles.miniLabel
             );
         }
@@ -241,6 +249,18 @@ namespace TinyHero.Skill.Editor
             float maxX = Mathf.Max( 0.0f, _previewData.offset.x + radius );
             float minY = Mathf.Min( 0.0f, _previewData.offset.y - radius );
             float maxY = Mathf.Max( 0.0f, _previewData.offset.y + radius );
+
+            if ( _previewData.trajectoryPointArray != null )
+            {
+                for ( int index = 0; index < _previewData.trajectoryPointArray.Length; index++ )
+                {
+                    Vector2 trajectoryPoint = _previewData.trajectoryPointArray[ index ];
+                    minX = Mathf.Min( minX, trajectoryPoint.x );
+                    maxX = Mathf.Max( maxX, trajectoryPoint.x );
+                    minY = Mathf.Min( minY, trajectoryPoint.y );
+                    maxY = Mathf.Max( maxY, trajectoryPoint.y );
+                }
+            }
             minX = Mathf.Min( minX, playerBounds.xMin );
             maxX = Mathf.Max( maxX, playerBounds.xMax );
             minY = Mathf.Min( minY, playerBounds.yMin );
@@ -646,6 +666,63 @@ namespace TinyHero.Skill.Editor
             previewData.title = "Phase Strike";
             previewData.detail = $"Hits {hitCount}, Interval {hitIntervalSeconds:0.##}s, Duration {totalDurationSeconds:0.##}s, Damage {damageMultiplier * 100.0f:0.##}%";
             return previewData;
+        }
+
+        private static CSkillRangePreviewData BuildSkyfallStrikeRangePreviewData( SerializedObject _activeEffectSerializedObject )
+        {
+            CSkillRangePreviewData previewData = new CSkillRangePreviewData();
+            SerializedProperty launchDistanceProperty = _activeEffectSerializedObject.FindProperty( "launchDistance" );
+            SerializedProperty launchHeightProperty = _activeEffectSerializedObject.FindProperty( "launchHeight" );
+            SerializedProperty landingDistanceProperty = _activeEffectSerializedObject.FindProperty( "landingDistance" );
+            SerializedProperty areaRadiusProperty = _activeEffectSerializedObject.FindProperty( "areaRadius" );
+            SerializedProperty launchDurationProperty = _activeEffectSerializedObject.FindProperty( "launchDurationSeconds" );
+            SerializedProperty plungeDurationProperty = _activeEffectSerializedObject.FindProperty( "plungeDurationSeconds" );
+
+            if ( launchDistanceProperty == null || launchHeightProperty == null || landingDistanceProperty == null || areaRadiusProperty == null )
+            {
+                return previewData;
+            }
+
+            float launchDistance = Mathf.Max( 0.0f, launchDistanceProperty.floatValue );
+            float launchHeight = Mathf.Max( 0.0f, launchHeightProperty.floatValue );
+            float landingDistance = Mathf.Max( launchDistance, landingDistanceProperty.floatValue );
+            float radius = Mathf.Max( 0.0f, areaRadiusProperty.floatValue );
+            float launchDuration = launchDurationProperty != null ? Mathf.Max( 0.0f, launchDurationProperty.floatValue ) : 0.0f;
+            float plungeDuration = plungeDurationProperty != null ? Mathf.Max( 0.0f, plungeDurationProperty.floatValue ) : 0.0f;
+            previewData.isValid = true;
+            previewData.shapeType = eSkillRangePreviewShape.CIRCLE;
+            previewData.offset = new Vector2( landingDistance, 0.0f );
+            previewData.radius = radius;
+            previewData.trajectoryPointArray = new[]
+            {
+                Vector2.zero,
+                new Vector2( launchDistance, launchHeight ),
+                new Vector2( landingDistance, 0.0f )
+            };
+            previewData.title = "Skyfall Trajectory";
+            previewData.detail = $"Apex ({launchDistance:0.##}, {launchHeight:0.##}) in {launchDuration:0.##}s, plunge to ({landingDistance:0.##}, 0) in {plungeDuration:0.##}s, impact radius {radius:0.##}";
+            return previewData;
+        }
+
+        private static void DrawTrajectoryPreview( CSkillRangePreviewData _previewData, CPreviewWorldBounds _worldBounds, Rect _mappedBoundsRect, float _pixelPerUnit )
+        {
+            if ( _previewData.trajectoryPointArray == null || _previewData.trajectoryPointArray.Length < 2 )
+            {
+                return;
+            }
+
+            Handles.color = PreviewLinkLineColor;
+            Vector2 previousPoint = ConvertWorldToPreviewPosition( _previewData.trajectoryPointArray[ 0 ], _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+
+            for ( int index = 1; index < _previewData.trajectoryPointArray.Length; index++ )
+            {
+                Vector2 currentPoint = ConvertWorldToPreviewPosition( _previewData.trajectoryPointArray[ index ], _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+                Handles.DrawAAPolyLine( 3.0f, previousPoint, currentPoint );
+                previousPoint = currentPoint;
+            }
+
+            Vector2 apexPoint = ConvertWorldToPreviewPosition( _previewData.trajectoryPointArray[ 1 ], _worldBounds, _mappedBoundsRect, _pixelPerUnit );
+            Handles.DrawSolidDisc( apexPoint, Vector3.forward, PreviewOwnerRadius * 0.75f );
         }
     }
 }

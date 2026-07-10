@@ -46,6 +46,11 @@ namespace TinyHero.Skill
             return result;
         }
 
+        public virtual bool ShouldExecuteDuringCast()
+        {
+            return false;
+        }
+
         ///<summary>
         /// 툴 미리보기 범위 데이터 반환
         ///</summary>

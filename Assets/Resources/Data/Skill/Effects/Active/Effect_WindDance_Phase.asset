@@ -18,6 +18,7 @@ MonoBehaviour:
   hitIntervalSeconds: 0.1
   damageMultiplier: 0.5
   flatDamageBonus: 2
+  postPhaseInvincibilityDurationSeconds: 0.25
   debuffEffectList: []
   crowdControlEffectList:
   - {fileID: 11400000, guid: 9e397834f07bcfe4392795498caeacf1, type: 2}

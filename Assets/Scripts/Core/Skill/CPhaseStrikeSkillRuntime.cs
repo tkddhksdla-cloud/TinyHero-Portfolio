@@ -244,6 +244,13 @@ namespace TinyHero.Skill
             if ( shouldControlPlayerState )
             {
                 playerController.EndPhaseStrikeState( castPosition );
+                CPhaseStrikeActiveSkillEffect phaseStrikeEffect = skillContext.GetSkillDefinition().GetActiveSkillEffect() as CPhaseStrikeActiveSkillEffect;
+
+                if ( phaseStrikeEffect != null )
+                {
+                    playerController.ApplySkillInvincibility( phaseStrikeEffect.GetPostPhaseInvincibilityDurationSeconds() );
+                }
+
                 playerController = null;
                 ownerTransform = null;
                 return;

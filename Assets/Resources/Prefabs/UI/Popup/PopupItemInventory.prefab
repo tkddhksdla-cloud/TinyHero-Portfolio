@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7366080869715563797}
   - component: {fileID: 3430594613763774949}
   m_Layer: 0
-  m_Name: AtsRow
+  m_Name: CdrRow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -938,7 +938,7 @@ MonoBehaviour:
   crtText: {fileID: 0}
   crdText: {fileID: 0}
   accText: {fileID: 0}
-  atsText: {fileID: 0}
+  cdrText: {fileID: 0}
   moveText: {fileID: 0}
   hrText: {fileID: 0}
   mrText: {fileID: 0}
@@ -1278,7 +1278,7 @@ GameObject:
   - component: {fileID: 5463070917506381931}
   - component: {fileID: 1434424156846492755}
   m_Layer: 0
-  m_Name: AtsText
+  m_Name: CdrText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2707,7 +2707,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ATS
+  m_text: CDR
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: bd2d98d5115fec2419286a2f11356cf4, type: 2}
   m_sharedMaterial: {fileID: -471080762330912670, guid: bd2d98d5115fec2419286a2f11356cf4, type: 2}
@@ -4922,16 +4922,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5409180952775ee458962f356883adaa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.UI.CPlayerEquipmentStatusPanelUI
-  rootRectTransform: {fileID: 0}
-  previewFrameRectTransform: {fileID: 0}
-  previewRawImage: {fileID: 0}
-  statSectionRectTransform: {fileID: 0}
-  playerStatView: {fileID: 0}
-  slotRowRectTransform: {fileID: 0}
-  helmetSlotView: {fileID: 0}
-  armorSlotView: {fileID: 0}
-  weaponSlotView: {fileID: 0}
-  shieldSlotView: {fileID: 0}
+  rootRectTransform: {fileID: 8746949809802134287}
+  previewFrameRectTransform: {fileID: 8071428516888426335}
+  previewRawImage: {fileID: 8870297765187737263}
+  statSectionRectTransform: {fileID: 7621256697661806255}
+  playerStatView: {fileID: 1061825990698755293}
+  slotRowRectTransform: {fileID: 8807370587609860225}
+  helmetSlotView: {fileID: 5249953642013737658}
+  armorSlotView: {fileID: 3385977696610895513}
+  weaponSlotView: {fileID: 3255055859487689153}
+  shieldSlotView: {fileID: 9119944526110298154}
   targetInventoryUiController: {fileID: 0}
   targetCanvas: {fileID: 0}
   targetInventoryManager: {fileID: 0}

@@ -16,6 +16,7 @@ namespace TinyHero.Player
         private const float DefaultAttackIntervalSeconds = 0.5f;
         private const float DefaultAttackRatePerSecond = 2.0f;
         private const float DefaultMoveSpeedPercent = 0.0f;
+        private const float MaximumCooldownReductionPercent = 90.0f;
 
         [Header( "Fallback Base Stats" )]
         [SerializeField] private CPlayerStatDefinition baseStatDefinition = new CPlayerStatDefinition();
@@ -293,6 +294,16 @@ namespace TinyHero.Player
         public float GetEquipmentFinalAttackPercentBonus()
         {
             float result = equipmentModifierBonus != null ? equipmentModifierBonus.GetFinalAttackPercent() * 0.01f : 0.0f;
+            return result;
+        }
+
+        ///<summary>
+        /// 스킬 쿨타임 감소율 반환
+        ///</summary>
+        public float GetCooldownReductionPercent()
+        {
+            float finalCooldownReductionPercent = GetFinalStatValue( ePlayerStatType.CDR );
+            float result = Mathf.Clamp( finalCooldownReductionPercent, 0.0f, MaximumCooldownReductionPercent );
             return result;
         }
 

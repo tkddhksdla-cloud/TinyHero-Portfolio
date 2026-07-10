@@ -40,7 +40,7 @@ namespace TinyHero.Core.Data
         CRT,
         CRD,
         ACC,
-        ATS,
+        CDR,
         MOVE,
         EXP_GAIN_PERCENT,
         GOLD_GAIN_PERCENT,

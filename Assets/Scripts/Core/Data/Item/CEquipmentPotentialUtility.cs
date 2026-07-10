@@ -60,16 +60,16 @@ namespace TinyHero.Core.Data
                     _statType = ePlayerStatType.ACC;
                     return true;
 
-                case eEquipmentPotentialOptionType.ATS:
-                    _statType = ePlayerStatType.ATS;
-                    return true;
-
                 case eEquipmentPotentialOptionType.MOVE:
                     _statType = ePlayerStatType.MOVE;
                     return true;
 
                 case eEquipmentPotentialOptionType.RANGE:
                     _statType = ePlayerStatType.RANGE;
+                    return true;
+
+                case eEquipmentPotentialOptionType.CDR:
+                    _statType = ePlayerStatType.CDR;
                     return true;
             }
 
@@ -110,9 +110,6 @@ namespace TinyHero.Core.Data
                 case eEquipmentPotentialOptionType.ACC:
                     return "명중률 증가";
 
-                case eEquipmentPotentialOptionType.ATS:
-                    return "공격 속도 증가";
-
                 case eEquipmentPotentialOptionType.MOVE:
                     return "이동 속도 증가";
 
@@ -127,6 +124,9 @@ namespace TinyHero.Core.Data
 
                 case eEquipmentPotentialOptionType.RANGE:
                     return "공격 범위 증가";
+
+                case eEquipmentPotentialOptionType.CDR:
+                    return "스킬 쿨타임 감소";
             }
 
             return "없음";
@@ -140,9 +140,9 @@ namespace TinyHero.Core.Data
             bool result = _optionType == eEquipmentPotentialOptionType.EXP_GAIN_PERCENT
                 || _optionType == eEquipmentPotentialOptionType.GOLD_GAIN_PERCENT
                 || _optionType == eEquipmentPotentialOptionType.FINAL_ATTACK_PERCENT
-                || _optionType == eEquipmentPotentialOptionType.ATS
                 || _optionType == eEquipmentPotentialOptionType.MOVE
-                || _optionType == eEquipmentPotentialOptionType.RANGE;
+                || _optionType == eEquipmentPotentialOptionType.RANGE
+                || _optionType == eEquipmentPotentialOptionType.CDR;
             return result;
         }
 

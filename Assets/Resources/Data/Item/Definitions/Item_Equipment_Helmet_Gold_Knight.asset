@@ -39,5 +39,6 @@ MonoBehaviour:
     ats: 0
     move: 0
     range: 0
+    cdr: 50
   equipmentPartsType: 2
   equipmentPartsIndex: 68

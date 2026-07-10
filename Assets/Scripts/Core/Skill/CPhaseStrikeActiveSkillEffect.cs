@@ -14,6 +14,7 @@ namespace TinyHero.Skill
         [SerializeField] private float hitIntervalSeconds = 0.15f;
         [SerializeField] private float damageMultiplier = 1.1f;
         [SerializeField] private int flatDamageBonus;
+        [SerializeField] private float postPhaseInvincibilityDurationSeconds;
         [SerializeField] private List<CEnemyDebuffEffectBase> debuffEffectList = new List<CEnemyDebuffEffectBase>();
         [SerializeField] private List<CEnemyCrowdControlEffectBase> crowdControlEffectList = new List<CEnemyCrowdControlEffectBase>();
 
@@ -64,6 +65,12 @@ namespace TinyHero.Skill
         public float GetDamageMultiplier()
         {
             float result = Mathf.Max( 0.0f, damageMultiplier );
+            return result;
+        }
+
+        public float GetPostPhaseInvincibilityDurationSeconds()
+        {
+            float result = Mathf.Max( 0.0f, postPhaseInvincibilityDurationSeconds );
             return result;
         }
 

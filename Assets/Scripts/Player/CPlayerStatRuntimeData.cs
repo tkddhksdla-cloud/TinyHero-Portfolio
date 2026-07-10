@@ -18,9 +18,10 @@ namespace TinyHero.Player
         [SerializeField] private float crt;
         [SerializeField] private float crd;
         [SerializeField] private float acc;
-        [SerializeField] private float ats;
+        [HideInInspector] [SerializeField] private float ats;
         [SerializeField] private float move;
         [SerializeField] private float range;
+        [SerializeField] private float cdr;
 
         ///<summary>
         /// 스탯 값 반환
@@ -64,6 +65,9 @@ namespace TinyHero.Player
 
                 case ePlayerStatType.RANGE:
                     return range;
+
+                case ePlayerStatType.CDR:
+                    return cdr;
             }
 
             return 0.0f;
@@ -122,6 +126,10 @@ namespace TinyHero.Player
 
                 case ePlayerStatType.RANGE:
                     range = _value;
+                    break;
+
+                case ePlayerStatType.CDR:
+                    cdr = _value;
                     break;
             }
         }
@@ -192,6 +200,7 @@ namespace TinyHero.Player
             ats = _sourceData.ats;
             move = _sourceData.move;
             range = _sourceData.range;
+            cdr = _sourceData.cdr;
         }
 
         ///<summary>
@@ -211,6 +220,7 @@ namespace TinyHero.Player
             ats = 0.0f;
             move = 0.0f;
             range = 0.0f;
+            cdr = 0.0f;
         }
     }
 }

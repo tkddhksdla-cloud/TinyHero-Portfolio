@@ -54,6 +54,34 @@ namespace TinyHero.Skill
             return result;
         }
 
+        public static CSkillPooledVfxHandle PlayHitVfxAtWorldPosition( CSkillContext _skillContext, Vector3 _worldPosition )
+        {
+            if ( _skillContext == null )
+            {
+                return null;
+            }
+
+            CSkillDefinition skillDefinition = _skillContext.GetSkillDefinition();
+
+            if ( skillDefinition == null )
+            {
+                return null;
+            }
+
+            Vector3 worldPosition = _worldPosition + skillDefinition.GetHitVfxOffset();
+            CSkillPooledVfxHandle result = CSkillVfxPoolManager.Spawn( skillDefinition.GetHitVfxPrefab(), worldPosition, null, skillDefinition.GetHitVfxReturnDelay() );
+            ApplyRangeScale( _skillContext, result );
+            return result;
+        }
+
+        public static CSkillPooledVfxHandle PlayVfxAtWorldPosition( CSkillContext _skillContext, GameObject _vfxPrefab, Vector3 _worldPosition, Vector3 _offset, float _returnDelay )
+        {
+            Vector3 worldPosition = _worldPosition + _offset;
+            CSkillPooledVfxHandle result = CSkillVfxPoolManager.Spawn( _vfxPrefab, worldPosition, null, _returnDelay );
+            ApplyRangeScale( _skillContext, result );
+            return result;
+        }
+
         ///<summary>
         /// 스킬 투사체 이펙트 생성
         ///</summary>

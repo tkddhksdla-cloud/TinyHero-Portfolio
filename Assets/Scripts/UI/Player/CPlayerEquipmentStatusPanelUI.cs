@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace TinyHero.UI
 {
     ///<summary>
-    /// ?筌뤾퍒萸??ル벣遊????? ?縕?????꾪떅 ???븐꽢 ???샑???怨뺣콦
+    /// 장비 슬롯, 스탯, 캐릭터 외형 프리뷰장비 상태 패널 컴포넌트
     ///</summary>
     public sealed class CPlayerEquipmentStatusPanelUI : MonoBehaviour
     {
@@ -62,7 +62,8 @@ namespace TinyHero.UI
         private bool isShowingPanelOwnedTooltip;
 
         ///<summary>
-        /// ???븐꽢 ?貫?껆뵳???뚮봽??        ///</summary>
+        /// 패널 내부 UI 참조와 초기 상호작용 구성
+        ///</summary>
         private void Awake()
         {
             ResolveReferences();
@@ -71,7 +72,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??戮?뎽????戮곗젍 ?띠룄???        ///</summary>
+        /// 패널 표시 시 대상 연결, 이벤트 구독, 프리뷰 갱신 처리
+        ///</summary>
         private void OnEnable()
         {
             ResolveReferences();
@@ -85,7 +87,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ???븐꽢 ?熬곣뫁????띠룄???嶺뚳퐣瑗??        ///</summary>
+        /// 장비 및 스탯 툴팁의 닫힘과 호버 상태를 처리합니다.
+        ///</summary>
         private void Update()
         {
             HandleTooltipCloseInput();
@@ -93,7 +96,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?????繹먮봿????戮곗젍 ?筌먲퐘遊?        ///</summary>
+        /// 이벤트 구독을 해제하고 툴팁과 프리뷰를 비활성화합니다.
+        ///</summary>
         private void OnDisable()
         {
             UnsubscribeEvents();
@@ -102,14 +106,16 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ???????戮곗젍 ?洹먮봾爰???筌먲퐘遊?        ///</summary>
+        /// 런타임에 만든 프리뷰 카메라와 렌더 텍스처를 해제합니다.
+        ///</summary>
         private void OnDestroy()
         {
             ReleasePreviewObjects();
         }
 
         ///<summary>
-        /// ?筌? ??????⑤슡??        ///</summary>
+        /// 플레이어 인벤토리, 장비, 스탯, 컨트롤러 참조를 주입합니다.
+        ///</summary>
         public void Bind( CPlayerInventoryManager _targetInventoryManager, CPlayerEquipmentManager _targetEquipmentManager, CPlayerStatManager _targetStatManager, PlayerController _targetPlayerController )
         {
             bool isSameBinding = targetInventoryManager == _targetInventoryManager
@@ -132,7 +138,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕????袁⑥깓 ??戮?뻣
+        /// 장착 아이템과 잠재능력 정보를 인벤토리 툴팁으로 표시합니다.
         ///</summary>
         public void ShowEquipmentTooltip( CItemDefinition _itemDefinition )
         {
@@ -140,7 +146,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕????ル‘????????袁⑥깓 ??戮?뻣
+        /// 장착 아이템과 잠재능력 정보를 인벤토리 툴팁으로 표시합니다.
         ///</summary>
         public void ShowEquipmentTooltip( eEquipmentType _equipmentType, CItemDefinition _itemDefinition )
         {
@@ -157,7 +163,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ???꾪떅 ??袁⑥깓 ??戮?뻣
+        /// 스탯 설명을 공용 툴팁으로 표시합니다.
         ///</summary>
         public void ShowStatTooltip( string _titleText, string _descriptionText )
         {
@@ -173,7 +179,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??袁⑥깓 ???
+        /// 패널에서 표시한 공용 툴팁 닫기
         ///</summary>
         public void HideTooltip()
         {
@@ -189,7 +195,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕????怨몄젷 嶺뚳퐣瑗??        ///</summary>
+        /// 지정 장비를 인벤토리로 해제하고 표시를 갱신합니다.
+        ///</summary>
         public void TryUnequip( eEquipmentType _equipmentType )
         {
             if ( targetEquipmentManager == null || targetInventoryManager == null )
@@ -209,7 +216,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ???븐꽢 ?熬곣뫕???띠룄???        ///</summary>
+        /// 스탯, 장비 슬롯, 캐릭터 프리뷰를 전체 갱신합니다.
+        ///</summary>
         public void RefreshView()
         {
             ResolveTargets();
@@ -225,7 +233,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??瑜곷쭊 嶺뚣볦굣???롪퍒???        ///</summary>
+        /// 직렬화된 패널 내부 UI 참조를 보정합니다.
+        ///</summary>
         private void ResolveReferences()
         {
             if ( rootRectTransform == null )
@@ -284,7 +293,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ????嶺뚣볦굣???롪퍒???        ///</summary>
+        /// 이름을 기준으로 장비 슬롯 뷰 참조를 보정합니다.
+        ///</summary>
         private CPlayerEquipmentSlotView ResolveSlotViewReference( CPlayerEquipmentSlotView _currentReference, string _targetName )
         {
             if ( _currentReference != null )
@@ -298,7 +308,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ????嶺뚮씞???? ???吏??롪퍒???        ///</summary>
+        /// 런타임 플레이어 매니저와 컨트롤러 참조를 찾습니다.
+        ///</summary>
         private void ResolveTargets()
         {
             if ( targetEquipmentManager == null )
@@ -328,7 +339,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕???곌떠??????繹????뚮맧利?        ///</summary>
+        /// 장비 변경 이벤트를 구독합니다.
+        ///</summary>
         private void SubscribeEvents()
         {
             if ( targetEquipmentManager == null )
@@ -341,7 +353,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕???곌떠??????繹????뚮맧利???怨몄젷
+        /// 장비 변경 이벤트 구독 해제
         ///</summary>
         private void UnsubscribeEvents()
         {
@@ -354,7 +366,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕???곌떠????꾩룇瑗??        ///</summary>
+        /// 장비 변경 시 툴팁, 슬롯, 프리뷰를 갱신합니다.
+        ///</summary>
         private void HandleEquipmentChanged( CPlayerEquipmentManager _equipmentManager )
         {
             HideTooltip();
@@ -363,7 +376,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??袁⑥깓 ???뗢뵛 ???놁졑 嶺뚳퐣瑗??        ///</summary>
+        /// 마우스 클릭으로 패널 소유 툴팁 닫기
+        ///</summary>
         private void HandleTooltipCloseInput()
         {
             if ( isShowingPanelOwnedTooltip == false )
@@ -383,7 +397,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??袁⑥깓 ?筌뤾퍔????⑤객臾??롪틵?嶺?        ///</summary>
+        /// 툴팁 원본 UI에서 벗어나면 툴팁 닫기
+        ///</summary>
         private void HandleTooltipHoverState()
         {
             if ( isShowingPanelOwnedTooltip == false )
@@ -402,7 +417,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??袁⑥깓 ?????筌뤾퍔????? ?꾩룇瑗??        ///</summary>
+        /// 포인터가 이 패널의 장비 또는 스탯 UI 위에 있는지 확인합니다.
+        ///</summary>
         private bool IsPointerHoveringTooltipSource()
         {
             EventSystem currentEventSystem = EventSystem.current;
@@ -445,7 +461,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕????????戮?뻣 ?띠룄???        ///</summary>
+        /// 모든 장비 슬롯 표시를 현재 장착 상태로 갱신합니다.
+        ///</summary>
         private void RefreshEquipmentSlots()
         {
             RefreshSlotView( helmetSlotView, eEquipmentType.HELMET );
@@ -455,7 +472,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?띠룇裕????????戮?뻣 ?띠룄???        ///</summary>
+        /// 한 장비 슬롯에 해당하는 장착 아이템 표시
+        ///</summary>
         private void RefreshSlotView( CPlayerEquipmentSlotView _slotView, eEquipmentType _equipmentType )
         {
             if ( _slotView == null )
@@ -468,7 +486,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ????????뚮봽??        ///</summary>
+        /// 각 장비 슬롯의 타입과 기본 라벨 초기화
+        ///</summary>
         private void ConfigureSlotViews()
         {
             ConfigureSlotView( helmetSlotView, eEquipmentType.HELMET, "HELMET", "H" );
@@ -478,7 +497,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?띠룇裕??????????뚮봽??        ///</summary>
+        /// 장비 슬롯 뷰와 드롭 대상 구성
+        ///</summary>
         private void ConfigureSlotView( CPlayerEquipmentSlotView _slotView, eEquipmentType _equipmentType, string _labelText, string _placeholderText )
         {
             if ( _slotView == null )
@@ -496,7 +516,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ???꾪떅 ??袁⑥깓 ?筌뤾봇遊뷸ㅀ???뚮봽??        ///</summary>
+        /// 스탯 행별 툴팁 제목과 설명 설정
+        ///</summary>
         private void ConfigureStatTooltipTriggers()
         {
             ConfigureStatTooltipTrigger( "StatSection/HpRow", "체력", "현재 체력과 최대 체력 수치." );
@@ -506,7 +527,7 @@ namespace TinyHero.UI
             ConfigureStatTooltipTrigger( "StatSection/CrtRow", "치명타 확률", "CRT 1당 치명타 확률 1% 증가." );
             ConfigureStatTooltipTrigger( "StatSection/CrdRow", "치명타 피해", "CRD 1당 치명타 추가 피해 1% 증가." );
             ConfigureStatTooltipTrigger( "StatSection/AccRow", "정확도", "최종 피해의 최소값과 최대값 편차를 보정하는 정확도 수치." );
-            ConfigureStatTooltipTrigger( "StatSection/AtsRow", "공격 속도", "기본 공격 초당 타격 수와 공격 애니메이션 속도 수치." );
+            ConfigureStatTooltipTrigger( "StatSection/CdrRow", "쿨타임 감소", "모든 스킬의 쿨타임을 CDR 수치만큼 감소시킵니다." );
             ConfigureStatTooltipTrigger( "StatSection/MoveRow", "이동 속도", "플레이어 이동 속도 증가 비율." );
             ConfigureStatTooltipTrigger( "StatSection/HrRow", "체력 재생", "시간 경과에 따라 회복되는 체력 수치." );
             ConfigureStatTooltipTrigger( "StatSection/MrRow", "마나 재생", "시간 경과에 따라 회복되는 마나 수치." );
@@ -514,7 +535,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 媛쒕퀎 ?ㅽ꺈 ?댄똻 ?몃━嫄?援ъ꽦
+        /// 지정 경로의 스탯 행에 툴팁 트리거를 연결합니다.
         ///</summary>
         private void ConfigureStatTooltipTrigger( string _targetPath, string _titleText, string _descriptionText )
         {
@@ -536,7 +557,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???洹먮봾爰????諛댁뎽 ?곌랜???        ///</summary>
+        /// 캐릭터 프리뷰용 루트와 카메라를 생성합니다.
+        ///</summary>
         private void EnsurePreviewObjects()
         {
             if ( previewRawImage == null )
@@ -568,7 +590,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊??????????⑸츩嶺??띠룄???        ///</summary>
+        /// 프리뷰 이미지 크기에 맞는 렌더 텍스처를 준비합니다.
+        ///</summary>
         private void RefreshPreviewRenderTexture()
         {
             if ( previewRawImage == null || previewCamera == null )
@@ -597,7 +620,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊??嶺?큔????띠룄???        ///</summary>
+        /// 현재 플레이어 외형과 장비 상태로 프리뷰 캐릭터를 다시 생성합니다.
+        ///</summary>
         private void RefreshPreviewCharacter()
         {
             if ( previewRootObject == null || previewCamera == null )
@@ -629,7 +653,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊?????沅????듬땹??釉띾콦 ?롪퍒???        ///</summary>
+        /// 프리뷰에 사용할 기본 플레이어 외형 프리팹 로드
+        ///</summary>
         private GameObject ResolvePreviewSourceObject()
         {
             GameObject loadedPrefabObject = Resources.Load<GameObject>( PlayerVisualPrefabResourcePath );
@@ -637,9 +662,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???곸궠?筌????뚮맧利??롪퍒???        ///</summary>
-        ///<summary>
-        /// ?熬곣뱿遊?????????⑤객臾????욋뵛??        ///</summary>
+        /// 기본 외형을 복원한 뒤 현재 장비 파츠를 프리뷰에 적용합니다.
+        ///</summary>
         private void ApplyPreviewPartsState()
         {
             PartsManager previewPartsManager = ResolvePreviewPartsManager();
@@ -663,7 +687,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???リ옇????熬곣뱿遊??嶺?흮??        ///</summary>
+        /// 프리뷰 캐릭터의 기본 프리셋 보관
+        ///</summary>
         private void CachePreviewDefaultPresetItem()
         {
             previewDefaultPresetItem = null;
@@ -684,7 +709,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???リ옇????熬곣뱿遊????⑤객臾???⑤챷??        ///</summary>
+        /// 보관한 기본 프리셋을 프리뷰 파츠 매니저에 적용합니다.
+        ///</summary>
         private void ApplyPreviewDefaultPresetState( PartsManager _previewPartsManager )
         {
             if ( _previewPartsManager == null || previewDefaultPresetItem == null || previewDefaultPresetItem.isEmpty )
@@ -696,7 +722,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???リ옇??????????⑤객臾?嶺?흮??        ///</summary>
+        /// 장비 적용 전 기본 파츠의 인덱스와 표시 상태를 보관합니다.
+        ///</summary>
         private void CachePreviewDefaultPartsState( PartsManager _previewPartsManager )
         {
             if ( _previewPartsManager == null )
@@ -718,7 +745,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???熬곣뱿遊???貫?껆뵳?????샑???怨뺣콦 ??蹂ㅽ깴
+        /// 복제된 프리뷰에서 원본 프리셋 컴포넌트를 제거합니다.
         ///</summary>
         private void RemovePreviewPresetComponent()
         {
@@ -738,7 +765,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???????嶺뚮씞???? ?롪퍒???        ///</summary>
+        /// 프리뷰 캐릭터의 파츠 매니저를 반환합니다.
+        ///</summary>
         private PartsManager ResolvePreviewPartsManager()
         {
             if ( previewInstanceObject == null )
@@ -751,7 +779,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ???덊깵???깅턄???????嶺뚮씞???? ?롪퍒???        ///</summary>
+        /// 실제 플레이어의 파츠 매니저를 반환합니다.
+        ///</summary>
         private PartsManager ResolveLivePlayerPartsManager()
         {
             if ( targetPlayerController == null )
@@ -764,7 +793,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕????⑥щ턄???リ옇?↑??熬곣뱿遊????????꾩룇瑗??        ///</summary>
+        /// 현재 장비 슬롯 상태를 프리뷰 파츠 매니저에 적용합니다.
+        ///</summary>
         private void ApplyEquipmentStateToPreviewPartsManager( PartsManager _previewPartsManager )
         {
             if ( _previewPartsManager == null )
@@ -779,7 +809,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ??關逾??縕????????꾩룇瑗??        ///</summary>
+        /// 한 장비 슬롯의 외형 파츠를 프리뷰에 적용합니다.
+        ///</summary>
         private void ApplyEquipmentVisualToPreviewPartsManager( PartsManager _previewPartsManager, eEquipmentType _equipmentType )
         {
             if ( _previewPartsManager == null || targetEquipmentManager == null )
@@ -813,7 +844,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???リ옇??????????⑤객臾??곌랜踰??        ///</summary>
+        /// 지정 파츠 타입을 장비 적용 전 기본 상태로 복원합니다.
+        ///</summary>
         private void RestorePreviewDefaultPartsState( PartsManager _previewPartsManager, PartsType _partsType )
         {
             if ( _previewPartsManager == null )
@@ -834,7 +866,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕???????눫???㉱????????꾩룄?ｈ굢??꾩룇瑗??        ///</summary>
+        /// 장비 타입이 제어하는 캐릭터 파츠 타입 목록 반환
+        ///</summary>
         private PartsType[] ResolveManagedPartsTypeArray( eEquipmentType _equipmentType )
         {
             switch ( _equipmentType )
@@ -876,7 +909,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?縕??????猿딄땁 ??????????筌뤿굞????? ???堉?        ///</summary>
+        /// 장비 타입과 외형 파츠 타입의 호환 여부를 확인합니다.
+        ///</summary>
         private bool IsCompatiblePartsType( eEquipmentType _equipmentType, PartsType _partsType )
         {
             PartsType[] compatiblePartsTypeArray = ResolveManagedPartsTypeArray( _equipmentType );
@@ -897,7 +931,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???곸궠?筌????뚮맧利??롪퍒???        ///</summary>
+        /// 프리뷰 캐릭터의 스프라이트 경계에 맞춰 카메라를 배치합니다.
+        ///</summary>
         private void ConfigurePreviewCamera()
         {
             if ( previewCamera == null || previewInstanceObject == null || previewRawImage == null )
@@ -937,7 +972,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊????戮?뎽 ??⑤객臾??꾩룇瑗??        ///</summary>
+        /// 프리뷰 카메라와 루트 오브젝트의 활성 상태를 설정합니다.
+        ///</summary>
         private void SetPreviewActive( bool _isActive )
         {
             if ( previewCamera != null )
@@ -952,7 +988,8 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// ?熬곣뱿遊???洹먮봾爰???筌먲퐘遊?        ///</summary>
+        /// 생성한 프리뷰 런타임 리소스를 해제합니다.
+        ///</summary>
         private void ReleasePreviewObjects()
         {
             if ( previewRenderTexture != null )
@@ -976,3 +1013,6 @@ namespace TinyHero.UI
         }
     }
 }
+
+
+

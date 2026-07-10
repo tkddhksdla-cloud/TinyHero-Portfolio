@@ -12,6 +12,7 @@ namespace TinyHero.Skill
         BUFF,
         CLONE,
         PROJECTILE_PIERCING,
-        PHASE_STRIKE
+        PHASE_STRIKE,
+        SKYFALL_STRIKE
     }
 }

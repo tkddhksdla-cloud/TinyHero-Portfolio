@@ -24,6 +24,7 @@ namespace TinyHero.UI
         private Camera targetCamera;
         private GameObject playerNameTagPrefab;
         private GameObject createdRootCanvasObject;
+        private bool isPlayerNameTagVisible = true;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -117,6 +118,16 @@ namespace TinyHero.UI
             }
         }
 
+        public void SetPlayerNameTagVisible( bool _isVisible )
+        {
+            isPlayerNameTagVisible = _isVisible;
+
+            if ( playerNameTagView != null )
+            {
+                playerNameTagView.gameObject.SetActive( _isVisible );
+            }
+        }
+
         ///<summary>
         /// 프로필 이름 변경 처리
         ///</summary>
@@ -146,6 +157,16 @@ namespace TinyHero.UI
         private void UpdatePlayerNameTagView()
         {
             if ( targetPlayerController == null || targetPlayerController.gameObject.activeInHierarchy == false )
+            {
+                if ( playerNameTagView != null )
+                {
+                    playerNameTagView.gameObject.SetActive( false );
+                }
+
+                return;
+            }
+
+            if ( isPlayerNameTagVisible == false )
             {
                 if ( playerNameTagView != null )
                 {

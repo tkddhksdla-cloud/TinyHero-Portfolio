@@ -17,7 +17,7 @@ MonoBehaviour:
   itemType: 0
   description: KEY_TEXT_ITEM_EQUIPMENT_HELMET_ANGEL_KNIG_DESCRIPTION
   iconSprite: {fileID: 21300000, guid: 8f7a39fde31994ac98db5238b0e4a57d, type: 3}
-  worldDropPrefab: {fileID: 195316652170265812, guid: 051974dea3aa31c4db5b7b42f6ae4b4b, type: 3}
+  worldDropPrefab: {fileID: 4682764567050567687, guid: c1a40cdbcd894b442bf6ef0c36063af0, type: 3}
   isStackable: 0
   maxStackCountValue: 1
   sellPriceItemId: ITEM_CURRENCY_GOLD
@@ -39,5 +39,6 @@ MonoBehaviour:
     ats: 0
     move: 0
     range: 0
+    cdr: 0
   equipmentPartsType: 2
   equipmentPartsIndex: 68

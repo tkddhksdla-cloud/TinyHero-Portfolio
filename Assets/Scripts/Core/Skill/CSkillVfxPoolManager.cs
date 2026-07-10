@@ -60,6 +60,24 @@ namespace TinyHero.Skill
             return result;
         }
 
+        public static bool TryWarmup( GameObject _prefab )
+        {
+            if ( _prefab == null )
+            {
+                return false;
+            }
+
+            CPooledVfxEntry pooledVfxEntry = GetOrCreatePoolEntry( _prefab );
+
+            if ( pooledVfxEntry == null || CObjectPoolManager.TryGet( pooledVfxEntry.PoolKey, out GameObject warmedObject ) == false || warmedObject == null )
+            {
+                return false;
+            }
+
+            CObjectPoolManager.TryRelease( pooledVfxEntry.PoolKey, warmedObject );
+            return true;
+        }
+
         ///<summary>
         /// 비지속성 활성 스킬 이펙트 일괄 정리
         ///</summary>
