@@ -14,6 +14,11 @@ namespace TinyHero.UI
         [SerializeField] private TextMeshProUGUI damageValueText;
         [SerializeField] private Animator targetAnimator;
 
+        private RectTransform followRootRectTransform;
+        private Canvas followCanvas;
+        private Camera followWorldCamera;
+        private Vector3 followWorldPosition;
+
         ///<summary>
         /// 컴포넌트 초기화
         ///</summary>
@@ -25,9 +30,13 @@ namespace TinyHero.UI
         ///<summary>
         /// 데미지 폰트 표시 내용 설정
         ///</summary>
-        public void SetDisplay( string _damageText, Color _damageColor, Vector2 _anchoredPosition )
+        public void SetDisplay( string _damageText, Color _damageColor, Vector3 _worldPosition, RectTransform _rootRectTransform, Canvas _targetCanvas, Camera _worldCamera )
         {
             ResolveReferences();
+            followWorldPosition = _worldPosition;
+            followRootRectTransform = _rootRectTransform;
+            followCanvas = _targetCanvas;
+            followWorldCamera = _worldCamera;
 
             if ( damageValueText != null )
             {
@@ -35,10 +44,15 @@ namespace TinyHero.UI
                 damageValueText.color = _damageColor;
             }
 
-            if ( targetRectTransform != null )
-            {
-                targetRectTransform.anchoredPosition = _anchoredPosition;
-            }
+            UpdateFollowPosition();
+        }
+
+        ///<summary>
+        /// 후처리 위치 갱신
+        ///</summary>
+        private void LateUpdate()
+        {
+            UpdateFollowPosition();
         }
 
         ///<summary>
@@ -47,6 +61,65 @@ namespace TinyHero.UI
         protected override void OnAutoReturnObjectEnabled()
         {
             RestartAnimator();
+        }
+
+        ///<summary>
+        /// 비활성화 시 추적 상태 초기화
+        ///</summary>
+        protected override void OnAutoReturnObjectDisabled()
+        {
+            followRootRectTransform = null;
+            followCanvas = null;
+            followWorldCamera = null;
+            followWorldPosition = Vector3.zero;
+        }
+
+        ///<summary>
+        /// 추적 대상 기준 UI 위치 갱신
+        ///</summary>
+        private void UpdateFollowPosition()
+        {
+            if ( targetRectTransform == null || followRootRectTransform == null )
+            {
+                return;
+            }
+
+            Camera resolvedWorldCamera = ResolveWorldCamera();
+            Vector3 screenPosition = resolvedWorldCamera != null
+                ? resolvedWorldCamera.WorldToScreenPoint( followWorldPosition )
+                : RectTransformUtility.WorldToScreenPoint( null, followWorldPosition );
+
+            if ( screenPosition.z < 0.0f )
+            {
+                return;
+            }
+
+            Camera canvasCamera = followCanvas != null && followCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? followCanvas.worldCamera
+                : null;
+            bool wasResolved = RectTransformUtility.ScreenPointToLocalPointInRectangle( followRootRectTransform, screenPosition, canvasCamera, out Vector2 localPoint );
+
+            if ( wasResolved == false )
+            {
+                return;
+            }
+
+            targetRectTransform.anchoredPosition = localPoint;
+        }
+
+        ///<summary>
+        /// 월드 카메라 결정
+        ///</summary>
+        private Camera ResolveWorldCamera()
+        {
+            if ( followWorldCamera != null )
+            {
+                return followWorldCamera;
+            }
+
+            Camera mainCamera = Camera.main;
+            followWorldCamera = mainCamera;
+            return followWorldCamera;
         }
 
         ///<summary>

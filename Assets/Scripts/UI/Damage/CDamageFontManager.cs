@@ -79,7 +79,8 @@ namespace TinyHero.UI
 
             Vector3 worldPosition = _monsterObject.GetMonsterInfoWorldPosition();
             worldPosition.y += monsterWorldOffsetY;
-            worldPosition = ApplyRandomWorldOffset( worldPosition );
+            Vector3 randomWorldOffset = CreateRandomWorldOffset();
+            worldPosition += randomWorldOffset;
             Color damageColor = _isCritical ? monsterCriticalDamageColor : monsterNormalDamageColor;
             string damageText = _damage.ToString();
             ShowDamageFont( worldPosition, damageText, damageColor );
@@ -97,19 +98,20 @@ namespace TinyHero.UI
 
             Vector3 worldPosition = ResolvePlayerDamageWorldPosition( _targetTransform );
             worldPosition.y += playerWorldOffsetY;
-            worldPosition = ApplyRandomWorldOffset( worldPosition );
+            Vector3 randomWorldOffset = CreateRandomWorldOffset();
+            worldPosition += randomWorldOffset;
             string damageText = _damage.ToString();
             ShowDamageFont( worldPosition, damageText, playerDamageColor );
         }
 
         ///<summary>
-        /// 데미지 폰트 랜덤 오프셋 적용
+        /// 데미지 폰트 랜덤 월드 오프셋 생성
         ///</summary>
-        private Vector3 ApplyRandomWorldOffset( Vector3 _worldPosition )
+        private Vector3 CreateRandomWorldOffset()
         {
-            float randomOffsetX = Random.Range( -Mathf.Abs( damageFontRandomOffsetX ), Mathf.Abs( damageFontRandomOffsetX ) );
-            float randomOffsetY = Random.Range( -Mathf.Abs( damageFontRandomOffsetY ), Mathf.Abs( damageFontRandomOffsetY ) );
-            Vector3 result = _worldPosition + new Vector3( randomOffsetX, randomOffsetY, 0.0f );
+            float randomOffsetX = UnityEngine.Random.Range( -Mathf.Abs( damageFontRandomOffsetX ), Mathf.Abs( damageFontRandomOffsetX ) );
+            float randomOffsetY = UnityEngine.Random.Range( -Mathf.Abs( damageFontRandomOffsetY ), Mathf.Abs( damageFontRandomOffsetY ) );
+            Vector3 result = new Vector3( randomOffsetX, randomOffsetY, 0.0f );
             return result;
         }
 
@@ -147,32 +149,13 @@ namespace TinyHero.UI
                 return;
             }
 
-            Camera resolvedWorldCamera = ResolveWorldCamera();
-            Vector3 screenPosition = resolvedWorldCamera != null
-                ? resolvedWorldCamera.WorldToScreenPoint( _worldPosition )
-                : RectTransformUtility.WorldToScreenPoint( null, _worldPosition );
-
-            if ( screenPosition.z < 0.0f )
-            {
-                return;
-            }
-
-            Camera canvasCamera = targetCanvas != null && targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? targetCanvas.worldCamera
-                : null;
-            bool wasResolved = RectTransformUtility.ScreenPointToLocalPointInRectangle( damageFontRootRectTransform, screenPosition, canvasCamera, out Vector2 localPoint );
-
-            if ( wasResolved == false )
-            {
-                return;
-            }
-
             if ( CObjectPoolManager.TryGet( damageFontPoolKey, out CDamageFontObject damageFontObject ) == false || damageFontObject == null )
             {
                 return;
             }
 
-            damageFontObject.SetDisplay( _damageText, _damageColor, localPoint );
+            Camera resolvedWorldCamera = ResolveWorldCamera();
+            damageFontObject.SetDisplay( _damageText, _damageColor, _worldPosition, damageFontRootRectTransform, targetCanvas, resolvedWorldCamera );
 
             if ( activeDamageFontObjectList.Contains( damageFontObject ) == false )
             {
