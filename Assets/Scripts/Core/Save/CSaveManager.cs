@@ -110,6 +110,48 @@ namespace TinyHero.Core
         }
 
         ///<summary>
+        /// 대기 중인 저장 로드의 플레이어 월드 위치 조회 시도
+        ///</summary>
+        public bool TryGetPendingLoadPlayerWorldPosition( out Vector3 _playerWorldPosition )
+        {
+            _playerWorldPosition = Vector3.zero;
+
+            if ( isPendingLoadRequested == false || pendingLoadSaveData == null )
+            {
+                return false;
+            }
+
+            _playerWorldPosition = pendingLoadSaveData.playerWorldPosition;
+            return true;
+        }
+
+        ///<summary>
+        /// 대기 중인 저장 데이터를 지정 플레이어에 즉시 적용
+        ///</summary>
+        public bool TryApplyPendingLoadToPlayer( PlayerController _playerController )
+        {
+            if ( _playerController == null || isPendingLoadRequested == false || pendingLoadSaveData == null )
+            {
+                return false;
+            }
+
+            isPendingLoadApplying = true;
+            CGameSaveData saveDataToApply = pendingLoadSaveData;
+            ApplyPendingSaveDataToPlayer( _playerController, saveDataToApply );
+            _playerController.transform.position = saveDataToApply.playerWorldPosition;
+            Rigidbody2D playerRigidbody = _playerController.GetComponent<Rigidbody2D>();
+
+            if ( playerRigidbody != null )
+            {
+                playerRigidbody.linearVelocity = Vector2.zero;
+                playerRigidbody.angularVelocity = 0.0f;
+            }
+
+            ClearPendingLoadRequest();
+            return true;
+        }
+
+        ///<summary>
         /// 현재 게임 저장 처리
         ///</summary>
         public bool TrySaveCurrentGame()
@@ -136,15 +178,15 @@ namespace TinyHero.Core
             Debug.Log( "[ SaveDebug ] RequestSaveWithPopup requested.", this );
             bool isSaved = TrySaveCurrentGame();
             string descriptionText = isSaved ? SaveCompletedDescriptionText : SaveFailedDescriptionText;
-            CPopupCommonNoticeManager popupManager = CPopupCommonNoticeManager.Instance;
+            CUINavigationController navigationController = CUINavigationController.Instance;
 
-            if ( popupManager != null )
+            if ( navigationController != null )
             {
-                popupManager.ShowNotice( descriptionText, ConfirmButtonText, null, string.Empty, null );
+                navigationController.ShowCommonNotice( descriptionText, ConfirmButtonText, null, string.Empty, null );
             }
             else
             {
-                Debug.LogWarning( "[ SaveDebug ] Popup manager was null during save popup request.", this );
+                Debug.LogWarning( "[ SaveDebug ] UI navigation controller was null during save popup request.", this );
             }
 
             return isSaved;
@@ -199,17 +241,7 @@ namespace TinyHero.Core
                 yield break;
             }
 
-            ApplyPendingSaveDataToPlayer( resolvedPlayerController, pendingLoadSaveData );
-            resolvedPlayerController.transform.position = pendingLoadSaveData.playerWorldPosition;
-            Rigidbody2D playerRigidbody = resolvedPlayerController.GetComponent<Rigidbody2D>();
-
-            if ( playerRigidbody != null )
-            {
-                playerRigidbody.linearVelocity = Vector2.zero;
-                playerRigidbody.angularVelocity = 0.0f;
-            }
-
-            ClearPendingLoadRequest();
+            TryApplyPendingLoadToPlayer( resolvedPlayerController );
         }
 
         ///<summary>
@@ -247,8 +279,9 @@ namespace TinyHero.Core
             CPlayerEquipmentManager playerEquipmentManager = playerController.GetEquipmentManager();
             CQuestManager questManager = playerController.GetQuestManager();
             CSkillManager skillManager = playerController.GetSkillManager();
+            CPlayerProfileManager playerProfileManager = CPlayerProfileManager.Instance;
 
-            if ( playerStatManager == null || playerInventoryManager == null || playerEquipmentManager == null || questManager == null || skillManager == null )
+            if ( playerStatManager == null || playerInventoryManager == null || playerEquipmentManager == null || questManager == null || skillManager == null || playerProfileManager == null )
             {
                 Debug.LogWarning( "[ SaveDebug ] Save build failed because one or more player managers were null.", this );
                 return false;
@@ -265,6 +298,7 @@ namespace TinyHero.Core
             CGameSaveData createdSaveData = new CGameSaveData();
             createdSaveData.mapId = currentMapId;
             createdSaveData.playerWorldPosition = playerController.transform.position;
+            createdSaveData.playerProfileSnapshotData = playerProfileManager.CreateSnapshotData();
             createdSaveData.playerStatSnapshotData = playerStatManager.CreateSnapshotData();
             createdSaveData.playerInventorySnapshotData = playerInventoryManager.CreateSnapshotData();
             createdSaveData.playerEquipmentSnapshotData = playerEquipmentManager.CreateSnapshotData();
@@ -607,8 +641,9 @@ namespace TinyHero.Core
             CPlayerEquipmentManager playerEquipmentManager = _playerController.GetEquipmentManager();
             CQuestManager questManager = _playerController.GetQuestManager();
             CSkillManager skillManager = _playerController.GetSkillManager();
+            CPlayerProfileManager playerProfileManager = CPlayerProfileManager.Instance;
 
-            if ( playerStatManager == null || playerInventoryManager == null || playerEquipmentManager == null || questManager == null || skillManager == null )
+            if ( playerStatManager == null || playerInventoryManager == null || playerEquipmentManager == null || questManager == null || skillManager == null || playerProfileManager == null )
             {
                 return;
             }
@@ -620,6 +655,7 @@ namespace TinyHero.Core
                 return;
             }
 
+            playerProfileManager.LoadSnapshotData( _gameSaveData.playerProfileSnapshotData );
             playerStatManager.LoadSnapshotData( _gameSaveData.playerStatSnapshotData );
             playerInventoryManager.LoadSnapshotData( _gameSaveData.playerInventorySnapshotData );
             playerEquipmentManager.LoadSnapshotData( _gameSaveData.playerEquipmentSnapshotData );

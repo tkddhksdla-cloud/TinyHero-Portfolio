@@ -86,6 +86,53 @@ namespace TinyHero.UI
         }
 
         ///<summary>
+        /// 리소스 키 기반 팝업 표시 요청
+        ///</summary>
+        public bool ShowPopup<T>( eResourceKey _resourceKey, bool _shouldReuseExistingInstance, Action<T> _configureAction ) where T : CUIPopup
+        {
+            if ( _resourceKey == eResourceKey.NONE )
+            {
+                return false;
+            }
+
+            AddPopupAsync<T>( _resourceKey, _shouldReuseExistingInstance, ( T _popup ) =>
+            {
+                if ( _popup == null || _configureAction == null )
+                {
+                    return;
+                }
+
+                _configureAction.Invoke( _popup );
+            } );
+
+            return true;
+        }
+
+        ///<summary>
+        /// 공용 안내 팝업 표시 요청
+        ///</summary>
+        public bool ShowCommonNotice( string _descriptionText, string _positiveButtonText, Action _positiveButtonAction, string _negativeButtonText, Action _negativeButtonAction )
+        {
+            bool result = ShowPopup<CPopupCommonNotice>( eResourceKey.POPUP_COMMON_NOTICE, true, ( CPopupCommonNotice _popup ) =>
+            {
+                _popup.Show( _descriptionText, _positiveButtonText, _positiveButtonAction, _negativeButtonText, _negativeButtonAction );
+            } );
+            return result;
+        }
+
+        ///<summary>
+        /// 공용 입력 팝업 표시 요청
+        ///</summary>
+        public bool ShowCommonInputField( string _descriptionText, string _initialText, string _placeholderText, string _positiveButtonText, Action<string> _submitAction, Action _closeAction )
+        {
+            bool result = ShowPopup<CPopupCommonInputField>( eResourceKey.POPUP_COMMON_INPUT_FIELD, true, ( CPopupCommonInputField _popup ) =>
+            {
+                _popup.Show( _descriptionText, _initialText, _placeholderText, _positiveButtonText, _submitAction, _closeAction );
+            } );
+            return result;
+        }
+
+        ///<summary>
         /// 전체 화면 UI 동적 생성
         ///</summary>
         public T AddViewController<T>( GameObject _prefabObject, bool _shouldReuseExistingInstance = false ) where T : CUIView

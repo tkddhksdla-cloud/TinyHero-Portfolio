@@ -530,6 +530,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  useClickSfx: 1
+  clickSfxClipName: SFX_CLICK_00
+  clickSfxVolumeScale: 1
 --- !u!1 &570835629
 GameObject:
   m_ObjectHideFlags: 0

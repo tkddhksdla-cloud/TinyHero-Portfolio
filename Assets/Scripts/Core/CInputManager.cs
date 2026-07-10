@@ -354,7 +354,7 @@ namespace TinyHero.Core
         ///</summary>
         private void HandleEditorPauseInput()
         {
-            bool isPauseDown = Input.GetKeyDown( KeyCode.Backspace );
+            bool isPauseDown = Input.GetKeyDown( KeyCode.Insert );
 
             if ( isPauseDown == false )
             {

@@ -25,6 +25,8 @@ namespace TinyHero.Core
         private const string RewardPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupReward";
         private const string CubePopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCube";
         private const string LegacyCubePopupPrefabResourcePath = "Prefabs/UI/Inventory/CubeUI";
+        private const string CommonNoticePopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCommonNotice";
+        private const string CommonInputFieldPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCommonInputField";
         private const string ItemTooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
         private const string MapLoadingUiPrefabResourcePath = "Prefabs/UI/Map/MapLoadingUI";
@@ -81,6 +83,8 @@ namespace TinyHero.Core
             RegisterResourceLoadEntry( eResourceKey.POPUP_QUEST_LIST_PLAYER, PlayerQuestPopupPrefabResourcePath, PlayerQuestPopupPrefabResourcePath );
             RegisterResourceLoadEntry( eResourceKey.POPUP_REWARD, RewardPopupPrefabResourcePath, RewardPopupPrefabResourcePath );
             RegisterResourceLoadEntry( eResourceKey.POPUP_CUBE, CubePopupPrefabResourcePath, CubePopupPrefabResourcePath, LegacyCubePopupPrefabResourcePath );
+            RegisterResourceLoadEntry( eResourceKey.POPUP_COMMON_NOTICE, CommonNoticePopupPrefabResourcePath, CommonNoticePopupPrefabResourcePath );
+            RegisterResourceLoadEntry( eResourceKey.POPUP_COMMON_INPUT_FIELD, CommonInputFieldPopupPrefabResourcePath, CommonInputFieldPopupPrefabResourcePath );
         }
 
         ///<summary>
@@ -115,6 +119,8 @@ namespace TinyHero.Core
             LoadResource<GameObject>( NpcQuestPopupPrefabResourcePath );
             LoadResource<GameObject>( PlayerQuestPopupPrefabResourcePath );
             LoadResource<GameObject>( RewardPopupPrefabResourcePath );
+            LoadResource<GameObject>( CommonNoticePopupPrefabResourcePath );
+            LoadResource<GameObject>( CommonInputFieldPopupPrefabResourcePath );
             LoadResource<GameObject>( ItemTooltipPrefabResourcePath );
             LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
             LoadResource<GameObject>( MapLoadingUiPrefabResourcePath );

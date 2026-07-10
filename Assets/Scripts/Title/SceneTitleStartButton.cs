@@ -1,4 +1,5 @@
 using TinyHero.Maps;
+using TinyHero.Player;
 using TinyHero.UI;
 using TinyHero.Core;
 using System.Collections;
@@ -19,6 +20,9 @@ namespace TinyHero.Title
         private const string FadeImageObjectName = "TitleFadeImage";
         private const float DefaultFadeDuration = 0.35f;
         private const string LoadSaveDescriptionText = "저장된 정보를 불러오시겠습니까?";
+        private const string NicknameInputDescriptionText = "닉네임을 입력하세요.";
+        private const string NicknameInputPlaceholderText = "닉네임";
+        private const string NicknameConfirmButtonText = "확인";
         private const string PositiveButtonText = "예";
         private const string NegativeButtonText = "아니오";
 
@@ -86,8 +90,8 @@ namespace TinyHero.Title
 
             if ( hasSaveData )
             {
-                CPopupCommonNoticeManager popupManager = CPopupCommonNoticeManager.Instance;
-                bool isPopupShown = popupManager != null && popupManager.ShowNotice( LoadSaveDescriptionText, PositiveButtonText, HandlePositiveLoadSelected, NegativeButtonText, HandleNegativeLoadSelected );
+                CUINavigationController navigationController = CUINavigationController.Instance;
+                bool isPopupShown = navigationController != null && navigationController.ShowCommonNotice( LoadSaveDescriptionText, PositiveButtonText, HandlePositiveLoadSelected, NegativeButtonText, HandleNegativeLoadSelected );
 
                 if ( isPopupShown )
                 {
@@ -115,7 +119,58 @@ namespace TinyHero.Title
         {
             Debug.Log( "[ SaveDebug ] SceneTitle selected negative load option.", this );
             shouldLoadSavedData = false;
+            ShowNicknameInputPopup();
+        }
+
+        ///<summary>
+        /// 닉네임 입력 팝업 표시
+        ///</summary>
+        private void ShowNicknameInputPopup()
+        {
+            isStarting = true;
+
+            if ( startButton != null )
+            {
+                startButton.interactable = false;
+            }
+
+            CUINavigationController navigationController = CUINavigationController.Instance;
+            bool isPopupShown = navigationController != null && navigationController.ShowCommonInputField( NicknameInputDescriptionText, string.Empty, NicknameInputPlaceholderText, NicknameConfirmButtonText, HandleNicknameSubmitted, HandleNicknameInputClosed );
+
+            if ( isPopupShown )
+            {
+                return;
+            }
+
+            HandleNicknameSubmitted( string.Empty );
+        }
+
+        ///<summary>
+        /// 닉네임 입력 완료 처리
+        ///</summary>
+        private void HandleNicknameSubmitted( string _nickname )
+        {
+            CPlayerProfileManager playerProfileManager = CPlayerProfileManager.Instance;
+
+            if ( playerProfileManager != null )
+            {
+                playerProfileManager.SetPlayerName( _nickname );
+            }
+
             StartCoroutine( IE_StartGame() );
+        }
+
+        ///<summary>
+        /// 닉네임 입력 닫기 처리
+        ///</summary>
+        private void HandleNicknameInputClosed()
+        {
+            isStarting = false;
+
+            if ( startButton != null )
+            {
+                startButton.interactable = true;
+            }
         }
 
         ///<summary>

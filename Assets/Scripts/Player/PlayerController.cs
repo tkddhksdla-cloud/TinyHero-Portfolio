@@ -213,6 +213,22 @@ namespace TinyHero.Player
         }
 
         ///<summary>
+        /// 플레이어 이름표 월드 위치 반환
+        ///</summary>
+        public Vector3 GetNameTagWorldPosition()
+        {
+            if ( bodyCollider == null )
+            {
+                Vector3 fallbackPosition = transform.position + new Vector3( 0.0f, 1.4f, 0.0f );
+                return fallbackPosition;
+            }
+
+            Bounds colliderBounds = bodyCollider.bounds;
+            Vector3 result = new Vector3( colliderBounds.center.x, colliderBounds.max.y, colliderBounds.center.z );
+            return result;
+        }
+
+        ///<summary>
         /// 현재 애니메이터 속도 반환
         ///</summary>
         public float GetCurrentAnimatorSpeed()
@@ -340,6 +356,11 @@ namespace TinyHero.Player
             CacheTargetColliders();
             SubscribeAnimationEventReceiver();
             EnsureAttackSlashFxPoolInitialized();
+
+            if ( CPlayerNameTagManager.TryGetInstance( out CPlayerNameTagManager playerNameTagManager ) && playerNameTagManager != null )
+            {
+                playerNameTagManager.RegisterPlayer( this );
+            }
         }
 
         ///<summary>
@@ -353,6 +374,11 @@ namespace TinyHero.Player
             isPhaseStrikeActive = false;
             SetSpriteRendererVisible( true );
             StopInvincibilityVisual();
+
+            if ( CPlayerNameTagManager.TryGetExistingInstance( out CPlayerNameTagManager playerNameTagManager ) && playerNameTagManager != null )
+            {
+                playerNameTagManager.UnregisterPlayer( this );
+            }
         }
 
         ///<summary>
@@ -1261,7 +1287,7 @@ namespace TinyHero.Player
                     return false;
                 }
 
-                PlayDoubleJumpCastVfx();
+                PlayDoubleJumpCastFeedback();
 
                 currentVelocity.y = 0.0f;
                 targetRigidbody.linearVelocity = currentVelocity;
@@ -1278,7 +1304,12 @@ namespace TinyHero.Player
 
             currentJumpCount++;
             isGrounded = false;
-            PlayJumpSfx();
+
+            if ( isDoubleJump == false )
+            {
+                PlayJumpSfx();
+            }
+
             return true;
         }
 
@@ -1352,9 +1383,9 @@ namespace TinyHero.Player
         }
 
         ///<summary>
-        /// 더블 점프 캐스트 VFX 재생
+        /// 더블 점프 캐스트 피드백 재생
         ///</summary>
-        private void PlayDoubleJumpCastVfx()
+        private void PlayDoubleJumpCastFeedback()
         {
             if ( targetSkillManager == null || targetStatManager == null )
             {
@@ -1371,6 +1402,7 @@ namespace TinyHero.Player
             CSkillRuntimeData skillRuntimeData = targetSkillManager.GetSkillRuntimeData( DoubleJumpSkillId );
             CSkillContext skillContext = new CSkillContext( targetSkillManager, this, targetStatManager, skillDefinition, skillRuntimeData, transform );
             CSkillVfxUtility.PlayCastVfx( skillContext );
+            CSkillAudioUtility.PlayCastSfx( skillContext );
         }
 
         ///<summary>

@@ -394,15 +394,15 @@ namespace TinyHero.UI
             }
 
             string descriptionText = BuildPurchaseNoticeText( entryData, itemDefinition );
-            CPopupCommonNoticeManager popupCommonNoticeManager = CPopupCommonNoticeManager.Instance;
+            CUINavigationController navigationController = CUINavigationController.Instance;
 
-            if ( popupCommonNoticeManager == null )
+            if ( navigationController == null )
             {
                 ProcessPurchase( _shopEntryIndex );
                 return;
             }
 
-            popupCommonNoticeManager.ShowNotice( descriptionText, "구매", () => ProcessPurchase( _shopEntryIndex ), "취소", null );
+            navigationController.ShowCommonNotice( descriptionText, "구매", () => ProcessPurchase( _shopEntryIndex ), "취소", null );
         }
 
         ///<summary>
@@ -491,15 +491,15 @@ namespace TinyHero.UI
             string priceItemId = itemDefinition.GetSellPriceItemId();
             string priceText = BuildPriceText( priceItemId, totalPrice );
             string descriptionText = $"{itemDefinition.GetItemName()} x{itemQuantity}\n{priceText}\n판매하시겠습니까?";
-            CPopupCommonNoticeManager popupCommonNoticeManager = CPopupCommonNoticeManager.Instance;
+            CUINavigationController navigationController = CUINavigationController.Instance;
 
-            if ( popupCommonNoticeManager == null )
+            if ( navigationController == null )
             {
                 ProcessSellInventoryItem( _inventorySlotIndex );
                 return;
             }
 
-            popupCommonNoticeManager.ShowNotice( descriptionText, "판매", () => ProcessSellInventoryItem( _inventorySlotIndex ), "취소", null );
+            navigationController.ShowCommonNotice( descriptionText, "판매", () => ProcessSellInventoryItem( _inventorySlotIndex ), "취소", null );
         }
 
         ///<summary>

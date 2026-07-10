@@ -22,6 +22,7 @@ public class CPlayerStatusUI : MonoBehaviour
 
     [Space]
     [SerializeField] private TextMeshProUGUI textLevelValue;    // format : "n"
+    [SerializeField] private TextMeshProUGUI textPlayerNameValue;    // format : "{playerName}"
     [SerializeField] private TextMeshProUGUI textExpValue;  // format : "n% <size=80%>{currentExp}/{maxExp}</size>"
     [SerializeField] private Image expFillImage;  // fillAmount 0 ~ 1
 
@@ -81,7 +82,9 @@ public class CPlayerStatusUI : MonoBehaviour
     {
         ResolveTargetStatManager();
         SubscribeEvents();
+        SubscribePlayerProfileEvents();
         RefreshAll();
+        RefreshPlayerName();
     }
 
     ///<summary>
@@ -91,6 +94,7 @@ public class CPlayerStatusUI : MonoBehaviour
     {
         StopGaugeAnimationRoutines();
         UnsubscribeEvents();
+        UnsubscribePlayerProfileEvents();
     }
 
     ///<summary>
@@ -146,6 +150,7 @@ public class CPlayerStatusUI : MonoBehaviour
         ApplyImmediateHpState( targetStatManager.GetCurrentHp(), targetStatManager.GetMaxHp() );
         ApplyImmediateMpState( targetStatManager.GetCurrentMp(), targetStatManager.GetMaxMp() );
         ApplyImmediateLevelExpState( currentLevel, displayedCurrentExp, displayedMaxExp );
+        RefreshPlayerName();
     }
 
     ///<summary>
@@ -219,6 +224,35 @@ public class CPlayerStatusUI : MonoBehaviour
     }
 
     ///<summary>
+    /// 플레이어 프로필 이벤트 구독
+    ///</summary>
+    private void SubscribePlayerProfileEvents()
+    {
+        CPlayerProfileManager playerProfileManager = CPlayerProfileManager.Instance;
+
+        if ( playerProfileManager == null )
+        {
+            return;
+        }
+
+        playerProfileManager.OnPlayerNameChanged -= HandlePlayerNameChanged;
+        playerProfileManager.OnPlayerNameChanged += HandlePlayerNameChanged;
+    }
+
+    ///<summary>
+    /// 플레이어 프로필 이벤트 구독 해제
+    ///</summary>
+    private void UnsubscribePlayerProfileEvents()
+    {
+        if ( CPlayerProfileManager.TryGetExistingInstance( out CPlayerProfileManager playerProfileManager ) == false || playerProfileManager == null )
+        {
+            return;
+        }
+
+        playerProfileManager.OnPlayerNameChanged -= HandlePlayerNameChanged;
+    }
+
+    ///<summary>
     /// 체력 변경 반영
     ///</summary>
     private void HandleHpChanged( float _currentHp, float _maxHp )
@@ -240,6 +274,14 @@ public class CPlayerStatusUI : MonoBehaviour
     private void HandleLevelExpChanged( int _level, float _currentExp, float _maxExp )
     {
         SetLevelExpAnimationTarget( _level, _currentExp, _maxExp );
+    }
+
+    ///<summary>
+    /// 플레이어 이름 변경 반영
+    ///</summary>
+    private void HandlePlayerNameChanged( string _playerName )
+    {
+        RefreshPlayerName();
     }
 
     ///<summary>
@@ -592,6 +634,21 @@ public class CPlayerStatusUI : MonoBehaviour
 
             expFillImage.fillAmount = fillAmount;
         }
+    }
+
+    ///<summary>
+    /// 플레이어 이름 UI 갱신
+    ///</summary>
+    private void RefreshPlayerName()
+    {
+        if ( textPlayerNameValue == null )
+        {
+            return;
+        }
+
+        CPlayerProfileManager playerProfileManager = CPlayerProfileManager.Instance;
+        string playerName = playerProfileManager != null ? playerProfileManager.GetPlayerName() : string.Empty;
+        textPlayerNameValue.text = playerName;
     }
 
     ///<summary>

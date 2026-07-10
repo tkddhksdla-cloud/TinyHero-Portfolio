@@ -17,11 +17,21 @@ namespace TinyHero.Core
         public int saveVersion = 1;
         public string mapId = string.Empty;
         public Vector3 playerWorldPosition = Vector3.zero;
+        public CPlayerProfileSnapshotData playerProfileSnapshotData = new CPlayerProfileSnapshotData();
         public CPlayerStatSnapshotData playerStatSnapshotData = new CPlayerStatSnapshotData();
         public CPlayerInventorySnapshotData playerInventorySnapshotData = new CPlayerInventorySnapshotData();
         public CPlayerEquipmentSnapshotData playerEquipmentSnapshotData = new CPlayerEquipmentSnapshotData();
         public CQuestRuntimeSnapshotData questRuntimeSnapshotData = new CQuestRuntimeSnapshotData();
         public CSkillSnapshotData skillSnapshotData = new CSkillSnapshotData();
+    }
+
+    ///<summary>
+    /// 플레이어 프로필 저장 데이터
+    ///</summary>
+    [Serializable]
+    public sealed class CPlayerProfileSnapshotData
+    {
+        public string playerName = string.Empty;
     }
 
     ///<summary>

@@ -1,5 +1,6 @@
 using TinyHero.Core.Data;
 using TinyHero.Maps;
+using TinyHero.Player;
 using TinyHero.UI;
 using UnityEngine;
 
@@ -32,12 +33,13 @@ namespace TinyHero.Core
             CSkillUiManager skillUiManager = CSkillUiManager.Instance;
             CQuestUiManager questUiManager = CQuestUiManager.Instance;
             CSaveManager saveManager = CSaveManager.Instance;
-            CPopupCommonNoticeManager popupCommonNoticeManager = CPopupCommonNoticeManager.Instance;
+            CPlayerProfileManager playerProfileManager = CPlayerProfileManager.Instance;
             CToastMessageSystem toastMessageSystem = CToastMessageSystem.EnsureInstance();
             CMapManager mapManager = CMapManager.Instance;
             CNPCInteractionManager npcInteractionManager = CNPCInteractionManager.Instance;
             CMonsterInfoManager monsterInfoManager = CMonsterInfoManager.Instance;
             CNPCNameTagManager npcNameTagManager = CNPCNameTagManager.Instance;
+            CPlayerNameTagManager playerNameTagManager = CPlayerNameTagManager.Instance;
         }
 
         ///<summary>
