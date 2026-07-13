@@ -15,7 +15,7 @@ namespace TinyHero.Skill.Editor
         private const string DefinitionFolderPath = "Assets/Resources/Data/Skill/Definitions";
         private const string ConditionFolderPath = "Assets/Resources/Data/Skill/Conditions";
         private const string IconFolderPath = "Assets/Resources/Data/Skill/Icons";
-        private const string PlayerObjectName = "PlayerObject";
+        private const string GameManagerPrefabAssetPath = "Assets/Resources/Prefabs/Core/CGameManager.prefab";
         private const int IconTextureSize = 64;
 
         ///<summary>
@@ -137,18 +137,18 @@ namespace TinyHero.Skill.Editor
         ///</summary>
         private static string BindSkillToPlayer( CSkillDefinition _skillDefinition )
         {
-            GameObject playerObject = GameObject.Find( PlayerObjectName );
+            GameObject gameManagerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( GameManagerPrefabAssetPath );
 
-            if ( playerObject == null )
+            if ( gameManagerPrefab == null )
             {
-                return "PlayerObject was not found.";
+                return "CGameManager prefab was not found.";
             }
 
-            CSkillManager skillManager = playerObject.GetComponent<CSkillManager>();
+            CSkillManager skillManager = gameManagerPrefab.GetComponentInChildren<CSkillManager>( true );
 
             if ( skillManager == null )
             {
-                return "CSkillManager was not found on PlayerObject.";
+                return "CSkillManager was not found under CGameManager.";
             }
 
             SerializedObject serializedSkillManager = new SerializedObject( skillManager );
@@ -178,7 +178,8 @@ namespace TinyHero.Skill.Editor
 
             serializedSkillManager.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty( skillManager );
-            return "Double Jump skill asset created and bound to PlayerObject.";
+            AssetDatabase.SaveAssets();
+            return "Double Jump skill asset created and bound to CGameManager.";
         }
     }
 }

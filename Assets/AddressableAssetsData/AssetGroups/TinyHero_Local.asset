@@ -40,6 +40,12 @@ MonoBehaviour:
     - TinyHero.RuntimeResource
     - UI
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0da813bdde3d910429d3924f635c4dae
+    m_Address: Audio/SFX/SFX_PLAYER_JUMP
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 155c92be42b617048bb6028d3283b5b0
     m_Address: Prefabs/UI/Common/ToastMessage
     m_ReadOnly: 0
@@ -48,6 +54,18 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1730fcfcec9cb5d43b59a8c2e3ad4974
     m_Address: Audio/BGM/BGM_FORSEST_VILLAGE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 173d23eb5997f914dafcfdf66ed3b5cf
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_MATERIAL_TURTLE_SNAIL_WATER
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1fa3a3431e68fbb419c69ab6eaba82d7
+    m_Address: Audio/SFX/SFX_PLAYER_JUMP_DOUBLE
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -114,6 +132,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3eaea9cdcff196f499f083ab6a00e03b
     m_Address: Prefabs/UI/Quest/RewardSlot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 402ef90793b406d49a40daf15a5dfc0b
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_SWORD_ANGEL_KNIGHT
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -217,6 +241,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b8fee9abba1e264690a9926f4c08739
+    m_Address: Prefabs/Core/CGameManager
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7c2bd12729a5f0242b55a70db8b0b45c
     m_Address: Prefabs/UI/Inventory/ItemTooltipUI
     m_ReadOnly: 0
@@ -278,6 +308,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a700d3616874c749a028cebd68ede67
+    m_Address: Audio/SFX/SFX_CLICK_00
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9a9ab0c2a09b4024a8b3663a5348dfad
     m_Address: Prefabs/Item/Drops/Drop_Item_Consumable_Apple
     m_ReadOnly: 0
@@ -321,6 +357,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b4761d61e7cf4474fbc312701d16d612
+    m_Address: Prefabs/UI/NameTag/PlayerNameTag
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b9d391f69a115fa42861c9782673f5e7
     m_Address: Prefabs/UI/Quest/QuestSlot
     m_ReadOnly: 0
@@ -341,6 +383,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c1964584651b7e343ba769f038d63ca6
     m_Address: Prefabs/Item/Drops/DROP_ITEM_CONSUMABLE_CUBE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1a40cdbcd894b442bf6ef0c36063af0
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_HELMET_ANGEL_KNIGHT
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -377,6 +425,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d29623103da69674599fe88b86fc1a16
     m_Address: Prefabs/FX/FX_DoubleJump
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d578a71711b74e84d95a5531be1042f3
+    m_Address: Prefabs/UI/Popup/PopupCommonInputField
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -418,6 +472,18 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ed10090370f0bc741aabd0e3fd227fe8
+    m_Address: Audio/SFX/SFX_MONSTER_HURT_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee0edddf88dd48c4aac8035413435e02
+    m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_SWORD_GOLD_KNIGHT
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ee9d5e184f630db4fb6b32506e1af221
     m_Address: Prefabs/UI/Common/CToastMessageSystem
     m_ReadOnly: 0
@@ -426,6 +492,18 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f4f7384544bfe584184c35abe6df58ac
     m_Address: Prefabs/Character/NPC/NPC_0001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f655fbbb61daaa64b96e228751831b35
+    m_Address: Audio/SFX/SFX_ITEM_ACQUIRE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f8cbad8e755644042b3494381e54793b
+    m_Address: Prefabs/FX/FX_Explosion
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource

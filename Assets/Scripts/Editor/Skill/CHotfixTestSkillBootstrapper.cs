@@ -16,7 +16,7 @@ namespace TinyHero.Skill.Editor
         private const string ActiveEffectFolderPath = "Assets/Resources/Data/Skill/Effects/Active";
         private const string ConditionFolderPath = "Assets/Resources/Data/Skill/Conditions";
         private const string IconFolderPath = "Assets/Resources/Data/Skill/Icons";
-        private const string PlayerObjectName = "PlayerObject";
+        private const string GameManagerPrefabAssetPath = "Assets/Resources/Prefabs/Core/CGameManager.prefab";
         private const string HotfixTestSkillId = "skill_hotfix_test";
         private const int IconTextureSize = 64;
 
@@ -131,18 +131,18 @@ namespace TinyHero.Skill.Editor
         ///<summary>플레이어 스킬 매니저에 Hotfix 테스트 스킬 연결</summary>
         private static string BindSkillToPlayer( CSkillDefinition _skillDefinition )
         {
-            GameObject playerObject = GameObject.Find( PlayerObjectName );
+            GameObject gameManagerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( GameManagerPrefabAssetPath );
 
-            if ( playerObject == null )
+            if ( gameManagerPrefab == null )
             {
-                return "Hotfix test skill asset created. PlayerObject was not found in the active scene.";
+                return "Hotfix test skill asset created. CGameManager prefab was not found.";
             }
 
-            CSkillManager skillManager = playerObject.GetComponent<CSkillManager>();
+            CSkillManager skillManager = gameManagerPrefab.GetComponentInChildren<CSkillManager>( true );
 
             if ( skillManager == null )
             {
-                return "Hotfix test skill asset created. CSkillManager was not found on PlayerObject.";
+                return "Hotfix test skill asset created. CSkillManager was not found under CGameManager.";
             }
 
             SerializedObject serializedSkillManager = new SerializedObject( skillManager );
@@ -172,7 +172,8 @@ namespace TinyHero.Skill.Editor
 
             serializedSkillManager.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty( skillManager );
-            return "Hotfix test skill asset created and bound to PlayerObject.";
+            AssetDatabase.SaveAssets();
+            return "Hotfix test skill asset created and bound to CGameManager.";
         }
     }
 }

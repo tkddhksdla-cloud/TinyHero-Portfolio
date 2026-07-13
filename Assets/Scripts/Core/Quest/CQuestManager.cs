@@ -12,8 +12,6 @@ namespace TinyHero.Quest
     /// 플레이어 퀘스트 진행 관리 컴포넌트
     ///</summary>
     [DisallowMultipleComponent]
-    [RequireComponent( typeof( CQuestStateProvider ) )]
-    [RequireComponent( typeof( CPlayerInventoryManager ) )]
     public sealed class CQuestManager : MonoBehaviour
     {
         private const string MonsterStatTableResourcePath = "Data/Monster/MonsterStatTableData";
@@ -29,6 +27,30 @@ namespace TinyHero.Quest
         private static CMonsterStatTableData cachedMonsterStatTableData;
 
         public event Action<string> OnQuestUpdated;
+
+        ///<summary>
+        /// 플레이어 런타임 참조 연결
+        ///</summary>
+        public void BindRuntimeReferences( PlayerController _playerController, CPlayerStatManager _statManager, CPlayerInventoryManager _inventoryManager, CQuestStateProvider _questStateProvider )
+        {
+            UnsubscribeEvents();
+            targetPlayerController = _playerController;
+            targetPlayerStatManager = _statManager;
+            targetPlayerInventoryManager = _inventoryManager;
+            targetQuestStateProvider = _questStateProvider;
+
+            if ( targetPlayerController == null )
+            {
+                return;
+            }
+
+            if ( isActiveAndEnabled )
+            {
+                SubscribeEvents();
+                RefreshLevelConditionProgress();
+                RefreshTurnInConditionProgress();
+            }
+        }
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -1743,12 +1765,6 @@ namespace TinyHero.Quest
             if ( targetPlayerInventoryManager == null )
             {
                 CPlayerInventoryManager resolvedPlayerInventoryManager = GetComponent<CPlayerInventoryManager>();
-
-                if ( resolvedPlayerInventoryManager == null )
-                {
-                    resolvedPlayerInventoryManager = gameObject.AddComponent<CPlayerInventoryManager>();
-                }
-
                 targetPlayerInventoryManager = resolvedPlayerInventoryManager;
             }
 

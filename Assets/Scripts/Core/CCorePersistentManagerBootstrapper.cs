@@ -12,6 +12,7 @@ namespace TinyHero.Core
     public static class CCorePersistentManagerBootstrapper
     {
         private const string AudioManagerPrefabResourcePath = "Prefabs/Core/CAudioManager";
+        private const string GameManagerPrefabResourcePath = "Prefabs/Core/CGameManager";
 
         ///<summary>
         /// 영속 매니저 선생성 처리
@@ -23,6 +24,7 @@ namespace TinyHero.Core
             _ = CHotfixRuntimeLoader.Instance;
             _ = CObjectPoolManager.Instance;
             EnsureAudioManagerExists();
+            EnsureGameManagerExists();
             CInputManager inputManager = CInputManager.Instance;
             CDataManager dataManager = CDataManager.Instance;
             _ = CGameSettingManager.Instance;
@@ -64,6 +66,31 @@ namespace TinyHero.Core
 
             GameObject audioManagerObject = Object.Instantiate( audioManagerPrefab );
             audioManagerObject.name = audioManagerPrefab.name;
+        }
+
+        ///<summary>
+        /// 게임 매니저 프리팹 인스턴스 보장
+        ///</summary>
+        private static void EnsureGameManagerExists()
+        {
+            bool hasExistingGameManager = CGameManager.TryGetExistingInstance( out CGameManager existingGameManager );
+
+            if ( hasExistingGameManager && existingGameManager != null )
+            {
+                return;
+            }
+
+            GameObject gameManagerPrefab = Resources.Load<GameObject>( GameManagerPrefabResourcePath );
+
+            if ( gameManagerPrefab == null )
+            {
+                Debug.LogError( $"[ CoreBootstrap ] Game manager prefab was not found: {GameManagerPrefabResourcePath}" );
+                _ = CGameManager.Instance;
+                return;
+            }
+
+            GameObject gameManagerObject = Object.Instantiate( gameManagerPrefab );
+            gameManagerObject.name = gameManagerPrefab.name;
         }
     }
 }

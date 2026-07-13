@@ -11,7 +11,6 @@ namespace TinyHero.Skill
     ///<summary>
     /// 플레이어 스킬 상태 관리 컴포넌트
     ///</summary>
-    [RequireComponent( typeof( CPlayerStatManager ) )]
     public sealed class CSkillManager : MonoBehaviour
     {
         private const int VfxWarmupCountPerFrame = 10;
@@ -48,6 +47,38 @@ namespace TinyHero.Skill
         public event Action<CSkillDefinition> OnSkillUsed;
         public event Action<CSkillDefinition> OnSkillExecuted;
         public event Action OnSkillStateChanged;
+
+        ///<summary>
+        /// 연결된 플레이어 제어 컴포넌트 반환
+        ///</summary>
+        public PlayerController GetPlayerController()
+        {
+            PlayerController result = targetPlayerController;
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 런타임 참조 연결
+        ///</summary>
+        public void BindRuntimeReferences( PlayerController _playerController, CPlayerStatManager _statManager, CQuestStateProvider _questStateProvider )
+        {
+            UnsubscribeRuntimeEvents();
+            targetPlayerController = _playerController;
+            targetStatManager = _statManager;
+            targetQuestStateProvider = _questStateProvider;
+
+            if ( targetPlayerController == null )
+            {
+                return;
+            }
+
+            if ( isActiveAndEnabled )
+            {
+                SubscribeRuntimeEvents();
+                RebuildPassiveStatBonus();
+                RaiseSkillStateChanged();
+            }
+        }
 
         ///<summary>
         /// 스킬 매니저 초기화
@@ -1862,7 +1893,7 @@ private CSkillDefinition CreateDefaultCloneSampleSkillDefinition()
         ///</summary>
         private CSkillContext CreateSkillContext( CSkillDefinition _skillDefinition, CSkillRuntimeData _runtimeData )
         {
-            Transform ownerTransform = transform;
+            Transform ownerTransform = targetPlayerController != null ? targetPlayerController.transform : transform;
             CSkillContext skillContext = new CSkillContext( this, targetPlayerController, targetStatManager, _skillDefinition, _runtimeData, ownerTransform );
             return skillContext;
         }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using TinyHero.Core;
+using TinyHero.Player;
 using TinyHero.Skill;
 using UnityEngine;
 
@@ -148,6 +150,35 @@ namespace TinyHero.Tests
             Assert.IsTrue( createdSnapshotData.skillRuntimeEntryList[ 0 ].isUnlocked );
             Assert.AreEqual( 2, createdSnapshotData.skillRuntimeEntryList[ 0 ].skillLevel );
             Assert.AreEqual( 4, createdSnapshotData.skillRuntimeEntryList[ 0 ].assignedQuickSlotIndex );
+        }
+
+        ///<summary>
+        /// 분리된 스킬 매니저가 플레이어 트랜스폼을 실행 주체로 사용하는지 검증
+        ///</summary>
+        [Test]
+        public void CreateSkillContext_UsesBoundPlayerTransformAsOwner()
+        {
+            GameObject playerObject = new GameObject( "SkillManagerTests_Player" );
+
+            try
+            {
+                PlayerController playerController = playerObject.AddComponent<PlayerController>();
+                skillManager.BindRuntimeReferences( playerController, null, null );
+                CSkillDefinition skillDefinition = CreateActiveSkillDefinition( "skill_owner", "Owner Skill" );
+                MethodInfo createSkillContextMethod = typeof( CSkillManager ).GetMethod( "CreateSkillContext", BindingFlags.Instance | BindingFlags.NonPublic );
+
+                Assert.IsNotNull( createSkillContextMethod );
+
+                object[] parameterArray = new object[] { skillDefinition, null };
+                CSkillContext skillContext = createSkillContextMethod.Invoke( skillManager, parameterArray ) as CSkillContext;
+
+                Assert.IsNotNull( skillContext );
+                Assert.AreEqual( playerController.transform, skillContext.GetOwnerTransform() );
+            }
+            finally
+            {
+                Object.DestroyImmediate( playerObject );
+            }
         }
 
         ///<summary>

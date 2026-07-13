@@ -41,12 +41,14 @@ namespace TinyHero.Tools
         private static readonly string[] RequiredAssetPaths =
         {
             "Assets/Resources/Prefabs/Character/Player/PlayerObject.prefab",
+            "Assets/Resources/Prefabs/Core/CGameManager.prefab",
             HotfixPayloadAssetPath
         };
 
         private static readonly string[] RequiredAddressableKeys =
         {
             "Prefabs/Character/Player/PlayerObject",
+            "Prefabs/Core/CGameManager",
             "Hotfix/TinyHero.Hotfix.dll"
         };
 

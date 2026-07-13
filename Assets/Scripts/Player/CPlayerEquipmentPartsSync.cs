@@ -9,7 +9,6 @@ namespace TinyHero.Player
     ///<summary>
     /// 플레이어 장비와 파츠 외형 동기화
     ///</summary>
-    [RequireComponent( typeof( CPlayerEquipmentManager ) )]
     public sealed class CPlayerEquipmentPartsSync : MonoBehaviour
     {
         private static readonly PartsType[] ManagedPartsTypeArray =
@@ -35,6 +34,26 @@ namespace TinyHero.Player
         private readonly Dictionary<PartsType, bool> defaultPartsVisibilityDictionary = new Dictionary<PartsType, bool>();
 
         private bool isDefaultStateCached;
+
+        ///<summary>
+        /// 장비 매니저 참조 연결
+        ///</summary>
+        public void BindEquipmentManager( CPlayerEquipmentManager _equipmentManager )
+        {
+            if ( targetEquipmentManager == _equipmentManager )
+            {
+                return;
+            }
+
+            UnsubscribeEquipmentChanged();
+            targetEquipmentManager = _equipmentManager;
+            SubscribeEquipmentChanged();
+
+            if ( isDefaultStateCached )
+            {
+                ApplyEquipmentPartsState();
+            }
+        }
 
         ///<summary>
         /// 장비 매니저와 파츠 매니저 참조 결정

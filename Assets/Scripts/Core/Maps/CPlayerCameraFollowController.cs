@@ -1,3 +1,4 @@
+using TinyHero.Core;
 using TinyHero.Player;
 using UnityEngine;
 
@@ -10,7 +11,6 @@ namespace TinyHero.Maps
     [RequireComponent( typeof( Camera ) )]
     public sealed class CPlayerCameraFollowController : MonoBehaviour
     {
-        private const string PlayerObjectName = "PlayerObject";
         private const float DefaultFollowSmoothTime = 0.42f;
         private const float DefaultCameraZ = -10.0f;
         private const float DefaultHorizontalDeadZone = 0.8f;
@@ -127,15 +127,8 @@ namespace TinyHero.Maps
         ///</summary>
         private void ResolveTargetTransform()
         {
-            GameObject playerObject = GameObject.Find( PlayerObjectName );
-
-            if ( playerObject != null )
-            {
-                targetTransform = playerObject.transform;
-                return;
-            }
-
-            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+            CGameManager gameManager = CGameManager.Instance;
+            gameManager.TryGetActivePlayerController( out PlayerController playerController );
 
             if ( playerController == null )
             {

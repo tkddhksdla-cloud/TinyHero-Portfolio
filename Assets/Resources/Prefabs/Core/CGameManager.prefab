@@ -1,0 +1,319 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2553976324741130503
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1808746844902363929}
+  - component: {fileID: 3747642937114501427}
+  - component: {fileID: 7913958678284786308}
+  - component: {fileID: 5478571554225968327}
+  - component: {fileID: 833399691765920662}
+  - component: {fileID: 6128094026325241734}
+  - component: {fileID: 645720852316827962}
+  - component: {fileID: 2703560856381932143}
+  m_Layer: 0
+  m_Name: PlayerRuntime
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1808746844902363929
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1018604637718826817}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3747642937114501427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fadc31fe7bb7ef42b03fb975f277531, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Player.CPlayerStatManager
+  baseStatDefinition:
+    hp: 100
+    hr: 0
+    mp: 50
+    mr: 0
+    atk: 3
+    def: 0
+    crt: 0.05
+    crd: 1.5
+    acc: 0
+    ats: 1
+    move: 4.5
+    range: 0
+    cdr: 0
+  equipmentStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+    cdr: 0
+  equipmentPercentStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+    cdr: 0
+  levelStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+    cdr: 0
+  skillStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+    cdr: 0
+  equipmentModifierBonus:
+    expGainPercent: 0
+    goldGainPercent: 0
+    finalAttackPercent: 0
+  restoreResourceOnAwake: 1
+  enableAutoRecovery: 1
+  initialUnspentStatPoint: 0
+  initialCurrentLevel: 1
+  initialCurrentExp: 0
+  maxExp: 100
+--- !u!114 &7913958678284786308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c813d1a830177f4c8903738d8e53494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Player.CPlayerInventoryManager
+  inventoryCategoryEntryList: []
+--- !u!114 &5478571554225968327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9248ac1bc505f8b4dbc25e419007b328, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Player.CPlayerEquipmentManager
+  targetStatManager: {fileID: 3747642937114501427}
+  equipmentSlotEntryList:
+  - equipmentType: 1
+    itemId: ITEM_EQUIPMENT_BRONZE_SWORD
+    equipmentPotentialData:
+      rank: 0
+      lineDataList:
+      - optionKey: 
+        optionType: 0
+        valueType: 0
+        lineRank: 0
+        value: 0
+      - optionKey: 
+        optionType: 0
+        valueType: 0
+        lineRank: 0
+        value: 0
+      - optionKey: 
+        optionType: 0
+        valueType: 0
+        lineRank: 0
+        value: 0
+  - equipmentType: 2
+    itemId: 
+    equipmentPotentialData:
+      rank: 0
+      lineDataList: []
+  - equipmentType: 3
+    itemId: 
+    equipmentPotentialData:
+      rank: 0
+      lineDataList: []
+  - equipmentType: 4
+    itemId: 
+    equipmentPotentialData:
+      rank: 0
+      lineDataList: []
+--- !u!114 &833399691765920662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0919510aba6514458adf3f2d84e8832, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CQuestStateProvider
+  completedQuestIdList: []
+  runtimeEntryList: []
+--- !u!114 &6128094026325241734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 794eaf9a15d17de448849a378ec9c36b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Quest.CQuestManager
+  targetPlayerController: {fileID: 0}
+  targetPlayerStatManager: {fileID: 3747642937114501427}
+  targetPlayerInventoryManager: {fileID: 7913958678284786308}
+  targetQuestStateProvider: {fileID: 833399691765920662}
+--- !u!114 &645720852316827962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cac81e2a94f435c49a0fc0f68f9c42a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CSkillManager
+  targetPlayerController: {fileID: 0}
+  targetStatManager: {fileID: 3747642937114501427}
+  targetQuestStateProvider: {fileID: 833399691765920662}
+  skillDefinitionList:
+  - {fileID: 11400000, guid: c5163fd33b8d42e4da3263b5c7994d0c, type: 2}
+  - {fileID: 11400000, guid: dec46b49d4f725243a3ddd2f1890f65e, type: 2}
+  - {fileID: 11400000, guid: 7ee758556a9a00c479697812e439e729, type: 2}
+  - {fileID: 11400000, guid: be34c12bfb9051b4db229b8ca5c3a53e, type: 2}
+  - {fileID: 11400000, guid: ff6d683b879db984c878cf3d47d1afdc, type: 2}
+  - {fileID: 11400000, guid: ef937572343ad8442b292e7685adb322, type: 2}
+  - {fileID: 11400000, guid: a5715b0f89b01e149955104e88301c59, type: 2}
+  - {fileID: 11400000, guid: 14eda11401939c34aa3ebb50466cf4aa, type: 2}
+  skillRuntimeDataList: []
+  useDefaultSampleSkills: 0
+  currentSkillPoint: 0
+  initialSkillPoint: 0
+  skillPointPerLevelUp: 1
+  lastGrantedPlayerLevel: 1
+--- !u!114 &2703560856381932143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553976324741130503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9138e4f422a93674889af5b51318716b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Player.CPlayerRuntimeContext
+  playerStatManager: {fileID: 3747642937114501427}
+  playerInventoryManager: {fileID: 7913958678284786308}
+  playerEquipmentManager: {fileID: 5478571554225968327}
+  questStateProvider: {fileID: 833399691765920662}
+  questManager: {fileID: 6128094026325241734}
+  skillManager: {fileID: 645720852316827962}
+--- !u!1 &8092722240320170307
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1018604637718826817}
+  - component: {fileID: 7209609724855526891}
+  m_Layer: 0
+  m_Name: CGameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1018604637718826817
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8092722240320170307}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1808746844902363929}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7209609724855526891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8092722240320170307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df45e896982e1b94c9e4c06d70a8d2fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.CGameManager
+  playerRuntimeContext: {fileID: 2703560856381932143}
+  playerPrefab: {fileID: 1694710819052504179, guid: 2dbfe91b3ba540942b2978c78051cd39, type: 3}

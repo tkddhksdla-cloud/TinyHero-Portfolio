@@ -165,6 +165,20 @@ namespace TinyHero.Player
         public event Action<CPlayerEquipmentManager> OnEquipmentChanged;
 
         ///<summary>
+        /// 플레이어 스탯 매니저 연결
+        ///</summary>
+        public void BindStatManager( CPlayerStatManager _statManager )
+        {
+            if ( _statManager == null || targetStatManager == _statManager )
+            {
+                return;
+            }
+
+            targetStatManager = _statManager;
+            RefreshEquipmentStatBonus();
+        }
+
+        ///<summary>
         /// 장비 상태 초기화
         ///</summary>
         private void Awake()
@@ -643,12 +657,6 @@ namespace TinyHero.Player
             }
 
             CPlayerStatManager resolvedStatManager = GetComponent<CPlayerStatManager>();
-
-            if ( resolvedStatManager == null )
-            {
-                resolvedStatManager = gameObject.AddComponent<CPlayerStatManager>();
-            }
-
             targetStatManager = resolvedStatManager;
         }
 

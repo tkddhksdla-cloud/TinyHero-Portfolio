@@ -173,13 +173,13 @@ namespace TinyHero.Player
 
             if ( targetStatManager == null )
             {
-                CPlayerStatManager resolvedStatManager = GetComponent<CPlayerStatManager>();
+                CPlayerStatManager resolvedStatManager = targetPlayerController != null ? targetPlayerController.GetPlayerStatManager() : null;
                 targetStatManager = resolvedStatManager;
             }
 
             if ( targetSkillManager == null )
             {
-                CSkillManager resolvedSkillManager = GetComponent<CSkillManager>();
+                CSkillManager resolvedSkillManager = targetPlayerController != null ? targetPlayerController.GetSkillManager() : null;
                 targetSkillManager = resolvedSkillManager;
             }
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using TinyHero.UI;
@@ -337,18 +338,11 @@ public sealed class CNPCObject : MonoBehaviour
     ///</summary>
     private void ApplyCollisionIgnoreToActivePlayers()
     {
-        PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
-        int playerControllerCount = playerControllerArray.Length;
+        CGameManager gameManager = CGameManager.Instance;
+        bool hasPlayerController = gameManager.TryGetActivePlayerController( out PlayerController playerController );
 
-        for ( int index = 0; index < playerControllerCount; index++ )
+        if ( hasPlayerController )
         {
-            PlayerController playerController = playerControllerArray[ index ];
-
-            if ( playerController == null || playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
-            {
-                continue;
-            }
-
             IgnoreCollisionWithPlayer( playerController );
         }
     }

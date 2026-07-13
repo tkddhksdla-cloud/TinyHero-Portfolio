@@ -669,22 +669,10 @@ namespace TinyHero.Core
         ///</summary>
         private PlayerController ResolveActivePlayerController()
         {
-            PlayerController[] playerControllerArray = UnityEngine.Object.FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
-            int playerControllerCount = playerControllerArray.Length;
-
-            for ( int index = 0; index < playerControllerCount; index++ )
-            {
-                PlayerController playerController = playerControllerArray[ index ];
-
-                if ( playerController == null || playerController.gameObject.activeInHierarchy == false || playerController.enabled == false )
-                {
-                    continue;
-                }
-
-                return playerController;
-            }
-
-            return null;
+            CGameManager gameManager = CGameManager.Instance;
+            bool hasPlayerController = gameManager.TryGetActivePlayerController( out PlayerController playerController );
+            PlayerController result = hasPlayerController ? playerController : null;
+            return result;
         }
 
         ///<summary>

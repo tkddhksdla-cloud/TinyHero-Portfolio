@@ -34,8 +34,6 @@ namespace TinyHero.Maps
         }
 
         private const string BackgroundPrefabResourcePath = "Prefabs/BackgroundObject/BackgroundObject";
-        private const string PlayerPrefabResourcePath = "Prefabs/Character/Player/PlayerObject";
-        private const string PlayerObjectName = "PlayerObject";
         private const string PortalPrefabResourcePath = "Prefabs/Portal/PortalObject";
         private const string MonsterPrefabResourceFolderPath = "Prefabs/Character/Monster";
         private const string NpcPrefabResourceFolderPath = "Prefabs/Character/NPC";
@@ -365,33 +363,13 @@ namespace TinyHero.Maps
         ///</summary>
         private void EnsurePlayerObjectExists()
         {
-            PlayerController existingPlayerController = FindFirstObjectByType<PlayerController>();
+            CGameManager gameManager = CGameManager.Instance;
+            bool hasPlayerController = gameManager.EnsurePlayerForActiveScene( defaultPlayerSpawnPosition, out PlayerController playerController );
 
-            if ( existingPlayerController != null )
+            if ( hasPlayerController )
             {
-                ApplyMonsterContactHitEnabledToPlayer( existingPlayerController );
-                return;
+                ApplyMonsterContactHitEnabledToPlayer( playerController );
             }
-
-            GameObject existingPlayerObject = GameObject.Find( PlayerObjectName );
-
-            if ( existingPlayerObject != null )
-            {
-                return;
-            }
-
-            GameObject playerPrefab = Resources.Load<GameObject>( PlayerPrefabResourcePath );
-
-            if ( playerPrefab == null )
-            {
-                return;
-            }
-
-            Vector3 spawnPosition = defaultPlayerSpawnPosition;
-            GameObject playerObject = Instantiate( playerPrefab, spawnPosition, Quaternion.identity );
-            playerObject.name = PlayerObjectName;
-            PlayerController createdPlayerController = playerObject.GetComponent<PlayerController>();
-            ApplyMonsterContactHitEnabledToPlayer( createdPlayerController );
         }
 
         ///<summary>
@@ -411,7 +389,8 @@ namespace TinyHero.Maps
                 cameraFollowController = worldCamera.gameObject.AddComponent<CPlayerCameraFollowController>();
             }
 
-            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+            CGameManager gameManager = CGameManager.Instance;
+            gameManager.TryGetActivePlayerController( out PlayerController playerController );
 
             if ( playerController == null )
             {
@@ -426,7 +405,8 @@ namespace TinyHero.Maps
         ///</summary>
         private void ApplyMonsterContactHitToggleToPlayer()
         {
-            PlayerController playerController = FindFirstObjectByType<PlayerController>();
+            CGameManager gameManager = CGameManager.Instance;
+            gameManager.TryGetActivePlayerController( out PlayerController playerController );
             ApplyMonsterContactHitEnabledToPlayer( playerController );
         }
 
@@ -454,8 +434,9 @@ namespace TinyHero.Maps
                 return;
             }
 
-            CSkillManager resolvedSkillManager = FindFirstObjectByType<CSkillManager>();
-            skillManager = resolvedSkillManager;
+            CGameManager gameManager = CGameManager.Instance;
+            bool hasRuntimeContext = gameManager.TryGetPlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            skillManager = hasRuntimeContext ? playerRuntimeContext.GetSkillManager() : null;
         }
 
         ///<summary>
@@ -2262,12 +2243,13 @@ namespace TinyHero.Maps
             }
 
             EnsurePlayerObjectExists();
-            PlayerController resolvedPlayerController = FindFirstObjectByType<PlayerController>();
+            CGameManager gameManager = CGameManager.Instance;
+            gameManager.TryGetActivePlayerController( out PlayerController resolvedPlayerController );
             _playerController = resolvedPlayerController;
 
             if ( resolvedPlayerController != null )
             {
-                CSkillManager playerSkillManager = resolvedPlayerController.GetComponent<CSkillManager>();
+                CSkillManager playerSkillManager = resolvedPlayerController.GetSkillManager();
 
                 if ( playerSkillManager != null )
                 {
@@ -2283,7 +2265,7 @@ namespace TinyHero.Maps
                 return false;
             }
 
-            _playerStatManager = _resolvedSkillManager.GetComponent<CPlayerStatManager>();
+            _playerStatManager = resolvedPlayerController != null ? resolvedPlayerController.GetPlayerStatManager() : null;
             _ownerTransform = resolvedPlayerController != null ? resolvedPlayerController.transform : _resolvedSkillManager.transform;
 
             string skillId = _skillDefinition.GetSkillId();
@@ -2376,7 +2358,8 @@ namespace TinyHero.Maps
         {
             if ( skillManager == null )
             {
-                PlayerController resolvedPlayerController = FindFirstObjectByType<PlayerController>();
+                CGameManager gameManager = CGameManager.Instance;
+                gameManager.TryGetActivePlayerController( out PlayerController resolvedPlayerController );
 
                 if ( resolvedPlayerController != null )
                 {
@@ -2386,7 +2369,7 @@ namespace TinyHero.Maps
                 return null;
             }
 
-            PlayerController playerController = skillManager.GetComponent<PlayerController>();
+            PlayerController playerController = skillManager.GetPlayerController();
             Transform ownerTransform = playerController != null ? playerController.transform : skillManager.transform;
             return ownerTransform;
         }

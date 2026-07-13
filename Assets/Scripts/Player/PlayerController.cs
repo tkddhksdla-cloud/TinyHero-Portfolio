@@ -13,9 +13,6 @@ namespace TinyHero.Player
     /// 플레이어 제어 컴포넌트
     ///</summary>
     [RequireComponent( typeof( Rigidbody2D ) )]
-    [RequireComponent( typeof( CPlayerStatManager ) )]
-    [RequireComponent( typeof( CPlayerEquipmentManager ) )]
-    [RequireComponent( typeof( CQuestManager ) )]
     public sealed class PlayerController : MonoBehaviour
     {
         ///<summary>
@@ -136,6 +133,7 @@ namespace TinyHero.Player
         private bool isPendingAttack;
         private bool wasGrounded;
         private int pendingSkillSlotIndex = InvalidSkillSlotIndex;
+        private CPlayerRuntimeContext playerRuntimeContext;
 
         public event System.Action OnAttackHitTriggered;
 
@@ -194,6 +192,30 @@ namespace TinyHero.Player
         {
             CQuestManager result = targetQuestManager;
             return result;
+        }
+
+        ///<summary>
+        /// 플레이어 런타임 컨텍스트 연결
+        ///</summary>
+        public void BindRuntimeContext( CPlayerRuntimeContext _playerRuntimeContext )
+        {
+            if ( _playerRuntimeContext == null )
+            {
+                return;
+            }
+
+            playerRuntimeContext = _playerRuntimeContext;
+            targetStatManager = playerRuntimeContext.GetStatManager();
+            targetInventoryManager = playerRuntimeContext.GetInventoryManager();
+            targetEquipmentManager = playerRuntimeContext.GetEquipmentManager();
+            targetQuestManager = playerRuntimeContext.GetQuestManager();
+            targetSkillManager = playerRuntimeContext.GetSkillManager();
+            CPlayerEquipmentPartsSync equipmentPartsSync = GetComponent<CPlayerEquipmentPartsSync>();
+
+            if ( equipmentPartsSync != null )
+            {
+                equipmentPartsSync.BindEquipmentManager( targetEquipmentManager );
+            }
         }
 
         ///<summary>
@@ -445,6 +467,12 @@ namespace TinyHero.Player
             CObjectPoolManager.TryClearPool( attackSlashFxPoolKey );
 
             SetSpriteRendererVisible( true );
+
+            if ( playerRuntimeContext != null )
+            {
+                playerRuntimeContext.UnbindPlayerController( this );
+                playerRuntimeContext = null;
+            }
         }
 
         ///<summary>
@@ -656,12 +684,6 @@ namespace TinyHero.Player
             }
 
             CPlayerStatManager resolvedStatManager = GetComponent<CPlayerStatManager>();
-
-            if ( resolvedStatManager == null )
-            {
-                resolvedStatManager = gameObject.AddComponent<CPlayerStatManager>();
-            }
-
             targetStatManager = resolvedStatManager;
         }
 
@@ -676,12 +698,6 @@ namespace TinyHero.Player
             }
 
             CSkillManager resolvedSkillManager = GetComponent<CSkillManager>();
-
-            if ( resolvedSkillManager == null )
-            {
-                resolvedSkillManager = gameObject.AddComponent<CSkillManager>();
-            }
-
             targetSkillManager = resolvedSkillManager;
         }
 
@@ -696,12 +712,6 @@ namespace TinyHero.Player
             }
 
             CPlayerEquipmentManager resolvedEquipmentManager = GetComponent<CPlayerEquipmentManager>();
-
-            if ( resolvedEquipmentManager == null )
-            {
-                resolvedEquipmentManager = gameObject.AddComponent<CPlayerEquipmentManager>();
-            }
-
             targetEquipmentManager = resolvedEquipmentManager;
         }
 
@@ -716,12 +726,6 @@ namespace TinyHero.Player
             }
 
             CPlayerInventoryManager resolvedInventoryManager = GetComponent<CPlayerInventoryManager>();
-
-            if ( resolvedInventoryManager == null )
-            {
-                resolvedInventoryManager = gameObject.AddComponent<CPlayerInventoryManager>();
-            }
-
             targetInventoryManager = resolvedInventoryManager;
         }
 
@@ -736,12 +740,6 @@ namespace TinyHero.Player
             }
 
             CQuestManager resolvedQuestManager = GetComponent<CQuestManager>();
-
-            if ( resolvedQuestManager == null )
-            {
-                resolvedQuestManager = gameObject.AddComponent<CQuestManager>();
-            }
-
             targetQuestManager = resolvedQuestManager;
         }
 
