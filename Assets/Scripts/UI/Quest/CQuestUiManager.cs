@@ -184,22 +184,11 @@ namespace TinyHero.UI
                 return targetPlayerController;
             }
 
-            PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
-
-            for ( int index = 0; index < playerControllerArray.Length; index++ )
-            {
-                PlayerController playerController = playerControllerArray[ index ];
-
-                if ( playerController == null || playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
-                {
-                    continue;
-                }
-
-                targetPlayerController = playerController;
-                return targetPlayerController;
-            }
-
-            return null;
+            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
+            PlayerController playerController = null;
+            bool hasPlayerController = hasGameManager && gameManager.TryGetActivePlayerController( out playerController );
+            targetPlayerController = hasPlayerController ? playerController : null;
+            return targetPlayerController;
         }
     }
 }

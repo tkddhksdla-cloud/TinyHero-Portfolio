@@ -1,3 +1,4 @@
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using LayerLab.ArtMakerUnity;
@@ -125,6 +126,8 @@ namespace TinyHero.UI
 
             if ( isSameBinding )
             {
+                SubscribeEvents();
+                RefreshView();
                 return;
             }
 
@@ -312,30 +315,24 @@ namespace TinyHero.UI
         ///</summary>
         private void ResolveTargets()
         {
-            if ( targetEquipmentManager == null )
+            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
+
+            if ( hasGameManager == false )
             {
-                targetEquipmentManager = FindFirstObjectByType<CPlayerEquipmentManager>();
+                return;
             }
 
-            if ( targetInventoryManager == null )
+            gameManager.TryGetActivePlayerController( out targetPlayerController );
+            bool hasRuntimeContext = gameManager.TryGetPlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+
+            if ( hasRuntimeContext == false )
             {
-                targetInventoryManager = FindFirstObjectByType<CPlayerInventoryManager>();
+                return;
             }
 
-            if ( targetStatManager == null && targetEquipmentManager != null )
-            {
-                targetStatManager = targetEquipmentManager.GetComponent<CPlayerStatManager>();
-            }
-
-            if ( targetStatManager == null )
-            {
-                targetStatManager = FindFirstObjectByType<CPlayerStatManager>();
-            }
-
-            if ( targetPlayerController == null )
-            {
-                targetPlayerController = FindFirstObjectByType<PlayerController>();
-            }
+            targetEquipmentManager = playerRuntimeContext.GetEquipmentManager();
+            targetInventoryManager = playerRuntimeContext.GetInventoryManager();
+            targetStatManager = playerRuntimeContext.GetStatManager();
         }
 
         ///<summary>
@@ -620,7 +617,7 @@ namespace TinyHero.UI
         }
 
         ///<summary>
-        /// 현재 플레이어 외형과 장비 상태로 프리뷰 캐릭터를 다시 생성합니다.
+        /// 현재 플레이어 외형과 장비 상태를 프리뷰 캐릭터에 반영합니다.
         ///</summary>
         private void RefreshPreviewCharacter()
         {
@@ -636,18 +633,17 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( previewInstanceObject != null )
+            if ( previewInstanceObject == null )
             {
-                Destroy( previewInstanceObject );
+                previewInstanceObject = Instantiate( sourceVisualObject, previewRootObject.transform );
+                previewInstanceObject.name = "PreviewCharacter";
+                previewInstanceObject.transform.localPosition = Vector3.zero;
+                previewInstanceObject.transform.localRotation = Quaternion.identity;
+                previewInstanceObject.transform.localScale = Vector3.one;
+                CachePreviewDefaultPresetItem();
+                RemovePreviewPresetComponent();
             }
 
-            previewInstanceObject = Instantiate( sourceVisualObject, previewRootObject.transform );
-            previewInstanceObject.name = "PreviewCharacter";
-            previewInstanceObject.transform.localPosition = Vector3.zero;
-            previewInstanceObject.transform.localRotation = Quaternion.identity;
-            previewInstanceObject.transform.localScale = Vector3.one;
-            CachePreviewDefaultPresetItem();
-            RemovePreviewPresetComponent();
             ApplyPreviewPartsState();
             ConfigurePreviewCamera();
         }

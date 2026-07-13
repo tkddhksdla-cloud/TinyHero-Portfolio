@@ -633,7 +633,7 @@ namespace TinyHero.UI
 
             if (targetPlayerController != null)
             {
-                CSkillManager resolvedFromPlayer = targetPlayerController.GetComponent<CSkillManager>();
+                CSkillManager resolvedFromPlayer = targetPlayerController.GetSkillManager();
 
                 if (resolvedFromPlayer != null)
                 {
@@ -657,7 +657,7 @@ namespace TinyHero.UI
 
             if (targetEquipmentManager != null)
             {
-                CPlayerStatManager resolvedFromEquipment = targetEquipmentManager.GetComponent<CPlayerStatManager>();
+                CPlayerStatManager resolvedFromEquipment = targetPlayerController != null ? targetPlayerController.GetPlayerStatManager() : null;
 
                 if (resolvedFromEquipment != null)
                 {
@@ -807,7 +807,12 @@ namespace TinyHero.UI
                 return;
             }
 
-            targetPlayerController = FindFirstObjectByType<PlayerController>();
+            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
+
+            if ( hasGameManager )
+            {
+                gameManager.TryGetActivePlayerController( out targetPlayerController );
+            }
         }
 
         /// 인벤토리 매니저 바인딩 해제

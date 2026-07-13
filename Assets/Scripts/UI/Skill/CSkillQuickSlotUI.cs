@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Player;
 using TinyHero.Skill;
 using UnityEngine;
@@ -235,36 +236,10 @@ namespace TinyHero.UI
         ///</summary>
         private void ResolveSkillManager()
         {
-            PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
-            CSkillManager resolvedSkillManager = null;
-            int playerControllerCount = playerControllerArray.Length;
-
-            for ( int index = 0; index < playerControllerCount; index++ )
-            {
-                PlayerController playerController = playerControllerArray[ index ];
-
-                if ( playerController == null )
-                {
-                    continue;
-                }
-
-                if ( playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
-                {
-                    continue;
-                }
-
-                CSkillManager playerSkillManager = playerController.GetComponent<CSkillManager>();
-
-                if ( playerSkillManager == null || playerSkillManager.enabled == false )
-                {
-                    continue;
-                }
-
-                resolvedSkillManager = playerSkillManager;
-                break;
-            }
-
-            targetSkillManager = resolvedSkillManager;
+            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
+            CPlayerRuntimeContext playerRuntimeContext = null;
+            bool hasRuntimeContext = hasGameManager && gameManager.TryGetPlayerRuntimeContext( out playerRuntimeContext );
+            targetSkillManager = hasRuntimeContext ? playerRuntimeContext.GetSkillManager() : null;
         }
 
         ///<summary>
@@ -393,7 +368,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            PlayerController targetPlayerController = targetSkillManager.GetComponent<PlayerController>();
+            PlayerController targetPlayerController = targetSkillManager.GetPlayerController();
 
             if ( targetPlayerController != null )
             {

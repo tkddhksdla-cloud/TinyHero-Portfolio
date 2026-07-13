@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Player;
 using TinyHero.Skill;
 using TMPro;
@@ -614,30 +615,10 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
                 return;
             }
 
-            PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
-            CSkillManager resolvedSkillManager = null;
-
-            for ( int index = 0; index < playerControllerArray.Length; index++ )
-            {
-                PlayerController playerController = playerControllerArray[ index ];
-
-                if ( playerController == null || playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
-                {
-                    continue;
-                }
-
-                CSkillManager skillManager = playerController.GetComponent<CSkillManager>();
-
-                if ( skillManager == null || skillManager.enabled == false )
-                {
-                    continue;
-                }
-
-                resolvedSkillManager = skillManager;
-                break;
-            }
-
-            targetSkillManager = resolvedSkillManager;
+            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
+            CPlayerRuntimeContext playerRuntimeContext = null;
+            bool hasRuntimeContext = hasGameManager && gameManager.TryGetPlayerRuntimeContext( out playerRuntimeContext );
+            targetSkillManager = hasRuntimeContext ? playerRuntimeContext.GetSkillManager() : null;
         }
 
         ///<summary>

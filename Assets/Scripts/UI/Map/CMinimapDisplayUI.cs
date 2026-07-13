@@ -755,22 +755,10 @@ namespace TinyHero.UI
                 return;
             }
 
-            PlayerController[] playerControllerArray = FindObjectsByType<PlayerController>( FindObjectsInactive.Exclude, FindObjectsSortMode.None );
-            int playerControllerCount = playerControllerArray.Length;
-            targetPlayerController = null;
-
-            for ( int index = 0; index < playerControllerCount; index++ )
-            {
-                PlayerController playerController = playerControllerArray[ index ];
-
-                if ( playerController == null || playerController.enabled == false || playerController.gameObject.activeInHierarchy == false )
-                {
-                    continue;
-                }
-
-                targetPlayerController = playerController;
-                return;
-            }
+            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
+            PlayerController playerController = null;
+            bool hasPlayerController = hasGameManager && gameManager.TryGetActivePlayerController( out playerController );
+            targetPlayerController = hasPlayerController ? playerController : null;
         }
 
         ///<summary>
