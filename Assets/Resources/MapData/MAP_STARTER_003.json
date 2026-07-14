@@ -1,0 +1,224 @@
+{
+    "mapId": "MAP_STARTER_003",
+    "mapName": "선인장의 들판",
+    "backgroundSpriteName": "BG_StarterVillage_02",
+    "bgmClipName": "BGM_FORSEST_VILLAGE",
+    "hasCustomRightBoundary": false,
+    "customRightBoundaryX": 0.0,
+    "portals": [
+        {
+            "prefabName": "PortalObject",
+            "resourcePath": "Prefabs/Portal/PortalObject",
+            "portalId": "Portal_001",
+            "targetMapId": "MAP_STARTER_002",
+            "targetPortalId": "Portal_002",
+            "transform": {
+                "position": [
+                    -9.615457534790039,
+                    -2.568225145339966,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.550000011920929,
+                    0.550000011920929,
+                    0.550000011920929
+                ]
+            }
+        }
+    ],
+    "monsters": [
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    -3.6601524353027345,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    2.6673622131347658,
+                    -2.458582639694214,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    5.533352851867676,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    8.58544635772705,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    11.711983680725098,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    14.503536224365235,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    17.592849731445314,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    20.496061325073243,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    23.65981674194336,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    26.823577880859376,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        },
+        {
+            "prefabName": "Monster_0003",
+            "resourcePath": "Prefabs/Character/Monster/Monster_0003",
+            "transform": {
+                "position": [
+                    -0.3752312660217285,
+                    -2.462085485458374,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": []
+            }
+        }
+    ],
+    "npcs": []
+}
