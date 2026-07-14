@@ -30,6 +30,12 @@ $parameterDefinitions = @'
     <trim>false</trim>
   </hudson.model.StringParameterDefinition>
   <hudson.model.StringParameterDefinition>
+    <name>GAME_VERSION</name>
+    <description>Player build version displayed in the title scene. Format: 0.0.01</description>
+    <defaultValue>0.0.01</defaultValue>
+    <trim>true</trim>
+  </hudson.model.StringParameterDefinition>
+  <hudson.model.StringParameterDefinition>
     <name>BUILD_OUTPUT_PATH</name>
     <description>Optional Windows player output path. Empty value uses Builds/Windows/&lt;BUILD_NUMBER&gt;/TinyHero.exe</description>
     <defaultValue></defaultValue>
@@ -71,6 +77,7 @@ $trackedParameters = @'
 <parameters>
   <string>BUILD_MODE</string>
   <string>UNITY_EXE</string>
+  <string>GAME_VERSION</string>
   <string>BUILD_OUTPUT_PATH</string>
   <string>CONTENT_STATE_PATH</string>
   <string>CONTENT_PUBLISH_PATH</string>

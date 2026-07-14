@@ -11,6 +11,7 @@ namespace TinyHero.Tools
     {
         private const string OutputPathArgumentName = "-tinyHeroBuildOutputPath";
         private const string LegacyOutputPathArgumentName = "-buildOutputPath";
+        private const string GameVersionArgumentName = "-tinyHeroGameVersion";
         private const string ContentStatePathArgumentName = "-tinyHeroContentStatePath";
 
         ///<summary>
@@ -19,7 +20,9 @@ namespace TinyHero.Tools
         public static void BuildWindowsPlayer()
         {
             string outputPath = ResolveOutputPath();
-            bool isBuilt = CTinyHeroCustomBuildPlayer.BuildWindowsPlayer( outputPath );
+            string[] argumentArray = Environment.GetCommandLineArgs();
+            string gameVersion = FindArgumentValue( argumentArray, GameVersionArgumentName );
+            bool isBuilt = CTinyHeroCustomBuildPlayer.BuildWindowsPlayer( outputPath, gameVersion );
 
             if ( Application.isBatchMode == false )
             {

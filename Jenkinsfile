@@ -9,6 +9,7 @@ pipeline {
     parameters {
         choice(name: 'BUILD_MODE', choices: ['PLAYER_BUILD', 'CONTENT_UPDATE'], description: 'Build a Windows player or update Addressables content for an existing player')
         string(name: 'UNITY_EXE', defaultValue: 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.15f1\\Editor\\Unity.exe', description: 'Unity Editor executable path')
+        string(name: 'GAME_VERSION', defaultValue: '0.0.01', description: 'Player build version displayed in the title scene. Format: 0.0.01')
         string(name: 'BUILD_OUTPUT_PATH', defaultValue: '', description: 'Optional Windows player output path. Empty value uses Builds/Windows/<BUILD_NUMBER>/TinyHero.exe')
         string(name: 'CONTENT_STATE_PATH', defaultValue: 'Assets/AddressableAssetsData/Windows/addressables_content_state.bin', description: 'Content state file belonging to the player release being updated')
         string(name: 'CONTENT_PUBLISH_PATH', defaultValue: 'PublishedContent', description: 'Workspace path used to stage Addressables server files')
@@ -31,7 +32,9 @@ pipeline {
                         \$buildOutputPath = 'Builds/Windows/${env.BUILD_NUMBER}/TinyHero.exe'
                     }
 
-                    ./Tools/CI/Invoke-TinyHeroCustomBuild.ps1 -BuildOutputPath \$buildOutputPath
+                    ./Tools/CI/Invoke-TinyHeroCustomBuild.ps1 `
+                        -BuildOutputPath \$buildOutputPath `
+                        -GameVersion '${params.GAME_VERSION}'
 
                     \$resolvedBuildOutputPath = [System.IO.Path]::GetFullPath((Join-Path \$env:WORKSPACE \$buildOutputPath))
                     \$resolvedBuildOutputDirectory = Split-Path -Path \$resolvedBuildOutputPath -Parent
@@ -79,12 +82,14 @@ pipeline {
 
                     Write-Host ''
                     Write-Host '========== TinyHero Build Output =========='
+                    Write-Host "Game Version: ${params.GAME_VERSION}"
                     Write-Host "Build EXE: \$resolvedBuildOutputPath"
                     Write-Host "Build Folder: \$resolvedBuildOutputDirectory"
                     Write-Host '==========================================='
                     Write-Host ''
 
                     Set-Content -Path 'BuildOutputPath.txt' -Value @(
+                        "Game Version: ${params.GAME_VERSION}",
                         "Build EXE: \$resolvedBuildOutputPath",
                         "Build Folder: \$resolvedBuildOutputDirectory"
                     ) -Encoding UTF8

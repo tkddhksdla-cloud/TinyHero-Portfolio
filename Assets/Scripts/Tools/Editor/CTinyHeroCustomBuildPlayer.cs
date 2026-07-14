@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using HybridCLR.Editor.Installer;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
@@ -19,6 +20,7 @@ namespace TinyHero.Tools
         private const string MenuPath = "TinyHero/Build/Build Windows Player";
         private const string HybridClrGenerateAllMenuPath = "HybridCLR/Generate/All";
         private const string DefaultBuildOutputPath = "Builds/Windows/TinyHero.exe";
+        private const string GameVersionPattern = @"^\d+\.\d+\.\d+$";
         private const string MethodBridgeGeneratedPath = "HybridCLRData/LocalIl2CppData-WindowsEditor/il2cpp/libil2cpp/hybridclr/generated/MethodBridge.cpp";
         private const string VisualStudioVcToolsComponentId = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
         private const string StandalonePlatformName = "Standalone";
@@ -31,7 +33,7 @@ namespace TinyHero.Tools
         [MenuItem( MenuPath )]
         public static void BuildWindowsPlayerFromMenu()
         {
-            bool isBuilt = BuildWindowsPlayer( DefaultBuildOutputPath );
+            bool isBuilt = BuildWindowsPlayer( DefaultBuildOutputPath, PlayerSettings.bundleVersion );
 
             if ( isBuilt )
             {
@@ -42,9 +44,16 @@ namespace TinyHero.Tools
         ///<summary>
         /// Windows 플레이어 빌드 실행
         ///</summary>
-        public static bool BuildWindowsPlayer( string _outputPath )
+        public static bool BuildWindowsPlayer( string _outputPath, string _gameVersion )
         {
             string normalizedOutputPath = NormalizeOutputPath( _outputPath );
+            bool isGameVersionApplied = TryApplyGameVersion( _gameVersion, out string resolvedGameVersion );
+
+            if ( isGameVersionApplied == false )
+            {
+                return false;
+            }
+
             bool isBuildSettingsPrepared = PrepareWindowsIl2CppBuildSettings();
 
             if ( isBuildSettingsPrepared == false )
@@ -97,7 +106,34 @@ namespace TinyHero.Tools
             BuildPlayerOptions buildPlayerOptions = CreateWindowsBuildPlayerOptions( scenePathArray, normalizedOutputPath );
             BuildReport buildReport = BuildPipeline.BuildPlayer( buildPlayerOptions );
             bool result = ReportBuildResult( buildReport, normalizedOutputPath );
+
+            if ( result )
+            {
+                Debug.Log( $"[TinyHero Build] Game version: {resolvedGameVersion}" );
+            }
+
             return result;
+        }
+
+        ///<summary>
+        /// Player 빌드 버전 적용 시도
+        ///</summary>
+        private static bool TryApplyGameVersion( string _gameVersion, out string _resolvedGameVersion )
+        {
+            string resolvedGameVersion = string.IsNullOrWhiteSpace( _gameVersion ) ? PlayerSettings.bundleVersion : _gameVersion.Trim();
+            bool isValid = string.IsNullOrWhiteSpace( resolvedGameVersion ) == false && Regex.IsMatch( resolvedGameVersion, GameVersionPattern );
+
+            if ( isValid == false )
+            {
+                Debug.LogError( $"[TinyHero Build] Invalid game version. Expected format: 0.0.01. Value: {resolvedGameVersion}" );
+                _resolvedGameVersion = string.Empty;
+                return false;
+            }
+
+            PlayerSettings.bundleVersion = resolvedGameVersion;
+            _resolvedGameVersion = resolvedGameVersion;
+            Debug.Log( $"[TinyHero Build] Player version applied: {resolvedGameVersion}" );
+            return true;
         }
 
         ///<summary>

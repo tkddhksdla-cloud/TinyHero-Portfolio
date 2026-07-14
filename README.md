@@ -123,7 +123,7 @@ BGM과 SFX는 `TinyHeroAudioMixer`의 `Master`, `BGM`, `SFX` 그룹으로 분리
 
 빌드 산출물은 Jenkins build number 기준으로 분리된 `Builds/Windows/<BUILD_NUMBER>` 경로에 생성되며, `Logs/TinyHeroCustomBuild.log`를 통해 Unity 빌드 로그를 추적할 수 있습니다.
 
-Jenkins Item `TinyHero-Build-Windows`는 `PLAYER_BUILD`와 `CONTENT_UPDATE` 모드를 제공합니다. 로컬 Jenkins는 Unity MCP의 `8080` 포트와 충돌하지 않도록 `http://localhost:8081`을 사용하며, 콘텐츠 서버 주소는 기본적으로 `http://127.0.0.1:8082/TinyHeroContent`를 사용합니다.
+Jenkins Item `TinyHero-Build-Windows`는 `PLAYER_BUILD`와 `CONTENT_UPDATE` 모드를 제공합니다. `PLAYER_BUILD`의 `GAME_VERSION`은 `0.0.01` 형식으로 입력하며 Unity `PlayerSettings.bundleVersion`과 타이틀 화면의 `version : 0.0.01` 표시에 함께 적용됩니다. 로컬 Jenkins는 Unity MCP의 `8080` 포트와 충돌하지 않도록 `http://localhost:8081`을 사용하며, 콘텐츠 서버 주소는 기본적으로 `http://127.0.0.1:8082/TinyHeroContent`를 사용합니다.
 
 ## Scenes
 

@@ -2,6 +2,7 @@ param(
     [string]$UnityExe = $env:UNITY_EXE,
     [string]$ProjectPath = (Resolve-Path "$PSScriptRoot/../..").Path,
     [string]$BuildOutputPath = "Builds/Windows/TinyHero.exe",
+    [string]$GameVersion = "0.0.01",
     [string]$LogFile = "Logs/TinyHeroCustomBuild.log"
 )
 
@@ -19,6 +20,16 @@ function ConvertTo-UnityProcessArgument {
 
     $escapedValue = $Value.Replace('"', '\"')
     return '"' + $escapedValue + '"'
+}
+
+function Test-TinyHeroGameVersion {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $result = $Value -match '^\d+\.\d+\.\d+$'
+    return $result
 }
 
 function Write-TinyHeroColoredLine {
@@ -101,6 +112,10 @@ if ([string]::IsNullOrWhiteSpace($UnityExe)) {
     $UnityExe = "C:\Program Files\Unity\Hub\Editor\6000.3.15f1\Editor\Unity.exe"
 }
 
+if ((Test-TinyHeroGameVersion -Value $GameVersion) -eq $false) {
+    throw "Invalid game version. Expected format: 0.0.01. Value: $GameVersion"
+}
+
 if ((Test-Path -LiteralPath $UnityExe) -eq $false) {
     throw "Unity executable not found. Set UNITY_EXE or pass -UnityExe. Path: $UnityExe"
 }
@@ -120,6 +135,7 @@ $arguments = @(
     "-projectPath", $resolvedProjectPath,
     "-executeMethod", "TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildWindowsPlayer",
     "-tinyHeroBuildOutputPath", $BuildOutputPath,
+    "-tinyHeroGameVersion", $GameVersion,
     "-logFile", $resolvedLogFile
 )
 
@@ -143,4 +159,4 @@ if ($exitCode -ne 0) {
     throw "TinyHero custom build failed. ExitCode: $exitCode. Log: $resolvedLogFile"
 }
 
-Write-Host "TinyHero custom build completed. Output: $BuildOutputPath"
+Write-Host "TinyHero custom build completed. Version: $GameVersion, Output: $BuildOutputPath"
