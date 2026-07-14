@@ -26,6 +26,8 @@ namespace TinyHero.Title
         private const string NicknameConfirmButtonText = "확인";
         private const string PositiveButtonText = "예";
         private const string NegativeButtonText = "아니오";
+        private const string DownloadConfirmButtonText = "다운로드";
+        private const string DownloadCancelButtonText = "취소";
 
         [SerializeField] private CButtonEx startButton;
         [SerializeField] private Image fadeImage;
@@ -33,6 +35,9 @@ namespace TinyHero.Title
 
         private bool isStarting;
         private bool shouldLoadSavedData;
+        private bool isDownloadNoticeRequested;
+        private bool isDownloadProgressPopupRequested;
+        private PopupContentDownload contentDownloadPopup;
 
         ///<summary>
         /// 컴포넌트 초기화
@@ -61,6 +66,11 @@ namespace TinyHero.Title
             startButton.onClick.AddListener( HandleStartButtonClicked );
         }
 
+        private void Start()
+        {
+            StartCoroutine( IE_MonitorRemoteContentDownload() );
+        }
+
         ///<summary>
         /// 비활성화 처리
         ///</summary>
@@ -72,6 +82,151 @@ namespace TinyHero.Title
             }
 
             startButton.onClick.RemoveListener( HandleStartButtonClicked );
+        }
+
+        private IEnumerator IE_MonitorRemoteContentDownload()
+        {
+            while ( true )
+            {
+                CResourceManager resourceManager = CResourceManager.Instance;
+
+                if ( resourceManager == null )
+                {
+                    yield return null;
+                    continue;
+                }
+
+                if ( resourceManager.IsRemoteContentDownloadConfirmationRequired() )
+                {
+                    ShowRemoteContentDownloadNotice( resourceManager );
+                }
+
+                if ( resourceManager.IsRemoteContentDownloading() )
+                {
+                    ShowRemoteContentDownloadProgress( resourceManager );
+
+                    if ( contentDownloadPopup != null )
+                    {
+                        long downloadedBytes = resourceManager.GetRemoteContentDownloadedBytes();
+                        long totalBytes = resourceManager.GetRemoteContentTotalDownloadBytes();
+                        contentDownloadPopup.SetProgress( downloadedBytes, totalBytes );
+                    }
+                }
+                else if ( contentDownloadPopup != null )
+                {
+                    contentDownloadPopup.Hide();
+                    contentDownloadPopup = null;
+                    isDownloadProgressPopupRequested = false;
+                }
+
+                if ( resourceManager.IsRemoteDataReady() )
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+        }
+
+        private void ShowRemoteContentDownloadNotice( CResourceManager _resourceManager )
+        {
+            if ( _resourceManager == null || isDownloadNoticeRequested )
+            {
+                return;
+            }
+
+            isDownloadNoticeRequested = true;
+            long totalBytes = _resourceManager.GetRemoteContentTotalDownloadBytes();
+            string formattedSize = FormatBytes( totalBytes );
+            string descriptionText = $"새로운 업데이트 파일이 있습니다.\n다운로드 크기: {formattedSize}\n지금 다운로드하시겠습니까?";
+            CUINavigationController navigationController = CUINavigationController.Instance;
+
+            if ( navigationController == null )
+            {
+                isDownloadNoticeRequested = false;
+                return;
+            }
+
+            navigationController.ShowCommonNotice(
+                descriptionText,
+                DownloadConfirmButtonText,
+                HandleRemoteContentDownloadConfirmed,
+                DownloadCancelButtonText,
+                HandleRemoteContentDownloadRejected,
+                true );
+        }
+
+        private void HandleRemoteContentDownloadConfirmed()
+        {
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null )
+            {
+                return;
+            }
+
+            resourceManager.ConfirmRemoteContentDownload();
+            ShowRemoteContentDownloadProgress( resourceManager );
+        }
+
+        private void HandleRemoteContentDownloadRejected()
+        {
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager != null )
+            {
+                resourceManager.RejectRemoteContentDownload();
+            }
+        }
+
+        private void ShowRemoteContentDownloadProgress( CResourceManager _resourceManager )
+        {
+            if ( _resourceManager == null || contentDownloadPopup != null || isDownloadProgressPopupRequested )
+            {
+                return;
+            }
+
+            CUINavigationController navigationController = CUINavigationController.Instance;
+
+            if ( navigationController == null )
+            {
+                return;
+            }
+
+            isDownloadProgressPopupRequested = true;
+            long totalBytes = _resourceManager.GetRemoteContentTotalDownloadBytes();
+            navigationController.ShowContentDownload( totalBytes, HandleContentDownloadPopupShown );
+        }
+
+        private void HandleContentDownloadPopupShown( PopupContentDownload _popup )
+        {
+            contentDownloadPopup = _popup;
+            isDownloadProgressPopupRequested = false;
+        }
+
+        private static string FormatBytes( long _byteCount )
+        {
+            const float Kilobyte = 1024.0f;
+            const float Megabyte = Kilobyte * 1024.0f;
+            const float Gigabyte = Megabyte * 1024.0f;
+            float byteCount = Mathf.Max( 0.0f, _byteCount );
+
+            if ( byteCount >= Gigabyte )
+            {
+                return $"{byteCount / Gigabyte:0.00} GB";
+            }
+
+            if ( byteCount >= Megabyte )
+            {
+                return $"{byteCount / Megabyte:0.00} MB";
+            }
+
+            if ( byteCount >= Kilobyte )
+            {
+                return $"{byteCount / Kilobyte:0.00} KB";
+            }
+
+            return $"{_byteCount} B";
         }
 
         ///<summary>
@@ -231,7 +386,17 @@ namespace TinyHero.Title
 
             while ( resourceManager.IsRemoteDataReady() == false && elapsedTime < RemoteDataWaitTimeoutSeconds )
             {
-                elapsedTime += Time.unscaledDeltaTime;
+                bool isWaitingForDownload = resourceManager.IsRemoteContentDownloadConfirmationRequired() || resourceManager.IsRemoteContentDownloading();
+
+                if ( isWaitingForDownload )
+                {
+                    elapsedTime = 0.0f;
+                }
+                else
+                {
+                    elapsedTime += Time.unscaledDeltaTime;
+                }
+
                 yield return null;
             }
 

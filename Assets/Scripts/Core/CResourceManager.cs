@@ -28,6 +28,7 @@ namespace TinyHero.Core
         private const string LegacyCubePopupPrefabResourcePath = "Prefabs/UI/Inventory/CubeUI";
         private const string CommonNoticePopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCommonNotice";
         private const string CommonInputFieldPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCommonInputField";
+        private const string ContentDownloadPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupContentDownload";
         private const string ItemTooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
         private const string MapLoadingUiPrefabResourcePath = "Prefabs/UI/Map/MapLoadingUI";
@@ -37,6 +38,7 @@ namespace TinyHero.Core
         private const string ItemDataAddressableLabel = "TinyHero.Data.Item";
         private const string ShopDataAddressableLabel = "TinyHero.Data.Shop";
         private const string QuestDataAddressableLabel = "TinyHero.Data.Quest";
+        private const string RuntimeAddressableLabel = "TinyHero.RuntimeResource";
         private const string PlayerDefaultStatTablePath = "Data/Player/PlayerDefaultStatTableData";
         private const string PlayerLevelStatTablePath = "Data/Player/PlayerLevelStatTableData";
         private const string MonsterStatTablePath = "Data/Monster/MonsterStatTableData";
@@ -53,6 +55,9 @@ namespace TinyHero.Core
         private bool isRemoteDataReady;
         private bool hasRemoteDataLoadFailed;
         private bool isRequiredRemoteUpdateDetected;
+        private eRemoteContentDownloadState remoteContentDownloadState = eRemoteContentDownloadState.CHECKING;
+        private long remoteContentTotalDownloadBytes;
+        private long remoteContentDownloadedBytes;
         private int pendingRemoteDataLoadCount;
         private string remoteDataFailureReason = string.Empty;
 
@@ -102,6 +107,7 @@ namespace TinyHero.Core
             RegisterResourceLoadEntry( eResourceKey.POPUP_CUBE, CubePopupPrefabResourcePath, CubePopupPrefabResourcePath, LegacyCubePopupPrefabResourcePath );
             RegisterResourceLoadEntry( eResourceKey.POPUP_COMMON_NOTICE, CommonNoticePopupPrefabResourcePath, CommonNoticePopupPrefabResourcePath );
             RegisterResourceLoadEntry( eResourceKey.POPUP_COMMON_INPUT_FIELD, CommonInputFieldPopupPrefabResourcePath, CommonInputFieldPopupPrefabResourcePath );
+            RegisterResourceLoadEntry( eResourceKey.POPUP_CONTENT_DOWNLOAD, ContentDownloadPopupPrefabResourcePath, ContentDownloadPopupPrefabResourcePath );
         }
 
         ///<summary>
@@ -138,6 +144,7 @@ namespace TinyHero.Core
             LoadResource<GameObject>( RewardPopupPrefabResourcePath );
             LoadResource<GameObject>( CommonNoticePopupPrefabResourcePath );
             LoadResource<GameObject>( CommonInputFieldPopupPrefabResourcePath );
+            LoadResource<GameObject>( ContentDownloadPopupPrefabResourcePath );
             LoadResource<GameObject>( ItemTooltipPrefabResourcePath );
             LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
             LoadResource<GameObject>( MapLoadingUiPrefabResourcePath );
@@ -172,6 +179,50 @@ namespace TinyHero.Core
         {
             string result = remoteDataFailureReason;
             return result;
+        }
+
+        public bool IsRemoteContentDownloadConfirmationRequired()
+        {
+            bool result = remoteContentDownloadState == eRemoteContentDownloadState.AWAITING_CONFIRMATION;
+            return result;
+        }
+
+        public bool IsRemoteContentDownloading()
+        {
+            bool result = remoteContentDownloadState == eRemoteContentDownloadState.DOWNLOADING;
+            return result;
+        }
+
+        public long GetRemoteContentTotalDownloadBytes()
+        {
+            long result = remoteContentTotalDownloadBytes;
+            return result;
+        }
+
+        public long GetRemoteContentDownloadedBytes()
+        {
+            long result = remoteContentDownloadedBytes;
+            return result;
+        }
+
+        public void ConfirmRemoteContentDownload()
+        {
+            if ( remoteContentDownloadState != eRemoteContentDownloadState.AWAITING_CONFIRMATION )
+            {
+                return;
+            }
+
+            StartCoroutine( IE_DownloadRequiredRemoteContent() );
+        }
+
+        public void RejectRemoteContentDownload()
+        {
+            if ( remoteContentDownloadState != eRemoteContentDownloadState.AWAITING_CONFIRMATION )
+            {
+                return;
+            }
+
+            MarkRemoteDataLoadFailed( "필수 업데이트 다운로드가 취소되었습니다." );
         }
 
         ///<summary>
@@ -406,6 +457,9 @@ namespace TinyHero.Core
             isRemoteDataReady = false;
             hasRemoteDataLoadFailed = false;
             isRequiredRemoteUpdateDetected = false;
+            remoteContentDownloadState = eRemoteContentDownloadState.CHECKING;
+            remoteContentTotalDownloadBytes = 0L;
+            remoteContentDownloadedBytes = 0L;
             remoteDataFailureReason = string.Empty;
             StartCoroutine( IE_PrepareRemoteData() );
         }
@@ -479,6 +533,76 @@ namespace TinyHero.Core
                 }
             }
 
+            yield return IE_CheckRequiredRemoteContentDownload();
+        }
+
+        private IEnumerator IE_CheckRequiredRemoteContentDownload()
+        {
+            AsyncOperationHandle<long> downloadSizeHandle = Addressables.GetDownloadSizeAsync( RuntimeAddressableLabel );
+            yield return downloadSizeHandle;
+
+            if ( downloadSizeHandle.Status != AsyncOperationStatus.Succeeded )
+            {
+                if ( downloadSizeHandle.IsValid() )
+                {
+                    Addressables.Release( downloadSizeHandle );
+                }
+
+                HandleRemoteCatalogFailure( "원격 콘텐츠 다운로드 크기 확인에 실패했습니다." );
+                yield break;
+            }
+
+            remoteContentTotalDownloadBytes = Math.Max( 0L, downloadSizeHandle.Result );
+            remoteContentDownloadedBytes = 0L;
+
+            if ( downloadSizeHandle.IsValid() )
+            {
+                Addressables.Release( downloadSizeHandle );
+            }
+
+            if ( remoteContentTotalDownloadBytes <= 0L )
+            {
+                remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
+                BeginRemoteDataLoads();
+                yield break;
+            }
+
+            isRequiredRemoteUpdateDetected = true;
+            remoteContentDownloadState = eRemoteContentDownloadState.AWAITING_CONFIRMATION;
+        }
+
+        private IEnumerator IE_DownloadRequiredRemoteContent()
+        {
+            remoteContentDownloadState = eRemoteContentDownloadState.DOWNLOADING;
+            remoteContentDownloadedBytes = 0L;
+            AsyncOperationHandle downloadHandle = Addressables.DownloadDependenciesAsync( RuntimeAddressableLabel, false );
+
+            while ( downloadHandle.IsValid() && downloadHandle.IsDone == false )
+            {
+                DownloadStatus downloadStatus = downloadHandle.GetDownloadStatus();
+                remoteContentDownloadedBytes = Math.Max( 0L, downloadStatus.DownloadedBytes );
+                remoteContentTotalDownloadBytes = Math.Max( remoteContentTotalDownloadBytes, downloadStatus.TotalBytes );
+                yield return null;
+            }
+
+            bool isDownloaded = downloadHandle.IsValid() && downloadHandle.Status == AsyncOperationStatus.Succeeded;
+
+            if ( downloadHandle.IsValid() )
+            {
+                DownloadStatus downloadStatus = downloadHandle.GetDownloadStatus();
+                remoteContentDownloadedBytes = Math.Max( 0L, downloadStatus.DownloadedBytes );
+                remoteContentTotalDownloadBytes = Math.Max( remoteContentTotalDownloadBytes, downloadStatus.TotalBytes );
+                Addressables.Release( downloadHandle );
+            }
+
+            if ( isDownloaded == false )
+            {
+                MarkRemoteDataLoadFailed( "필수 원격 콘텐츠 다운로드에 실패했습니다." );
+                yield break;
+            }
+
+            remoteContentDownloadedBytes = remoteContentTotalDownloadBytes;
+            remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
             BeginRemoteDataLoads();
         }
 
@@ -494,6 +618,7 @@ namespace TinyHero.Core
             }
 
             Debug.LogWarning( $"[ ResourceManager ] {_failureReason} Resources fallback을 사용합니다." );
+            remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
             BeginRemoteDataLoads();
         }
 
@@ -671,6 +796,7 @@ namespace TinyHero.Core
         {
             hasRemoteDataLoadFailed = true;
             isRemoteDataReady = true;
+            remoteContentDownloadState = eRemoteContentDownloadState.FAILED;
             remoteDataFailureReason = _failureReason;
             Debug.LogError( $"[ ResourceManager ] {_failureReason}" );
         }

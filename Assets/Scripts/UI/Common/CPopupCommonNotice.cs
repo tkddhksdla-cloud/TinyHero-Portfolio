@@ -23,6 +23,7 @@ namespace TinyHero.UI
 
         private Action positiveButtonAction;
         private Action negativeButtonAction;
+        private bool isCloseBlocked;
 
         ///<summary>
         /// 팝업 초기 참조 구성
@@ -54,7 +55,7 @@ namespace TinyHero.UI
         ///<summary>
         /// 팝업 내용 표시 처리
         ///</summary>
-        public void Show( string _descriptionText, string _positiveButtonText, Action _positiveButtonAction, string _negativeButtonText, Action _negativeButtonAction )
+        public void Show( string _descriptionText, string _positiveButtonText, Action _positiveButtonAction, string _negativeButtonText, Action _negativeButtonAction, bool _isCloseBlocked = false )
         {
             ResolveReferences();
             EnsureWindowDragHandle();
@@ -68,6 +69,7 @@ namespace TinyHero.UI
 
             positiveButtonAction = _positiveButtonAction;
             negativeButtonAction = _negativeButtonAction;
+            isCloseBlocked = _isCloseBlocked;
 
             if ( descriptionText != null )
             {
@@ -123,7 +125,23 @@ namespace TinyHero.UI
         ///</summary>
         public override void CloseNavigationLayer()
         {
+            if ( isCloseBlocked )
+            {
+                return;
+            }
+
             HideInternal();
+        }
+
+        public override bool CanCloseByEscape()
+        {
+            if ( isCloseBlocked )
+            {
+                return false;
+            }
+
+            bool result = base.CanCloseByEscape();
+            return result;
         }
 
         ///<summary>
@@ -163,6 +181,11 @@ namespace TinyHero.UI
         ///</summary>
         private void HandleCloseButtonClicked()
         {
+            if ( isCloseBlocked )
+            {
+                return;
+            }
+
             HideInternal();
         }
 
@@ -217,6 +240,7 @@ namespace TinyHero.UI
         {
             positiveButtonAction = null;
             negativeButtonAction = null;
+            isCloseBlocked = false;
             SetLayerVisible( false );
         }
 

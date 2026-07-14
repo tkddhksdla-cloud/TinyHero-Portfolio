@@ -11,6 +11,7 @@ namespace TinyHero.Core
         POPUP_REWARD,
         POPUP_CUBE,
         POPUP_COMMON_NOTICE,
-        POPUP_COMMON_INPUT_FIELD
+        POPUP_COMMON_INPUT_FIELD,
+        POPUP_CONTENT_DOWNLOAD
     }
 }

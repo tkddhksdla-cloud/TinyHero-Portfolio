@@ -230,6 +230,12 @@ MonoBehaviour:
     - TinyHero.RuntimeResource
     - UI
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 874e8bd2bfb77384f85bd6effca26947
+    m_Address: Prefabs/UI/Popup/PopupContentDownload
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8eb6ed0006325aa418f6df5d5b75b176
     m_Address: Prefabs/UI/Popup/PopupCommonNotice
     m_ReadOnly: 0

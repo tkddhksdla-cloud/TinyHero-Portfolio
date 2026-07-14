@@ -111,11 +111,21 @@ namespace TinyHero.UI
         ///<summary>
         /// 공용 안내 팝업 표시 요청
         ///</summary>
-        public bool ShowCommonNotice( string _descriptionText, string _positiveButtonText, Action _positiveButtonAction, string _negativeButtonText, Action _negativeButtonAction )
+        public bool ShowCommonNotice( string _descriptionText, string _positiveButtonText, Action _positiveButtonAction, string _negativeButtonText, Action _negativeButtonAction, bool _isCloseBlocked = false )
         {
             bool result = ShowPopup<CPopupCommonNotice>( eResourceKey.POPUP_COMMON_NOTICE, true, ( CPopupCommonNotice _popup ) =>
             {
-                _popup.Show( _descriptionText, _positiveButtonText, _positiveButtonAction, _negativeButtonText, _negativeButtonAction );
+                _popup.Show( _descriptionText, _positiveButtonText, _positiveButtonAction, _negativeButtonText, _negativeButtonAction, _isCloseBlocked );
+            } );
+            return result;
+        }
+
+        public bool ShowContentDownload( long _totalBytes, Action<PopupContentDownload> _onShown )
+        {
+            bool result = ShowPopup<PopupContentDownload>( eResourceKey.POPUP_CONTENT_DOWNLOAD, true, ( PopupContentDownload _popup ) =>
+            {
+                _popup.Show( _totalBytes );
+                _onShown?.Invoke( _popup );
             } );
             return result;
         }
