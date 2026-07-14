@@ -61,7 +61,9 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 
 ### Remote Addressables Content Delivery
 
-런타임 콘텐츠는 빌드에 포함되는 `TinyHero_Local` 그룹과 배포 후 갱신 가능한 `TinyHero_Remote` 그룹으로 분리합니다. 프리팹은 로컬 그룹에 유지하고, 맵 데이터, 배경 이미지, Hotfix DLL, 오디오와 아이템·퀘스트·상점·플레이어·몬스터·텍스트 데이터는 원격 콘텐츠 업데이트 대상으로 관리합니다. 등록은 Unity 메뉴 `TinyHero/Addressables/Sync Runtime Resources`를 사용하며, Addressables key는 `Assets/Resources` 기준 상대 경로에서 확장자를 제거한 형식을 따릅니다.
+런타임 콘텐츠는 빌드에 포함되는 `TinyHero_Local` 그룹과 배포 후 갱신 가능한 `TinyHero_Remote` 그룹으로 분리합니다. 프리팹은 로컬 그룹에 유지하고, 맵 데이터, 배경 이미지, SpriteAtlas, Hotfix DLL, 오디오와 아이템·퀘스트·상점·플레이어·몬스터·텍스트 데이터는 원격 콘텐츠 업데이트 대상으로 관리합니다. 등록은 Unity 메뉴 `TinyHero/Addressables/Sync Runtime Resources`를 사용하며, Addressables key는 `Assets/Resources` 기준 상대 경로에서 확장자를 제거한 형식을 따릅니다.
+
+공용 UI 아이콘은 `Assets/Resources/Atlas/SpriteAtlas_Icon.spriteatlasv2`에 포함하고 `Atlas/SpriteAtlas_Icon` 키로 배포합니다. 새 아이콘을 아틀라스 Packable 대상에 추가한 뒤 Addressables 동기화와 Jenkins `CONTENT_UPDATE`를 실행하면 변경된 아틀라스 번들이 원격 콘텐츠에 포함되므로, 개별 아이콘을 별도 Addressables 엔트리로 등록하지 않습니다.
 
 타이틀 진입 시 원격 카탈로그와 필수 다운로드 크기를 확인합니다. 업데이트가 있으면 확인 팝업과 다운로드 진행 팝업을 표시하고, 다운로드 후 필수 데이터 검증까지 완료해야 게임을 시작할 수 있습니다. 일시적인 Addressables 로드 실패는 제한 횟수만큼 재시도하지만, 새 원격 카탈로그가 적용된 상태에서 필수 데이터 로드가 끝내 실패하면 이전 `Resources` 데이터로 조용히 fallback하지 않고 진입을 차단합니다.
 
@@ -137,6 +139,7 @@ Jenkins Item `TinyHero-Build-Windows`는 `PLAYER_BUILD`와 `CONTENT_UPDATE` 모�
 Assets/
   AddressableAssetsData/  # Addressables 설정
   Resources/              # 런타임 로드 리소스
+    Atlas/                # 원격 배포 SpriteAtlas
     Audio/                # BGM, SFX, AudioMixer
   Scenes/                 # 주요 씬
   Scripts/
