@@ -18,16 +18,39 @@ public sealed record ContentStatus(
 
 public sealed record PortalDefaults(
     string JenkinsJobName,
+    string JenkinsUrl,
     string ContentBaseUrl,
     string ContentStatePath,
     string PublishPath,
-    string LocalContentRoot);
+    string LocalContentRoot,
+    string GameVersion,
+    string BuildOutputPath);
+
+public sealed record JenkinsPlayerBuildRequest(
+    string? GameVersion,
+    string? BuildOutputPath,
+    bool RequireRemoteContent = false);
 
 public sealed record JenkinsBuildRequest(
     string? ContentStatePath,
     bool RequireRemoteContent = false);
 
 public sealed record JenkinsTriggerResult(bool IsTriggered, string Message, string? QueueUrl);
+
+public sealed record JenkinsCredentialRequest(string? UserName, string? ApiToken);
+
+public sealed record JenkinsCredentialStatus(bool IsConfigured, string? UserName);
+
+public sealed record JenkinsCredential(string UserName, string ApiToken);
+
+public sealed record JenkinsBuildStatus(
+    bool IsAvailable,
+    bool IsQueued,
+    bool IsBuilding,
+    int? BuildNumber,
+    string State,
+    string Detail,
+    string? BuildUrl);
 
 public sealed record DeploymentRecord(
     string Id,

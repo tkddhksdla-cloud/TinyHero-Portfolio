@@ -18,5 +18,9 @@ public sealed class OperationsPortalOptions
 
     public string DefaultPublishPath { get; set; } = "PublishedContent";
 
+    public string DefaultGameVersion { get; set; } = "0.0.01";
+
+    public string DefaultBuildOutputPath { get; set; } = string.Empty;
+
     public long MaximumUploadBytes { get; set; } = 5L * 1024L * 1024L * 1024L;
 }

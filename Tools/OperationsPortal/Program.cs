@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using TinyHero.OperationsPortal.Configuration;
 using TinyHero.OperationsPortal.Models;
@@ -12,9 +13,12 @@ long configuredMaximumUploadBytes = builder.Configuration.GetValue<long>($"{Oper
 long maximumUploadBytes = configuredMaximumUploadBytes > 0L ? configuredMaximumUploadBytes : 5L * 1024L * 1024L * 1024L;
 builder.WebHost.ConfigureKestrel(_options => _options.Limits.MaxRequestBodySize = maximumUploadBytes);
 builder.Services.Configure<OperationsPortalOptions>(builder.Configuration.GetSection(OperationsPortalOptions.SectionName));
+string dataProtectionKeyPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath));
 builder.Services.AddSingleton<DeploymentHistoryService>();
 builder.Services.AddSingleton<ContentPackageService>();
 builder.Services.AddSingleton<OperationsStatusService>();
+builder.Services.AddSingleton<JenkinsCredentialService>();
 builder.Services.AddHttpClient<JenkinsService>(_client => _client.Timeout = TimeSpan.FromSeconds(5.0));
 builder.Services.AddHttpClient("ContentServer", _client => _client.Timeout = TimeSpan.FromSeconds(3.0));
 builder.Services.Configure<FormOptions>(_options =>
@@ -39,6 +43,58 @@ app.MapGet("/api/deployments", async (DeploymentHistoryService _historyService, 
 {
     IReadOnlyList<DeploymentRecord> response = await _historyService.GetRecentAsync(_cancellationToken);
     return Results.Ok(response);
+});
+
+app.MapGet("/api/jenkins/build-status", async (JenkinsService _jenkinsService, CancellationToken _cancellationToken) =>
+{
+    JenkinsBuildStatus response = await _jenkinsService.GetBuildStatusAsync(_cancellationToken);
+    return Results.Ok(response);
+});
+
+app.MapGet("/api/jenkins/credentials", (JenkinsCredentialService _credentialService) =>
+{
+    JenkinsCredentialStatus response = _credentialService.GetStatus();
+    return Results.Ok(response);
+});
+
+app.MapPost("/api/jenkins/credentials", async (
+    JenkinsCredentialRequest _request,
+    JenkinsCredentialService _credentialService,
+    JenkinsService _jenkinsService,
+    CancellationToken _cancellationToken) =>
+{
+    try
+    {
+        JenkinsCredentialStatus credentialStatus = _credentialService.Save(_request);
+        ServiceStatus connectionStatus = await _jenkinsService.GetStatusAsync(_cancellationToken);
+
+        if (connectionStatus.IsOnline == false)
+        {
+            _credentialService.Clear();
+            return Results.BadRequest(new { message = "Jenkins 인증에 실패했습니다. 사용자 이름과 API 토큰 또는 비밀번호를 확인하세요." });
+        }
+
+        return Results.Ok(credentialStatus);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { message = exception.Message });
+    }
+});
+
+app.MapDelete("/api/jenkins/credentials", (JenkinsCredentialService _credentialService) =>
+{
+    _credentialService.Clear();
+    return Results.NoContent();
+});
+
+app.MapPost("/api/jenkins/player-build", async (
+    JenkinsPlayerBuildRequest _request,
+    JenkinsService _jenkinsService,
+    CancellationToken _cancellationToken) =>
+{
+    JenkinsTriggerResult result = await _jenkinsService.TriggerPlayerBuildAsync(_request, _cancellationToken);
+    return result.IsTriggered ? Results.Accepted(result.QueueUrl, result) : Results.BadRequest(result);
 });
 
 app.MapPost("/api/jenkins/content-update", async (
