@@ -161,6 +161,8 @@ namespace TinyHero.Tools
         ///</summary>
         public static bool BuildRemoteContentUpdate( string _contentStatePath )
         {
+            Debug.Log( $"[ Addressables Remote ] Content update build started. State: {_contentStatePath}" );
+
             if ( string.IsNullOrWhiteSpace( _contentStatePath ) || File.Exists( _contentStatePath ) == false )
             {
                 Debug.LogError( $"[ Addressables Remote ] Content state file not found. Path: {_contentStatePath}" );
@@ -168,6 +170,7 @@ namespace TinyHero.Tools
             }
 
             List<string> issueList = new List<string>();
+            Debug.Log( "[ Addressables Remote ] Configuring remote distribution." );
             bool isConfigured = TryConfigureRemoteDistribution( issueList );
 
             if ( isConfigured == false )
@@ -176,6 +179,7 @@ namespace TinyHero.Tools
                 return false;
             }
 
+            Debug.Log( "[ Addressables Remote ] Synchronizing runtime Addressables resources." );
             bool isSynced = CTinyHeroAddressablesSyncUtility.TrySyncRuntimeResources( issueList, out int registeredCount );
 
             if ( isSynced == false )
@@ -185,6 +189,7 @@ namespace TinyHero.Tools
             }
 
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            Debug.Log( "[ Addressables Remote ] Starting Addressables ContentUpdateScript." );
             AddressablesPlayerBuildResult buildResult = ContentUpdateScript.BuildContentUpdate( settings, _contentStatePath );
 
             if ( buildResult == null || string.IsNullOrWhiteSpace( buildResult.Error ) == false )

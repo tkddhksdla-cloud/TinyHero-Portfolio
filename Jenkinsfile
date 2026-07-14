@@ -28,6 +28,12 @@ pipeline {
                     \$env:UNITY_EXE = '${params.UNITY_EXE}'
                     \$buildOutputPath = '${params.BUILD_OUTPUT_PATH}'
 
+                    Write-Host '========== TinyHero Player Build =========='
+                    Write-Host "Build Number: ${env.BUILD_NUMBER}"
+                    Write-Host "Game Version: ${params.GAME_VERSION}"
+                    Write-Host "Remote Content Required: ${params.REQUIRE_REMOTE_CONTENT}"
+                    Write-Host '==========================================='
+
                     if ([string]::IsNullOrWhiteSpace(\$buildOutputPath)) {
                         \$buildOutputPath = 'Builds/Windows/${env.BUILD_NUMBER}/TinyHero.exe'
                     }
@@ -36,12 +42,16 @@ pipeline {
                         -BuildOutputPath \$buildOutputPath `
                         -GameVersion '${params.GAME_VERSION}'
 
+                    Write-Host '[ Pipeline ] Unity player build completed. Configuring runtime content endpoint.'
+
                     \$resolvedBuildOutputPath = [System.IO.Path]::GetFullPath((Join-Path \$env:WORKSPACE \$buildOutputPath))
                     \$resolvedBuildOutputDirectory = Split-Path -Path \$resolvedBuildOutputPath -Parent
                     ./Tools/Addressables/Set-TinyHeroBuildContentEndpoint.ps1 `
                         -BuildPath \$resolvedBuildOutputDirectory `
                         -RemoteBaseUrl '${params.CONTENT_BASE_URL}' `
                         -RequireRemoteContent \$${params.REQUIRE_REMOTE_CONTENT}
+
+                    Write-Host '[ Pipeline ] Content endpoint configured. Publishing Addressables content.'
 
                     ./Tools/Addressables/Publish-TinyHeroAddressablesContent.ps1 `
                         -PublishPath '${params.CONTENT_PUBLISH_PATH}' `
@@ -57,6 +67,11 @@ pipeline {
             steps {
                 powershell """
                     \$env:UNITY_EXE = '${params.UNITY_EXE}'
+                    Write-Host '======= TinyHero Content Update ======='
+                    Write-Host "Build Number: ${env.BUILD_NUMBER}"
+                    Write-Host "Content State: ${params.CONTENT_STATE_PATH}"
+                    Write-Host "Remote Content Required: ${params.REQUIRE_REMOTE_CONTENT}"
+                    Write-Host '======================================='
                     ./Tools/Addressables/Invoke-TinyHeroContentUpdate.ps1 `
                         -ContentStatePath '${params.CONTENT_STATE_PATH}' `
                         -PublishPath '${params.CONTENT_PUBLISH_PATH}' `

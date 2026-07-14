@@ -7,20 +7,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-
-function ConvertTo-UnityProcessArgument {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Value
-    )
-
-    if ($Value.Contains(" ") -eq $false) {
-        return $Value
-    }
-
-    $escapedValue = $Value.Replace('"', '\"')
-    return '"' + $escapedValue + '"'
-}
+$unityProcessScriptPath = Join-Path $PSScriptRoot "Invoke-TinyHeroUnityProcess.ps1"
+. $unityProcessScriptPath
 
 function Test-TinyHeroGameVersion {
     param(
@@ -139,20 +127,11 @@ $arguments = @(
     "-logFile", $resolvedLogFile
 )
 
-$processStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
-$processStartInfo.FileName = $UnityExe
-$processStartInfo.Arguments = ($arguments | ForEach-Object { ConvertTo-UnityProcessArgument $_ }) -join " "
-$processStartInfo.UseShellExecute = $false
-$processStartInfo.CreateNoWindow = $true
-
-$process = [System.Diagnostics.Process]::Start($processStartInfo)
-
-if ($null -eq $process) {
-    throw "Unity process did not start. Path: $UnityExe"
-}
-
-$process.WaitForExit()
-$exitCode = $process.ExitCode
+$exitCode = Invoke-TinyHeroUnityProcess `
+    -UnityExe $UnityExe `
+    -ArgumentList $arguments `
+    -LogFile $resolvedLogFile `
+    -BuildLabel "Windows Player Build"
 
 if ($exitCode -ne 0) {
     Write-TinyHeroBuildFailureSummary -TargetLogFile $resolvedLogFile

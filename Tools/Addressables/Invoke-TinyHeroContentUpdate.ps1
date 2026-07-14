@@ -9,20 +9,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-
-function ConvertTo-UnityProcessArgument {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Value
-    )
-
-    if ($Value.Contains(" ") -eq $false) {
-        return $Value
-    }
-
-    $escapedValue = $Value.Replace('"', '\"')
-    return '"' + $escapedValue + '"'
-}
+$unityProcessScriptPath = Join-Path $PSScriptRoot "../CI/Invoke-TinyHeroUnityProcess.ps1"
+. $unityProcessScriptPath
 
 if ([string]::IsNullOrWhiteSpace($UnityExe)) {
     $UnityExe = "C:\Program Files\Unity\Hub\Editor\6000.3.15f1\Editor\Unity.exe"
@@ -49,22 +37,17 @@ $arguments = @(
     "-logFile", $resolvedLogFile
 )
 
-$processStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
-$processStartInfo.FileName = $UnityExe
-$processStartInfo.Arguments = ($arguments | ForEach-Object { ConvertTo-UnityProcessArgument $_ }) -join " "
-$processStartInfo.UseShellExecute = $false
-$processStartInfo.CreateNoWindow = $true
+$exitCode = Invoke-TinyHeroUnityProcess `
+    -UnityExe $UnityExe `
+    -ArgumentList $arguments `
+    -LogFile $resolvedLogFile `
+    -BuildLabel "Addressables Content Update"
 
-$process = [System.Diagnostics.Process]::Start($processStartInfo)
-
-if ($null -eq $process) {
-    throw "Unity content update process did not start."
-}
-
-$process.WaitForExit()
-
-if ($process.ExitCode -ne 0) {
-    throw "TinyHero content update build failed. ExitCode: $($process.ExitCode). Log: $resolvedLogFile"
+if ($exitCode -ne 0) {
+    Write-Host ""
+    Write-Host "[ Addressables Content Update Failure - Last 120 Lines ]"
+    Get-Content -LiteralPath $resolvedLogFile -Tail 120 | ForEach-Object { Write-Host $_ }
+    throw "TinyHero content update build failed. ExitCode: $exitCode. Log: $resolvedLogFile"
 }
 
 $publishScriptPath = Join-Path $PSScriptRoot "Publish-TinyHeroAddressablesContent.ps1"

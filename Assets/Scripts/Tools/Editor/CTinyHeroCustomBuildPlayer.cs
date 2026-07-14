@@ -47,6 +47,7 @@ namespace TinyHero.Tools
         public static bool BuildWindowsPlayer( string _outputPath, string _gameVersion )
         {
             string normalizedOutputPath = NormalizeOutputPath( _outputPath );
+            Debug.Log( $"[TinyHero Build] Windows Player build started. Version: {_gameVersion}, Output: {normalizedOutputPath}" );
             bool isGameVersionApplied = TryApplyGameVersion( _gameVersion, out string resolvedGameVersion );
 
             if ( isGameVersionApplied == false )
@@ -54,6 +55,7 @@ namespace TinyHero.Tools
                 return false;
             }
 
+            Debug.Log( "[TinyHero Build] Preparing Windows IL2CPP build settings." );
             bool isBuildSettingsPrepared = PrepareWindowsIl2CppBuildSettings();
 
             if ( isBuildSettingsPrepared == false )
@@ -62,6 +64,7 @@ namespace TinyHero.Tools
                 return false;
             }
 
+            Debug.Log( "[TinyHero Build] Validating HybridCLR installer state." );
             bool isHybridClrInstalled = EnsureHybridClrInstalled();
 
             if ( isHybridClrInstalled == false )
@@ -70,6 +73,7 @@ namespace TinyHero.Tools
                 return false;
             }
 
+            Debug.Log( "[TinyHero Build] Generating HybridCLR build artifacts." );
             bool isHybridClrGenerated = GenerateHybridClrBuildArtifacts();
 
             if ( isHybridClrGenerated == false )
@@ -78,6 +82,7 @@ namespace TinyHero.Tools
                 return false;
             }
 
+            Debug.Log( "[TinyHero Build] Preparing hotfix payload and validating prebuild state." );
             bool isPrepared = CTinyHeroHotfixBuildPreparationUtility.PrepareHotfixBuild( true );
 
             if ( isPrepared == false )
@@ -86,6 +91,7 @@ namespace TinyHero.Tools
                 return false;
             }
 
+            Debug.Log( "[TinyHero Build] Building Addressables player content." );
             bool isAddressablesBuilt = BuildAddressablesContent();
 
             if ( isAddressablesBuilt == false )
@@ -104,6 +110,7 @@ namespace TinyHero.Tools
 
             EnsureOutputDirectory( normalizedOutputPath );
             BuildPlayerOptions buildPlayerOptions = CreateWindowsBuildPlayerOptions( scenePathArray, normalizedOutputPath );
+            Debug.Log( $"[TinyHero Build] Starting Unity BuildPipeline. Scenes: {scenePathArray.Length}" );
             BuildReport buildReport = BuildPipeline.BuildPlayer( buildPlayerOptions );
             bool result = ReportBuildResult( buildReport, normalizedOutputPath );
 
