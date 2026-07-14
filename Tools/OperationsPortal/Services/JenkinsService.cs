@@ -12,6 +12,8 @@ public sealed class JenkinsService
 {
     private const string PlayerBuildMode = "PLAYER_BUILD";
     private const string ContentUpdateBuildMode = "CONTENT_UPDATE";
+    private const string GameVersionParameterName = "GAME_VERSION";
+    private const string BuildModeParameterName = "BUILD_MODE";
 
     private readonly HttpClient httpClient;
     private readonly OperationsPortalOptions options;
@@ -109,13 +111,14 @@ public sealed class JenkinsService
         try
         {
             string encodedJobName = Uri.EscapeDataString(options.JenkinsJobName);
-            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration]";
-            using HttpRequestMessage request = CreateRequest(HttpMethod.Get, $"job/{encodedJobName}/api/json?tree={treeQuery}");
+            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration],builds[number,url,building,result,timestamp,duration,actions[parameters[name,value]]]{0,6}";
+            string encodedTreeQuery = Uri.EscapeDataString(treeQuery);
+            using HttpRequestMessage request = CreateRequest(HttpMethod.Get, $"job/{encodedJobName}/api/json?tree={encodedTreeQuery}");
             using HttpResponseMessage response = await httpClient.SendAsync(request, _cancellationToken);
 
             if (response.IsSuccessStatusCode == false)
             {
-                return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", $"HTTP {(int)response.StatusCode}", null, 0, 0L, 0L, null);
+                return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", $"HTTP {(int)response.StatusCode}", null, 0, 0L, 0L, null, Array.Empty<JenkinsBuildHistoryItem>());
             }
 
             await using Stream responseStream = await response.Content.ReadAsStreamAsync(_cancellationToken);
@@ -123,22 +126,24 @@ public sealed class JenkinsService
 
             if (jobState == null)
             {
-                return new JenkinsBuildStatus(false, false, false, null, "UNKNOWN", "빌드 상태를 읽을 수 없습니다.", null, 0, 0L, 0L, null);
+                return new JenkinsBuildStatus(false, false, false, null, "UNKNOWN", "빌드 상태를 읽을 수 없습니다.", null, 0, 0L, 0L, null, Array.Empty<JenkinsBuildHistoryItem>());
             }
+
+            IReadOnlyList<JenkinsBuildHistoryItem> recentBuildList = BuildRecentBuildHistory(jobState.Builds);
 
             if (jobState.InQueue)
             {
                 string queueDetail = string.IsNullOrWhiteSpace(jobState.QueueItem?.Why)
                     ? "Jenkins 대기열에서 실행을 기다리는 중입니다."
                     : jobState.QueueItem.Why;
-                return new JenkinsBuildStatus(true, true, false, jobState.LastBuild?.Number, "QUEUED", queueDetail, jobState.QueueItem?.Url, 0, 0L, 0L, null);
+                return new JenkinsBuildStatus(true, true, false, jobState.LastBuild?.Number, "QUEUED", queueDetail, jobState.QueueItem?.Url, 0, 0L, 0L, null, recentBuildList);
             }
 
             JenkinsBuildState? lastBuild = jobState.LastBuild;
 
             if (lastBuild == null)
             {
-                return new JenkinsBuildStatus(true, false, false, null, "IDLE", "아직 실행된 빌드가 없습니다.", null, 0, 0L, 0L, null);
+                return new JenkinsBuildStatus(true, false, false, null, "IDLE", "아직 실행된 빌드가 없습니다.", null, 0, 0L, 0L, null, recentBuildList);
             }
 
             DateTimeOffset? startedAtUtc = lastBuild.Timestamp > 0L
@@ -151,18 +156,80 @@ public sealed class JenkinsService
                     ? Math.Max(0L, (long)(DateTimeOffset.UtcNow - startedAtUtc.Value).TotalMilliseconds)
                     : 0L;
                 int progressPercent = CalculateBuildProgressPercent(elapsedMilliseconds, lastBuild.EstimatedDuration);
-                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url, progressPercent, elapsedMilliseconds, lastBuild.EstimatedDuration, startedAtUtc);
+                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url, progressPercent, elapsedMilliseconds, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList);
             }
 
             string result = string.IsNullOrWhiteSpace(lastBuild.Result) ? "UNKNOWN" : lastBuild.Result;
             long completedDuration = Math.Max(0L, lastBuild.Duration);
             int completedProgressPercent = string.Equals(result, "UNKNOWN", StringComparison.OrdinalIgnoreCase) ? 0 : 100;
-            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc);
+            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList);
         }
         catch (Exception exception)
         {
-            return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", exception.Message, null, 0, 0L, 0L, null);
+            return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", exception.Message, null, 0, 0L, 0L, null, Array.Empty<JenkinsBuildHistoryItem>());
         }
+    }
+
+    private static IReadOnlyList<JenkinsBuildHistoryItem> BuildRecentBuildHistory(IReadOnlyList<JenkinsBuildState>? _buildList)
+    {
+        if (_buildList == null || _buildList.Count == 0)
+        {
+            return Array.Empty<JenkinsBuildHistoryItem>();
+        }
+
+        List<JenkinsBuildHistoryItem> resultList = new(_buildList.Count);
+
+        for (int buildIndex = 0; buildIndex < _buildList.Count; buildIndex++)
+        {
+            JenkinsBuildState buildState = _buildList[buildIndex];
+            string gameVersion = ResolveBuildParameter(buildState.Actions, GameVersionParameterName);
+            string buildMode = ResolveBuildParameter(buildState.Actions, BuildModeParameterName);
+            string state = buildState.Building
+                ? "BUILDING"
+                : string.IsNullOrWhiteSpace(buildState.Result) ? "UNKNOWN" : buildState.Result;
+            DateTimeOffset? startedAtUtc = buildState.Timestamp > 0L
+                ? DateTimeOffset.FromUnixTimeMilliseconds(buildState.Timestamp)
+                : null;
+            JenkinsBuildHistoryItem historyItem = new(
+                buildState.Number,
+                string.IsNullOrWhiteSpace(gameVersion) ? "—" : gameVersion,
+                string.IsNullOrWhiteSpace(buildMode) ? "UNKNOWN" : buildMode,
+                state,
+                startedAtUtc,
+                Math.Max(0L, buildState.Duration),
+                buildState.Url);
+            resultList.Add(historyItem);
+        }
+
+        return resultList;
+    }
+
+    private static string ResolveBuildParameter(IReadOnlyList<JenkinsBuildAction>? _actionList, string _parameterName)
+    {
+        if (_actionList == null || string.IsNullOrWhiteSpace(_parameterName))
+        {
+            return string.Empty;
+        }
+
+        for (int actionIndex = 0; actionIndex < _actionList.Count; actionIndex++)
+        {
+            JenkinsBuildAction action = _actionList[actionIndex];
+
+            for (int parameterIndex = 0; parameterIndex < action.Parameters.Count; parameterIndex++)
+            {
+                JenkinsBuildParameter parameter = action.Parameters[parameterIndex];
+
+                if (string.Equals(parameter.Name, _parameterName, StringComparison.OrdinalIgnoreCase))
+                {
+                    string result = parameter.Value.ValueKind == JsonValueKind.String
+                        ? parameter.Value.GetString() ?? string.Empty
+                        : parameter.Value.ToString();
+                    return result;
+                }
+            }
+        }
+
+        return string.Empty;
     }
 
     private static int CalculateBuildProgressPercent(long _elapsedMilliseconds, long _estimatedDurationMilliseconds)
@@ -272,6 +339,9 @@ public sealed class JenkinsService
 
         [JsonPropertyName("lastBuild")]
         public JenkinsBuildState? LastBuild { get; set; }
+
+        [JsonPropertyName("builds")]
+        public List<JenkinsBuildState> Builds { get; set; } = new();
     }
 
     private sealed class JenkinsQueueState
@@ -308,5 +378,23 @@ public sealed class JenkinsService
 
         [JsonPropertyName("estimatedDuration")]
         public long EstimatedDuration { get; set; }
+
+        [JsonPropertyName("actions")]
+        public List<JenkinsBuildAction> Actions { get; set; } = new();
+    }
+
+    private sealed class JenkinsBuildAction
+    {
+        [JsonPropertyName("parameters")]
+        public List<JenkinsBuildParameter> Parameters { get; set; } = new();
+    }
+
+    private sealed class JenkinsBuildParameter
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("value")]
+        public JsonElement Value { get; set; }
     }
 }

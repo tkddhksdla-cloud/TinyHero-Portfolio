@@ -224,10 +224,42 @@ function renderBuildStatus(buildStatus) {
   document.querySelector('#buildStartedValue').textContent = buildStatus.startedAtUtc
     ? formatDateTime(buildStatus.startedAtUtc)
     : buildStatus.isQueued ? '대기열 등록' : '—';
+  renderBuildHistory(buildStatus.recentBuilds || []);
 
   if (buildStatus.buildUrl) {
     document.querySelector('#buildStatusLink').href = buildStatus.buildUrl;
   }
+}
+
+function renderBuildHistory(buildList) {
+  const historyList = document.querySelector('#buildHistoryList');
+
+  if (!buildList.length) {
+    historyList.innerHTML = '<div class="build-history-empty">표시할 Jenkins 빌드 이력이 없습니다.</div>';
+    return;
+  }
+
+  historyList.innerHTML = buildList.map(build => {
+    const stateClass = resolveBuildHistoryStateClass(build.state);
+    const modeLabel = build.buildMode === 'PLAYER_BUILD' ? '전체 빌드' : build.buildMode === 'CONTENT_UPDATE' ? '콘텐츠 업데이트' : '빌드';
+    const versionLabel = build.gameVersion === '—' && build.buildMode === 'CONTENT_UPDATE' ? '기준 유지' : build.gameVersion;
+    const startedLabel = build.startedAtUtc ? formatRelativeTime(build.startedAtUtc) : '시각 정보 없음';
+    const tagName = build.buildUrl ? 'a' : 'div';
+    const linkAttributes = build.buildUrl
+      ? ` href="${escapeHtml(build.buildUrl)}" target="_blank" rel="noreferrer"`
+      : '';
+    return `<${tagName} class="build-history-item"${linkAttributes}>
+      <div><span class="build-history-number">#${build.buildNumber}</span><i class="build-history-state ${stateClass}"></i></div>
+      <strong class="build-history-version">${escapeHtml(versionLabel)}</strong>
+      <small class="build-history-meta">${modeLabel} · ${startedLabel}</small>
+    </${tagName}>`;
+  }).join('');
+}
+
+function resolveBuildHistoryStateClass(buildState) {
+  const normalizedState = String(buildState || '').toLowerCase();
+  const supportedStateList = ['success', 'building', 'failure', 'aborted', 'unstable'];
+  return supportedStateList.includes(normalizedState) ? normalizedState : '';
 }
 
 function resolveBuildStateLabel(buildStatus) {

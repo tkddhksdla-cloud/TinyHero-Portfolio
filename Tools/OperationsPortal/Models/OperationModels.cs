@@ -43,6 +43,15 @@ public sealed record JenkinsCredentialStatus(bool IsConfigured, string? UserName
 
 public sealed record JenkinsCredential(string UserName, string ApiToken);
 
+public sealed record JenkinsBuildHistoryItem(
+    int BuildNumber,
+    string GameVersion,
+    string BuildMode,
+    string State,
+    DateTimeOffset? StartedAtUtc,
+    long DurationMilliseconds,
+    string? BuildUrl);
+
 public sealed record JenkinsBuildStatus(
     bool IsAvailable,
     bool IsQueued,
@@ -54,7 +63,8 @@ public sealed record JenkinsBuildStatus(
     int ProgressPercent,
     long ElapsedMilliseconds,
     long EstimatedDurationMilliseconds,
-    DateTimeOffset? StartedAtUtc);
+    DateTimeOffset? StartedAtUtc,
+    IReadOnlyList<JenkinsBuildHistoryItem> RecentBuilds);
 
 public sealed record DeploymentRecord(
     string Id,
