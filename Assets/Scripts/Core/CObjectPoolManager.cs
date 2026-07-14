@@ -9,19 +9,30 @@ namespace TinyHero.Core
     ///</summary>
     public sealed class CObjectPoolManager : CSingleTon<CObjectPoolManager>
     {
+        private const string MonsterPoolRootName = "Pool_Monster";
+        private const string FxPoolRootName = "Pool_FX";
+        private const string ItemPoolRootName = "Pool_Item";
+
         ///<summary>
         /// 기존 오브젝트 풀 매니저 인스턴스 조회 시도
         ///</summary>
         public static bool TryGetInstance( out CObjectPoolManager _objectPoolManager )
         {
-            bool result = TryGetExistingInstance( out _objectPoolManager );
+            bool hasExistingInstance = TryGetExistingInstance( out _objectPoolManager );
+
+            if ( hasExistingInstance == false || _objectPoolManager == null )
+            {
+                _objectPoolManager = Instance;
+            }
+
+            bool result = _objectPoolManager != null;
             return result;
         }
 
         ///<summary>
         /// 안전한 풀 등록 시도
         ///</summary>
-        public static bool TryEnsurePoolRegistered<T>( string _poolKey, Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler = null ) where T : class
+        public static bool TryEnsurePoolRegistered<T>( string _poolKey, Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler = null, eObjectPoolCategory _category = eObjectPoolCategory.NONE ) where T : class
         {
             bool hasObjectPoolManager = TryGetInstance( out CObjectPoolManager objectPoolManager );
 
@@ -30,7 +41,25 @@ namespace TinyHero.Core
                 return false;
             }
 
-            bool result = objectPoolManager.EnsurePoolRegistered<T>( _poolKey, _createItemHandler, _onGetItemHandler, _onReleaseItemHandler, _onDestroyItemHandler );
+            bool result = objectPoolManager.EnsurePoolRegistered<T>( _poolKey, _createItemHandler, _onGetItemHandler, _onReleaseItemHandler, _onDestroyItemHandler, _category );
+            return result;
+        }
+
+        ///<summary>
+        /// 풀 카테고리 루트 조회 시도
+        ///</summary>
+        public static bool TryGetCategoryRoot( eObjectPoolCategory _category, out Transform _categoryRoot )
+        {
+            _categoryRoot = null;
+            bool hasObjectPoolManager = TryGetInstance( out CObjectPoolManager objectPoolManager );
+
+            if ( hasObjectPoolManager == false || objectPoolManager == null )
+            {
+                return false;
+            }
+
+            _categoryRoot = objectPoolManager.GetOrCreateCategoryRoot( _category );
+            bool result = _categoryRoot != null;
             return result;
         }
 
@@ -104,9 +133,26 @@ namespace TinyHero.Core
             ///<summary>
             /// 풀 엔트리 초기화
             ///</summary>
-            public CObjectPoolEntry( Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler )
+            public CObjectPoolEntry( Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler, Action<T> _moveToCategoryRootHandler )
             {
-                pool = new CObjectPool<T>( _createItemHandler, _onGetItemHandler, _onReleaseItemHandler, _onDestroyItemHandler );
+                pool = new CObjectPool<T>(
+                    () => CreateItem( _createItemHandler, _moveToCategoryRootHandler ),
+                    _onGetItemHandler,
+                    _item => ReleaseItem( _item, _onReleaseItemHandler, _moveToCategoryRootHandler ),
+                    _onDestroyItemHandler );
+            }
+
+            private static T CreateItem( Func<T> _createItemHandler, Action<T> _moveToCategoryRootHandler )
+            {
+                T createdItem = _createItemHandler.Invoke();
+                _moveToCategoryRootHandler?.Invoke( createdItem );
+                return createdItem;
+            }
+
+            private static void ReleaseItem( T _item, Action<T> _onReleaseItemHandler, Action<T> _moveToCategoryRootHandler )
+            {
+                _onReleaseItemHandler?.Invoke( _item );
+                _moveToCategoryRootHandler?.Invoke( _item );
             }
 
             ///<summary>
@@ -145,11 +191,12 @@ namespace TinyHero.Core
         }
 
         private readonly Dictionary<string, IObjectPoolEntry> poolEntryByKey = new Dictionary<string, IObjectPoolEntry>();
+        private readonly Dictionary<eObjectPoolCategory, Transform> categoryRootByCategory = new Dictionary<eObjectPoolCategory, Transform>();
 
         ///<summary>
         /// 풀 등록 보장
         ///</summary>
-        public bool EnsurePoolRegistered<T>( string _poolKey, Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler = null ) where T : class
+        public bool EnsurePoolRegistered<T>( string _poolKey, Func<T> _createItemHandler, Action<T> _onGetItemHandler, Action<T> _onReleaseItemHandler, Action<T> _onDestroyItemHandler = null, eObjectPoolCategory _category = eObjectPoolCategory.NONE ) where T : class
         {
             if ( string.IsNullOrWhiteSpace( _poolKey ) )
             {
@@ -171,7 +218,9 @@ namespace TinyHero.Core
                 return true;
             }
 
-            CObjectPoolEntry<T> createdEntry = new CObjectPoolEntry<T>( _createItemHandler, _onGetItemHandler, _onReleaseItemHandler, _onDestroyItemHandler );
+            Transform categoryRoot = GetOrCreateCategoryRoot( _category );
+            Action<T> moveToCategoryRootHandler = categoryRoot != null ? _item => MoveItemToCategoryRoot( _item, categoryRoot ) : null;
+            CObjectPoolEntry<T> createdEntry = new CObjectPoolEntry<T>( _createItemHandler, _onGetItemHandler, _onReleaseItemHandler, _onDestroyItemHandler, moveToCategoryRootHandler );
             poolEntryByKey.Add( trimmedPoolKey, createdEntry );
             return true;
         }
@@ -253,6 +302,79 @@ namespace TinyHero.Core
         {
             ClearAllPools();
             base.OnDestroy();
+        }
+
+        private Transform GetOrCreateCategoryRoot( eObjectPoolCategory _category )
+        {
+            if ( _category == eObjectPoolCategory.NONE )
+            {
+                return null;
+            }
+
+            bool hasRoot = categoryRootByCategory.TryGetValue( _category, out Transform categoryRoot );
+
+            if ( hasRoot && categoryRoot != null )
+            {
+                return categoryRoot;
+            }
+
+            string rootName = ResolveCategoryRootName( _category );
+
+            if ( string.IsNullOrWhiteSpace( rootName ) )
+            {
+                return null;
+            }
+
+            Transform existingRoot = transform.Find( rootName );
+
+            if ( existingRoot != null )
+            {
+                categoryRootByCategory[ _category ] = existingRoot;
+                return existingRoot;
+            }
+
+            GameObject rootObject = new GameObject( rootName );
+            categoryRoot = rootObject.transform;
+            categoryRoot.SetParent( transform, false );
+            categoryRootByCategory[ _category ] = categoryRoot;
+            return categoryRoot;
+        }
+
+        private static string ResolveCategoryRootName( eObjectPoolCategory _category )
+        {
+            switch ( _category )
+            {
+                case eObjectPoolCategory.MONSTER:
+                    return MonsterPoolRootName;
+                case eObjectPoolCategory.FX:
+                    return FxPoolRootName;
+                case eObjectPoolCategory.ITEM:
+                    return ItemPoolRootName;
+            }
+
+            return string.Empty;
+        }
+
+        private static void MoveItemToCategoryRoot<T>( T _item, Transform _categoryRoot ) where T : class
+        {
+            if ( _item == null || _categoryRoot == null )
+            {
+                return;
+            }
+
+            GameObject itemObject = _item as GameObject;
+
+            if ( itemObject == null && _item is Component component )
+            {
+                itemObject = component.gameObject;
+            }
+
+            if ( itemObject == null )
+            {
+                return;
+            }
+
+            itemObject.transform.SetParent( _categoryRoot, false );
         }
 
         ///<summary>

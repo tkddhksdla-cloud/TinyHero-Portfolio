@@ -2808,7 +2808,7 @@ namespace TinyHero.Player
                 return;
             }
 
-            CObjectPoolManager.TryEnsurePoolRegistered<GameObject>( attackSlashFxPoolKey, CreateAttackSlashFxInstance, OnGetAttackSlashFxInstance, OnReleaseAttackSlashFxInstance );
+            CObjectPoolManager.TryEnsurePoolRegistered<GameObject>( attackSlashFxPoolKey, CreateAttackSlashFxInstance, OnGetAttackSlashFxInstance, OnReleaseAttackSlashFxInstance, null, eObjectPoolCategory.FX );
         }
 
         ///<summary>
@@ -2837,8 +2837,9 @@ namespace TinyHero.Player
                 return;
             }
 
-            _fxObject.transform.SetParent( null, true );
-            _fxObject.SetActive( true );
+            CObjectPoolManager.TryGetCategoryRoot( eObjectPoolCategory.FX, out Transform fxPoolRoot );
+            _fxObject.transform.SetParent( fxPoolRoot, true );
+            _fxObject.SetActive( false );
 
             if ( activeAttackSlashFxObjectList.Contains( _fxObject ) == false )
             {
@@ -2893,6 +2894,7 @@ namespace TinyHero.Player
             fxScale.z *= rangeMultiplier;
             fxScale.x = Mathf.Abs( fxScale.x ) * facingDirection;
             fxTransform.localScale = fxScale;
+            attackSlashFxObject.SetActive( true );
 
             float fxLifetime = Mathf.Max( 0.01f, attackSlashFxLifetime );
             StartCoroutine( IE_ReturnAttackSlashFxAfterDelay( attackSlashFxObject, fxLifetime ) );

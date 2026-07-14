@@ -43,7 +43,14 @@ namespace TinyHero.Skill
             }
 
             Transform spawnedTransform = spawnedObject.transform;
-            spawnedTransform.SetParent( _parentTransform, false );
+            Transform resolvedParentTransform = _parentTransform;
+
+            if ( resolvedParentTransform == null )
+            {
+                CObjectPoolManager.TryGetCategoryRoot( eObjectPoolCategory.FX, out resolvedParentTransform );
+            }
+
+            spawnedTransform.SetParent( resolvedParentTransform, false );
             spawnedTransform.position = _worldPosition;
 
             Vector3 prefabScale = _prefab.transform.localScale;
@@ -105,8 +112,9 @@ namespace TinyHero.Skill
                 }
 
                 Transform parentTransform = targetObject.transform.parent;
+                CObjectPoolManager.TryGetCategoryRoot( eObjectPoolCategory.FX, out Transform fxPoolRoot );
 
-                if ( parentTransform != null )
+                if ( parentTransform != null && parentTransform != fxPoolRoot )
                 {
                     continue;
                 }
@@ -157,7 +165,9 @@ namespace TinyHero.Skill
                 _pooledVfxEntry.PoolKey,
                 () => CreateInstance( _prefab ),
                 _item => OnGetInstance( _item ),
-                _item => OnReleaseInstance( _item )
+                _item => OnReleaseInstance( _item ),
+                null,
+                eObjectPoolCategory.FX
             );
             return result;
         }

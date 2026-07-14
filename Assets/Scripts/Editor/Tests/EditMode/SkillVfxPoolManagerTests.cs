@@ -71,6 +71,8 @@ namespace TinyHero.Tests
 
             GameObject spawnedObject = pooledVfxHandle.GetSpawnedObject();
             Assert.IsNotNull( spawnedObject, "풀 대여 핸들이 활성 FX 오브젝트를 보유해야 한다." );
+            Assert.IsTrue( CObjectPoolManager.TryGetCategoryRoot( eObjectPoolCategory.FX, out Transform fxPoolRoot ) );
+            Assert.AreEqual( fxPoolRoot, spawnedObject.transform.parent );
 
             ParticleSystem particleSystem = spawnedObject.GetComponent<ParticleSystem>();
             Assert.IsNotNull( particleSystem, "풀에서 생성된 FX가 원본 파티클 시스템을 유지해야 한다." );
@@ -84,6 +86,28 @@ namespace TinyHero.Tests
             float distanceFromSpawnPosition = Vector3.Distance( spawnPosition, firstParticle.position );
             Assert.Less( distanceFromSpawnPosition, 0.01f );
 
+            pooledVfxHandle.ForceReturn();
+            Assert.IsFalse( spawnedObject.activeSelf );
+            Assert.AreEqual( fxPoolRoot, spawnedObject.transform.parent );
+        }
+
+        ///<summary>
+        /// 풀 매니저가 없을 때 최초 FX 요청이 매니저를 생성하는지 검증
+        ///</summary>
+        [Test]
+        public void Spawn_FirstRequestCreatesPoolManagerWhenMissing()
+        {
+            Object.DestroyImmediate( objectPoolManagerObject );
+            objectPoolManagerObject = null;
+
+            CSkillPooledVfxHandle pooledVfxHandle = CSkillVfxPoolManager.Spawn( effectPrefabObject, Vector3.zero, null, 3.0f );
+
+            Assert.IsNotNull( pooledVfxHandle );
+            Assert.IsTrue( CObjectPoolManager.TryGetInstance( out CObjectPoolManager objectPoolManager ) );
+            Assert.IsNotNull( objectPoolManager );
+            Assert.AreEqual( "Pool_FX", pooledVfxHandle.GetSpawnedObject().transform.parent.name );
+
+            objectPoolManagerObject = objectPoolManager.gameObject;
             pooledVfxHandle.ForceReturn();
         }
     }

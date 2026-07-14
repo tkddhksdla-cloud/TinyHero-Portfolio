@@ -1841,7 +1841,8 @@ namespace TinyHero.Maps
                 () => CreatePooledMonsterInstance( _monsterPoolKey, monsterPrefab ),
                 OnGetPooledMonsterInstance,
                 OnReleasePooledMonsterInstance,
-                OnDestroyPooledMonsterInstance );
+                OnDestroyPooledMonsterInstance,
+                eObjectPoolCategory.MONSTER );
 
             if ( isRegistered == false )
             {
@@ -2061,7 +2062,8 @@ namespace TinyHero.Maps
                 () => CreatePooledWorldItemDropInstance( _worldItemDropPoolKey, _worldItemDropPrefab ),
                 OnGetPooledWorldItemDropInstance,
                 OnReleasePooledWorldItemDropInstance,
-                OnDestroyPooledWorldItemDropInstance );
+                OnDestroyPooledWorldItemDropInstance,
+                eObjectPoolCategory.ITEM );
 
             if ( isRegistered == false )
             {

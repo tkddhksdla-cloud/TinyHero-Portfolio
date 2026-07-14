@@ -18,6 +18,8 @@ namespace TinyHero.Core
         {
             get
             {
+                ResetEditorQuitState();
+
                 if ( isApplicationQuitting )
                 {
                     return null;
@@ -48,6 +50,7 @@ namespace TinyHero.Core
         public static bool TryGetExistingInstance( out T _instance )
         {
             _instance = null;
+            ResetEditorQuitState();
 
             if ( isApplicationQuitting )
             {
@@ -73,6 +76,19 @@ namespace TinyHero.Core
         }
 
         ///<summary>
+        /// 에디터 플레이 종료 후 접근 상태 복구
+        ///</summary>
+        private static void ResetEditorQuitState()
+        {
+#if UNITY_EDITOR
+            if ( Application.isPlaying == false )
+            {
+                isApplicationQuitting = false;
+            }
+#endif
+        }
+
+        ///<summary>
         /// 컴포넌트 초기화
         ///</summary>
         protected virtual void Awake()
@@ -93,13 +109,22 @@ namespace TinyHero.Core
             if ( instance == null )
             {
                 instance = currentInstance;
-                DontDestroyOnLoad( gameObject );
+
+                if ( Application.isPlaying )
+                {
+                    DontDestroyOnLoad( gameObject );
+                }
+
                 return;
             }
 
             if ( ReferenceEquals( instance, currentInstance ) )
             {
-                DontDestroyOnLoad( gameObject );
+                if ( Application.isPlaying )
+                {
+                    DontDestroyOnLoad( gameObject );
+                }
+
                 return;
             }
 
@@ -111,7 +136,11 @@ namespace TinyHero.Core
         ///</summary>
         protected virtual void OnApplicationQuit()
         {
+#if UNITY_EDITOR
+            isApplicationQuitting = false;
+#else
             isApplicationQuitting = true;
+#endif
         }
 
         ///<summary>
@@ -141,7 +170,12 @@ namespace TinyHero.Core
 
             GameObject singletonObject = new GameObject( typeof( T ).Name );
             T createdInstance = singletonObject.AddComponent<T>();
-            DontDestroyOnLoad( singletonObject );
+
+            if ( Application.isPlaying )
+            {
+                DontDestroyOnLoad( singletonObject );
+            }
+
             return createdInstance;
         }
     }
