@@ -15,6 +15,9 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     private const string ItemAcquireSfxClipName = "SFX_ITEM_ACQUIRE";
     private const float DropGravityScale = 3.0f;
     private const float DropLinearDamping = 1.5f;
+    private const float DropLifetimeSeconds = 180.0f;
+    private const float BlinkDurationSeconds = 10.0f;
+    private const float BlinkIntervalSeconds = 0.15f;
 
     [SerializeField] private string itemId = string.Empty;
     [SerializeField] [HideInInspector] private int itemCount = 1;
@@ -27,6 +30,9 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     private CItemDefinition cachedItemDefinition;
     private string mapRuntimePoolKey = string.Empty;
     private bool isPickupInProgress;
+    private float expirationTime;
+    private float nextBlinkTime;
+    private bool isBlinkVisible = true;
 
     ///<summary>
     /// 드랍 오브젝트 초기화
@@ -37,6 +43,34 @@ public sealed class CWorldItemDropObject : MonoBehaviour
         ConfigureCollider();
         RefreshVisual();
         PreloadItemAcquireSfx();
+    }
+
+    ///<summary>
+    /// 드랍 수명 및 소멸 전 점멸 처리
+    ///</summary>
+    private void Update()
+    {
+        if ( expirationTime <= 0.0f || isPickupInProgress )
+        {
+            return;
+        }
+
+        if ( Time.time >= expirationTime )
+        {
+            ReleaseToPoolOrDeactivate();
+            return;
+        }
+
+        float blinkStartTime = expirationTime - BlinkDurationSeconds;
+
+        if ( Time.time < blinkStartTime || Time.time < nextBlinkTime )
+        {
+            return;
+        }
+
+        isBlinkVisible = isBlinkVisible == false;
+        SetVisualVisible( isBlinkVisible );
+        nextBlinkTime = Time.time + BlinkIntervalSeconds;
     }
 
     ///<summary>
@@ -59,8 +93,12 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     public void PrepareForSpawn()
     {
         isPickupInProgress = false;
+        expirationTime = Time.time + DropLifetimeSeconds;
+        nextBlinkTime = expirationTime - BlinkDurationSeconds;
+        isBlinkVisible = true;
         ResolveReferences();
         ConfigureCollider();
+        SetVisualVisible( true );
         ResetPhysicsState();
         SetPhysicsSimulationEnabled( true );
     }
@@ -225,6 +263,19 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     }
 
     ///<summary>
+    /// 드랍 아이콘 표시 상태 설정
+    ///</summary>
+    private void SetVisualVisible( bool _isVisible )
+    {
+        if ( targetSpriteRenderer == null )
+        {
+            return;
+        }
+
+        targetSpriteRenderer.enabled = _isVisible;
+    }
+
+    ///<summary>
     /// 드랍 오브젝트 참조 결정
     ///</summary>
     private void ResolveReferences()
@@ -293,6 +344,10 @@ public sealed class CWorldItemDropObject : MonoBehaviour
     ///</summary>
     public void PrepareForRelease()
     {
+        expirationTime = 0.0f;
+        nextBlinkTime = 0.0f;
+        isBlinkVisible = true;
+        SetVisualVisible( true );
         SetPickupTriggerEnabled( false );
         SetPhysicsSimulationEnabled( false );
         ResetPhysicsState();
