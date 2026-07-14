@@ -25,20 +25,21 @@ MonoBehaviour:
   equipmentType: 2
   consumableType: 0
   linkedSkillId: 
+  skillPointGrantAmount: 1
   randomBoxRewardTable: {fileID: 0}
   equipmentStatBonus:
-    hp: 50
-    hr: 20
-    mp: 50
-    mr: 10
-    atk: 100
-    def: 50
-    crt: 10
-    crd: 20
-    acc: 20
+    hp: 5000
+    hr: 100
+    mp: 3000
+    mr: 50
+    atk: 0
+    def: 100
+    crt: 30
+    crd: 0
+    acc: 0
     ats: 0
     move: 0
-    range: 0
+    range: 50
     cdr: 50
   equipmentPartsType: 2
   equipmentPartsIndex: 68
