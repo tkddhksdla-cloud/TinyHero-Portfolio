@@ -69,9 +69,9 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 
 ### Local Content Operations Portal
 
-`Tools/OperationsPortal`은 로컬 Addressables 콘텐츠 빌드와 배포 상태를 관리하는 ASP.NET Core 운영 대시보드입니다. `Tools/OperationsPortal/Start-TinyHeroOperationsPortal.ps1`을 실행하면 운영 페이지 `http://127.0.0.1:8090`과 게임용 콘텐츠 서버 `http://127.0.0.1:8082/TinyHeroContent`가 함께 실행됩니다.
+`Tools/OperationsPortal`은 로컬 Addressables 콘텐츠 빌드와 배포 상태를 관리하는 ASP.NET Core 운영 대시보드입니다. 바탕화면의 `TinyHero-운영툴.ps1`을 실행하면 Jenkins, 운영 페이지 `http://127.0.0.1:8090`, 게임용 콘텐츠 서버 `http://127.0.0.1:8082/TinyHeroContent`가 함께 실행됩니다.
 
-운영툴에서는 Jenkins `TinyHero-Build-Windows`의 `CONTENT_UPDATE` 빌드를 요청하고, 빌드된 Windows Addressables ZIP을 검증한 뒤 로컬 콘텐츠 경로에 배포할 수 있습니다. 기존 콘텐츠 백업, 실패 시 복원, ZIP 경로 검증과 배포 이력을 포함하며 세부 사용법은 `Tools/OperationsPortal/README.md`를 참고합니다.
+운영툴에서는 Jenkins `TinyHero-Build-Windows`의 `PLAYER_BUILD`와 `CONTENT_UPDATE`를 요청하고 진행 상태와 최근 결과를 확인할 수 있습니다. 빌드된 Windows Addressables ZIP의 직접 배포, 기존 콘텐츠 백업, 실패 시 복원, ZIP 경로 검증과 배포 이력도 제공하며 세부 사용법은 `Tools/OperationsPortal/README.md`를 참고합니다.
 
 ### Audio Management
 
