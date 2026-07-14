@@ -1,0 +1,376 @@
+using System.Collections.Generic;
+using TinyHero.Player;
+using UnityEngine;
+
+namespace TinyHero.Skill
+{
+    ///<summary>
+    /// 부유 무기 소환수의 수명, 편대, 대상 예약과 장비 외형 동기화 관리
+    ///</summary>
+    public sealed class CFloatingWeaponSummonRuntime : MonoBehaviour
+    {
+        private const int TargetBufferSize = 64;
+        private const float MinimumTargetRetrySeconds = 0.2f;
+        private static readonly Dictionary<int, CFloatingWeaponSummonRuntime> ActiveRuntimeByOwnerId = new Dictionary<int, CFloatingWeaponSummonRuntime>();
+
+        private readonly Collider2D[] targetBuffer = new Collider2D[ TargetBufferSize ];
+        private readonly List<CFloatingWeaponCompanionRuntime> companionList = new List<CFloatingWeaponCompanionRuntime>();
+        private CSkillContext skillContext;
+        private Transform ownerTransform;
+        private CPlayerEquipmentManager equipmentManager;
+        private Vector2 formationBaseOffset;
+        private float formationVerticalSpacing;
+        private float hoverAmplitude;
+        private float hoverFrequency;
+        private float targetSearchRadius;
+        private float attackIntervalSeconds;
+        private float flightSpeed;
+        private float hitRadius;
+        private float damageMultiplier;
+        private int flatDamageBonus;
+        private float attackRotationSpeed;
+        private float expirationTime;
+        private int ownerInstanceId;
+        private bool isInitialized;
+
+        ///<summary>
+        /// 부유 무기 소환 런타임 초기화
+        ///</summary>
+        public bool Initialize( CSkillContext _skillContext, int _companionCount, float _durationSeconds, Vector2 _formationBaseOffset, float _formationVerticalSpacing, float _hoverAmplitude, float _hoverFrequency, float _targetSearchRadius, float _attackIntervalSeconds, float _flightSpeed, float _hitRadius, float _damageMultiplier, int _flatDamageBonus, float _weaponVisualScale, float _attackRotationSpeed )
+        {
+            if ( _skillContext == null || _skillContext.GetOwnerTransform() == null )
+            {
+                return false;
+            }
+
+            if ( CFloatingWeaponVisualUtility.TryResolveWeaponSprite( _skillContext, out Sprite weaponSprite ) == false )
+            {
+                return false;
+            }
+
+            skillContext = _skillContext;
+            ownerTransform = _skillContext.GetOwnerTransform();
+            formationBaseOffset = _formationBaseOffset;
+            formationVerticalSpacing = Mathf.Max( 0.0f, _formationVerticalSpacing );
+            hoverAmplitude = Mathf.Max( 0.0f, _hoverAmplitude );
+            hoverFrequency = Mathf.Max( 0.0f, _hoverFrequency );
+            targetSearchRadius = Mathf.Max( 0.01f, _targetSearchRadius );
+            attackIntervalSeconds = Mathf.Max( 0.01f, _attackIntervalSeconds );
+            flightSpeed = Mathf.Max( 0.01f, _flightSpeed );
+            hitRadius = Mathf.Max( 0.01f, _hitRadius );
+            damageMultiplier = Mathf.Max( 0.0f, _damageMultiplier );
+            flatDamageBonus = _flatDamageBonus;
+            attackRotationSpeed = Mathf.Max( 0.0f, _attackRotationSpeed );
+            expirationTime = Time.time + Mathf.Max( 0.01f, _durationSeconds );
+            ownerInstanceId = ownerTransform.GetInstanceID();
+            ReplaceExistingRuntime();
+            ResolveEquipmentManager();
+            SubscribeEquipmentChanged();
+            CreateCompanions( Mathf.Max( 1, _companionCount ), weaponSprite, Mathf.Max( 0.01f, _weaponVisualScale ) );
+            isInitialized = companionList.Count > 0;
+            return isInitialized;
+        }
+
+        ///<summary>
+        /// 소환 수명과 소유자 유효성 확인
+        ///</summary>
+        private void Update()
+        {
+            if ( isInitialized == false )
+            {
+                return;
+            }
+
+            if ( ownerTransform == null || Time.time >= expirationTime )
+            {
+                Destroy( gameObject );
+            }
+        }
+
+        ///<summary>
+        /// 이벤트와 활성 런타임 등록 해제
+        ///</summary>
+        private void OnDestroy()
+        {
+            UnsubscribeEquipmentChanged();
+
+            if ( ownerInstanceId == 0 )
+            {
+                return;
+            }
+
+            if ( ActiveRuntimeByOwnerId.TryGetValue( ownerInstanceId, out CFloatingWeaponSummonRuntime activeRuntime ) && activeRuntime == this )
+            {
+                ActiveRuntimeByOwnerId.Remove( ownerInstanceId );
+            }
+        }
+
+        ///<summary>
+        /// 편대 위치 반환
+        ///</summary>
+        public Vector3 GetFormationWorldPosition( int _companionIndex, int _companionCount, float _hoverPhase )
+        {
+            if ( ownerTransform == null )
+            {
+                return transform.position;
+            }
+
+            float facingDirection = ResolveFacingDirection();
+            float centerIndex = ( Mathf.Max( 1, _companionCount ) - 1 ) * 0.5f;
+            float verticalOffset = ( _companionIndex - centerIndex ) * formationVerticalSpacing;
+            float hoverOffset = Mathf.Sin( Time.time * hoverFrequency + _hoverPhase ) * hoverAmplitude;
+            Vector3 resolvedOffset = new Vector3( formationBaseOffset.x * facingDirection, formationBaseOffset.y + verticalOffset + hoverOffset, 0.0f );
+            Vector3 result = ownerTransform.position + resolvedOffset;
+            return result;
+        }
+
+        ///<summary>
+        /// 주변에서 다른 무기가 예약하지 않은 가장 가까운 적 결정
+        ///</summary>
+        public MonsterObject AcquireTarget( CFloatingWeaponCompanionRuntime _requester )
+        {
+            if ( ownerTransform == null )
+            {
+                return null;
+            }
+
+            ContactFilter2D contactFilter = CreateMonsterContactFilter();
+            Vector2 searchCenter = ownerTransform.position;
+            int hitCount = Physics2D.OverlapCircle( searchCenter, targetSearchRadius, contactFilter, targetBuffer );
+            MonsterObject nearestUnreservedTarget = null;
+            MonsterObject nearestFallbackTarget = null;
+            float nearestUnreservedDistance = float.MaxValue;
+            float nearestFallbackDistance = float.MaxValue;
+
+            for ( int index = 0; index < hitCount; index++ )
+            {
+                Collider2D targetCollider = targetBuffer[ index ];
+                MonsterObject monsterObject = ResolveMonsterObject( targetCollider );
+
+                if ( IsValidTarget( monsterObject ) == false )
+                {
+                    continue;
+                }
+
+                float distance = ( monsterObject.transform.position - ownerTransform.position ).sqrMagnitude;
+
+                if ( distance < nearestFallbackDistance )
+                {
+                    nearestFallbackDistance = distance;
+                    nearestFallbackTarget = monsterObject;
+                }
+
+                if ( IsReservedByOtherCompanion( monsterObject, _requester ) || distance >= nearestUnreservedDistance )
+                {
+                    continue;
+                }
+
+                nearestUnreservedDistance = distance;
+                nearestUnreservedTarget = monsterObject;
+            }
+
+            MonsterObject result = nearestUnreservedTarget != null ? nearestUnreservedTarget : nearestFallbackTarget;
+            return result;
+        }
+
+        ///<summary>
+        /// 소환 스킬 실행 문맥 반환
+        ///</summary>
+        public CSkillContext GetSkillContext()
+        {
+            CSkillContext result = skillContext;
+            return result;
+        }
+
+        public float GetAttackIntervalSeconds()
+        {
+            float result = attackIntervalSeconds;
+            return result;
+        }
+
+        public float GetTargetRetrySeconds()
+        {
+            float result = MinimumTargetRetrySeconds;
+            return result;
+        }
+
+        public float GetFlightSpeed()
+        {
+            float result = flightSpeed;
+            return result;
+        }
+
+        public float GetHitRadius()
+        {
+            float result = hitRadius;
+            return result;
+        }
+
+        public float GetDamageMultiplier()
+        {
+            float result = damageMultiplier;
+            return result;
+        }
+
+        public int GetFlatDamageBonus()
+        {
+            int result = flatDamageBonus;
+            return result;
+        }
+
+        public float GetAttackRotationSpeed()
+        {
+            float result = attackRotationSpeed;
+            return result;
+        }
+
+        public float ResolveFacingDirection()
+        {
+            if ( ownerTransform == null )
+            {
+                return 1.0f;
+            }
+
+            float result = ownerTransform.localScale.x < 0.0f ? -1.0f : 1.0f;
+            return result;
+        }
+
+        ///<summary>
+        /// 새 시전 시 동일 플레이어의 기존 소환 제거
+        ///</summary>
+        private void ReplaceExistingRuntime()
+        {
+            if ( ActiveRuntimeByOwnerId.TryGetValue( ownerInstanceId, out CFloatingWeaponSummonRuntime existingRuntime ) && existingRuntime != null && existingRuntime != this )
+            {
+                Destroy( existingRuntime.gameObject );
+            }
+
+            ActiveRuntimeByOwnerId[ ownerInstanceId ] = this;
+        }
+
+        ///<summary>
+        /// 무기 소환수 생성
+        ///</summary>
+        private void CreateCompanions( int _companionCount, Sprite _weaponSprite, float _weaponVisualScale )
+        {
+            for ( int index = 0; index < _companionCount; index++ )
+            {
+                GameObject companionObject = new GameObject( $"FloatingWeapon_{index + 1}" );
+                companionObject.transform.SetParent( transform );
+                companionObject.transform.position = GetFormationWorldPosition( index, _companionCount, index * 1.7f );
+                SpriteRenderer spriteRenderer = companionObject.AddComponent<SpriteRenderer>();
+                spriteRenderer.sprite = _weaponSprite;
+                spriteRenderer.sortingLayerName = "SkillEffect";
+                spriteRenderer.sortingOrder = 10 + index;
+                companionObject.transform.localScale = Vector3.one * _weaponVisualScale;
+                CFloatingWeaponCompanionRuntime companionRuntime = companionObject.AddComponent<CFloatingWeaponCompanionRuntime>();
+                companionRuntime.Initialize( this, index, _companionCount, index * 1.7f, spriteRenderer );
+                companionList.Add( companionRuntime );
+            }
+        }
+
+        ///<summary>
+        /// 장비 매니저 결정
+        ///</summary>
+        private void ResolveEquipmentManager()
+        {
+            PlayerController playerController = skillContext != null ? skillContext.GetPlayerController() : null;
+            equipmentManager = playerController != null ? playerController.GetEquipmentManager() : null;
+        }
+
+        private void SubscribeEquipmentChanged()
+        {
+            if ( equipmentManager == null )
+            {
+                return;
+            }
+
+            equipmentManager.OnEquipmentChanged -= HandleEquipmentChanged;
+            equipmentManager.OnEquipmentChanged += HandleEquipmentChanged;
+        }
+
+        private void UnsubscribeEquipmentChanged()
+        {
+            if ( equipmentManager == null )
+            {
+                return;
+            }
+
+            equipmentManager.OnEquipmentChanged -= HandleEquipmentChanged;
+        }
+
+        ///<summary>
+        /// 장비 변경 시 소환 무기 외형 동기화
+        ///</summary>
+        private void HandleEquipmentChanged( CPlayerEquipmentManager _equipmentManager )
+        {
+            Sprite weaponSprite = null;
+            CFloatingWeaponVisualUtility.TryResolveWeaponSprite( skillContext, out weaponSprite );
+
+            for ( int index = 0; index < companionList.Count; index++ )
+            {
+                CFloatingWeaponCompanionRuntime companionRuntime = companionList[ index ];
+
+                if ( companionRuntime == null )
+                {
+                    continue;
+                }
+
+                companionRuntime.SetWeaponSprite( weaponSprite );
+            }
+        }
+
+        private ContactFilter2D CreateMonsterContactFilter()
+        {
+            ContactFilter2D contactFilter = new ContactFilter2D();
+            contactFilter.useLayerMask = true;
+            contactFilter.useTriggers = true;
+            contactFilter.layerMask = LayerMask.GetMask( "Monster" );
+            return contactFilter;
+        }
+
+        private bool IsReservedByOtherCompanion( MonsterObject _monsterObject, CFloatingWeaponCompanionRuntime _requester )
+        {
+            for ( int index = 0; index < companionList.Count; index++ )
+            {
+                CFloatingWeaponCompanionRuntime companionRuntime = companionList[ index ];
+
+                if ( companionRuntime == null || companionRuntime == _requester )
+                {
+                    continue;
+                }
+
+                if ( companionRuntime.GetTarget() == _monsterObject )
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool IsValidTarget( MonsterObject _monsterObject )
+        {
+            bool result = _monsterObject != null && _monsterObject.gameObject.activeInHierarchy && _monsterObject.GetCurrentHp() > 0;
+            return result;
+        }
+
+        private MonsterObject ResolveMonsterObject( Collider2D _targetCollider )
+        {
+            if ( _targetCollider == null )
+            {
+                return null;
+            }
+
+            MonsterObject monsterObject = _targetCollider.GetComponent<MonsterObject>();
+
+            if ( monsterObject != null )
+            {
+                return monsterObject;
+            }
+
+            MonsterObject result = _targetCollider.GetComponentInParent<MonsterObject>();
+            return result;
+        }
+    }
+}

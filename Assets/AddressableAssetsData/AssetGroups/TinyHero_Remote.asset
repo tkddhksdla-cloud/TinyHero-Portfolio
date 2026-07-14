@@ -1,0 +1,298 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: TinyHero_Remote
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: TinyHero_Remote
+  m_GUID: f4c6487648109014fa0e8154b5d0c79f
+  m_SerializeEntries:
+  - m_GUID: 01f3d315fda805d4f9fb473850abb96e
+    m_Address: Audio/BGM/BGM_TITLE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 03880bef8af1c204cabf739596a3397d
+    m_Address: Data/Player/PlayerDefaultStatTableData
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Player
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 068b9faecc502724bb8a6c11d90fd28b
+    m_Address: Data/Item/Definitions/Item_Material_TurtleSnailWater
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0da813bdde3d910429d3924f635c4dae
+    m_Address: Audio/SFX/SFX_PLAYER_JUMP
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1174588dbec9d3941bdac3ca8e590585
+    m_Address: Data/Item/Definitions/Item_Consumable_SkillPointBook
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1244f604b5ad5ce46b97314a46e42e77
+    m_Address: Data/Item/EquipmentPotentialTableData
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1730fcfcec9cb5d43b59a8c2e3ad4974
+    m_Address: Audio/BGM/BGM_FORSEST_VILLAGE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 175338dfe710468439cb3ad57306bc3c
+    m_Address: Data/Item/Definitions/Item_Equipment_Sword_Gold_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1fa3a3431e68fbb419c69ab6eaba82d7
+    m_Address: Audio/SFX/SFX_PLAYER_JUMP_DOUBLE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 259d2f47a9d516d41849d7c9a3a2d99e
+    m_Address: RawImages/BG/BG_StarterVillage_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c34799f4ef78a541aa925dbcfcccc9e
+    m_Address: Data/Item/Definitions/Item_Consumable_Cube
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 338502a5de5c07f488be7e81461a4ca0
+    m_Address: Data/Monster/MonsterStatTableData
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Monster
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ae4f170f7111cd4387b7256edf50a23
+    m_Address: RawImages/BG/BG_StarterVillage_06
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 487a0f418ba4ddb4f819b1b785447045
+    m_Address: Data/Player/PlayerLevelStatTableData
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Player
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5aa18d162201f5349a99e5ec7b98c80a
+    m_Address: Data/Item/Definitions/Item_Equipment_Helmet_Drex
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5b7d03f02d02e2f42864348f1570e1db
+    m_Address: Data/Text/TextTableData
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Text
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5c3d15663001130468fda65ed0677546
+    m_Address: MapData/MAP_STARTER_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 629332a484ea1cf4e806871c902bab80
+    m_Address: Data/Item/Definitions/Item_Material_HoneyJelly
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 68358d8979bb5eb40a1d6b25dc33c045
+    m_Address: MapData/MAP_STARTER_000_VILLAGE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6af118b6aa10a3042b2adbf9987ad3e3
+    m_Address: Data/Item/Definitions/Item_Equipment_Sword_Angel_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c084544aeb065947bda926ec689f898
+    m_Address: Data/Quest/Definitions/QUEST_GRAHAM_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Quest
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c54ae18e1f10d349a687a345f72d445
+    m_Address: Audio/Mixers/TinyHeroAudioMixer
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 77c1ba67fdb8a5c439cf3495bc51db4a
+    m_Address: Data/Item/Definitions/Item_Consumable_Skillbook_ShadowPartner
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7844db35c3d024d409dbba164edecc86
+    m_Address: Data/Item/Definitions/Item_Equipment_Helmet_Angel_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a7a7cd62ed41ff409c3373fe5bbd0d4
+    m_Address: RawImages/BG/BG_StarterVillage_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7f1798aeccb3a5045b5d66dd68129e1e
+    m_Address: Data/Shop/Definitions/SHOP_0001 1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Shop
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7f5dbaea7e9c448478c335215a7bcca7
+    m_Address: Data/Quest/Definitions/QUEST_GRAHAM_002
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Quest
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7fb22cddd8a28924e9d21c53ff51d8e6
+    m_Address: Data/Item/Definitions/Item_Equipment_Helmet_Gold_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93c0ffda6df6f6b47bc0e30db1a2085f
+    m_Address: MapData/MAP_STARTER_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94a2eea3dfbaa7c4086a769cf6a18909
+    m_Address: RawImages/BG/BG_StarterVillage_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a700d3616874c749a028cebd68ede67
+    m_Address: Audio/SFX/SFX_CLICK_00
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9d84989b2c284dc4ac7b5a0fd7f816f0
+    m_Address: Data/Shop/Definitions/SHOP_0001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Shop
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a2207d8e7626d6349aedec3265108d3b
+    m_Address: Data/Item/Definitions/Item_Equipment_Sword_Ignition
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a548de135325c26479041cf6a7f7514a
+    m_Address: Data/Quest/Definitions/QUEST_DREX_001
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Quest
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c31f3d3153ad9e349a9566b6d511c80b
+    m_Address: Hotfix/TinyHero.Hotfix.dll
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4d8af5d271ec1647ad765f08371357c
+    m_Address: RawImages/BG/BG_StarterVillage_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dfaee30c609a3d9419aa7e518512aa00
+    m_Address: MapData/SceneMapTool
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e1a027f621767df428b079b32fe88769
+    m_Address: RawImages/BG/BG_StarterVillage_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e350d307d025c9340b63b05028ee2e5e
+    m_Address: Data/Item/Definitions/Item_Currency_Gold
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ed10090370f0bc741aabd0e3fd227fe8
+    m_Address: Audio/SFX/SFX_MONSTER_HURT_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f3da1dc5bbcc87d4ba88fb591e43b5b3
+    m_Address: Data/Item/Definitions/Item_Equipment_BronzeSword
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.Data.Item
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f655fbbb61daaa64b96e228751831b35
+    m_Address: Audio/SFX/SFX_ITEM_ACQUIRE
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: bca4858ae8452974895f5c99decf5998, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: a5bf039206d89a449bb34701968990af, type: 2}
+    - {fileID: 11400000, guid: f8cfef6d862d8d84ea769cecc1c8b5a9, type: 2}

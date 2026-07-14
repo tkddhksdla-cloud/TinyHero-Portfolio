@@ -12,7 +12,14 @@ namespace TinyHero.Tools
     public static class CTinyHeroDataValidationRules
     {
         public const string AddressableGroupName = "TinyHero_Local";
+        public const string RemoteAddressableGroupName = "TinyHero_Remote";
         public const string RuntimeAddressableLabel = "TinyHero.RuntimeResource";
+        public const string ItemDataAddressableLabel = "TinyHero.Data.Item";
+        public const string QuestDataAddressableLabel = "TinyHero.Data.Quest";
+        public const string ShopDataAddressableLabel = "TinyHero.Data.Shop";
+        public const string PlayerDataAddressableLabel = "TinyHero.Data.Player";
+        public const string MonsterDataAddressableLabel = "TinyHero.Data.Monster";
+        public const string TextDataAddressableLabel = "TinyHero.Data.Text";
 
         private const string ResourcesRootPath = "Assets/Resources/";
         private const string MapDataSearchRootPath = "Assets/Resources/MapData";
@@ -20,6 +27,13 @@ namespace TinyHero.Tools
         private const string PrefabSearchRootPath = "Assets/Resources/Prefabs";
         private const string HotfixSearchRootPath = "Assets/Resources/Hotfix";
         private const string AudioSearchRootPath = "Assets/Resources/Audio";
+        private const string ItemDefinitionSearchRootPath = "Assets/Resources/Data/Item/Definitions";
+        private const string ItemTableSearchRootPath = "Assets/Resources/Data/Item";
+        private const string QuestDefinitionSearchRootPath = "Assets/Resources/Data/Quest/Definitions";
+        private const string ShopDefinitionSearchRootPath = "Assets/Resources/Data/Shop/Definitions";
+        private const string PlayerDataSearchRootPath = "Assets/Resources/Data/Player";
+        private const string MonsterDataSearchRootPath = "Assets/Resources/Data/Monster";
+        private const string TextDataSearchRootPath = "Assets/Resources/Data/Text";
 
         ///<summary>
         /// Addressables 자동 동기화 규칙 데이터
@@ -29,15 +43,19 @@ namespace TinyHero.Tools
             public string searchRootPath;
             public string searchFilter;
             public bool isRequiredFolder;
+            public string targetGroupName;
+            public string[] labelArray;
 
             ///<summary>
             /// Addressables 자동 동기화 규칙 초기화
             ///</summary>
-            public CAddressableSyncRule( string _searchRootPath, string _searchFilter, bool _isRequiredFolder )
+            public CAddressableSyncRule( string _searchRootPath, string _searchFilter, bool _isRequiredFolder, bool _isRemote, params string[] _labelArray )
             {
                 searchRootPath = _searchRootPath;
                 searchFilter = _searchFilter;
                 isRequiredFolder = _isRequiredFolder;
+                targetGroupName = _isRemote ? RemoteAddressableGroupName : AddressableGroupName;
+                labelArray = _labelArray != null ? _labelArray : new string[ 0 ];
             }
         }
 
@@ -47,12 +65,20 @@ namespace TinyHero.Tools
         public static List<CAddressableSyncRule> CreateAddressableSyncRuleList()
         {
             List<CAddressableSyncRule> syncRuleList = new List<CAddressableSyncRule>();
-            syncRuleList.Add( new CAddressableSyncRule( MapDataSearchRootPath, "t:TextAsset", true ) );
-            syncRuleList.Add( new CAddressableSyncRule( BackgroundImageSearchRootPath, "t:Texture2D", true ) );
-            syncRuleList.Add( new CAddressableSyncRule( PrefabSearchRootPath, "t:Prefab", true ) );
-            syncRuleList.Add( new CAddressableSyncRule( HotfixSearchRootPath, "t:TextAsset", true ) );
-            syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioClip", true ) );
-            syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioMixer", true ) );
+            syncRuleList.Add( new CAddressableSyncRule( MapDataSearchRootPath, "t:TextAsset", true, true ) );
+            syncRuleList.Add( new CAddressableSyncRule( BackgroundImageSearchRootPath, "t:Texture2D", true, true ) );
+            syncRuleList.Add( new CAddressableSyncRule( PrefabSearchRootPath, "t:Prefab", true, false ) );
+            syncRuleList.Add( new CAddressableSyncRule( HotfixSearchRootPath, "t:TextAsset", true, true ) );
+            syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioClip", true, true ) );
+            syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioMixer", true, true ) );
+            syncRuleList.Add( new CAddressableSyncRule( ItemDefinitionSearchRootPath, "t:CItemDefinition", true, true, ItemDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( ItemTableSearchRootPath, "t:CEquipmentPotentialTableData", true, true, ItemDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( QuestDefinitionSearchRootPath, "t:CQuestDefinition", true, true, QuestDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( ShopDefinitionSearchRootPath, "t:CShopDefinition", true, true, ShopDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( PlayerDataSearchRootPath, "t:CPlayerDefaultStatTableData", true, true, PlayerDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( PlayerDataSearchRootPath, "t:CPlayerLevelStatTableData", true, true, PlayerDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( MonsterDataSearchRootPath, "t:CMonsterStatTableData", true, true, MonsterDataAddressableLabel ) );
+            syncRuleList.Add( new CAddressableSyncRule( TextDataSearchRootPath, "t:CTextTableData", true, true, TextDataAddressableLabel ) );
             return syncRuleList;
         }
 

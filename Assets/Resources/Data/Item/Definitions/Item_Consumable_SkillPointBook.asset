@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7698db6904da0bc4f8e7a1cfade82f24, type: 3}
+  m_Name: Item_Consumable_SkillPointBook
+  m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Core.Data.CItemDefinition
+  itemId: ITEM_CONSUMABLE_SKILL_POINT_BOOK
+  itemName: KEY_TEXT_ITEM_CONSUMABLE_SP_BOOK_ITEM_NAME
+  itemType: 1
+  description: KEY_TEXT_ITEM_CONSUMABLE_SP_BOOK_DESCRIPTION
+  iconSprite: {fileID: 21300000, guid: 4b08c7838d76e468ea67908f34173b9a, type: 3}
+  worldDropPrefab: {fileID: 0}
+  isStackable: 1
+  maxStackCountValue: 9999
+  sellPriceItemId: ITEM_CURRENCY_GOLD
+  sellPriceValue: 0
+  equipmentType: 0
+  consumableType: 5
+  linkedSkillId: 
+  skillPointGrantAmount: 1
+  randomBoxRewardTable: {fileID: 0}
+  equipmentStatBonus:
+    hp: 0
+    hr: 0
+    mp: 0
+    mr: 0
+    atk: 0
+    def: 0
+    crt: 0
+    crd: 0
+    acc: 0
+    ats: 0
+    move: 0
+    range: 0
+  equipmentPartsType: 4
+  equipmentPartsIndex: -1

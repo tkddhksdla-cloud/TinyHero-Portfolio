@@ -13,6 +13,7 @@ namespace TinyHero.Skill
         CLONE,
         PROJECTILE_PIERCING,
         PHASE_STRIKE,
-        SKYFALL_STRIKE
+        SKYFALL_STRIKE,
+        FLOATING_WEAPON_SUMMON
     }
 }

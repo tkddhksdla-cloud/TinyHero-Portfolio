@@ -21,7 +21,8 @@ namespace TinyHero.Core.Data
                 return cachedTableData;
             }
 
-            CEquipmentPotentialTableData loadedTableData = Resources.Load<CEquipmentPotentialTableData>( ResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CEquipmentPotentialTableData loadedTableData = resourceManager != null ? resourceManager.GetEquipmentPotentialTableData() : Resources.Load<CEquipmentPotentialTableData>( ResourcePath );
             cachedTableData = loadedTableData;
             return cachedTableData;
         }

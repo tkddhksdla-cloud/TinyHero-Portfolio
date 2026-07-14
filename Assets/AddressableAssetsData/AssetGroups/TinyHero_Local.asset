@@ -15,12 +15,6 @@ MonoBehaviour:
   m_GroupName: TinyHero_Local
   m_GUID: a98aa92c2b988644aa62eea983e221a6
   m_SerializeEntries:
-  - m_GUID: 01f3d315fda805d4f9fb473850abb96e
-    m_Address: Audio/BGM/BGM_TITLE
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0284b2cf062de6c4eb5535e7d5977cf2
     m_Address: Prefabs/UI/Skill/SkillSlot
     m_ReadOnly: 0
@@ -40,32 +34,14 @@ MonoBehaviour:
     - TinyHero.RuntimeResource
     - UI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 0da813bdde3d910429d3924f635c4dae
-    m_Address: Audio/SFX/SFX_PLAYER_JUMP
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 155c92be42b617048bb6028d3283b5b0
     m_Address: Prefabs/UI/Common/ToastMessage
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1730fcfcec9cb5d43b59a8c2e3ad4974
-    m_Address: Audio/BGM/BGM_FORSEST_VILLAGE
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 173d23eb5997f914dafcfdf66ed3b5cf
     m_Address: Prefabs/Item/Drops/DROP_ITEM_MATERIAL_TURTLE_SNAIL_WATER
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1fa3a3431e68fbb419c69ab6eaba82d7
-    m_Address: Audio/SFX/SFX_PLAYER_JUMP_DOUBLE
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -78,12 +54,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2537f2196e8725e4b9a18075afa5efab
     m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_SWORD_IGNITION
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 259d2f47a9d516d41849d7c9a3a2d99e
-    m_Address: RawImages/BG/BG_StarterVillage_05
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -120,12 +90,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 399c3351381bcc545b2eff8ac240c2e0
     m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_HELMET_DREX
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3ae4f170f7111cd4387b7256edf50a23
-    m_Address: RawImages/BG/BG_StarterVillage_06
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -167,20 +131,8 @@ MonoBehaviour:
     - TinyHero.RuntimeResource
     - UI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5c3d15663001130468fda65ed0677546
-    m_Address: MapData/MAP_STARTER_002
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 665138131a20dba45b356c11078af67c
     m_Address: Prefabs/Character/Monster/Monster_0003
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 68358d8979bb5eb40a1d6b25dc33c045
-    m_Address: MapData/MAP_STARTER_000_VILLAGE
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -198,12 +150,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     - UI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6c54ae18e1f10d349a687a345f72d445
-    m_Address: Audio/Mixers/TinyHeroAudioMixer
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 748fb53b79ad92046ad8e1f19a5da98d
     m_Address: Prefabs/Character/Monster/Monster_0004
@@ -225,12 +171,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 794b34ea311dbd342bca2af1ba62716b
     m_Address: Prefabs/UI/Shop/ShopSlot
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7a7a7cd62ed41ff409c3373fe5bbd0d4
-    m_Address: RawImages/BG/BG_StarterVillage_03
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -292,24 +232,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8eb6ed0006325aa418f6df5d5b75b176
     m_Address: Prefabs/UI/Popup/PopupCommonNotice
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 93c0ffda6df6f6b47bc0e30db1a2085f
-    m_Address: MapData/MAP_STARTER_001
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 94a2eea3dfbaa7c4086a769cf6a18909
-    m_Address: RawImages/BG/BG_StarterVillage_02
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9a700d3616874c749a028cebd68ede67
-    m_Address: Audio/SFX/SFX_CLICK_00
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -393,20 +315,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c31f3d3153ad9e349a9566b6d511c80b
-    m_Address: Hotfix/TinyHero.Hotfix.dll
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c4bbe7539beb5d54e9a5b405fbbe5016
     m_Address: Prefabs/UI/HpBar/MonsterInfo
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c4d8af5d271ec1647ad765f08371357c
-    m_Address: RawImages/BG/BG_StarterVillage_01
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -431,18 +341,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d578a71711b74e84d95a5531be1042f3
     m_Address: Prefabs/UI/Popup/PopupCommonInputField
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: dfaee30c609a3d9419aa7e518512aa00
-    m_Address: MapData/SceneMapTool
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e1a027f621767df428b079b32fe88769
-    m_Address: RawImages/BG/BG_StarterVillage_04
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -472,12 +370,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ed10090370f0bc741aabd0e3fd227fe8
-    m_Address: Audio/SFX/SFX_MONSTER_HURT_01
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ee0edddf88dd48c4aac8035413435e02
     m_Address: Prefabs/Item/Drops/DROP_ITEM_EQUIPMENT_SWORD_GOLD_KNIGHT
     m_ReadOnly: 0
@@ -492,12 +384,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f4f7384544bfe584184c35abe6df58ac
     m_Address: Prefabs/Character/NPC/NPC_0001
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - TinyHero.RuntimeResource
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f655fbbb61daaa64b96e228751831b35
-    m_Address: Audio/SFX/SFX_ITEM_ACQUIRE
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource

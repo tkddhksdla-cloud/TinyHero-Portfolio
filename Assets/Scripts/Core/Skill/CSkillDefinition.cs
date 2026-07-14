@@ -334,6 +334,16 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 타격 이펙트 설정 구성
+        ///</summary>
+        public void ConfigureHitVfx( GameObject _hitVfxPrefab, Vector3 _hitVfxOffset, float _hitVfxReturnDelay )
+        {
+            hitVfxPrefab = _hitVfxPrefab;
+            hitVfxOffset = _hitVfxOffset;
+            hitVfxReturnDelay = Mathf.Max( 0.0f, _hitVfxReturnDelay );
+        }
+
+        ///<summary>
         /// 시전 효과음 클립 이름 반환
         ///</summary>
         public string GetCastSfxClipName()

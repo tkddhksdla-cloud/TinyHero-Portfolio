@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using TinyHero.Skill;
@@ -1726,7 +1727,8 @@ namespace TinyHero.Quest
                 return cachedMonsterStatTableData;
             }
 
-            CMonsterStatTableData loadedTableData = Resources.Load<CMonsterStatTableData>( MonsterStatTableResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CMonsterStatTableData loadedTableData = resourceManager != null ? resourceManager.GetMonsterStatTableData() : Resources.Load<CMonsterStatTableData>( MonsterStatTableResourcePath );
             cachedMonsterStatTableData = loadedTableData;
             return cachedMonsterStatTableData;
         }

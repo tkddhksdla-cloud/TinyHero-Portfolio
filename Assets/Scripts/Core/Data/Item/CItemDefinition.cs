@@ -40,7 +40,8 @@ namespace TinyHero.Core.Data
         GENERAL,
         SKILL_BOOK,
         CUBE,
-        RANDOM_BOX
+        RANDOM_BOX,
+        SKILL_POINT_BOOK
     }
 
     ///<summary>
@@ -442,6 +443,7 @@ namespace TinyHero.Core.Data
         [SerializeField] private eEquipmentType equipmentType = eEquipmentType.NONE;
         [SerializeField] private eConsumableType consumableType = eConsumableType.NONE;
         [SerializeField] private string linkedSkillId = string.Empty;
+        [SerializeField] private int skillPointGrantAmount = 1;
         [SerializeField] private CRandomBoxRewardTable randomBoxRewardTable;
         [SerializeField] private CPlayerStatRuntimeData equipmentStatBonus = new CPlayerStatRuntimeData();
         [SerializeField] private PartsType equipmentPartsType = PartsType.Chest;
@@ -610,6 +612,24 @@ namespace TinyHero.Core.Data
         }
 
         ///<summary>
+        /// 스킬 포인트 북 여부 반환
+        ///</summary>
+        public bool IsSkillPointBook()
+        {
+            bool result = itemType == eItemType.CONSUMABLE && consumableType == eConsumableType.SKILL_POINT_BOOK;
+            return result;
+        }
+
+        ///<summary>
+        /// 사용 시 지급할 스킬 포인트 반환
+        ///</summary>
+        public int GetSkillPointGrantAmount()
+        {
+            int result = IsSkillPointBook() ? Mathf.Max( 1, skillPointGrantAmount ) : 0;
+            return result;
+        }
+
+        ///<summary>
         /// 연결 스킬 ID 반환
         ///</summary>
         public string GetLinkedSkillId()
@@ -744,6 +764,8 @@ namespace TinyHero.Core.Data
             equipmentType = isEquipmentItem ? _equipmentType : eEquipmentType.NONE;
             consumableType = isConsumableItem ? _consumableType : eConsumableType.NONE;
             linkedSkillId = isConsumableItem ? ( string.IsNullOrWhiteSpace( _linkedSkillId ) ? string.Empty : _linkedSkillId.Trim() ) : string.Empty;
+            bool isSkillPointBook = isConsumableItem && _consumableType == eConsumableType.SKILL_POINT_BOOK;
+            skillPointGrantAmount = isSkillPointBook ? Mathf.Max( 1, skillPointGrantAmount ) : 0;
             randomBoxRewardTable = isConsumableItem && _consumableType == eConsumableType.RANDOM_BOX ? randomBoxRewardTable : null;
             equipmentPartsType = isEquipmentItem ? _equipmentPartsType : PartsType.Chest;
             equipmentPartsIndex = isEquipmentItem ? Mathf.Max( -1, _equipmentPartsIndex ) : -1;
@@ -763,6 +785,14 @@ namespace TinyHero.Core.Data
             }
 
             equipmentStatBonus.Clear();
+        }
+
+        ///<summary>
+        /// 스킬 포인트 북 지급량 설정
+        ///</summary>
+        public void ConfigureSkillPointGrantAmount( int _skillPointGrantAmount )
+        {
+            skillPointGrantAmount = Mathf.Max( 1, _skillPointGrantAmount );
         }
 
         ///<summary>

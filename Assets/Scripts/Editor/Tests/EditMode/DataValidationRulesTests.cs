@@ -46,6 +46,50 @@ namespace TinyHero.Tests
         }
 
         ///<summary>
+        /// 독립 로딩 데이터 자동 동기화 규칙 검증
+        ///</summary>
+        [Test]
+        public void CreateAddressableSyncRuleList_IncludesRuntimeDataRoots()
+        {
+            List<CTinyHeroDataValidationRules.CAddressableSyncRule> syncRuleList = CTinyHeroDataValidationRules.CreateAddressableSyncRuleList();
+
+            Assert.IsTrue( HasSyncRuleWithLabel( syncRuleList, "Assets/Resources/Data/Item/Definitions", "t:CItemDefinition", CTinyHeroDataValidationRules.ItemDataAddressableLabel ) );
+            Assert.IsTrue( HasSyncRuleWithLabel( syncRuleList, "Assets/Resources/Data/Quest/Definitions", "t:CQuestDefinition", CTinyHeroDataValidationRules.QuestDataAddressableLabel ) );
+            Assert.IsTrue( HasSyncRuleWithLabel( syncRuleList, "Assets/Resources/Data/Shop/Definitions", "t:CShopDefinition", CTinyHeroDataValidationRules.ShopDataAddressableLabel ) );
+            Assert.IsTrue( HasSyncRuleWithLabel( syncRuleList, "Assets/Resources/Data/Player", "t:CPlayerDefaultStatTableData", CTinyHeroDataValidationRules.PlayerDataAddressableLabel ) );
+            Assert.IsTrue( HasSyncRuleWithLabel( syncRuleList, "Assets/Resources/Data/Monster", "t:CMonsterStatTableData", CTinyHeroDataValidationRules.MonsterDataAddressableLabel ) );
+            Assert.IsTrue( HasSyncRuleWithLabel( syncRuleList, "Assets/Resources/Data/Text", "t:CTextTableData", CTinyHeroDataValidationRules.TextDataAddressableLabel ) );
+        }
+
+        ///<summary>
+        /// 직렬화 종속 스킬 데이터 자동 동기화 제외 검증
+        ///</summary>
+        [Test]
+        public void CreateAddressableSyncRuleList_ExcludesSerializedSkillDependencies()
+        {
+            List<CTinyHeroDataValidationRules.CAddressableSyncRule> syncRuleList = CTinyHeroDataValidationRules.CreateAddressableSyncRuleList();
+            bool hasSkillDefinitionRule = HasSyncRule( syncRuleList, "Assets/Resources/Data/Skill/Definitions", "t:CSkillDefinition" );
+            bool hasSkillIconRule = HasSyncRule( syncRuleList, "Assets/Resources/Data/Skill/Icons", "t:Texture2D" );
+
+            Assert.IsFalse( hasSkillDefinitionRule );
+            Assert.IsFalse( hasSkillIconRule );
+        }
+
+        ///<summary>
+        /// 런타임 리소스 배포 그룹 분리 검증
+        ///</summary>
+        [Test]
+        public void CreateAddressableSyncRuleList_AssignsLocalAndRemoteGroups()
+        {
+            List<CTinyHeroDataValidationRules.CAddressableSyncRule> syncRuleList = CTinyHeroDataValidationRules.CreateAddressableSyncRuleList();
+            string prefabGroupName = FindSyncRuleGroupName( syncRuleList, "Assets/Resources/Prefabs", "t:Prefab" );
+            string itemDataGroupName = FindSyncRuleGroupName( syncRuleList, "Assets/Resources/Data/Item/Definitions", "t:CItemDefinition" );
+
+            Assert.AreEqual( CTinyHeroDataValidationRules.AddressableGroupName, prefabGroupName );
+            Assert.AreEqual( CTinyHeroDataValidationRules.RemoteAddressableGroupName, itemDataGroupName );
+        }
+
+        ///<summary>
         /// Addressables 동기화 대상 경로 판정 검증
         ///</summary>
         [Test]
@@ -169,6 +213,65 @@ namespace TinyHero.Tests
             }
 
             return false;
+        }
+
+        ///<summary>
+        /// 테스트용 Addressables 동기화 규칙과 라벨 존재 여부 반환
+        ///</summary>
+        private static bool HasSyncRuleWithLabel( List<CTinyHeroDataValidationRules.CAddressableSyncRule> _syncRuleList, string _searchRootPath, string _searchFilter, string _label )
+        {
+            if ( _syncRuleList == null )
+            {
+                return false;
+            }
+
+            for ( int ruleIndex = 0; ruleIndex < _syncRuleList.Count; ruleIndex++ )
+            {
+                CTinyHeroDataValidationRules.CAddressableSyncRule syncRule = _syncRuleList[ ruleIndex ];
+
+                if ( syncRule == null || syncRule.searchRootPath != _searchRootPath || syncRule.searchFilter != _searchFilter || syncRule.labelArray == null )
+                {
+                    continue;
+                }
+
+                for ( int labelIndex = 0; labelIndex < syncRule.labelArray.Length; labelIndex++ )
+                {
+                    string label = syncRule.labelArray[ labelIndex ];
+
+                    if ( label == _label )
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        ///<summary>
+        /// 테스트용 Addressables 동기화 규칙 그룹명 반환
+        ///</summary>
+        private static string FindSyncRuleGroupName( List<CTinyHeroDataValidationRules.CAddressableSyncRule> _syncRuleList, string _searchRootPath, string _searchFilter )
+        {
+            if ( _syncRuleList == null )
+            {
+                return string.Empty;
+            }
+
+            for ( int index = 0; index < _syncRuleList.Count; index++ )
+            {
+                CTinyHeroDataValidationRules.CAddressableSyncRule syncRule = _syncRuleList[ index ];
+
+                if ( syncRule == null || syncRule.searchRootPath != _searchRootPath || syncRule.searchFilter != _searchFilter )
+                {
+                    continue;
+                }
+
+                string result = syncRule.targetGroupName;
+                return result;
+            }
+
+            return string.Empty;
         }
     }
 }

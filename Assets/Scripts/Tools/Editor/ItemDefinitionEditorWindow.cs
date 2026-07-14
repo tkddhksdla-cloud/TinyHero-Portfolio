@@ -281,6 +281,7 @@ namespace TinyHero.Tools
             SerializedProperty equipmentTypeProperty = serializedObject.FindProperty( "equipmentType" );
             SerializedProperty consumableTypeProperty = serializedObject.FindProperty( "consumableType" );
             SerializedProperty linkedSkillIdProperty = serializedObject.FindProperty( "linkedSkillId" );
+            SerializedProperty skillPointGrantAmountProperty = serializedObject.FindProperty( "skillPointGrantAmount" );
             SerializedProperty randomBoxRewardTableProperty = serializedObject.FindProperty( "randomBoxRewardTable" );
             SerializedProperty equipmentStatBonusProperty = serializedObject.FindProperty( "equipmentStatBonus" );
             SerializedProperty equipmentPartsTypeProperty = serializedObject.FindProperty( "equipmentPartsType" );
@@ -373,6 +374,7 @@ namespace TinyHero.Tools
 
                 bool isSkillBook = consumableTypeProperty != null && consumableTypeProperty.enumValueIndex == ( int )eConsumableType.SKILL_BOOK;
                 bool isRandomBox = consumableTypeProperty != null && consumableTypeProperty.enumValueIndex == ( int )eConsumableType.RANDOM_BOX;
+                bool isSkillPointBook = consumableTypeProperty != null && consumableTypeProperty.enumValueIndex == ( int )eConsumableType.SKILL_POINT_BOOK;
 
                 if ( linkedSkillIdProperty != null )
                 {
@@ -385,6 +387,16 @@ namespace TinyHero.Tools
                     {
                         linkedSkillIdProperty.stringValue = string.Empty;
                     }
+                }
+
+                if ( skillPointGrantAmountProperty != null )
+                {
+                    using ( new EditorGUI.DisabledScope( isSkillPointBook == false ) )
+                    {
+                        EditorGUILayout.PropertyField( skillPointGrantAmountProperty );
+                    }
+
+                    skillPointGrantAmountProperty.intValue = isSkillPointBook ? Mathf.Max( 1, skillPointGrantAmountProperty.intValue ) : 0;
                 }
 
                 if ( randomBoxRewardTableProperty != null )

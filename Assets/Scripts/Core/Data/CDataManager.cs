@@ -235,7 +235,8 @@ namespace TinyHero.Core.Data
         ///</summary>
         private void RegisterResourceTextTableRows()
         {
-            CTextTableData[] textTableDataArray = Resources.LoadAll<CTextTableData>( TextTableResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CTextTableData[] textTableDataArray = resourceManager != null ? resourceManager.GetTextTableDataArray() : Resources.LoadAll<CTextTableData>( TextTableResourcePath );
 
             if ( textTableDataArray == null || textTableDataArray.Length == 0 )
             {

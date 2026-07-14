@@ -1069,7 +1069,8 @@ namespace TinyHero.Player
                 return cachedPlayerDefaultStatTableData;
             }
 
-            CPlayerDefaultStatTableData loadedTableData = Resources.Load<CPlayerDefaultStatTableData>( PlayerDefaultStatTableResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CPlayerDefaultStatTableData loadedTableData = resourceManager != null ? resourceManager.GetPlayerDefaultStatTableData() : Resources.Load<CPlayerDefaultStatTableData>( PlayerDefaultStatTableResourcePath );
             cachedPlayerDefaultStatTableData = loadedTableData;
             return cachedPlayerDefaultStatTableData;
         }
@@ -1084,7 +1085,8 @@ namespace TinyHero.Player
                 return cachedPlayerLevelStatTableData;
             }
 
-            CPlayerLevelStatTableData loadedTableData = Resources.Load<CPlayerLevelStatTableData>( PlayerLevelStatTableResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            CPlayerLevelStatTableData loadedTableData = resourceManager != null ? resourceManager.GetPlayerLevelStatTableData() : Resources.Load<CPlayerLevelStatTableData>( PlayerLevelStatTableResourcePath );
             cachedPlayerLevelStatTableData = loadedTableData;
             return cachedPlayerLevelStatTableData;
         }

@@ -321,6 +321,30 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 스킬 포인트 지급 시도
+        ///</summary>
+        public bool TryAddSkillPoint( int _amount )
+        {
+            if ( _amount <= 0 )
+            {
+                return false;
+            }
+
+            int currentPoint = GetSecureCurrentSkillPoint();
+
+            if ( currentPoint >= int.MaxValue )
+            {
+                return false;
+            }
+
+            long addedPoint = ( long ) currentPoint + _amount;
+            int nextPoint = addedPoint >= int.MaxValue ? int.MaxValue : ( int ) addedPoint;
+            SetSecureCurrentSkillPoint( nextPoint );
+            RaiseSkillStateChanged();
+            return true;
+        }
+
+        ///<summary>
         /// 스킬 레벨 반환
         ///</summary>
         public int GetSkillLevel( string _skillId )

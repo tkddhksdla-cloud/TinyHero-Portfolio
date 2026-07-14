@@ -2489,7 +2489,8 @@ public sealed class MonsterObject : MonoBehaviour
             return cachedMonsterStatTableData;
         }
 
-        CMonsterStatTableData loadedTableData = Resources.Load<CMonsterStatTableData>( MonsterStatTableResourcePath );
+        CResourceManager resourceManager = CResourceManager.Instance;
+        CMonsterStatTableData loadedTableData = resourceManager != null ? resourceManager.GetMonsterStatTableData() : Resources.Load<CMonsterStatTableData>( MonsterStatTableResourcePath );
         cachedMonsterStatTableData = loadedTableData;
 
         if ( cachedMonsterStatTableData == null )

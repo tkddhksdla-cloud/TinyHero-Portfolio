@@ -11,6 +11,7 @@ namespace TinyHero.Tools
     {
         private const string OutputPathArgumentName = "-tinyHeroBuildOutputPath";
         private const string LegacyOutputPathArgumentName = "-buildOutputPath";
+        private const string ContentStatePathArgumentName = "-tinyHeroContentStatePath";
 
         ///<summary>
         /// 배치모드 Windows 플레이어 빌드 실행
@@ -19,6 +20,24 @@ namespace TinyHero.Tools
         {
             string outputPath = ResolveOutputPath();
             bool isBuilt = CTinyHeroCustomBuildPlayer.BuildWindowsPlayer( outputPath );
+
+            if ( Application.isBatchMode == false )
+            {
+                return;
+            }
+
+            int exitCode = isBuilt ? 0 : 1;
+            EditorApplication.Exit( exitCode );
+        }
+
+        ///<summary>
+        /// 배치모드 Windows 원격 콘텐츠 업데이트 빌드 실행
+        ///</summary>
+        public static void BuildWindowsContentUpdate()
+        {
+            string[] argumentArray = Environment.GetCommandLineArgs();
+            string contentStatePath = FindArgumentValue( argumentArray, ContentStatePathArgumentName );
+            bool isBuilt = CTinyHeroRemoteContentBuildUtility.BuildRemoteContentUpdate( contentStatePath );
 
             if ( Application.isBatchMode == false )
             {

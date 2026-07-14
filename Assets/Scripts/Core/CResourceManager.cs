@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TinyHero.Core.Data;
 using TinyHero.Quest;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine;
@@ -33,11 +34,27 @@ namespace TinyHero.Core
         private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
         private const string ShopDefinitionResourcePath = "Data/Shop/Definitions";
         private const string QuestDefinitionResourcePath = "Data/Quest/Definitions";
+        private const string ItemDataAddressableLabel = "TinyHero.Data.Item";
+        private const string ShopDataAddressableLabel = "TinyHero.Data.Shop";
+        private const string QuestDataAddressableLabel = "TinyHero.Data.Quest";
+        private const string PlayerDefaultStatTablePath = "Data/Player/PlayerDefaultStatTableData";
+        private const string PlayerLevelStatTablePath = "Data/Player/PlayerLevelStatTableData";
+        private const string MonsterStatTablePath = "Data/Monster/MonsterStatTableData";
+        private const string TextTableDataPath = "Data/Text/TextTableData";
+        private const string EquipmentPotentialTablePath = "Data/Item/EquipmentPotentialTableData";
+        private const int RemoteDataLoadCount = 8;
+        private const float RemoteCatalogOperationTimeoutSeconds = 8.0f;
 
         private readonly Dictionary<string, Object> cachedResourceDictionary = new Dictionary<string, Object>();
         private readonly Dictionary<string, Object[]> cachedResourceArrayDictionary = new Dictionary<string, Object[]>();
         private readonly Dictionary<string, AsyncOperationHandle> cachedAddressableHandleDictionary = new Dictionary<string, AsyncOperationHandle>();
         private readonly Dictionary<eResourceKey, CResourceLoadEntry> resourceLoadEntryDictionary = new Dictionary<eResourceKey, CResourceLoadEntry>();
+        private bool isRemoteDataPreloadRequested;
+        private bool isRemoteDataReady;
+        private bool hasRemoteDataLoadFailed;
+        private bool isRequiredRemoteUpdateDetected;
+        private int pendingRemoteDataLoadCount;
+        private string remoteDataFailureReason = string.Empty;
 
         private sealed class CResourceLoadEntry
         {
@@ -127,6 +144,34 @@ namespace TinyHero.Core
             LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
             LoadResourceAll<CShopDefinition>( ShopDefinitionResourcePath );
             LoadResourceAll<CQuestDefinition>( QuestDefinitionResourcePath );
+            RequestRemoteDataPreload();
+        }
+
+        ///<summary>
+        /// 원격 정의 데이터 준비 여부 반환
+        ///</summary>
+        public bool IsRemoteDataReady()
+        {
+            bool result = isRemoteDataReady;
+            return result;
+        }
+
+        ///<summary>
+        /// 원격 데이터 로드 실패 여부 반환
+        ///</summary>
+        public bool HasRemoteDataLoadFailed()
+        {
+            bool result = hasRemoteDataLoadFailed;
+            return result;
+        }
+
+        ///<summary>
+        /// 원격 데이터 로드 실패 사유 반환
+        ///</summary>
+        public string GetRemoteDataFailureReason()
+        {
+            string result = remoteDataFailureReason;
+            return result;
         }
 
         ///<summary>
@@ -292,6 +337,345 @@ namespace TinyHero.Core
         }
 
         ///<summary>
+        /// 플레이어 기본 스탯 테이블 반환
+        ///</summary>
+        public CPlayerDefaultStatTableData GetPlayerDefaultStatTableData()
+        {
+            CPlayerDefaultStatTableData result = GetAddressableCachedResource<CPlayerDefaultStatTableData>( PlayerDefaultStatTablePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 플레이어 레벨 스탯 테이블 반환
+        ///</summary>
+        public CPlayerLevelStatTableData GetPlayerLevelStatTableData()
+        {
+            CPlayerLevelStatTableData result = GetAddressableCachedResource<CPlayerLevelStatTableData>( PlayerLevelStatTablePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 몬스터 스탯 테이블 반환
+        ///</summary>
+        public CMonsterStatTableData GetMonsterStatTableData()
+        {
+            CMonsterStatTableData result = GetAddressableCachedResource<CMonsterStatTableData>( MonsterStatTablePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 장비 잠재능력 테이블 반환
+        ///</summary>
+        public CEquipmentPotentialTableData GetEquipmentPotentialTableData()
+        {
+            CEquipmentPotentialTableData result = GetAddressableCachedResource<CEquipmentPotentialTableData>( EquipmentPotentialTablePath );
+            return result;
+        }
+
+        ///<summary>
+        /// 텍스트 테이블 목록 반환
+        ///</summary>
+        public CTextTableData[] GetTextTableDataArray()
+        {
+            CTextTableData loadedTableData = GetAddressableCachedResource<CTextTableData>( TextTableDataPath );
+
+            if ( loadedTableData != null )
+            {
+                CTextTableData[] addressableResult = new CTextTableData[]
+                {
+                    loadedTableData
+                };
+                return addressableResult;
+            }
+
+            CTextTableData[] result = LoadResourceAll<CTextTableData>( "Data/Text" );
+            return result;
+        }
+
+        ///<summary>
+        /// 원격 정의 데이터 선로딩 요청
+        ///</summary>
+        private void RequestRemoteDataPreload()
+        {
+            if ( isRemoteDataPreloadRequested )
+            {
+                return;
+            }
+
+            isRemoteDataPreloadRequested = true;
+            isRemoteDataReady = false;
+            hasRemoteDataLoadFailed = false;
+            isRequiredRemoteUpdateDetected = false;
+            remoteDataFailureReason = string.Empty;
+            StartCoroutine( IE_PrepareRemoteData() );
+        }
+
+        ///<summary>
+        /// 원격 카탈로그 확인 후 데이터 로드 준비
+        ///</summary>
+        private IEnumerator IE_PrepareRemoteData()
+        {
+            AsyncOperationHandle<List<string>> checkHandle = Addressables.CheckForCatalogUpdates( false );
+            float checkElapsedTime = 0.0f;
+
+            while ( checkHandle.IsValid() && checkHandle.IsDone == false && checkElapsedTime < RemoteCatalogOperationTimeoutSeconds )
+            {
+                checkElapsedTime += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if ( checkHandle.IsValid() == false || checkHandle.IsDone == false )
+            {
+                if ( checkHandle.IsValid() )
+                {
+                    Addressables.Release( checkHandle );
+                }
+
+                HandleRemoteCatalogFailure( "원격 콘텐츠 업데이트 확인 시간이 초과되었습니다." );
+                yield break;
+            }
+
+            if ( checkHandle.Status != AsyncOperationStatus.Succeeded )
+            {
+                if ( checkHandle.IsValid() )
+                {
+                    Addressables.Release( checkHandle );
+                }
+
+                HandleRemoteCatalogFailure( "원격 콘텐츠 업데이트 확인에 실패했습니다." );
+                yield break;
+            }
+
+            List<string> catalogIdList = checkHandle.Result != null ? new List<string>( checkHandle.Result ) : new List<string>();
+
+            if ( checkHandle.IsValid() )
+            {
+                Addressables.Release( checkHandle );
+            }
+
+            if ( catalogIdList.Count > 0 )
+            {
+                isRequiredRemoteUpdateDetected = true;
+                AsyncOperationHandle<List<IResourceLocator>> updateHandle = Addressables.UpdateCatalogs( true, catalogIdList, false );
+                float updateElapsedTime = 0.0f;
+
+                while ( updateHandle.IsValid() && updateHandle.IsDone == false && updateElapsedTime < RemoteCatalogOperationTimeoutSeconds )
+                {
+                    updateElapsedTime += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+
+                bool isUpdated = updateHandle.IsValid() && updateHandle.IsDone && updateHandle.Status == AsyncOperationStatus.Succeeded;
+
+                if ( updateHandle.IsValid() )
+                {
+                    Addressables.Release( updateHandle );
+                }
+
+                if ( isUpdated == false )
+                {
+                    MarkRemoteDataLoadFailed( "필수 원격 콘텐츠 카탈로그 갱신에 실패했습니다." );
+                    yield break;
+                }
+            }
+
+            BeginRemoteDataLoads();
+        }
+
+        ///<summary>
+        /// 원격 카탈로그 실패 정책 처리
+        ///</summary>
+        private void HandleRemoteCatalogFailure( string _failureReason )
+        {
+            if ( CAddressablesRuntimeConfig.IsRemoteContentRequired )
+            {
+                MarkRemoteDataLoadFailed( _failureReason );
+                return;
+            }
+
+            Debug.LogWarning( $"[ ResourceManager ] {_failureReason} Resources fallback을 사용합니다." );
+            BeginRemoteDataLoads();
+        }
+
+        ///<summary>
+        /// 원격 데이터 비동기 로드 시작
+        ///</summary>
+        private void BeginRemoteDataLoads()
+        {
+            pendingRemoteDataLoadCount = RemoteDataLoadCount;
+            StartCoroutine( IE_LoadAddressableResourceArrayWithFallback<CItemDefinition>( ItemDataAddressableLabel, ItemDefinitionResourcePath, HandleItemDefinitionArrayLoaded ) );
+            StartCoroutine( IE_LoadAddressableResourceArrayWithFallback<CShopDefinition>( ShopDataAddressableLabel, ShopDefinitionResourcePath, HandleShopDefinitionArrayLoaded ) );
+            StartCoroutine( IE_LoadAddressableResourceArrayWithFallback<CQuestDefinition>( QuestDataAddressableLabel, QuestDefinitionResourcePath, HandleQuestDefinitionArrayLoaded ) );
+            StartCoroutine( IE_LoadAddressableResourceWithFallback<CPlayerDefaultStatTableData>( PlayerDefaultStatTablePath, new string[] { PlayerDefaultStatTablePath }, HandleRemoteTableLoaded, true ) );
+            StartCoroutine( IE_LoadAddressableResourceWithFallback<CPlayerLevelStatTableData>( PlayerLevelStatTablePath, new string[] { PlayerLevelStatTablePath }, HandleRemoteTableLoaded, true ) );
+            StartCoroutine( IE_LoadAddressableResourceWithFallback<CMonsterStatTableData>( MonsterStatTablePath, new string[] { MonsterStatTablePath }, HandleRemoteTableLoaded, true ) );
+            StartCoroutine( IE_LoadAddressableResourceWithFallback<CTextTableData>( TextTableDataPath, new string[] { TextTableDataPath }, HandleTextTableLoaded, true ) );
+            StartCoroutine( IE_LoadAddressableResourceWithFallback<CEquipmentPotentialTableData>( EquipmentPotentialTablePath, new string[] { EquipmentPotentialTablePath }, HandleEquipmentPotentialTableLoaded, true ) );
+        }
+
+        ///<summary>
+        /// Addressables 캐시 우선 단일 데이터 반환
+        ///</summary>
+        private T GetAddressableCachedResource<T>( string _resourcePath ) where T : Object
+        {
+            bool hasCachedAddressable = cachedResourceDictionary.TryGetValue( _resourcePath, out Object cachedResourceObject );
+            T cachedAddressable = cachedResourceObject as T;
+
+            if ( hasCachedAddressable && cachedAddressable != null )
+            {
+                return cachedAddressable;
+            }
+
+            T result = LoadResource<T>( _resourcePath );
+            return result;
+        }
+
+        ///<summary>
+        /// Addressables 라벨 기반 복수 리소스 로드 후 fallback 처리
+        ///</summary>
+        private IEnumerator IE_LoadAddressableResourceArrayWithFallback<T>( string _addressableLabel, string _fallbackResourcePath, Action<T[]> _onCompleted ) where T : Object
+        {
+            AsyncOperationHandle<IList<T>> loadHandle = Addressables.LoadAssetsAsync<T>( _addressableLabel, null );
+            yield return loadHandle;
+
+            if ( loadHandle.Status == AsyncOperationStatus.Succeeded && loadHandle.Result != null && loadHandle.Result.Count > 0 )
+            {
+                T[] loadedResourceArray = new T[ loadHandle.Result.Count ];
+                Object[] cachedObjectArray = new Object[ loadHandle.Result.Count ];
+
+                for ( int index = 0; index < loadHandle.Result.Count; index++ )
+                {
+                    T loadedResource = loadHandle.Result[ index ];
+                    loadedResourceArray[ index ] = loadedResource;
+                    cachedObjectArray[ index ] = loadedResource;
+                }
+
+                cachedResourceArrayDictionary[ _fallbackResourcePath ] = cachedObjectArray;
+                cachedAddressableHandleDictionary[ _addressableLabel ] = loadHandle;
+                Debug.Log( $"[ ResourceManager ] Addressables data load success: {_addressableLabel}, Count: {loadedResourceArray.Length}" );
+                _onCompleted?.Invoke( loadedResourceArray );
+                yield break;
+            }
+
+            if ( loadHandle.IsValid() )
+            {
+                Addressables.Release( loadHandle );
+            }
+
+            if ( ShouldBlockRemoteDataFallback() )
+            {
+                MarkRemoteDataLoadFailed( $"필수 원격 데이터 로드에 실패했습니다. Label: {_addressableLabel}" );
+                _onCompleted?.Invoke( null );
+                yield break;
+            }
+
+            T[] fallbackResourceArray = LoadResourceAll<T>( _fallbackResourcePath );
+            Debug.LogWarning( $"[ ResourceManager ] Addressables data load failed. Fallback: {_fallbackResourcePath}" );
+            _onCompleted?.Invoke( fallbackResourceArray );
+        }
+
+        ///<summary>
+        /// 아이템 정의 데이터 로드 완료 처리
+        ///</summary>
+        private void HandleItemDefinitionArrayLoaded( CItemDefinition[] _definitionArray )
+        {
+            CItemDefinitionDatabase.Reload();
+            CompleteRemoteDataLoad();
+        }
+
+        ///<summary>
+        /// 상점 정의 데이터 로드 완료 처리
+        ///</summary>
+        private void HandleShopDefinitionArrayLoaded( CShopDefinition[] _definitionArray )
+        {
+            CShopDefinitionDatabase.Reload();
+            CompleteRemoteDataLoad();
+        }
+
+        ///<summary>
+        /// 퀘스트 정의 데이터 로드 완료 처리
+        ///</summary>
+        private void HandleQuestDefinitionArrayLoaded( CQuestDefinition[] _definitionArray )
+        {
+            CQuestDefinitionDatabase.Reload();
+            CompleteRemoteDataLoad();
+        }
+
+        ///<summary>
+        /// 원격 단일 테이블 로드 완료 처리
+        ///</summary>
+        private void HandleRemoteTableLoaded<T>( T _tableData ) where T : Object
+        {
+            CompleteRemoteDataLoad();
+        }
+
+        ///<summary>
+        /// 원격 텍스트 테이블 로드 완료 처리
+        ///</summary>
+        private void HandleTextTableLoaded( CTextTableData _tableData )
+        {
+            bool hasDataManager = CDataManager.TryGetExistingInstance( out CDataManager dataManager );
+
+            if ( hasDataManager && dataManager != null )
+            {
+                dataManager.RebuildTableCache();
+            }
+
+            CompleteRemoteDataLoad();
+        }
+
+        ///<summary>
+        /// 원격 장비 잠재능력 테이블 로드 완료 처리
+        ///</summary>
+        private void HandleEquipmentPotentialTableLoaded( CEquipmentPotentialTableData _tableData )
+        {
+            CEquipmentPotentialDatabase.Reload();
+            CompleteRemoteDataLoad();
+        }
+
+        ///<summary>
+        /// 원격 정의 데이터 단위 로드 완료 처리
+        ///</summary>
+        private void CompleteRemoteDataLoad()
+        {
+            pendingRemoteDataLoadCount = Mathf.Max( 0, pendingRemoteDataLoadCount - 1 );
+
+            if ( pendingRemoteDataLoadCount > 0 )
+            {
+                return;
+            }
+
+            isRemoteDataReady = true;
+
+            if ( hasRemoteDataLoadFailed )
+            {
+                return;
+            }
+
+            Debug.Log( "[ ResourceManager ] Remote definition data is ready." );
+        }
+
+        ///<summary>
+        /// 원격 데이터 fallback 차단 여부 반환
+        ///</summary>
+        private bool ShouldBlockRemoteDataFallback()
+        {
+            bool result = isRequiredRemoteUpdateDetected || CAddressablesRuntimeConfig.IsRemoteContentRequired;
+            return result;
+        }
+
+        ///<summary>
+        /// 원격 데이터 로드 실패 상태 설정
+        ///</summary>
+        private void MarkRemoteDataLoadFailed( string _failureReason )
+        {
+            hasRemoteDataLoadFailed = true;
+            isRemoteDataReady = true;
+            remoteDataFailureReason = _failureReason;
+            Debug.LogError( $"[ ResourceManager ] {_failureReason}" );
+        }
+
+        ///<summary>
         /// 단일 리소스 로드
         ///</summary>
         private T LoadResource<T>( string _resourcePath ) where T : Object
@@ -361,7 +745,7 @@ namespace TinyHero.Core
         ///<summary>
         /// Addressables 로드 후 fallback 처리 코루틴
         ///</summary>
-        private IEnumerator IE_LoadAddressableResourceWithFallback<T>( string _addressableKey, string[] _fallbackResourcePathArray, Action<T> _onCompleted ) where T : Object
+        private IEnumerator IE_LoadAddressableResourceWithFallback<T>( string _addressableKey, string[] _fallbackResourcePathArray, Action<T> _onCompleted, bool _isRemoteDataLoad = false ) where T : Object
         {
             AsyncOperationHandle<IList<IResourceLocation>> locationHandle = Addressables.LoadResourceLocationsAsync( _addressableKey, typeof( T ) );
             yield return locationHandle;
@@ -375,6 +759,13 @@ namespace TinyHero.Core
 
             if ( hasAddressableLocation == false )
             {
+                if ( _isRemoteDataLoad && ShouldBlockRemoteDataFallback() )
+                {
+                    MarkRemoteDataLoadFailed( $"필수 원격 데이터 위치를 찾지 못했습니다. Key: {_addressableKey}" );
+                    InvokeLoadCompletedHandler( _onCompleted, null );
+                    yield break;
+                }
+
                 T locationFallbackResource = LoadFirstAvailableResource<T>( _fallbackResourcePathArray );
                 InvokeLoadCompletedHandler( _onCompleted, locationFallbackResource );
                 yield break;
@@ -399,6 +790,14 @@ namespace TinyHero.Core
             }
 
             Debug.LogWarning( $"[ ResourceManager ] Addressables load failed: {_addressableKey}" );
+
+            if ( _isRemoteDataLoad && ShouldBlockRemoteDataFallback() )
+            {
+                MarkRemoteDataLoadFailed( $"필수 원격 데이터 다운로드에 실패했습니다. Key: {_addressableKey}" );
+                InvokeLoadCompletedHandler( _onCompleted, null );
+                yield break;
+            }
+
             T fallbackResource = LoadFirstAvailableResource<T>( _fallbackResourcePathArray );
             InvokeLoadCompletedHandler( _onCompleted, fallbackResource );
         }

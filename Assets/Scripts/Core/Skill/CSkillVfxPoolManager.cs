@@ -56,6 +56,8 @@ namespace TinyHero.Skill
                 autoPoolReturnObject.SetReturnDelay( _returnDelaySeconds );
             }
 
+            ActivateInstance( spawnedObject );
+
             CSkillPooledVfxHandle result = new CSkillPooledVfxHandle( spawnedObject, autoPoolReturnObject );
             return result;
         }
@@ -123,22 +125,41 @@ namespace TinyHero.Skill
 
             if ( hasEntry )
             {
-                return pooledVfxEntry;
+                bool didEnsurePool = TryEnsurePoolRegistered( pooledVfxEntry, _prefab );
+                CPooledVfxEntry result = didEnsurePool ? pooledVfxEntry : null;
+                return result;
             }
 
             CPooledVfxEntry createdEntry = new CPooledVfxEntry();
             createdEntry.Prefab = _prefab;
             createdEntry.PoolKey = BuildPoolKey( _prefab );
-            if ( CObjectPoolManager.TryEnsurePoolRegistered<GameObject>(
-                createdEntry.PoolKey,
-                () => CreateInstance( _prefab ),
-                _item => OnGetInstance( _item ),
-                _item => OnReleaseInstance( _item ) ) == false )
+
+            if ( TryEnsurePoolRegistered( createdEntry, _prefab ) == false )
             {
                 return null;
             }
+
             pooledVfxEntryByPrefabId.Add( prefabInstanceId, createdEntry );
             return createdEntry;
+        }
+
+        ///<summary>
+        /// 현재 풀 매니저에 스킬 이펙트 풀 등록 보장
+        ///</summary>
+        private static bool TryEnsurePoolRegistered( CPooledVfxEntry _pooledVfxEntry, GameObject _prefab )
+        {
+            if ( _pooledVfxEntry == null || _prefab == null || string.IsNullOrWhiteSpace( _pooledVfxEntry.PoolKey ) )
+            {
+                return false;
+            }
+
+            bool result = CObjectPoolManager.TryEnsurePoolRegistered<GameObject>(
+                _pooledVfxEntry.PoolKey,
+                () => CreateInstance( _prefab ),
+                _item => OnGetInstance( _item ),
+                _item => OnReleaseInstance( _item )
+            );
+            return result;
         }
 
         ///<summary>
@@ -184,6 +205,18 @@ namespace TinyHero.Skill
             }
 
             ResetParticleSystems( _item );
+        }
+
+        ///<summary>
+        /// 위치 설정 완료 후 이펙트 활성화 처리
+        ///</summary>
+        private static void ActivateInstance( GameObject _item )
+        {
+            if ( _item == null )
+            {
+                return;
+            }
+
             _item.SetActive( true );
             PlayParticleSystems( _item );
         }

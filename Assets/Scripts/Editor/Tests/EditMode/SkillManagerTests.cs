@@ -181,6 +181,32 @@ namespace TinyHero.Tests
             }
         }
 
+        [Test]
+        public void FloatingWeaponSummonEffect_ReportsDedicatedActiveSkillType()
+        {
+            CFloatingWeaponSummonActiveSkillEffect activeSkillEffect = ScriptableObject.CreateInstance<CFloatingWeaponSummonActiveSkillEffect>();
+
+            try
+            {
+                Assert.AreEqual( eActiveSkillType.FLOATING_WEAPON_SUMMON, activeSkillEffect.GetActiveSkillType() );
+                Assert.IsFalse( activeSkillEffect.CanExecute( null ) );
+            }
+            finally
+            {
+                Object.DestroyImmediate( activeSkillEffect );
+            }
+        }
+
+        [Test]
+        public void TryAddSkillPoint_IncreasesSecureSkillPointState()
+        {
+            int previousSkillPoint = skillManager.GetCurrentSkillPoint();
+            bool result = skillManager.TryAddSkillPoint( 1 );
+
+            Assert.IsTrue( result );
+            Assert.AreEqual( previousSkillPoint + 1, skillManager.GetCurrentSkillPoint() );
+        }
+
         ///<summary>
         /// 테스트용 액티브 스킬 정의 생성
         ///</summary>

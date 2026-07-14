@@ -686,6 +686,12 @@ namespace TinyHero.UI
                 return false;
             }
 
+            if ( itemDefinition.IsSkillPointBook() )
+            {
+                bool didUseSkillPointBook = TryUseSkillPointBook( itemDefinition );
+                return didUseSkillPointBook;
+            }
+
             if (itemDefinition.IsSkillBook() == false)
             {
                 if (itemDefinition.IsCube())
@@ -718,6 +724,38 @@ namespace TinyHero.UI
 
             bool didRemoveItem = targetInventoryManager.TryRemoveItem(itemDefinition.GetItemId(), 1);
             return didRemoveItem;
+        }
+
+        ///<summary>
+        /// 스킬 포인트 북 사용 처리
+        ///</summary>
+        private bool TryUseSkillPointBook( CItemDefinition _itemDefinition )
+        {
+            if ( _itemDefinition == null || targetInventoryManager == null || targetSkillManager == null )
+            {
+                return false;
+            }
+
+            int grantAmount = _itemDefinition.GetSkillPointGrantAmount();
+            string itemId = _itemDefinition.GetItemId();
+            bool didRemoveItem = targetInventoryManager.TryRemoveItem( itemId, 1 );
+
+            if ( didRemoveItem == false )
+            {
+                return false;
+            }
+
+            bool didAddSkillPoint = targetSkillManager.TryAddSkillPoint( grantAmount );
+
+            if ( didAddSkillPoint == false )
+            {
+                targetInventoryManager.TryAddItem( _itemDefinition, 1 );
+                return false;
+            }
+
+            string toastMessage = $"스킬 포인트 +{grantAmount}";
+            CToastMessageSystem.Show( toastMessage );
+            return true;
         }
 
         ///<summary>

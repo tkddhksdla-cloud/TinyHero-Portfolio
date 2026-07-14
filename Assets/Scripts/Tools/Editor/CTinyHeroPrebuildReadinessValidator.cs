@@ -272,6 +272,19 @@ namespace TinyHero.Tools
                 return;
             }
 
+            AddressableAssetGroup remoteGroup = settings.FindGroup( CTinyHeroDataValidationRules.RemoteAddressableGroupName );
+
+            if ( remoteGroup == null )
+            {
+                _errorList.Add( $"원격 Addressables 그룹을 찾을 수 없습니다. Group: {CTinyHeroDataValidationRules.RemoteAddressableGroupName}" );
+                return;
+            }
+
+            if ( settings.BuildRemoteCatalog == false )
+            {
+                _errorList.Add( "Addressables 원격 카탈로그 빌드가 비활성화되어 있습니다." );
+            }
+
             List<string> syncTargetAssetPathList = CTinyHeroDataValidationRules.FindAddressableSyncTargetAssetPaths();
 
             for ( int index = 0; index < syncTargetAssetPathList.Count; index++ )

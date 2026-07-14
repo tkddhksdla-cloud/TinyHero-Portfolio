@@ -246,6 +246,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ef937572343ad8442b292e7685adb322, type: 2}
   - {fileID: 11400000, guid: a5715b0f89b01e149955104e88301c59, type: 2}
   - {fileID: 11400000, guid: 14eda11401939c34aa3ebb50466cf4aa, type: 2}
+  - {fileID: 11400000, guid: f1959f251732ddb41af4911adf41c4f0, type: 2}
   skillRuntimeDataList: []
   useDefaultSampleSkills: 0
   currentSkillPoint: 0

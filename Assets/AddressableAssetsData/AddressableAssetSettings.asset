@@ -18,9 +18,9 @@ MonoBehaviour:
     Hash: 00000000000000000000000000000000
   m_DisableWriteTypeTree: 0
   m_OptimizeCatalogSize: 0
-  m_BuildRemoteCatalog: 0
-  m_CatalogRequestsTimeout: 0
-  m_DisableCatalogUpdateOnStart: 0
+  m_BuildRemoteCatalog: 1
+  m_CatalogRequestsTimeout: 5
+  m_DisableCatalogUpdateOnStart: 1
   m_InternalIdNamingMode: 0
   m_InternalBundleIdMode: 1
   m_AssetLoadMode: 0
@@ -54,9 +54,9 @@ MonoBehaviour:
   m_CheckForContentUpdateRestrictionsOption: 0
   m_MonoScriptBundleCustomNaming: 
   m_RemoteCatalogBuildPath:
-    m_Id: 
+    m_Id: 914134b074ac02d4cabd2ac8b403483f
   m_RemoteCatalogLoadPath:
-    m_Id: 
+    m_Id: d08648bb008ee234c99b32bdee06f783
   m_ContentStateBuildPathProfileVariableName: 
   m_CustomContentStateBuildPath: 
   m_ContentStateBuildPath: 
@@ -65,6 +65,7 @@ MonoBehaviour:
   m_GroupAssets:
   - {fileID: 11400000, guid: 4e98fd7e634b037498fd85c1ca219185, type: 2}
   - {fileID: 11400000, guid: eb71754152d63294b8ba7f576e0cf7ee, type: 2}
+  - {fileID: 11400000, guid: 656aa1c7c2c4f1c45853ce377c23d95d, type: 2}
   m_BuildSettings:
     m_LogResourceManagerExceptions: 1
     m_ContentDirectoryBuildPath: Temp/com.unity.addressables/ContentDirectories
@@ -80,7 +81,7 @@ MonoBehaviour:
       - m_Id: a9d202e91cadaa6489b2751e3e5ef386
         m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
       - m_Id: d08648bb008ee234c99b32bdee06f783
-        m_Value: <undefined>
+        m_Value: '{TinyHero.Core.CAddressablesRuntimeConfig.RemoteBaseUrl}/[BuildTarget]'
       - m_Id: ecb92c8730947cb49919836df29a08b9
         m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
       - m_Id: fe9fd0ef163aacf4782383ebe249980b
@@ -107,6 +108,12 @@ MonoBehaviour:
     - default
     - UI
     - TinyHero.RuntimeResource
+    - TinyHero.Data.Item
+    - TinyHero.Data.Quest
+    - TinyHero.Data.Shop
+    - TinyHero.Data.Player
+    - TinyHero.Data.Monster
+    - TinyHero.Data.Text
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: 6ed49231d08e1834e8b52955917f01a9, type: 2}

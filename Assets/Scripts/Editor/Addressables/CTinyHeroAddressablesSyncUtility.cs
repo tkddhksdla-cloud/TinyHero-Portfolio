@@ -45,21 +45,29 @@ namespace TinyHero.Tools
                 return false;
             }
 
-            AddressableAssetGroup group = settings.FindGroup( CTinyHeroDataValidationRules.AddressableGroupName );
+            bool isRemoteDistributionConfigured = CTinyHeroRemoteContentBuildUtility.TryConfigureRemoteDistribution( _issueList );
 
-            if ( group == null )
+            if ( isRemoteDistributionConfigured == false )
             {
-                AddIssue( _issueList, $"Addressables 그룹을 찾을 수 없습니다. Group: {CTinyHeroDataValidationRules.AddressableGroupName}" );
                 return false;
             }
 
             settings.AddLabel( CTinyHeroDataValidationRules.RuntimeAddressableLabel, false );
             List<CTinyHeroDataValidationRules.CAddressableSyncRule> syncRuleList = CTinyHeroDataValidationRules.CreateAddressableSyncRuleList();
+            RegisterRuleLabels( settings, syncRuleList );
 
             for ( int index = 0; index < syncRuleList.Count; index++ )
             {
                 CTinyHeroDataValidationRules.CAddressableSyncRule syncRule = syncRuleList[ index ];
-                _registeredCount += SyncRule( settings, group, syncRule, _issueList );
+                AddressableAssetGroup targetGroup = settings.FindGroup( syncRule.targetGroupName );
+
+                if ( targetGroup == null )
+                {
+                    AddIssue( _issueList, $"Addressables 그룹을 찾을 수 없습니다. Group: {syncRule.targetGroupName}" );
+                    continue;
+                }
+
+                _registeredCount += SyncRule( settings, targetGroup, syncRule, _issueList );
             }
 
             settings.SetDirty( AddressableAssetSettings.ModificationEvent.EntryMoved, null, true, true );
@@ -114,10 +122,67 @@ namespace TinyHero.Tools
                 AddressableAssetEntry entry = _settings.CreateOrMoveEntry( guid, _group, false, false );
                 entry.SetAddress( addressableKey, false );
                 entry.SetLabel( CTinyHeroDataValidationRules.RuntimeAddressableLabel, true, false, false );
+                ApplyRuleLabels( entry, _syncRule.labelArray );
                 registeredCount++;
             }
 
             return registeredCount;
+        }
+
+        ///<summary>
+        /// 동기화 규칙 라벨 등록
+        ///</summary>
+        private static void RegisterRuleLabels( AddressableAssetSettings _settings, List<CTinyHeroDataValidationRules.CAddressableSyncRule> _syncRuleList )
+        {
+            if ( _settings == null || _syncRuleList == null )
+            {
+                return;
+            }
+
+            for ( int ruleIndex = 0; ruleIndex < _syncRuleList.Count; ruleIndex++ )
+            {
+                CTinyHeroDataValidationRules.CAddressableSyncRule syncRule = _syncRuleList[ ruleIndex ];
+
+                if ( syncRule == null || syncRule.labelArray == null )
+                {
+                    continue;
+                }
+
+                for ( int labelIndex = 0; labelIndex < syncRule.labelArray.Length; labelIndex++ )
+                {
+                    string label = syncRule.labelArray[ labelIndex ];
+
+                    if ( string.IsNullOrWhiteSpace( label ) )
+                    {
+                        continue;
+                    }
+
+                    _settings.AddLabel( label, false );
+                }
+            }
+        }
+
+        ///<summary>
+        /// 엔트리에 동기화 규칙 라벨 적용
+        ///</summary>
+        private static void ApplyRuleLabels( AddressableAssetEntry _entry, string[] _labelArray )
+        {
+            if ( _entry == null || _labelArray == null )
+            {
+                return;
+            }
+
+            for ( int index = 0; index < _labelArray.Length; index++ )
+            {
+                string label = _labelArray[ index ];
+
+                if ( string.IsNullOrWhiteSpace( label ) )
+                {
+                    continue;
+                }
+
+                _entry.SetLabel( label, true, false, false );
+            }
         }
 
         ///<summary>

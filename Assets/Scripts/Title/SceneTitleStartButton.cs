@@ -19,6 +19,7 @@ namespace TinyHero.Title
         private const string StarterMapId = "MAP_STARTER_000_VILLAGE";
         private const string FadeImageObjectName = "TitleFadeImage";
         private const float DefaultFadeDuration = 0.35f;
+        private const float RemoteDataWaitTimeoutSeconds = 20.0f;
         private const string LoadSaveDescriptionText = "저장된 정보를 불러오시겠습니까?";
         private const string NicknameInputDescriptionText = "닉네임을 입력하세요.";
         private const string NicknameInputPlaceholderText = "닉네임";
@@ -185,6 +186,22 @@ namespace TinyHero.Title
                 startButton.interactable = false;
             }
 
+            yield return IE_WaitForRemoteDataReady();
+
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager != null && resourceManager.HasRemoteDataLoadFailed() )
+            {
+                HandleRemoteDataLoadFailure( resourceManager.GetRemoteDataFailureReason() );
+                yield break;
+            }
+
+            if ( resourceManager != null && resourceManager.IsRemoteDataReady() == false )
+            {
+                HandleRemoteDataLoadFailure( "원격 콘텐츠 준비 시간이 초과되었습니다." );
+                yield break;
+            }
+
             EnsureFadeImage();
             yield return IE_FadeAlpha( 0.0f, 1.0f );
             PreparePendingGameStart();
@@ -196,6 +213,49 @@ namespace TinyHero.Title
             }
 
             SceneManager.LoadScene( GameplaySceneName );
+        }
+
+        ///<summary>
+        /// 원격 정의 데이터 준비 대기
+        ///</summary>
+        private IEnumerator IE_WaitForRemoteDataReady()
+        {
+            CResourceManager resourceManager = CResourceManager.Instance;
+
+            if ( resourceManager == null || resourceManager.IsRemoteDataReady() )
+            {
+                yield break;
+            }
+
+            float elapsedTime = 0.0f;
+
+            while ( resourceManager.IsRemoteDataReady() == false && elapsedTime < RemoteDataWaitTimeoutSeconds )
+            {
+                elapsedTime += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if ( resourceManager.IsRemoteDataReady() == false )
+            {
+                Debug.LogWarning( "[ Title ] Remote data wait timed out.", this );
+            }
+        }
+
+        ///<summary>
+        /// 원격 데이터 로드 실패 처리
+        ///</summary>
+        private void HandleRemoteDataLoadFailure( string _failureReason )
+        {
+            isStarting = false;
+
+            if ( startButton != null )
+            {
+                startButton.interactable = true;
+            }
+
+            string message = string.IsNullOrWhiteSpace( _failureReason ) ? "필수 콘텐츠 업데이트에 실패했습니다. 게임을 다시 실행해 주세요." : _failureReason;
+            CToastMessageSystem.Show( message );
+            Debug.LogError( $"[ Title ] {message}", this );
         }
 
         ///<summary>
