@@ -25,6 +25,7 @@ MonoBehaviour:
   equipmentType: 0
   consumableType: 2
   linkedSkillId: skill_shadow_partner
+  skillPointGrantAmount: 0
   randomBoxRewardTable: {fileID: 0}
   equipmentStatBonus:
     hp: 0
@@ -39,5 +40,6 @@ MonoBehaviour:
     ats: 0
     move: 0
     range: 0
+    cdr: 0
   equipmentPartsType: 4
   equipmentPartsIndex: -1
