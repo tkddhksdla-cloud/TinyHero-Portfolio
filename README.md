@@ -46,6 +46,8 @@ Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
 - Excel-driven Data Pipeline
 - EditorWindow-based Data Tooling
 - Jenkins-based Windows Custom Build
+- Remote Addressables Content Update
+- Local Content Operations Portal
 
 ## Details
 
@@ -56,6 +58,20 @@ UI 팝업, 맵 데이터, 배경 스프라이트, 포탈, 몬스터, NPC 프리�
 ### Resource Loading Abstraction
 
 `CResourceManager`와 `CUINavigationController`를 중심으로 리소스 로딩 진입점을 통합했습니다. UI 매니저가 Addressables API를 직접 호출하지 않고 공통 로더를 경유하도록 정리해, 로딩 방식 변경과 fallback 정책을 한 곳에서 관리할 수 있습니다.
+
+### Remote Addressables Content Delivery
+
+런타임 콘텐츠는 빌드에 포함되는 `TinyHero_Local` 그룹과 배포 후 갱신 가능한 `TinyHero_Remote` 그룹으로 분리합니다. 프리팹은 로컬 그룹에 유지하고, 맵 데이터, 배경 이미지, Hotfix DLL, 오디오와 아이템·퀘스트·상점·플레이어·몬스터·텍스트 데이터는 원격 콘텐츠 업데이트 대상으로 관리합니다. 등록은 Unity 메뉴 `TinyHero/Addressables/Sync Runtime Resources`를 사용하며, Addressables key는 `Assets/Resources` 기준 상대 경로에서 확장자를 제거한 형식을 따릅니다.
+
+타이틀 진입 시 원격 카탈로그와 필수 다운로드 크기를 확인합니다. 업데이트가 있으면 확인 팝업과 다운로드 진행 팝업을 표시하고, 다운로드 후 필수 데이터 검증까지 완료해야 게임을 시작할 수 있습니다. 일시적인 Addressables 로드 실패는 제한 횟수만큼 재시도하지만, 새 원격 카탈로그가 적용된 상태에서 필수 데이터 로드가 끝내 실패하면 이전 `Resources` 데이터로 조용히 fallback하지 않고 진입을 차단합니다.
+
+최초 Player 빌드는 원격 카탈로그와 `addressables_content_state.bin`을 생성합니다. 이후 `CONTENT_UPDATE` 빌드는 해당 Player 릴리스의 content state를 기준으로 변경된 Addressables 콘텐츠만 다시 빌드하므로, 전체 실행 파일을 재생성하지 않고 콘텐츠를 배포할 수 있습니다. 상세 절차는 `Tools/Addressables/README.md`를 참고합니다.
+
+### Local Content Operations Portal
+
+`Tools/OperationsPortal`은 로컬 Addressables 콘텐츠 빌드와 배포 상태를 관리하는 ASP.NET Core 운영 대시보드입니다. `Tools/OperationsPortal/Start-TinyHeroOperationsPortal.ps1`을 실행하면 운영 페이지 `http://127.0.0.1:8090`과 게임용 콘텐츠 서버 `http://127.0.0.1:8082/TinyHeroContent`가 함께 실행됩니다.
+
+운영툴에서는 Jenkins `TinyHero-Build-Windows`의 `CONTENT_UPDATE` 빌드를 요청하고, 빌드된 Windows Addressables ZIP을 검증한 뒤 로컬 콘텐츠 경로에 배포할 수 있습니다. 기존 콘텐츠 백업, 실패 시 복원, ZIP 경로 검증과 배포 이력을 포함하며 세부 사용법은 `Tools/OperationsPortal/README.md`를 참고합니다.
 
 ### Audio Management
 
@@ -89,6 +105,8 @@ BGM과 SFX는 `TinyHeroAudioMixer`의 `Master`, `BGM`, `SFX` 그룹으로 분리
 
 플레이어 스탯, 몬스터 스탯, 아이템, 퀘스트, 상점, 스킬, 보상 테이블 등 데이터 기반 콘텐츠를 엑셀 import 및 EditorWindow 툴을 통해 관리합니다. 반복적인 ScriptableObject 생성과 데이터 입력을 툴링으로 줄이고, 런타임 시스템은 정리된 정의 데이터를 참조하는 구조를 지향합니다.
 
+런타임 UI와 콘텐츠 문구는 `Assets/RawData/Excel/Text/TextTableData.xlsx`에서 TextKey와 언어별 문자열을 관리하고, 파싱된 `Assets/Resources/Data/Text/TextTableData.asset`을 `CDataManager.GetText`로 조회합니다. 원격 텍스트 테이블이 갱신되면 다운로드 검증 단계에서 `CDataManager` 캐시를 재구성해 새 문구를 적용합니다.
+
 ### Editor Tooling
 
 퀘스트, 상점, 아이템, NPC 상호작용, 몬스터 행동 패턴, 랜덤박스 보상 테이블 등 주요 콘텐츠 제작을 위한 EditorWindow 도구를 포함합니다. 검색, 생성, 복제, 삭제, 저장, 검증 흐름을 갖춘 제작 도구 중심으로 확장하는 방향을 유지합니다.
@@ -97,11 +115,15 @@ BGM과 SFX는 `TinyHeroAudioMixer`의 `Master`, `BGM`, `SFX` 그룹으로 분리
 
 반복 생성되는 런타임 오브젝트와 UI 효과는 풀링 구조를 우선 적용합니다. 전투, 드랍, 데미지 폰트, 스킬 VFX처럼 빈번하게 생성되는 대상의 인스턴스 비용을 줄이고 맵 전환 시 정리 흐름을 관리합니다.
 
+런타임 Hierarchy에서는 풀 컨테이너를 `Pool_Monster`, `Pool_FX`처럼 역할별 부모 아래에 구성해 반복 생성 오브젝트가 루트에 흩어지지 않도록 관리합니다.
+
 ### Jenkins-based Windows Custom Build
 
 `Jenkinsfile`과 `Tools/CI/Invoke-TinyHeroCustomBuild.ps1`를 통해 PC Windows 빌드를 Unity batchmode에서 실행할 수 있도록 구성했습니다. 빌드 파이프라인은 HybridCLR 준비, Hotfix DLL 준비, Addressables 콘텐츠 빌드, Windows Player 빌드를 순차적으로 수행합니다.
 
 빌드 산출물은 Jenkins build number 기준으로 분리된 `Builds/Windows/<BUILD_NUMBER>` 경로에 생성되며, `Logs/TinyHeroCustomBuild.log`를 통해 Unity 빌드 로그를 추적할 수 있습니다.
+
+Jenkins Item `TinyHero-Build-Windows`는 `PLAYER_BUILD`와 `CONTENT_UPDATE` 모드를 제공합니다. 로컬 Jenkins는 Unity MCP의 `8080` 포트와 충돌하지 않도록 `http://localhost:8081`을 사용하며, 콘텐츠 서버 주소는 기본적으로 `http://127.0.0.1:8082/TinyHeroContent`를 사용합니다.
 
 ## Scenes
 
@@ -129,4 +151,7 @@ Assets/
     Tools/Editor/         # 제작 편의 EditorWindow
 Docs/
   TechnicalRoadmap.md     # 기술 도입 로드맵
+Tools/
+  Addressables/           # 원격 콘텐츠 빌드/배포 스크립트
+  OperationsPortal/       # 로컬 콘텐츠 운영 대시보드
 ```
