@@ -227,7 +227,7 @@ namespace TinyHero.Skill
 
             float playerAtk = _playerStatManager.GetFinalStatValue( ePlayerStatType.ATK );
             float rawDamage = playerAtk * damageMultiplier + flatDamageBonus - _monsterObject.GetDef();
-            long damage = Mathf.Max( 0, Mathf.RoundToInt( rawDamage ) );
+            long damage = Mathf.Max( 1, Mathf.RoundToInt( rawDamage ) );
             return damage;
         }
 

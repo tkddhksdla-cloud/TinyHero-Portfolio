@@ -23,8 +23,9 @@ namespace TinyHero.Player
             float clampedBaseDamage = Mathf.Max( 0.0f, _baseDamage );
             float criticalAppliedDamage = ResolveCriticalDamage( _playerStatManager, clampedBaseDamage, out bool isCritical );
             float accuracyAdjustedDamage = ResolveAccuracyAdjustedDamage( _playerStatManager, criticalAppliedDamage );
+            float minimumAdjustedDamage = Mathf.Max( 1.0f, accuracyAdjustedDamage );
             _isCritical = isCritical;
-            return accuracyAdjustedDamage;
+            return minimumAdjustedDamage;
         }
 
         ///<summary>
