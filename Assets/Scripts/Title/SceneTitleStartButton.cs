@@ -112,6 +112,20 @@ namespace TinyHero.Title
                         contentDownloadPopup.SetProgress( downloadedBytes, totalBytes );
                     }
                 }
+                else if ( resourceManager.IsRemoteContentVerifying() )
+                {
+                    if ( contentDownloadPopup != null )
+                    {
+                        contentDownloadPopup.SetVerifying();
+                    }
+                }
+                else if ( resourceManager.IsRemoteDataReady() && resourceManager.HasRemoteDataLoadFailed() == false )
+                {
+                    if ( contentDownloadPopup != null )
+                    {
+                        contentDownloadPopup.SetCompleted();
+                    }
+                }
                 else if ( contentDownloadPopup != null )
                 {
                     contentDownloadPopup.Hide();
