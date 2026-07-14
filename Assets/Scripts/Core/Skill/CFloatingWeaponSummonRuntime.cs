@@ -11,6 +11,7 @@ namespace TinyHero.Skill
     {
         private const int TargetBufferSize = 64;
         private const float MinimumTargetRetrySeconds = 0.2f;
+        private static readonly Color ReplayCloneWeaponTintColor = new Color( 0.12f, 0.12f, 0.12f, 0.58f );
         private static readonly Dictionary<int, CFloatingWeaponSummonRuntime> ActiveRuntimeByOwnerId = new Dictionary<int, CFloatingWeaponSummonRuntime>();
 
         private readonly Collider2D[] targetBuffer = new Collider2D[ TargetBufferSize ];
@@ -32,6 +33,7 @@ namespace TinyHero.Skill
         private float expirationTime;
         private int ownerInstanceId;
         private bool isInitialized;
+        private bool isReplayCloneOwner;
 
         ///<summary>
         /// 부유 무기 소환 런타임 초기화
@@ -50,6 +52,7 @@ namespace TinyHero.Skill
 
             skillContext = _skillContext;
             ownerTransform = _skillContext.GetOwnerTransform();
+            isReplayCloneOwner = ownerTransform.GetComponentInParent<CPlayerReplayCloneRuntime>() != null;
             formationBaseOffset = _formationBaseOffset;
             formationVerticalSpacing = Mathf.Max( 0.0f, _formationVerticalSpacing );
             hoverAmplitude = Mathf.Max( 0.0f, _hoverAmplitude );
@@ -236,6 +239,26 @@ namespace TinyHero.Skill
         }
 
         ///<summary>
+        /// 지정 소유자의 활성 부유 무기를 즉시 편대 위치로 이동
+        ///</summary>
+        public static void SnapActiveRuntimeToOwner( Transform _ownerTransform )
+        {
+            if ( _ownerTransform == null )
+            {
+                return;
+            }
+
+            int ownerTransformInstanceId = _ownerTransform.GetInstanceID();
+
+            if ( ActiveRuntimeByOwnerId.TryGetValue( ownerTransformInstanceId, out CFloatingWeaponSummonRuntime activeRuntime ) == false || activeRuntime == null )
+            {
+                return;
+            }
+
+            activeRuntime.SnapCompanionsToFormation();
+        }
+
+        ///<summary>
         /// 새 시전 시 동일 플레이어의 기존 소환 제거
         ///</summary>
         private void ReplaceExistingRuntime()
@@ -262,10 +285,29 @@ namespace TinyHero.Skill
                 spriteRenderer.sprite = _weaponSprite;
                 spriteRenderer.sortingLayerName = "SkillEffect";
                 spriteRenderer.sortingOrder = 10 + index;
+                spriteRenderer.color = isReplayCloneOwner ? ReplayCloneWeaponTintColor : Color.white;
                 companionObject.transform.localScale = Vector3.one * _weaponVisualScale;
                 CFloatingWeaponCompanionRuntime companionRuntime = companionObject.AddComponent<CFloatingWeaponCompanionRuntime>();
                 companionRuntime.Initialize( this, index, _companionCount, index * 1.7f, spriteRenderer );
                 companionList.Add( companionRuntime );
+            }
+        }
+
+        ///<summary>
+        /// 모든 부유 무기를 현재 소유자 편대 위치로 즉시 복귀
+        ///</summary>
+        private void SnapCompanionsToFormation()
+        {
+            for ( int index = 0; index < companionList.Count; index++ )
+            {
+                CFloatingWeaponCompanionRuntime companionRuntime = companionList[ index ];
+
+                if ( companionRuntime == null )
+                {
+                    continue;
+                }
+
+                companionRuntime.SnapToFormation();
             }
         }
 

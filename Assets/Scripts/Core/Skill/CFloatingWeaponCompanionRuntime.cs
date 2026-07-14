@@ -79,6 +79,26 @@ namespace TinyHero.Skill
             weaponSpriteRenderer.enabled = _weaponSprite != null;
         }
 
+        ///<summary>
+        /// 맵 이동 등 즉시 복귀가 필요한 경우 편대 위치로 상태 초기화
+        ///</summary>
+        public void SnapToFormation()
+        {
+            if ( ownerRuntime == null )
+            {
+                return;
+            }
+
+            Vector3 formationPosition = ownerRuntime.GetFormationWorldPosition( companionIndex, companionCount, hoverPhase );
+            transform.position = formationPosition;
+            transform.rotation = Quaternion.identity;
+            targetMonster = null;
+            currentState = eFloatingWeaponState.HOVERING;
+            nextAttackTime = Time.time + ownerRuntime.GetTargetRetrySeconds();
+            BeginDamageTrajectory();
+            ApplyFacingVisual();
+        }
+
         private void Update()
         {
             if ( ownerRuntime == null )

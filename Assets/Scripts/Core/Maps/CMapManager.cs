@@ -2399,6 +2399,7 @@ namespace TinyHero.Maps
 
             Transform playerTransform = playerController.transform;
             playerTransform.position = spawnPosition;
+            CFloatingWeaponSummonRuntime.SnapActiveRuntimeToOwner( playerTransform );
             Rigidbody2D playerRigidbody = playerController.GetComponent<Rigidbody2D>();
 
             if ( playerRigidbody != null )
