@@ -2,6 +2,7 @@ using TinyHero.Maps;
 using TinyHero.Player;
 using TinyHero.UI;
 using TinyHero.Core;
+using TinyHero.Core.Data;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,7 +28,7 @@ namespace TinyHero.Title
         private const string PositiveButtonText = "예";
         private const string NegativeButtonText = "아니오";
         private const string DownloadConfirmButtonText = "다운로드";
-        private const string DownloadCancelButtonText = "취소";
+        private const string DownloadExitButtonTextKey = "KEY_TEXT_UI_COMMON_EXIT";
 
         [SerializeField] private CButtonEx startButton;
         [SerializeField] private Image fadeImage;
@@ -165,8 +166,8 @@ namespace TinyHero.Title
                 descriptionText,
                 DownloadConfirmButtonText,
                 HandleRemoteContentDownloadConfirmed,
-                DownloadCancelButtonText,
-                HandleRemoteContentDownloadRejected,
+                CDataManager.GetText( DownloadExitButtonTextKey ),
+                HandleRemoteContentDownloadExitRequested,
                 true );
         }
 
@@ -183,7 +184,7 @@ namespace TinyHero.Title
             ShowRemoteContentDownloadProgress( resourceManager );
         }
 
-        private void HandleRemoteContentDownloadRejected()
+        private void HandleRemoteContentDownloadExitRequested()
         {
             CResourceManager resourceManager = CResourceManager.Instance;
 
@@ -191,6 +192,12 @@ namespace TinyHero.Title
             {
                 resourceManager.RejectRemoteContentDownload();
             }
+
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
         }
 
         private void ShowRemoteContentDownloadProgress( CResourceManager _resourceManager )
