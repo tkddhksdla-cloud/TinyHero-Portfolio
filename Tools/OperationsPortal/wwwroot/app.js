@@ -1,10 +1,16 @@
 const state = {
   selectedFile: null,
-  status: null
+  status: null,
+  jenkinsConfigured: false
 };
 
 const elements = {
   refreshButton: document.querySelector('#refreshButton'),
+  jenkinsCredentialButton: document.querySelector('#jenkinsCredentialButton'),
+  jenkinsCredentialDialog: document.querySelector('#jenkinsCredentialDialog'),
+  jenkinsCredentialForm: document.querySelector('#jenkinsCredentialForm'),
+  jenkinsCredentialCancelButton: document.querySelector('#jenkinsCredentialCancelButton'),
+  playerBuildForm: document.querySelector('#playerBuildForm'),
   jenkinsForm: document.querySelector('#jenkinsForm'),
   uploadForm: document.querySelector('#uploadForm'),
   packageInput: document.querySelector('#packageInput'),
@@ -21,16 +27,24 @@ function initialize() {
   bindEvents();
   observeSections();
   refreshAll();
+  window.setInterval(refreshBuildStatus, 5000);
 }
 
 function bindEvents() {
   elements.refreshButton.addEventListener('click', refreshAll);
+  elements.jenkinsCredentialButton.addEventListener('click', openJenkinsCredentialDialog);
+  elements.jenkinsCredentialForm.addEventListener('submit', handleJenkinsCredentialSubmit);
+  elements.jenkinsCredentialCancelButton.addEventListener('click', () => elements.jenkinsCredentialDialog.close());
+  elements.playerBuildForm.addEventListener('submit', handlePlayerBuildSubmit);
   elements.jenkinsForm.addEventListener('submit', handleJenkinsSubmit);
   elements.uploadForm.addEventListener('submit', handleUploadSubmit);
   elements.dropzone.addEventListener('click', () => elements.packageInput.click());
   elements.packageInput.addEventListener('change', event => selectFile(event.target.files[0]));
   elements.removeFileButton.addEventListener('click', clearSelectedFile);
   elements.copyEndpointButton.addEventListener('click', copyEndpoint);
+  document.querySelectorAll('[data-build-mode]').forEach(tab => {
+    tab.addEventListener('click', () => switchBuildMode(tab.dataset.buildMode));
+  });
 
   ['dragenter', 'dragover'].forEach(eventName => {
     elements.dropzone.addEventListener(eventName, event => {
@@ -54,25 +68,96 @@ async function refreshAll() {
   elements.refreshButton.textContent = '…';
 
   try {
-    const [statusResponse, deploymentsResponse] = await Promise.all([
+    const [statusResponse, deploymentsResponse, buildStatusResponse, credentialResponse] = await Promise.all([
       fetch('/api/status'),
-      fetch('/api/deployments')
+      fetch('/api/deployments'),
+      fetch('/api/jenkins/build-status'),
+      fetch('/api/jenkins/credentials')
     ]);
 
-    if (!statusResponse.ok || !deploymentsResponse.ok) {
+    if (!statusResponse.ok || !deploymentsResponse.ok || !buildStatusResponse.ok || !credentialResponse.ok) {
       throw new Error('운영 상태를 불러오지 못했습니다.');
     }
 
     state.status = await statusResponse.json();
     const deployments = await deploymentsResponse.json();
+    const buildStatus = await buildStatusResponse.json();
+    const credentialStatus = await credentialResponse.json();
     renderStatus(state.status);
     renderDeployments(deployments);
+    renderBuildStatus(buildStatus);
+    renderCredentialStatus(credentialStatus);
   } catch (error) {
     showToast('상태 확인 실패', error.message, true);
   } finally {
     elements.refreshButton.disabled = false;
     elements.refreshButton.textContent = '↻';
     document.querySelector('#lastSyncText').textContent = `${new Date().toLocaleTimeString('ko-KR')} 갱신`;
+  }
+}
+
+function renderCredentialStatus(credentialStatus) {
+  state.jenkinsConfigured = credentialStatus.isConfigured;
+  elements.jenkinsCredentialButton.textContent = credentialStatus.isConfigured
+    ? `${credentialStatus.userName} 연결됨`
+    : 'Jenkins 인증';
+  elements.jenkinsCredentialButton.classList.toggle('connected', credentialStatus.isConfigured);
+  document.querySelector('#jenkinsUserName').value = credentialStatus.userName || '';
+  updateBuildAvailability();
+}
+
+function switchBuildMode(buildMode) {
+  document.querySelectorAll('[data-build-mode]').forEach(tab => {
+    const isActive = tab.dataset.buildMode === buildMode;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', String(isActive));
+  });
+  document.querySelectorAll('[data-build-pane]').forEach(pane => {
+    const isActive = pane.dataset.buildPane === buildMode;
+    pane.classList.toggle('active', isActive);
+    pane.hidden = !isActive;
+  });
+}
+
+function updateBuildAvailability() {
+  const isJenkinsOnline = state.status?.jenkins?.isOnline === true;
+  const canTriggerBuild = state.jenkinsConfigured && isJenkinsOnline;
+  [elements.playerBuildForm, elements.jenkinsForm].forEach(form => {
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = !canTriggerBuild;
+    submitButton.title = canTriggerBuild ? '' : '먼저 Jenkins 인증을 연결하세요.';
+  });
+}
+
+function openJenkinsCredentialDialog() {
+  document.querySelector('#jenkinsApiToken').value = '';
+  elements.jenkinsCredentialDialog.showModal();
+}
+
+async function handleJenkinsCredentialSubmit(event) {
+  event.preventDefault();
+  const submitButton = elements.jenkinsCredentialForm.querySelector('button[type="submit"]');
+  setButtonBusy(submitButton, true, '인증 확인 중');
+
+  try {
+    const response = await fetch('/api/jenkins/credentials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userName: document.querySelector('#jenkinsUserName').value,
+        apiToken: document.querySelector('#jenkinsApiToken').value
+      })
+    });
+    const result = await response.json();
+
+    if (!response.ok) throw new Error(result.message || 'Jenkins 인증에 실패했습니다.');
+    elements.jenkinsCredentialDialog.close();
+    showToast('Jenkins 연결 완료', `${result.userName} 계정으로 연결했습니다.`, false);
+    await refreshAll();
+  } catch (error) {
+    showToast('Jenkins 인증 실패', error.message, true);
+  } finally {
+    setButtonBusy(submitButton, false, '인증 저장');
   }
 }
 
@@ -83,6 +168,9 @@ function renderStatus(status) {
   document.querySelector('#contentSizeValue').textContent = formatBytes(status.content.totalBytes);
   document.querySelector('#contentEndpoint').textContent = status.defaults.contentBaseUrl;
   document.querySelector('#contentStatePath').value = status.defaults.contentStatePath;
+  document.querySelector('#gameVersion').value = status.defaults.gameVersion;
+  document.querySelector('#buildOutputPath').value = status.defaults.buildOutputPath;
+  document.querySelector('#buildStatusLink').href = status.defaults.jenkinsUrl;
 
   const lastDeployment = status.content.lastDeployment;
   document.querySelector('#lastDeploymentValue').textContent = lastDeployment
@@ -97,6 +185,36 @@ function renderStatus(status) {
   healthElement.className = `health-pill ${isHealthy ? 'healthy' : 'degraded'}`;
   healthElement.innerHTML = `<span></span>${isHealthy ? '모든 시스템 정상' : '확인이 필요한 서비스 있음'}`;
   document.querySelector('#environmentDot').classList.toggle('online', status.contentServer.isOnline);
+  updateBuildAvailability();
+}
+
+async function refreshBuildStatus() {
+  try {
+    const response = await fetch('/api/jenkins/build-status');
+    if (!response.ok) return;
+    renderBuildStatus(await response.json());
+  } catch {
+  }
+}
+
+function renderBuildStatus(buildStatus) {
+  const card = document.querySelector('#buildStatusCard');
+  const isActive = buildStatus.isQueued || buildStatus.isBuilding;
+  const isSuccess = buildStatus.state === 'SUCCESS';
+  const isFailure = ['FAILURE', 'ABORTED', 'UNSTABLE'].includes(buildStatus.state);
+  card.className = `build-status-card ${isActive ? 'active' : isSuccess ? 'success' : isFailure ? 'failure' : ''}`;
+  document.querySelector('#buildStatusTitle').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
+    ? 'Jenkins 인증 필요'
+    : isActive
+    ? buildStatus.isQueued ? '빌드 대기 중' : `빌드 #${buildStatus.buildNumber} 진행 중`
+    : buildStatus.buildNumber ? `최근 빌드 #${buildStatus.buildNumber} · ${buildStatus.state}` : 'Jenkins 빌드 대기';
+  document.querySelector('#buildStatusDetail').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
+    ? 'Jenkins 계정을 한 번 연결하면 이후 자동으로 빌드를 제어할 수 있습니다.'
+    : buildStatus.detail;
+
+  if (buildStatus.buildUrl) {
+    document.querySelector('#buildStatusLink').href = buildStatus.buildUrl;
+  }
 }
 
 function renderServiceStatus(prefix, service) {
@@ -124,6 +242,41 @@ function renderDeployments(deployments) {
       <td><span class="verified">✓ VERIFIED</span></td>
     </tr>
   `).join('');
+}
+
+async function handlePlayerBuildSubmit(event) {
+  event.preventDefault();
+  const confirmed = await confirmAction(
+    'Windows 플레이어 빌드 시작',
+    '새 게임 실행 파일과 로컬 배포용 Addressables 콘텐츠를 함께 생성합니다.'
+  );
+
+  if (!confirmed) return;
+
+  const submitButton = elements.playerBuildForm.querySelector('button[type="submit"]');
+  setButtonBusy(submitButton, true, 'Jenkins 요청 중');
+
+  try {
+    const response = await fetch('/api/jenkins/player-build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameVersion: document.querySelector('#gameVersion').value,
+        buildOutputPath: document.querySelector('#buildOutputPath').value,
+        requireRemoteContent: document.querySelector('#playerRequireRemoteContent').checked
+      })
+    });
+    const result = await response.json();
+
+    if (!response.ok) throw new Error(result.message || '플레이어 빌드 등록에 실패했습니다.');
+    showToast('플레이어 빌드 요청 완료', result.message, false);
+    await refreshBuildStatus();
+  } catch (error) {
+    showToast('빌드 요청 실패', error.message, true);
+  } finally {
+    setButtonBusy(submitButton, false, '전체 빌드 시작');
+    updateBuildAvailability();
+  }
 }
 
 async function handleJenkinsSubmit(event) {
@@ -154,8 +307,9 @@ async function handleJenkinsSubmit(event) {
   } catch (error) {
     showToast('빌드 요청 실패', error.message, true);
   } finally {
-    setButtonBusy(submitButton, false, 'Jenkins 빌드 시작');
-    refreshAll();
+    setButtonBusy(submitButton, false, '콘텐츠 업데이트 시작');
+    updateBuildAvailability();
+    await refreshBuildStatus();
   }
 }
 

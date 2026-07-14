@@ -26,10 +26,13 @@
           <span class="nav-icon">⌂</span><span>개요</span>
         </a>
         <a class="nav-item" href="#pipeline" data-section="pipeline">
-          <span class="nav-icon">⌁</span><span>콘텐츠 파이프라인</span>
+          <span class="nav-icon">⌁</span><span>빌드 센터</span>
+        </a>
+        <a class="nav-item" href="#delivery" data-section="delivery">
+          <span class="nav-icon">⇧</span><span>콘텐츠 배포</span>
         </a>
         <a class="nav-item" href="#deployments" data-section="deployments">
-          <span class="nav-icon">⇧</span><span>배포 기록</span>
+          <span class="nav-icon">≡</span><span>배포 기록</span>
         </a>
       </nav>
 
@@ -114,37 +117,135 @@
       <section class="section" id="pipeline">
         <div class="section-heading">
           <div>
-            <h2>콘텐츠 파이프라인</h2>
-            <p>Jenkins 빌드 또는 사전 빌드된 패키지로 업데이트를 배포합니다.</p>
+            <p class="section-kicker">BUILD CENTER</p>
+            <h2>무엇을 빌드할까요?</h2>
+            <p>목적을 선택하면 필요한 설정만 표시됩니다.</p>
           </div>
         </div>
 
-        <div class="pipeline-grid">
-          <article class="panel pipeline-panel">
-            <div class="panel-heading">
-              <span class="step-number">01</span>
-              <div><h3>Jenkins 업데이트 빌드</h3><p>저장소의 변경된 Addressables를 빌드하고 로컬 서버에 배포합니다.</p></div>
+        <div class="build-layout">
+          <article class="panel build-workspace">
+            <div class="build-mode-tabs" role="tablist" aria-label="빌드 종류 선택">
+              <button class="build-mode-tab active" type="button" role="tab" aria-selected="true" data-build-mode="player">
+                <span class="mode-icon">▣</span>
+                <span><strong>게임 전체 빌드</strong><small>실행 파일이 필요할 때</small></span>
+                <i>권장</i>
+              </button>
+              <button class="build-mode-tab" type="button" role="tab" aria-selected="false" data-build-mode="content">
+                <span class="mode-icon cyan">↻</span>
+                <span><strong>콘텐츠만 업데이트</strong><small>데이터·에셋만 바뀌었을 때</small></span>
+              </button>
             </div>
-            <form id="jenkinsForm" class="form-stack">
-              <label>
-                <span>Content State 경로</span>
-                <input id="contentStatePath" name="contentStatePath" type="text" autocomplete="off" required>
-                <small>업데이트 대상 플레이어 빌드와 일치해야 합니다.</small>
-              </label>
-              <label class="switch-row">
-                <span><strong>원격 콘텐츠 필수 정책</strong><small>서버 연결 실패 시 게임 진입을 차단합니다.</small></span>
-                <input id="requireRemoteContent" type="checkbox"><i></i>
-              </label>
-              <button class="primary-button" type="submit"><span>Jenkins 빌드 시작</span><b>→</b></button>
-            </form>
+
+            <div class="build-form-pane active" data-build-pane="player">
+              <div class="form-intro">
+                <span>PLAYER BUILD</span>
+                <h3>Windows 게임 빌드</h3>
+                <p>실행 파일, Addressables 기준 상태, 로컬 배포 콘텐츠를 한 번에 생성합니다.</p>
+              </div>
+              <form id="playerBuildForm" class="form-stack build-form">
+                <div class="field-grid">
+                  <label>
+                    <span>게임 버전</span>
+                    <input id="gameVersion" name="gameVersion" type="text" inputmode="numeric" placeholder="0.0.01" autocomplete="off" required>
+                    <small>타이틀 화면에도 동일하게 표시됩니다.</small>
+                  </label>
+                  <label>
+                    <span>출력 경로 <em>선택 사항</em></span>
+                    <input id="buildOutputPath" name="buildOutputPath" type="text" autocomplete="off" placeholder="자동으로 빌드 번호별 폴더 사용">
+                    <small>대부분 비워두면 됩니다.</small>
+                  </label>
+                </div>
+                <label class="switch-row policy-switch">
+                  <span><strong>원격 콘텐츠를 필수로 사용</strong><small>라이브 배포 전용 · 서버 장애 시 게임 진입을 차단합니다.</small></span>
+                  <input id="playerRequireRemoteContent" type="checkbox"><i></i>
+                </label>
+                <div class="form-action-row">
+                  <span><b>예상 결과</b> 새 게임 실행 파일 + 업데이트 기준 파일</span>
+                  <button class="primary-button" type="submit"><span>전체 빌드 시작</span><b>→</b></button>
+                </div>
+              </form>
+            </div>
+
+            <div class="build-form-pane" data-build-pane="content" hidden>
+              <div class="form-intro">
+                <span>CONTENT UPDATE</span>
+                <h3>Addressables 콘텐츠 업데이트</h3>
+                <p>기존 게임 빌드는 유지하고 변경된 데이터와 에셋만 로컬 서버에 배포합니다.</p>
+              </div>
+              <form id="jenkinsForm" class="form-stack build-form">
+                <div class="content-update-note">
+                  <span>✓</span>
+                  <div><strong>이럴 때 사용하세요</strong><p>텍스트 데이터, ScriptableObject, FX, 프리팹 등 Addressables 대상만 변경된 경우</p></div>
+                </div>
+                <details class="advanced-settings">
+                  <summary><span>고급 설정</span><small>기본값 사용을 권장합니다.</small></summary>
+                  <label>
+                    <span>Content State 경로</span>
+                    <input id="contentStatePath" name="contentStatePath" type="text" autocomplete="off" required>
+                    <small>업데이트 대상 플레이어 빌드와 반드시 일치해야 합니다.</small>
+                  </label>
+                </details>
+                <label class="switch-row policy-switch">
+                  <span><strong>원격 콘텐츠를 필수로 사용</strong><small>라이브 배포 전용 · 현재 로컬 테스트에서는 끄는 것을 권장합니다.</small></span>
+                  <input id="requireRemoteContent" type="checkbox"><i></i>
+                </label>
+                <div class="form-action-row">
+                  <span><b>예상 결과</b> 변경 번들 생성 + 로컬 서버 자동 배포</span>
+                  <button class="primary-button" type="submit"><span>콘텐츠 업데이트 시작</span><b>→</b></button>
+                </div>
+              </form>
+            </div>
           </article>
 
-          <article class="panel pipeline-panel accent-panel">
-            <div class="panel-heading">
-              <span class="step-number">02</span>
-              <div><h3>빌드 패키지 즉시 배포</h3><p>카탈로그·해시·번들이 포함된 Windows Addressables ZIP을 배포합니다.</p></div>
-            </div>
-            <form id="uploadForm" class="form-stack">
+          <aside class="build-sidebar">
+            <article class="build-status-card" id="buildStatusCard">
+              <div class="build-status-heading">
+                <span class="build-pulse"></span>
+                <div><small>JENKINS PIPELINE</small><strong id="buildStatusTitle">상태 확인 중</strong></div>
+              </div>
+              <p id="buildStatusDetail">TinyHero-Build-Windows 상태를 불러오고 있습니다.</p>
+              <div class="build-status-actions">
+                <button id="jenkinsCredentialButton" type="button">Jenkins 인증</button>
+                <a id="buildStatusLink" href="http://127.0.0.1:8081" target="_blank" rel="noreferrer">상세 보기 ↗</a>
+              </div>
+            </article>
+
+            <article class="workflow-guide">
+              <span class="guide-label">RECOMMENDED FLOW</span>
+              <h3>처음 테스트한다면</h3>
+              <ol>
+                <li><span>1</span><div><strong>전체 빌드</strong><small>게임 실행 파일 생성</small></div></li>
+                <li><span>2</span><div><strong>에셋 수정</strong><small>데이터 파싱·Addressables 동기화</small></div></li>
+                <li><span>3</span><div><strong>콘텐츠 업데이트</strong><small>변경분만 로컬 서버에 배포</small></div></li>
+                <li><span>4</span><div><strong>게임 재실행</strong><small>다운로드 팝업과 적용 확인</small></div></li>
+              </ol>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" id="delivery">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker cyan">MANUAL DELIVERY</p>
+            <h2>빌드된 패키지 직접 배포</h2>
+            <p>Jenkins를 거치지 않고 준비된 Windows Addressables ZIP을 즉시 교체합니다.</p>
+          </div>
+        </div>
+
+        <article class="panel delivery-panel">
+          <div class="delivery-copy">
+            <span class="step-number">ZIP</span>
+            <h3>수동 배포</h3>
+            <p>카탈로그·해시·번들 구성을 검증하고 기존 콘텐츠를 백업한 뒤 안전하게 교체합니다.</p>
+            <ul>
+              <li>ServerData/Windows 구조 지원</li>
+              <li>실패 시 이전 콘텐츠 자동 복원</li>
+              <li>SHA-256과 배포 이력 기록</li>
+            </ul>
+          </div>
+          <form id="uploadForm" class="form-stack delivery-form">
               <input id="packageInput" name="package" type="file" accept=".zip" hidden>
               <button class="dropzone" id="dropzone" type="button">
                 <span class="upload-icon">⇧</span>
@@ -165,9 +266,8 @@
                 <div class="progress-track"><span id="uploadProgressBar"></span></div>
               </div>
               <button class="secondary-button" id="uploadButton" type="submit" disabled><span>로컬 서버에 배포</span><b>⇧</b></button>
-            </form>
-          </article>
-        </div>
+          </form>
+        </article>
 
         <div class="endpoint-strip">
           <span class="endpoint-icon">⌁</span>
@@ -204,6 +304,26 @@
       <div class="dialog-actions">
         <button value="cancel" class="ghost-button">취소</button>
         <button value="confirm" class="primary-button">실행</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="jenkinsCredentialDialog" class="confirm-dialog credential-dialog">
+    <form id="jenkinsCredentialForm">
+      <span class="dialog-icon">J</span>
+      <h3>Jenkins 인증 연결</h3>
+      <p>최초 한 번 저장하면 현재 Windows 사용자에게 암호화되어 이후 자동으로 사용됩니다.</p>
+      <label>
+        <span>사용자 이름</span>
+        <input id="jenkinsUserName" type="text" autocomplete="username" required>
+      </label>
+      <label>
+        <span>API 토큰 또는 비밀번호</span>
+        <input id="jenkinsApiToken" type="password" autocomplete="current-password" required>
+      </label>
+      <div class="dialog-actions">
+        <button id="jenkinsCredentialCancelButton" type="button" class="ghost-button">취소</button>
+        <button type="submit" class="primary-button"><span>인증 저장</span></button>
       </div>
     </form>
   </dialog>
