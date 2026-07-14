@@ -109,13 +109,13 @@ public sealed class JenkinsService
         try
         {
             string encodedJobName = Uri.EscapeDataString(options.JenkinsJobName);
-            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName]";
+            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration]";
             using HttpRequestMessage request = CreateRequest(HttpMethod.Get, $"job/{encodedJobName}/api/json?tree={treeQuery}");
             using HttpResponseMessage response = await httpClient.SendAsync(request, _cancellationToken);
 
             if (response.IsSuccessStatusCode == false)
             {
-                return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", $"HTTP {(int)response.StatusCode}", null);
+                return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", $"HTTP {(int)response.StatusCode}", null, 0, 0L, 0L, null);
             }
 
             await using Stream responseStream = await response.Content.ReadAsStreamAsync(_cancellationToken);
@@ -123,7 +123,7 @@ public sealed class JenkinsService
 
             if (jobState == null)
             {
-                return new JenkinsBuildStatus(false, false, false, null, "UNKNOWN", "빌드 상태를 읽을 수 없습니다.", null);
+                return new JenkinsBuildStatus(false, false, false, null, "UNKNOWN", "빌드 상태를 읽을 수 없습니다.", null, 0, 0L, 0L, null);
             }
 
             if (jobState.InQueue)
@@ -131,28 +131,51 @@ public sealed class JenkinsService
                 string queueDetail = string.IsNullOrWhiteSpace(jobState.QueueItem?.Why)
                     ? "Jenkins 대기열에서 실행을 기다리는 중입니다."
                     : jobState.QueueItem.Why;
-                return new JenkinsBuildStatus(true, true, false, jobState.LastBuild?.Number, "QUEUED", queueDetail, jobState.QueueItem?.Url);
+                return new JenkinsBuildStatus(true, true, false, jobState.LastBuild?.Number, "QUEUED", queueDetail, jobState.QueueItem?.Url, 0, 0L, 0L, null);
             }
 
             JenkinsBuildState? lastBuild = jobState.LastBuild;
 
             if (lastBuild == null)
             {
-                return new JenkinsBuildStatus(true, false, false, null, "IDLE", "아직 실행된 빌드가 없습니다.", null);
+                return new JenkinsBuildStatus(true, false, false, null, "IDLE", "아직 실행된 빌드가 없습니다.", null, 0, 0L, 0L, null);
             }
+
+            DateTimeOffset? startedAtUtc = lastBuild.Timestamp > 0L
+                ? DateTimeOffset.FromUnixTimeMilliseconds(lastBuild.Timestamp)
+                : null;
 
             if (lastBuild.Building)
             {
-                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url);
+                long elapsedMilliseconds = startedAtUtc.HasValue
+                    ? Math.Max(0L, (long)(DateTimeOffset.UtcNow - startedAtUtc.Value).TotalMilliseconds)
+                    : 0L;
+                int progressPercent = CalculateBuildProgressPercent(elapsedMilliseconds, lastBuild.EstimatedDuration);
+                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url, progressPercent, elapsedMilliseconds, lastBuild.EstimatedDuration, startedAtUtc);
             }
 
             string result = string.IsNullOrWhiteSpace(lastBuild.Result) ? "UNKNOWN" : lastBuild.Result;
-            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url);
+            long completedDuration = Math.Max(0L, lastBuild.Duration);
+            int completedProgressPercent = string.Equals(result, "UNKNOWN", StringComparison.OrdinalIgnoreCase) ? 0 : 100;
+            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc);
         }
         catch (Exception exception)
         {
-            return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", exception.Message, null);
+            return new JenkinsBuildStatus(false, false, false, null, "OFFLINE", exception.Message, null, 0, 0L, 0L, null);
         }
+    }
+
+    private static int CalculateBuildProgressPercent(long _elapsedMilliseconds, long _estimatedDurationMilliseconds)
+    {
+        if (_estimatedDurationMilliseconds <= 0L)
+        {
+            return 0;
+        }
+
+        double progressRatio = (double)_elapsedMilliseconds / _estimatedDurationMilliseconds;
+        int progressPercent = (int)Math.Round(progressRatio * 100.0, MidpointRounding.AwayFromZero);
+        int result = Math.Clamp(progressPercent, 1, 95);
+        return result;
     }
 
     private async Task<JenkinsTriggerResult> TriggerBuildAsync(
@@ -276,5 +299,14 @@ public sealed class JenkinsService
 
         [JsonPropertyName("displayName")]
         public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("timestamp")]
+        public long Timestamp { get; set; }
+
+        [JsonPropertyName("duration")]
+        public long Duration { get; set; }
+
+        [JsonPropertyName("estimatedDuration")]
+        public long EstimatedDuration { get; set; }
     }
 }

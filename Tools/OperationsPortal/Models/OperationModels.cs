@@ -50,7 +50,11 @@ public sealed record JenkinsBuildStatus(
     int? BuildNumber,
     string State,
     string Detail,
-    string? BuildUrl);
+    string? BuildUrl,
+    int ProgressPercent,
+    long ElapsedMilliseconds,
+    long EstimatedDurationMilliseconds,
+    DateTimeOffset? StartedAtUtc);
 
 public sealed record DeploymentRecord(
     string Id,

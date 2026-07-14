@@ -27,7 +27,7 @@ function initialize() {
   bindEvents();
   observeSections();
   refreshAll();
-  window.setInterval(refreshBuildStatus, 5000);
+  window.setInterval(refreshBuildStatus, 3000);
 }
 
 function bindEvents() {
@@ -202,7 +202,9 @@ function renderBuildStatus(buildStatus) {
   const isActive = buildStatus.isQueued || buildStatus.isBuilding;
   const isSuccess = buildStatus.state === 'SUCCESS';
   const isFailure = ['FAILURE', 'ABORTED', 'UNSTABLE'].includes(buildStatus.state);
-  card.className = `build-status-card ${isActive ? 'active' : isSuccess ? 'success' : isFailure ? 'failure' : ''}`;
+  const statusClass = buildStatus.isQueued ? 'queued' : buildStatus.isBuilding ? 'active' : isSuccess ? 'success' : isFailure ? 'failure' : '';
+  const progressPercent = Math.max(0, Math.min(100, buildStatus.progressPercent || 0));
+  card.className = `build-command-center ${statusClass}`;
   document.querySelector('#buildStatusTitle').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
     ? 'Jenkins 인증 필요'
     : isActive
@@ -211,10 +213,43 @@ function renderBuildStatus(buildStatus) {
   document.querySelector('#buildStatusDetail').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
     ? 'Jenkins 계정을 한 번 연결하면 이후 자동으로 빌드를 제어할 수 있습니다.'
     : buildStatus.detail;
+  document.querySelector('#buildStateBadge').textContent = resolveBuildStateLabel(buildStatus);
+  document.querySelector('#buildProgressPercent').textContent = buildStatus.isQueued ? '대기 중' : `${progressPercent}%`;
+  document.querySelector('#buildProgressTime').textContent = resolveBuildProgressTime(buildStatus);
+  document.querySelector('#buildProgressBar').style.width = `${progressPercent}%`;
+  document.querySelector('#buildProgressTrack').setAttribute('aria-valuenow', String(progressPercent));
+  document.querySelector('#buildNumberValue').textContent = buildStatus.isQueued
+    ? '대기열'
+    : buildStatus.buildNumber ? `#${buildStatus.buildNumber}` : '—';
+  document.querySelector('#buildStartedValue').textContent = buildStatus.startedAtUtc
+    ? formatDateTime(buildStatus.startedAtUtc)
+    : buildStatus.isQueued ? '대기열 등록' : '—';
 
   if (buildStatus.buildUrl) {
     document.querySelector('#buildStatusLink').href = buildStatus.buildUrl;
   }
+}
+
+function resolveBuildStateLabel(buildStatus) {
+  if (!buildStatus.isAvailable) return 'OFFLINE';
+  if (buildStatus.isQueued) return 'QUEUED';
+  if (buildStatus.isBuilding) return 'BUILDING';
+  return buildStatus.state || 'IDLE';
+}
+
+function resolveBuildProgressTime(buildStatus) {
+  if (buildStatus.isQueued) return 'Jenkins 실행 슬롯을 기다리고 있습니다.';
+  if (buildStatus.isBuilding) {
+    const elapsedText = formatDuration(buildStatus.elapsedMilliseconds);
+    const estimateText = buildStatus.estimatedDurationMilliseconds > 0
+      ? ` · 예상 ${formatDuration(buildStatus.estimatedDurationMilliseconds)}`
+      : '';
+    return `${elapsedText} 경과${estimateText}`;
+  }
+  if (buildStatus.progressPercent === 100 && buildStatus.elapsedMilliseconds > 0) {
+    return `${formatDuration(buildStatus.elapsedMilliseconds)} 소요`;
+  }
+  return buildStatus.isAvailable ? '다음 빌드를 기다리고 있습니다.' : 'Jenkins 연결을 확인하세요.';
 }
 
 function renderServiceStatus(prefix, service) {
@@ -451,6 +486,13 @@ function formatRelativeTime(value) {
   if (elapsedSeconds < 3600) return `${Math.floor(elapsedSeconds / 60)}분 전`;
   if (elapsedSeconds < 86400) return `${Math.floor(elapsedSeconds / 3600)}시간 전`;
   return `${Math.floor(elapsedSeconds / 86400)}일 전`;
+}
+
+function formatDuration(milliseconds) {
+  const totalSeconds = Math.max(0, Math.round((milliseconds || 0) / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
 }
 
 function escapeHtml(value) {

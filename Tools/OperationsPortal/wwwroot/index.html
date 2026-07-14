@@ -34,6 +34,9 @@
         <a class="nav-item" href="#deployments" data-section="deployments">
           <span class="nav-icon">≡</span><span>배포 기록</span>
         </a>
+        <a class="nav-item" href="#help" data-section="help">
+          <span class="nav-icon">?</span><span>도움말</span>
+        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -61,6 +64,39 @@
       </header>
 
       <section class="section" id="overview">
+        <article class="build-command-center" id="buildStatusCard">
+          <div class="build-command-header">
+            <div class="build-command-title">
+              <span class="build-pulse"></span>
+              <div>
+                <small>JENKINS BUILD CONTROL</small>
+                <h2 id="buildStatusTitle">빌드 상태 확인 중</h2>
+              </div>
+            </div>
+            <span class="build-state-badge" id="buildStateBadge">CHECKING</span>
+          </div>
+          <div class="build-command-body">
+            <div class="build-primary-status">
+              <p id="buildStatusDetail">TinyHero-Build-Windows 상태를 불러오고 있습니다.</p>
+              <div class="build-progress-summary">
+                <strong id="buildProgressPercent">0%</strong>
+                <span id="buildProgressTime">예상 시간 계산 중</span>
+              </div>
+              <div class="build-progress-track" id="buildProgressTrack" role="progressbar" aria-label="Jenkins 빌드 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span id="buildProgressBar"></span>
+              </div>
+            </div>
+            <div class="build-command-meta">
+              <div><small>BUILD</small><strong id="buildNumberValue">—</strong></div>
+              <div><small>STARTED</small><strong id="buildStartedValue">—</strong></div>
+              <div class="build-status-actions">
+                <button id="jenkinsCredentialButton" type="button">Jenkins 인증</button>
+                <a id="buildStatusLink" href="http://127.0.0.1:8081" target="_blank" rel="noreferrer">Jenkins 열기 ↗</a>
+              </div>
+            </div>
+          </div>
+        </article>
+
         <div class="section-heading">
           <div>
             <h2>시스템 현황</h2>
@@ -96,22 +132,6 @@
           </article>
         </div>
 
-        <div class="flow-card">
-          <div class="flow-copy">
-            <span class="flow-label">RUNTIME FLOW</span>
-            <h3>게임 실행 시 자동 업데이트 흐름</h3>
-            <p>새 카탈로그가 발견되면 클라이언트가 용량을 확인하고 다운로드 동의 팝업을 표시합니다.</p>
-          </div>
-          <div class="flow-steps" aria-label="업데이트 처리 단계">
-            <div class="flow-step"><span>01</span><strong>Catalog Check</strong><small>신규 버전 감지</small></div>
-            <i></i>
-            <div class="flow-step"><span>02</span><strong>User Confirm</strong><small>다운로드 동의</small></div>
-            <i></i>
-            <div class="flow-step"><span>03</span><strong>Download</strong><small>번들 수신</small></div>
-            <i></i>
-            <div class="flow-step"><span>04</span><strong>Ready</strong><small>콘텐츠 적용</small></div>
-          </div>
-        </div>
       </section>
 
       <section class="section" id="pipeline">
@@ -198,30 +218,6 @@
             </div>
           </article>
 
-          <aside class="build-sidebar">
-            <article class="build-status-card" id="buildStatusCard">
-              <div class="build-status-heading">
-                <span class="build-pulse"></span>
-                <div><small>JENKINS PIPELINE</small><strong id="buildStatusTitle">상태 확인 중</strong></div>
-              </div>
-              <p id="buildStatusDetail">TinyHero-Build-Windows 상태를 불러오고 있습니다.</p>
-              <div class="build-status-actions">
-                <button id="jenkinsCredentialButton" type="button">Jenkins 인증</button>
-                <a id="buildStatusLink" href="http://127.0.0.1:8081" target="_blank" rel="noreferrer">상세 보기 ↗</a>
-              </div>
-            </article>
-
-            <article class="workflow-guide">
-              <span class="guide-label">RECOMMENDED FLOW</span>
-              <h3>처음 테스트한다면</h3>
-              <ol>
-                <li><span>1</span><div><strong>전체 빌드</strong><small>게임 실행 파일 생성</small></div></li>
-                <li><span>2</span><div><strong>에셋 수정</strong><small>데이터 파싱·Addressables 동기화</small></div></li>
-                <li><span>3</span><div><strong>콘텐츠 업데이트</strong><small>변경분만 로컬 서버에 배포</small></div></li>
-                <li><span>4</span><div><strong>게임 재실행</strong><small>다운로드 팝업과 적용 확인</small></div></li>
-              </ol>
-            </article>
-          </aside>
         </div>
       </section>
 
@@ -290,6 +286,46 @@
             </table>
           </div>
         </article>
+      </section>
+
+      <section class="section" id="help">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker cyan">HELP &amp; WORKFLOW</p>
+            <h2>운영 도움말</h2>
+            <p>빌드와 콘텐츠 업데이트가 필요한 시점을 빠르게 확인하세요.</p>
+          </div>
+        </div>
+
+        <div class="help-grid">
+          <article class="workflow-guide">
+            <span class="guide-label">RECOMMENDED FLOW</span>
+            <h3>처음 업데이트를 테스트한다면</h3>
+            <ol>
+              <li><span>1</span><div><strong>전체 빌드</strong><small>게임 실행 파일과 Content State 생성</small></div></li>
+              <li><span>2</span><div><strong>에셋 수정</strong><small>데이터 파싱·Addressables 동기화</small></div></li>
+              <li><span>3</span><div><strong>콘텐츠 업데이트</strong><small>변경분만 로컬 서버에 배포</small></div></li>
+              <li><span>4</span><div><strong>게임 재실행</strong><small>다운로드 팝업과 적용 확인</small></div></li>
+            </ol>
+          </article>
+
+          <article class="flow-card">
+            <div class="flow-copy">
+              <span class="flow-label">RUNTIME FLOW</span>
+              <h3>게임 실행 시 자동 업데이트 흐름</h3>
+              <p>새 카탈로그가 발견되면 클라이언트가 용량을 확인하고 다운로드 동의 팝업을 표시합니다.</p>
+            </div>
+            <div class="flow-steps" aria-label="업데이트 처리 단계">
+              <div class="flow-step"><span>01</span><strong>Catalog Check</strong><small>신규 버전 감지</small></div>
+              <i></i>
+              <div class="flow-step"><span>02</span><strong>User Confirm</strong><small>다운로드 동의</small></div>
+              <i></i>
+              <div class="flow-step"><span>03</span><strong>Download</strong><small>번들 수신</small></div>
+              <i></i>
+              <div class="flow-step"><span>04</span><strong>Ready</strong><small>콘텐츠 적용</small></div>
+            </div>
+          </article>
+        </div>
       </section>
     </main>
   </div>
