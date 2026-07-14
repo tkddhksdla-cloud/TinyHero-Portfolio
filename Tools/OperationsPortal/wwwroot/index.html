@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>TinyHero Operations</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="TinyHero Operations 홈">
+        <span class="brand-mark">TH</span>
+        <span>
+          <strong>TinyHero</strong>
+          <small>OPERATIONS</small>
+        </span>
+      </a>
+
+      <nav class="nav-list" aria-label="주 메뉴">
+        <a class="nav-item active" href="#overview" data-section="overview">
+          <span class="nav-icon">⌂</span><span>개요</span>
+        </a>
+        <a class="nav-item" href="#pipeline" data-section="pipeline">
+          <span class="nav-icon">⌁</span><span>콘텐츠 파이프라인</span>
+        </a>
+        <a class="nav-item" href="#deployments" data-section="deployments">
+          <span class="nav-icon">⇧</span><span>배포 기록</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="environment-card">
+          <span class="status-dot" id="environmentDot"></span>
+          <div>
+            <small>ENVIRONMENT</small>
+            <strong>Local Development</strong>
+          </div>
+        </div>
+        <p>로컬 전용 · 127.0.0.1</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LIVE CONTENT CONTROL</p>
+          <h1>운영 대시보드</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="last-sync" id="lastSyncText">상태 확인 중</span>
+          <button class="icon-button" id="refreshButton" type="button" aria-label="새로고침" title="새로고침">↻</button>
+        </div>
+      </header>
+
+      <section class="section" id="overview">
+        <div class="section-heading">
+          <div>
+            <h2>시스템 현황</h2>
+            <p>빌드부터 배포까지 필요한 서비스 상태입니다.</p>
+          </div>
+          <span class="health-pill" id="overallHealth"><span></span> 확인 중</span>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <div class="metric-header"><span class="metric-icon violet">J</span><span class="status-badge" id="jenkinsBadge">확인 중</span></div>
+            <p>Jenkins</p>
+            <strong id="jenkinsValue">연결 확인 중</strong>
+            <small id="jenkinsDetail">TinyHero-Build-Windows</small>
+          </article>
+          <article class="metric-card">
+            <div class="metric-header"><span class="metric-icon cyan">C</span><span class="status-badge" id="contentBadge">확인 중</span></div>
+            <p>콘텐츠 서버</p>
+            <strong id="contentValue">배포 확인 중</strong>
+            <small id="contentDetail">Windows 카탈로그</small>
+          </article>
+          <article class="metric-card">
+            <div class="metric-header"><span class="metric-icon green">F</span><span class="metric-trend">LIVE</span></div>
+            <p>배포 파일</p>
+            <strong id="fileCountValue">—</strong>
+            <small id="contentSizeValue">—</small>
+          </article>
+          <article class="metric-card">
+            <div class="metric-header"><span class="metric-icon amber">D</span><span class="metric-trend muted">LATEST</span></div>
+            <p>최근 배포</p>
+            <strong id="lastDeploymentValue">배포 기록 없음</strong>
+            <small id="lastDeploymentDetail">—</small>
+          </article>
+        </div>
+
+        <div class="flow-card">
+          <div class="flow-copy">
+            <span class="flow-label">RUNTIME FLOW</span>
+            <h3>게임 실행 시 자동 업데이트 흐름</h3>
+            <p>새 카탈로그가 발견되면 클라이언트가 용량을 확인하고 다운로드 동의 팝업을 표시합니다.</p>
+          </div>
+          <div class="flow-steps" aria-label="업데이트 처리 단계">
+            <div class="flow-step"><span>01</span><strong>Catalog Check</strong><small>신규 버전 감지</small></div>
+            <i></i>
+            <div class="flow-step"><span>02</span><strong>User Confirm</strong><small>다운로드 동의</small></div>
+            <i></i>
+            <div class="flow-step"><span>03</span><strong>Download</strong><small>번들 수신</small></div>
+            <i></i>
+            <div class="flow-step"><span>04</span><strong>Ready</strong><small>콘텐츠 적용</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="pipeline">
+        <div class="section-heading">
+          <div>
+            <h2>콘텐츠 파이프라인</h2>
+            <p>Jenkins 빌드 또는 사전 빌드된 패키지로 업데이트를 배포합니다.</p>
+          </div>
+        </div>
+
+        <div class="pipeline-grid">
+          <article class="panel pipeline-panel">
+            <div class="panel-heading">
+              <span class="step-number">01</span>
+              <div><h3>Jenkins 업데이트 빌드</h3><p>저장소의 변경된 Addressables를 빌드하고 로컬 서버에 배포합니다.</p></div>
+            </div>
+            <form id="jenkinsForm" class="form-stack">
+              <label>
+                <span>Content State 경로</span>
+                <input id="contentStatePath" name="contentStatePath" type="text" autocomplete="off" required>
+                <small>업데이트 대상 플레이어 빌드와 일치해야 합니다.</small>
+              </label>
+              <label class="switch-row">
+                <span><strong>원격 콘텐츠 필수 정책</strong><small>서버 연결 실패 시 게임 진입을 차단합니다.</small></span>
+                <input id="requireRemoteContent" type="checkbox"><i></i>
+              </label>
+              <button class="primary-button" type="submit"><span>Jenkins 빌드 시작</span><b>→</b></button>
+            </form>
+          </article>
+
+          <article class="panel pipeline-panel accent-panel">
+            <div class="panel-heading">
+              <span class="step-number">02</span>
+              <div><h3>빌드 패키지 즉시 배포</h3><p>카탈로그·해시·번들이 포함된 Windows Addressables ZIP을 배포합니다.</p></div>
+            </div>
+            <form id="uploadForm" class="form-stack">
+              <input id="packageInput" name="package" type="file" accept=".zip" hidden>
+              <button class="dropzone" id="dropzone" type="button">
+                <span class="upload-icon">⇧</span>
+                <strong id="dropzoneTitle">ZIP 파일을 놓거나 선택하세요</strong>
+                <small id="dropzoneDetail">ServerData/Windows 또는 Windows 폴더 구조 지원</small>
+              </button>
+              <div class="file-preview hidden" id="filePreview">
+                <span class="file-type">ZIP</span>
+                <div><strong id="fileName">—</strong><small id="fileSize">—</small></div>
+                <button id="removeFileButton" type="button" aria-label="파일 제거">×</button>
+              </div>
+              <label>
+                <span>릴리즈 메모</span>
+                <textarea id="uploadReleaseNote" name="releaseNote" rows="3" placeholder="배포 목적과 변경 내용을 기록하세요."></textarea>
+              </label>
+              <div class="upload-progress hidden" id="uploadProgress">
+                <div><span>업로드 및 검증 중</span><strong id="uploadPercent">0%</strong></div>
+                <div class="progress-track"><span id="uploadProgressBar"></span></div>
+              </div>
+              <button class="secondary-button" id="uploadButton" type="submit" disabled><span>로컬 서버에 배포</span><b>⇧</b></button>
+            </form>
+          </article>
+        </div>
+
+        <div class="endpoint-strip">
+          <span class="endpoint-icon">⌁</span>
+          <div><small>GAME CONTENT ENDPOINT</small><strong id="contentEndpoint">http://127.0.0.1:8082/TinyHeroContent</strong></div>
+          <button id="copyEndpointButton" type="button">주소 복사</button>
+        </div>
+      </section>
+
+      <section class="section" id="deployments">
+        <div class="section-heading">
+          <div><h2>최근 배포</h2><p>직접 업로드로 배포한 콘텐츠 패키지 이력입니다.</p></div>
+        </div>
+        <article class="panel deployment-panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>배포 시각</th><th>패키지</th><th>릴리즈 메모</th><th>크기</th><th>검증</th></tr></thead>
+              <tbody id="deploymentTableBody">
+                <tr class="empty-row"><td colspan="5">배포 기록을 불러오는 중입니다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <dialog id="confirmDialog" class="confirm-dialog">
+    <form method="dialog">
+      <span class="dialog-icon">!</span>
+      <h3 id="dialogTitle">작업을 실행할까요?</h3>
+      <p id="dialogMessage">이 작업은 콘텐츠 배포 상태를 변경합니다.</p>
+      <div class="dialog-actions">
+        <button value="cancel" class="ghost-button">취소</button>
+        <button value="confirm" class="primary-button">실행</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
