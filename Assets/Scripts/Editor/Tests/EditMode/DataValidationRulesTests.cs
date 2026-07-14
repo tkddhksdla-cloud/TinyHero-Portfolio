@@ -46,6 +46,18 @@ namespace TinyHero.Tests
         }
 
         ///<summary>
+        /// Resources SpriteAtlas 원격 자동 동기화 규칙 검증
+        /// </summary>
+        [Test]
+        public void CreateAddressableSyncRuleList_IncludesRemoteSpriteAtlasRoot()
+        {
+            List<CTinyHeroDataValidationRules.CAddressableSyncRule> syncRuleList = CTinyHeroDataValidationRules.CreateAddressableSyncRuleList();
+            string atlasGroupName = FindSyncRuleGroupName( syncRuleList, "Assets/Resources/Atlas", "t:SpriteAtlas" );
+
+            Assert.AreEqual( CTinyHeroDataValidationRules.RemoteAddressableGroupName, atlasGroupName );
+        }
+
+        ///<summary>
         /// 독립 로딩 데이터 자동 동기화 규칙 검증
         ///</summary>
         [Test]

@@ -24,6 +24,7 @@ namespace TinyHero.Tools
         private const string ResourcesRootPath = "Assets/Resources/";
         private const string MapDataSearchRootPath = "Assets/Resources/MapData";
         private const string BackgroundImageSearchRootPath = "Assets/Resources/RawImages/BG";
+        private const string SpriteAtlasSearchRootPath = "Assets/Resources/Atlas";
         private const string PrefabSearchRootPath = "Assets/Resources/Prefabs";
         private const string HotfixSearchRootPath = "Assets/Resources/Hotfix";
         private const string AudioSearchRootPath = "Assets/Resources/Audio";
@@ -67,6 +68,7 @@ namespace TinyHero.Tools
             List<CAddressableSyncRule> syncRuleList = new List<CAddressableSyncRule>();
             syncRuleList.Add( new CAddressableSyncRule( MapDataSearchRootPath, "t:TextAsset", true, true ) );
             syncRuleList.Add( new CAddressableSyncRule( BackgroundImageSearchRootPath, "t:Texture2D", true, true ) );
+            syncRuleList.Add( new CAddressableSyncRule( SpriteAtlasSearchRootPath, "t:SpriteAtlas", true, true ) );
             syncRuleList.Add( new CAddressableSyncRule( PrefabSearchRootPath, "t:Prefab", true, false ) );
             syncRuleList.Add( new CAddressableSyncRule( HotfixSearchRootPath, "t:TextAsset", true, true ) );
             syncRuleList.Add( new CAddressableSyncRule( AudioSearchRootPath, "t:AudioClip", true, true ) );

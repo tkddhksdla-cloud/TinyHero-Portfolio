@@ -160,6 +160,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 76e739b49a0af7842a7c869eaa63df9e
+    m_Address: Atlas/SpriteAtlas_Icon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 77c1ba67fdb8a5c439cf3495bc51db4a
     m_Address: Data/Item/Definitions/Item_Consumable_Skillbook_ShadowPartner
     m_ReadOnly: 0
