@@ -8,6 +8,7 @@ namespace TinyHero.Core
         CHECKING,
         AWAITING_CONFIRMATION,
         DOWNLOADING,
+        VERIFYING,
         COMPLETED,
         FAILED
     }

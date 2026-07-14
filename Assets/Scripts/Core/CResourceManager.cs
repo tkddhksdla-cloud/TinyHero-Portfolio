@@ -45,6 +45,8 @@ namespace TinyHero.Core
         private const string TextTableDataPath = "Data/Text/TextTableData";
         private const string EquipmentPotentialTablePath = "Data/Item/EquipmentPotentialTableData";
         private const int RemoteDataLoadCount = 8;
+        private const int RemoteDataLoadMaxAttempts = 3;
+        private const float RemoteDataLoadRetryDelaySeconds = 0.25f;
         private const float RemoteCatalogOperationTimeoutSeconds = 8.0f;
 
         private readonly Dictionary<string, Object> cachedResourceDictionary = new Dictionary<string, Object>();
@@ -190,6 +192,15 @@ namespace TinyHero.Core
         public bool IsRemoteContentDownloading()
         {
             bool result = remoteContentDownloadState == eRemoteContentDownloadState.DOWNLOADING;
+            return result;
+        }
+
+        ///<summary>
+        /// 원격 콘텐츠 검증 상태 반환
+        ///</summary>
+        public bool IsRemoteContentVerifying()
+        {
+            bool result = remoteContentDownloadState == eRemoteContentDownloadState.VERIFYING;
             return result;
         }
 
@@ -562,7 +573,6 @@ namespace TinyHero.Core
 
             if ( remoteContentTotalDownloadBytes <= 0L )
             {
-                remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
                 BeginRemoteDataLoads();
                 yield break;
             }
@@ -602,7 +612,6 @@ namespace TinyHero.Core
             }
 
             remoteContentDownloadedBytes = remoteContentTotalDownloadBytes;
-            remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
             BeginRemoteDataLoads();
         }
 
@@ -618,7 +627,6 @@ namespace TinyHero.Core
             }
 
             Debug.LogWarning( $"[ ResourceManager ] {_failureReason} Resources fallback을 사용합니다." );
-            remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
             BeginRemoteDataLoads();
         }
 
@@ -627,6 +635,7 @@ namespace TinyHero.Core
         ///</summary>
         private void BeginRemoteDataLoads()
         {
+            remoteContentDownloadState = eRemoteContentDownloadState.VERIFYING;
             pendingRemoteDataLoadCount = RemoteDataLoadCount;
             StartCoroutine( IE_LoadAddressableResourceArrayWithFallback<CItemDefinition>( ItemDataAddressableLabel, ItemDefinitionResourcePath, HandleItemDefinitionArrayLoaded ) );
             StartCoroutine( IE_LoadAddressableResourceArrayWithFallback<CShopDefinition>( ShopDataAddressableLabel, ShopDefinitionResourcePath, HandleShopDefinitionArrayLoaded ) );
@@ -660,31 +669,44 @@ namespace TinyHero.Core
         ///</summary>
         private IEnumerator IE_LoadAddressableResourceArrayWithFallback<T>( string _addressableLabel, string _fallbackResourcePath, Action<T[]> _onCompleted ) where T : Object
         {
-            AsyncOperationHandle<IList<T>> loadHandle = Addressables.LoadAssetsAsync<T>( _addressableLabel, null );
-            yield return loadHandle;
-
-            if ( loadHandle.Status == AsyncOperationStatus.Succeeded && loadHandle.Result != null && loadHandle.Result.Count > 0 )
+            for ( int attempt = 1; attempt <= RemoteDataLoadMaxAttempts; attempt++ )
             {
-                T[] loadedResourceArray = new T[ loadHandle.Result.Count ];
-                Object[] cachedObjectArray = new Object[ loadHandle.Result.Count ];
+                AsyncOperationHandle<IList<T>> loadHandle = Addressables.LoadAssetsAsync<T>( _addressableLabel, null );
+                yield return loadHandle;
 
-                for ( int index = 0; index < loadHandle.Result.Count; index++ )
+                if ( loadHandle.Status == AsyncOperationStatus.Succeeded && loadHandle.Result != null && loadHandle.Result.Count > 0 )
                 {
-                    T loadedResource = loadHandle.Result[ index ];
-                    loadedResourceArray[ index ] = loadedResource;
-                    cachedObjectArray[ index ] = loadedResource;
+                    T[] loadedResourceArray = new T[ loadHandle.Result.Count ];
+                    Object[] cachedObjectArray = new Object[ loadHandle.Result.Count ];
+
+                    for ( int index = 0; index < loadHandle.Result.Count; index++ )
+                    {
+                        T loadedResource = loadHandle.Result[ index ];
+                        loadedResourceArray[ index ] = loadedResource;
+                        cachedObjectArray[ index ] = loadedResource;
+                    }
+
+                    cachedResourceArrayDictionary[ _fallbackResourcePath ] = cachedObjectArray;
+                    cachedAddressableHandleDictionary[ _addressableLabel ] = loadHandle;
+                    Debug.Log( $"[ ResourceManager ] Addressables data load success: {_addressableLabel}, Count: {loadedResourceArray.Length}, Attempt: {attempt}" );
+                    _onCompleted?.Invoke( loadedResourceArray );
+                    yield break;
                 }
 
-                cachedResourceArrayDictionary[ _fallbackResourcePath ] = cachedObjectArray;
-                cachedAddressableHandleDictionary[ _addressableLabel ] = loadHandle;
-                Debug.Log( $"[ ResourceManager ] Addressables data load success: {_addressableLabel}, Count: {loadedResourceArray.Length}" );
-                _onCompleted?.Invoke( loadedResourceArray );
-                yield break;
-            }
+                if ( loadHandle.IsValid() )
+                {
+                    Addressables.Release( loadHandle );
+                }
 
-            if ( loadHandle.IsValid() )
-            {
-                Addressables.Release( loadHandle );
+                bool shouldRetry = ShouldBlockRemoteDataFallback() && attempt < RemoteDataLoadMaxAttempts;
+
+                if ( shouldRetry == false )
+                {
+                    break;
+                }
+
+                Debug.LogWarning( $"[ ResourceManager ] Addressables data load retry scheduled. Label: {_addressableLabel}, Attempt: {attempt}" );
+                yield return new WaitForSecondsRealtime( RemoteDataLoadRetryDelaySeconds );
             }
 
             if ( ShouldBlockRemoteDataFallback() )
@@ -777,6 +799,7 @@ namespace TinyHero.Core
                 return;
             }
 
+            remoteContentDownloadState = eRemoteContentDownloadState.COMPLETED;
             Debug.Log( "[ ResourceManager ] Remote definition data is ready." );
         }
 
@@ -873,46 +896,48 @@ namespace TinyHero.Core
         ///</summary>
         private IEnumerator IE_LoadAddressableResourceWithFallback<T>( string _addressableKey, string[] _fallbackResourcePathArray, Action<T> _onCompleted, bool _isRemoteDataLoad = false ) where T : Object
         {
-            AsyncOperationHandle<IList<IResourceLocation>> locationHandle = Addressables.LoadResourceLocationsAsync( _addressableKey, typeof( T ) );
-            yield return locationHandle;
-
-            bool hasAddressableLocation = locationHandle.Status == AsyncOperationStatus.Succeeded && locationHandle.Result != null && locationHandle.Result.Count > 0;
-
-            if ( locationHandle.IsValid() )
+            for ( int attempt = 1; attempt <= RemoteDataLoadMaxAttempts; attempt++ )
             {
-                Addressables.Release( locationHandle );
-            }
+                AsyncOperationHandle<IList<IResourceLocation>> locationHandle = Addressables.LoadResourceLocationsAsync( _addressableKey, typeof( T ) );
+                yield return locationHandle;
 
-            if ( hasAddressableLocation == false )
-            {
-                if ( _isRemoteDataLoad && ShouldBlockRemoteDataFallback() )
+                bool hasAddressableLocation = locationHandle.Status == AsyncOperationStatus.Succeeded && locationHandle.Result != null && locationHandle.Result.Count > 0;
+
+                if ( locationHandle.IsValid() )
                 {
-                    MarkRemoteDataLoadFailed( $"필수 원격 데이터 위치를 찾지 못했습니다. Key: {_addressableKey}" );
-                    InvokeLoadCompletedHandler( _onCompleted, null );
-                    yield break;
+                    Addressables.Release( locationHandle );
                 }
 
-                T locationFallbackResource = LoadFirstAvailableResource<T>( _fallbackResourcePathArray );
-                InvokeLoadCompletedHandler( _onCompleted, locationFallbackResource );
-                yield break;
-            }
+                if ( hasAddressableLocation )
+                {
+                    AsyncOperationHandle<T> loadHandle = Addressables.LoadAssetAsync<T>( _addressableKey );
+                    yield return loadHandle;
 
-            AsyncOperationHandle<T> loadHandle = Addressables.LoadAssetAsync<T>( _addressableKey );
-            yield return loadHandle;
+                    if ( loadHandle.Status == AsyncOperationStatus.Succeeded && loadHandle.Result != null )
+                    {
+                        T loadedResource = loadHandle.Result;
+                        cachedResourceDictionary[ _addressableKey ] = loadedResource;
+                        cachedAddressableHandleDictionary[ _addressableKey ] = loadHandle;
+                        Debug.Log( $"[ ResourceManager ] Addressables load success: {_addressableKey}, Attempt: {attempt}" );
+                        InvokeLoadCompletedHandler( _onCompleted, loadedResource );
+                        yield break;
+                    }
 
-            if ( loadHandle.Status == AsyncOperationStatus.Succeeded && loadHandle.Result != null )
-            {
-                T loadedResource = loadHandle.Result;
-                cachedResourceDictionary[ _addressableKey ] = loadedResource;
-                cachedAddressableHandleDictionary[ _addressableKey ] = loadHandle;
-                Debug.Log( $"[ ResourceManager ] Addressables load success: {_addressableKey}" );
-                InvokeLoadCompletedHandler( _onCompleted, loadedResource );
-                yield break;
-            }
+                    if ( loadHandle.IsValid() )
+                    {
+                        Addressables.Release( loadHandle );
+                    }
+                }
 
-            if ( loadHandle.IsValid() )
-            {
-                Addressables.Release( loadHandle );
+                bool shouldRetry = _isRemoteDataLoad && ShouldBlockRemoteDataFallback() && attempt < RemoteDataLoadMaxAttempts;
+
+                if ( shouldRetry == false )
+                {
+                    break;
+                }
+
+                Debug.LogWarning( $"[ ResourceManager ] Addressables load retry scheduled. Key: {_addressableKey}, Attempt: {attempt}" );
+                yield return new WaitForSecondsRealtime( RemoteDataLoadRetryDelaySeconds );
             }
 
             Debug.LogWarning( $"[ ResourceManager ] Addressables load failed: {_addressableKey}" );
