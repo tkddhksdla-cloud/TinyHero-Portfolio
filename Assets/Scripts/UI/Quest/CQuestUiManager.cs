@@ -11,8 +11,8 @@ namespace TinyHero.UI
     public sealed class CQuestUiManager : CSingleTon<CQuestUiManager>
     {
         private PlayerController targetPlayerController;
-        private PopupQuestList npcQuestUiController;
-        private PopupQuestList playerQuestUiController;
+        private readonly CPopupAsyncHandle<PopupQuestList> npcQuestPopupHandle = new CPopupAsyncHandle<PopupQuestList>( eResourceKey.POPUP_QUEST_LIST_NPC, true );
+        private readonly CPopupAsyncHandle<PopupQuestList> playerQuestPopupHandle = new CPopupAsyncHandle<PopupQuestList>( eResourceKey.POPUP_QUEST_LIST_PLAYER, true );
 
         ///<summary>
         /// 플레이어 제어 컴포넌트 바인딩
@@ -34,9 +34,11 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( playerQuestUiController != null )
+            PopupQuestList cachedPlayerQuestUiController = playerQuestPopupHandle.GetCachedPopup();
+
+            if ( cachedPlayerQuestUiController != null )
             {
-                ToggleResolvedPlayerQuestListUi( playerQuestUiController, resolvedPlayerController, false );
+                ToggleResolvedPlayerQuestListUi( cachedPlayerQuestUiController, resolvedPlayerController, false );
                 return;
             }
 
@@ -62,9 +64,11 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( npcQuestUiController != null )
+            PopupQuestList cachedNpcQuestUiController = npcQuestPopupHandle.GetCachedPopup();
+
+            if ( cachedNpcQuestUiController != null )
             {
-                ShowResolvedNpcQuestListUi( npcQuestUiController, _npcObject, _playerController );
+                ShowResolvedNpcQuestListUi( cachedNpcQuestUiController, _npcObject, _playerController );
                 return;
             }
 
@@ -80,9 +84,8 @@ namespace TinyHero.UI
         ///</summary>
         private void RequestPlayerQuestUiController( Action<PopupQuestList> _onCompleted )
         {
-            RequestQuestUiController( eResourceKey.POPUP_QUEST_LIST_PLAYER, ( PopupQuestList _questUiController ) =>
+            playerQuestPopupHandle.Request( ( PopupQuestList _questUiController ) =>
             {
-                playerQuestUiController = _questUiController;
                 InvokeQuestUiControllerCompletedHandler( _onCompleted, _questUiController );
             } );
         }
@@ -92,27 +95,10 @@ namespace TinyHero.UI
         ///</summary>
         private void RequestNpcQuestUiController( Action<PopupQuestList> _onCompleted )
         {
-            RequestQuestUiController( eResourceKey.POPUP_QUEST_LIST_NPC, ( PopupQuestList _questUiController ) =>
+            npcQuestPopupHandle.Request( ( PopupQuestList _questUiController ) =>
             {
-                npcQuestUiController = _questUiController;
                 InvokeQuestUiControllerCompletedHandler( _onCompleted, _questUiController );
             } );
-        }
-
-        ///<summary>
-        /// 퀘스트 UI 컨트롤러 공통 비동기 요청
-        ///</summary>
-        private void RequestQuestUiController( eResourceKey _resourceKey, Action<PopupQuestList> _onCompleted )
-        {
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                InvokeQuestUiControllerCompletedHandler( _onCompleted, null );
-                return;
-            }
-
-            navigationController.AddPopupAsync<PopupQuestList>( _resourceKey, true, _onCompleted );
         }
 
         ///<summary>
@@ -184,9 +170,7 @@ namespace TinyHero.UI
                 return targetPlayerController;
             }
 
-            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
-            PlayerController playerController = null;
-            bool hasPlayerController = hasGameManager && gameManager.TryGetActivePlayerController( out playerController );
+            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
             targetPlayerController = hasPlayerController ? playerController : null;
             return targetPlayerController;
         }

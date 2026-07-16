@@ -322,7 +322,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            gameManager.TryGetActivePlayerController( out targetPlayerController );
+            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
+            targetPlayerController = hasPlayerController ? playerController : null;
             bool hasRuntimeContext = gameManager.TryGetPlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
 
             if ( hasRuntimeContext == false )

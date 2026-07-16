@@ -8,29 +8,22 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CCubeUiManager : CSingleTon<CCubeUiManager>
     {
-        private PopupCube cubeUiController;
+        private readonly CPopupAsyncHandle<PopupCube> cubePopupHandle = new CPopupAsyncHandle<PopupCube>( eResourceKey.POPUP_CUBE, true );
 
         ///<summary>
         /// 큐브 UI 열기 처리
         ///</summary>
         public bool OpenCubeUi( CPlayerInventoryManager _inventoryManager, CPlayerEquipmentManager _equipmentManager, int _cubeInventorySlotIndex )
         {
-            if ( cubeUiController != null )
+            PopupCube cachedCubeUiController = cubePopupHandle.GetCachedPopup();
+
+            if ( cachedCubeUiController != null )
             {
-                bool didOpenCubeUi = cubeUiController.TryOpen( _inventoryManager, _equipmentManager, _cubeInventorySlotIndex );
+                bool didOpenCubeUi = cachedCubeUiController.TryOpen( _inventoryManager, _equipmentManager, _cubeInventorySlotIndex );
                 return didOpenCubeUi;
             }
 
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                return false;
-            }
-
-            navigationController.AddPopupAsync<PopupCube>(
-                eResourceKey.POPUP_CUBE,
-                true,
+            bool didRequest = cubePopupHandle.Request(
                 ( PopupCube _createdCubeUiController ) =>
                 {
                     if ( _createdCubeUiController == null )
@@ -38,12 +31,10 @@ namespace TinyHero.UI
                         return;
                     }
 
-                    cubeUiController = _createdCubeUiController;
-                    cubeUiController.SetVisible( false );
-                    cubeUiController.TryOpen( _inventoryManager, _equipmentManager, _cubeInventorySlotIndex );
+                    _createdCubeUiController.SetVisible( false );
+                    _createdCubeUiController.TryOpen( _inventoryManager, _equipmentManager, _cubeInventorySlotIndex );
                 } );
-
-            return true;
+            return didRequest;
         }
     }
 }

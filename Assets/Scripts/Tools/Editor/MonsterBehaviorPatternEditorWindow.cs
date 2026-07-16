@@ -1281,34 +1281,11 @@ private void CopyPatternDataFromSource( MonsterBehaviorPrefabInfo _targetInfo, M
         ///</summary>
         private void HandleKeyboardNavigation()
         {
-            Event currentEvent = Event.current;
+            bool hasDirection = TryGetKeyboardNavigationDirection( out int direction );
 
-            if (currentEvent == null)
+            if ( hasDirection )
             {
-                return;
-            }
-
-            if (EditorGUIUtility.editingTextField)
-            {
-                return;
-            }
-
-            if (currentEvent.type != EventType.KeyDown)
-            {
-                return;
-            }
-
-            if (currentEvent.keyCode == KeyCode.DownArrow)
-            {
-                MoveSelectionInFilteredList(1);
-                currentEvent.Use();
-                return;
-            }
-
-            if (currentEvent.keyCode == KeyCode.UpArrow)
-            {
-                MoveSelectionInFilteredList(-1);
-                currentEvent.Use();
+                MoveSelectionInFilteredList( direction );
             }
         }
 

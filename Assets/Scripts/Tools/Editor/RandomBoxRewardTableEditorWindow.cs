@@ -1508,34 +1508,11 @@ namespace TinyHero.Tools
         ///</summary>
         private void HandleKeyboardNavigation()
         {
-            Event currentEvent = Event.current;
+            bool hasDirection = TryGetKeyboardNavigationDirection( out int direction );
 
-            if ( currentEvent == null )
+            if ( hasDirection )
             {
-                return;
-            }
-
-            if ( EditorGUIUtility.editingTextField )
-            {
-                return;
-            }
-
-            if ( currentEvent.type != EventType.KeyDown )
-            {
-                return;
-            }
-
-            if ( currentEvent.keyCode == KeyCode.DownArrow )
-            {
-                MoveSelectionInFilteredList( 1 );
-                currentEvent.Use();
-                return;
-            }
-
-            if ( currentEvent.keyCode == KeyCode.UpArrow )
-            {
-                MoveSelectionInFilteredList( -1 );
-                currentEvent.Use();
+                MoveSelectionInFilteredList( direction );
             }
         }
 
@@ -1551,7 +1528,6 @@ namespace TinyHero.Tools
                 return;
             }
 
-            int filteredSelectedIndex = 0;
             RandomBoxRewardTableInfo selectedInfo = null;
 
             if ( selectedTableIndex >= 0 && selectedTableIndex < rewardTableInfoList.Count )
@@ -1559,18 +1535,7 @@ namespace TinyHero.Tools
                 selectedInfo = rewardTableInfoList[ selectedTableIndex ];
             }
 
-            if ( selectedInfo != null )
-            {
-                int resolvedIndex = filteredInfoList.IndexOf( selectedInfo );
-
-                if ( resolvedIndex >= 0 )
-                {
-                    filteredSelectedIndex = resolvedIndex;
-                }
-            }
-
-            int lastIndex = filteredInfoList.Count - 1;
-            int nextFilteredIndex = Mathf.Clamp( filteredSelectedIndex + _direction, 0, lastIndex );
+            int nextFilteredIndex = ResolveNextFilteredIndex( filteredInfoList, selectedInfo, _direction );
             RandomBoxRewardTableInfo nextInfo = filteredInfoList[ nextFilteredIndex ];
             int sourceIndex = rewardTableInfoList.IndexOf( nextInfo );
             SelectTableByIndex( sourceIndex, nextFilteredIndex, filteredInfoList.Count );

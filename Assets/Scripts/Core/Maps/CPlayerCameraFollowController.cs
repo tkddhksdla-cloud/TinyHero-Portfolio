@@ -127,10 +127,9 @@ namespace TinyHero.Maps
         ///</summary>
         private void ResolveTargetTransform()
         {
-            CGameManager gameManager = CGameManager.Instance;
-            gameManager.TryGetActivePlayerController( out PlayerController playerController );
+            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
 
-            if ( playerController == null )
+            if ( hasPlayerController == false || playerController == null )
             {
                 return;
             }

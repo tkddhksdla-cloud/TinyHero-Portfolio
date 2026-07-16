@@ -30,7 +30,7 @@ namespace TinyHero.UI
 
         private static CDamageFontManager instance;
 
-        private readonly List<CDamageFontObject> activeDamageFontObjectList = new List<CDamageFontObject>();
+        private readonly CActivePooledObjectTracker<CDamageFontObject> activeDamageFontObjectTracker = new CActivePooledObjectTracker<CDamageFontObject>();
         private string damageFontPoolKey = string.Empty;
 
         ///<summary>
@@ -120,7 +120,7 @@ namespace TinyHero.UI
         ///</summary>
         public void ReleaseAllActiveDamageFonts()
         {
-            List<CDamageFontObject> copiedActiveDamageFontObjectList = new List<CDamageFontObject>( activeDamageFontObjectList );
+            List<CDamageFontObject> copiedActiveDamageFontObjectList = activeDamageFontObjectTracker.CreateSnapshot();
             int activeDamageFontCount = copiedActiveDamageFontObjectList.Count;
 
             for ( int index = 0; index < activeDamageFontCount; index++ )
@@ -157,10 +157,7 @@ namespace TinyHero.UI
             Camera resolvedWorldCamera = ResolveWorldCamera();
             damageFontObject.SetDisplay( _damageText, _damageColor, _worldPosition, damageFontRootRectTransform, targetCanvas, resolvedWorldCamera );
 
-            if ( activeDamageFontObjectList.Contains( damageFontObject ) == false )
-            {
-                activeDamageFontObjectList.Add( damageFontObject );
-            }
+            activeDamageFontObjectTracker.Track( damageFontObject );
         }
 
         ///<summary>
@@ -278,7 +275,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            activeDamageFontObjectList.Remove( _damageFontObject );
+            activeDamageFontObjectTracker.Untrack( _damageFontObject );
             _damageFontObject.transform.SetParent( damageFontRootRectTransform, false );
             _damageFontObject.gameObject.SetActive( false );
         }

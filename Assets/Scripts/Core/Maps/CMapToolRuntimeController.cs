@@ -389,8 +389,7 @@ namespace TinyHero.Maps
                 cameraFollowController = worldCamera.gameObject.AddComponent<CPlayerCameraFollowController>();
             }
 
-            CGameManager gameManager = CGameManager.Instance;
-            gameManager.TryGetActivePlayerController( out PlayerController playerController );
+            CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
 
             if ( playerController == null )
             {
@@ -405,8 +404,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void ApplyMonsterContactHitToggleToPlayer()
         {
-            CGameManager gameManager = CGameManager.Instance;
-            gameManager.TryGetActivePlayerController( out PlayerController playerController );
+            CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
             ApplyMonsterContactHitEnabledToPlayer( playerController );
         }
 
@@ -2243,8 +2241,7 @@ namespace TinyHero.Maps
             }
 
             EnsurePlayerObjectExists();
-            CGameManager gameManager = CGameManager.Instance;
-            gameManager.TryGetActivePlayerController( out PlayerController resolvedPlayerController );
+            CActivePlayerResolver.TryGetActivePlayerController( out PlayerController resolvedPlayerController );
             _playerController = resolvedPlayerController;
 
             if ( resolvedPlayerController != null )
@@ -2358,8 +2355,7 @@ namespace TinyHero.Maps
         {
             if ( skillManager == null )
             {
-                CGameManager gameManager = CGameManager.Instance;
-                gameManager.TryGetActivePlayerController( out PlayerController resolvedPlayerController );
+                CActivePlayerResolver.TryGetActivePlayerController( out PlayerController resolvedPlayerController );
 
                 if ( resolvedPlayerController != null )
                 {

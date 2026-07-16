@@ -755,9 +755,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
-            PlayerController playerController = null;
-            bool hasPlayerController = hasGameManager && gameManager.TryGetActivePlayerController( out playerController );
+            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
             targetPlayerController = hasPlayerController ? playerController : null;
         }
 

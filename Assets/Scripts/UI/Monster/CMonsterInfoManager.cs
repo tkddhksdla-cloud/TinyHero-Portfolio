@@ -19,7 +19,7 @@ namespace TinyHero.UI
         private const float MonsterInfoScreenOffsetY = 20.0f;
         private const int MonsterInfoSortingOrder = 50;
 
-        private readonly Dictionary<MonsterObject, CMonsterInfoView> monsterInfoViewByMonster = new Dictionary<MonsterObject, CMonsterInfoView>();
+        private readonly CTrackedUiBindingMap<MonsterObject, CMonsterInfoView> monsterInfoBindingMap = new CTrackedUiBindingMap<MonsterObject, CMonsterInfoView>();
 
         private RectTransform monsterInfoCanvasRectTransform;
         private RectTransform monsterInfoPoolRectTransform;
@@ -82,17 +82,11 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasExistingView = monsterInfoViewByMonster.TryGetValue( _monsterObject, out CMonsterInfoView existingView );
+            bool hasView = monsterInfoBindingMap.TryGetOrCreate( _monsterObject, RentMonsterInfoView, out CMonsterInfoView existingView );
 
-            if ( hasExistingView == false || existingView == null )
+            if ( hasView == false )
             {
-                if ( CObjectPoolManager.TryGet( MonsterInfoPoolKey, out CMonsterInfoView createdView ) == false || createdView == null )
-                {
-                    return;
-                }
-
-                monsterInfoViewByMonster[ _monsterObject ] = createdView;
-                existingView = createdView;
+                return;
             }
 
             UpdateMonsterInfoView( _monsterObject, existingView );
@@ -108,16 +102,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasView = monsterInfoViewByMonster.TryGetValue( _monsterObject, out CMonsterInfoView monsterInfoView );
-
-            if ( hasView == false )
-            {
-                return;
-            }
-
-            monsterInfoViewByMonster.Remove( _monsterObject );
-
-            CObjectPoolManager.TryRelease( MonsterInfoPoolKey, monsterInfoView );
+            monsterInfoBindingMap.TryRelease( _monsterObject, ReleaseMonsterInfoView );
         }
 
         ///<summary>
@@ -130,7 +115,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasView = monsterInfoViewByMonster.TryGetValue( _monsterObject, out CMonsterInfoView monsterInfoView );
+            bool hasView = monsterInfoBindingMap.TryGet( _monsterObject, out CMonsterInfoView monsterInfoView );
 
             if ( hasView == false || monsterInfoView == null )
             {
@@ -295,6 +280,18 @@ namespace TinyHero.UI
             return monsterInfoView;
         }
 
+        private CMonsterInfoView RentMonsterInfoView()
+        {
+            bool didRent = CObjectPoolManager.TryGet( MonsterInfoPoolKey, out CMonsterInfoView monsterInfoView );
+            CMonsterInfoView result = didRent ? monsterInfoView : null;
+            return result;
+        }
+
+        private void ReleaseMonsterInfoView( CMonsterInfoView _monsterInfoView )
+        {
+            CObjectPoolManager.TryRelease( MonsterInfoPoolKey, _monsterInfoView );
+        }
+
         ///<summary>
         /// 몬스터 정보 뷰 대여 처리
         ///</summary>
@@ -341,7 +338,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            List<MonsterObject> monsterList = new List<MonsterObject>( monsterInfoViewByMonster.Keys );
+            List<MonsterObject> monsterList = monsterInfoBindingMap.CreateTargetSnapshot();
 
             for ( int i = 0; i < monsterList.Count; i++ )
             {
@@ -353,7 +350,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                bool hasView = monsterInfoViewByMonster.TryGetValue( monsterObject, out CMonsterInfoView monsterInfoView );
+                bool hasView = monsterInfoBindingMap.TryGet( monsterObject, out CMonsterInfoView monsterInfoView );
 
                 if ( hasView == false || monsterInfoView == null )
                 {

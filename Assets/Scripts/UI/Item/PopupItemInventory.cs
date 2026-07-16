@@ -845,12 +845,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
-
-            if ( hasGameManager )
-            {
-                gameManager.TryGetActivePlayerController( out targetPlayerController );
-            }
+            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
+            targetPlayerController = hasPlayerController ? playerController : null;
         }
 
         /// 인벤토리 매니저 바인딩 해제

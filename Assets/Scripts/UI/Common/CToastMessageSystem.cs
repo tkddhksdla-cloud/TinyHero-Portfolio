@@ -19,7 +19,7 @@ namespace TinyHero.UI
         [SerializeField] private Transform toastPoolRootRectTransform;
         [SerializeField] private RectTransform toastContentRootRectTransform;
 
-        private readonly List<CToastMessage> activeToastMessageList = new List<CToastMessage>();
+        private readonly CActivePooledObjectTracker<CToastMessage> activeToastMessageTracker = new CActivePooledObjectTracker<CToastMessage>();
 
         private GameObject toastMessagePrefabObject;
 
@@ -85,10 +85,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( activeToastMessageList.Contains( toastMessage ) == false )
-            {
-                activeToastMessageList.Add( toastMessage );
-            }
+            activeToastMessageTracker.Track( toastMessage );
 
             toastMessage.ShowMessage( _message );
         }
@@ -256,7 +253,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            activeToastMessageList.Remove( _toastMessage );
+            activeToastMessageTracker.Untrack( _toastMessage );
 
             if ( toastPoolRootRectTransform != null )
             {
@@ -299,7 +296,7 @@ namespace TinyHero.UI
         ///</summary>
         private void ReleaseAllActiveToastMessages()
         {
-            List<CToastMessage> copiedActiveToastMessageList = new List<CToastMessage>( activeToastMessageList );
+            List<CToastMessage> copiedActiveToastMessageList = activeToastMessageTracker.CreateSnapshot();
             int activeToastMessageCount = copiedActiveToastMessageList.Count;
 
             for ( int index = 0; index < activeToastMessageCount; index++ )
@@ -314,7 +311,7 @@ namespace TinyHero.UI
                 CObjectPoolManager.TryRelease( ToastMessagePoolKey, toastMessage );
             }
 
-            activeToastMessageList.Clear();
+            activeToastMessageTracker.Clear();
         }
 
         ///<summary>

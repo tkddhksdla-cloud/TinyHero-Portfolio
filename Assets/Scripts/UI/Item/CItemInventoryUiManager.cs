@@ -10,7 +10,7 @@ namespace TinyHero.UI
     public sealed class CItemInventoryUiManager : CSingleTon<CItemInventoryUiManager>
     {
         private CPlayerInventoryManager targetInventoryManager;
-        private PopupItemInventory inventoryUiController;
+        private readonly CPopupAsyncHandle<PopupItemInventory> inventoryPopupHandle = new CPopupAsyncHandle<PopupItemInventory>( eResourceKey.POPUP_ITEM_INVENTORY, true );
         private bool isInventoryToggleLocked;
 
         ///<summary>
@@ -20,12 +20,14 @@ namespace TinyHero.UI
         {
             targetInventoryManager = _targetInventoryManager;
 
-            if ( inventoryUiController == null )
+            PopupItemInventory cachedInventoryUiController = inventoryPopupHandle.GetCachedPopup();
+
+            if ( cachedInventoryUiController == null )
             {
                 return;
             }
 
-            inventoryUiController.BindInventoryManager( targetInventoryManager );
+            cachedInventoryUiController.BindInventoryManager( targetInventoryManager );
         }
 
         ///<summary>
@@ -38,10 +40,12 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( inventoryUiController != null )
+            PopupItemInventory cachedInventoryUiController = inventoryPopupHandle.GetCachedPopup();
+
+            if ( cachedInventoryUiController != null )
             {
-                bool nextVisibleState = inventoryUiController.IsInventoryVisible() == false;
-                inventoryUiController.SetInventoryVisible( nextVisibleState );
+                bool nextVisibleState = cachedInventoryUiController.IsInventoryVisible() == false;
+                cachedInventoryUiController.SetInventoryVisible( nextVisibleState );
                 return;
             }
 
@@ -65,13 +69,15 @@ namespace TinyHero.UI
                 targetInventoryManager = _targetInventoryManager;
             }
 
-            if ( inventoryUiController == null )
+            PopupItemInventory cachedInventoryUiController = inventoryPopupHandle.GetCachedPopup();
+
+            if ( cachedInventoryUiController == null )
             {
                 return null;
             }
 
-            ConfigureInventoryForShop( inventoryUiController );
-            return inventoryUiController;
+            ConfigureInventoryForShop( cachedInventoryUiController );
+            return cachedInventoryUiController;
         }
 
         ///<summary>
@@ -101,13 +107,15 @@ namespace TinyHero.UI
         ///</summary>
         public void CloseInventoryForShop()
         {
-            if ( inventoryUiController == null )
+            PopupItemInventory cachedInventoryUiController = inventoryPopupHandle.GetCachedPopup();
+
+            if ( cachedInventoryUiController == null )
             {
                 return;
             }
 
-            inventoryUiController.SetEquipmentStatusPanelVisible( true );
-            inventoryUiController.SetInventoryVisible( false );
+            cachedInventoryUiController.SetEquipmentStatusPanelVisible( true );
+            cachedInventoryUiController.SetInventoryVisible( false );
         }
 
         ///<summary>
@@ -132,7 +140,7 @@ namespace TinyHero.UI
         ///</summary>
         public PopupItemInventory GetInventoryUiController()
         {
-            PopupItemInventory result = inventoryUiController;
+            PopupItemInventory result = inventoryPopupHandle.GetCachedPopup();
             return result;
         }
 
@@ -141,33 +149,15 @@ namespace TinyHero.UI
         ///</summary>
         private void RequestInventoryUiController( Action<PopupItemInventory> _onCompleted )
         {
-            if ( inventoryUiController != null )
-            {
-                inventoryUiController.BindInventoryManager( targetInventoryManager );
-                InvokeInventoryUiControllerCompletedHandler( _onCompleted, inventoryUiController );
-                return;
-            }
-
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                InvokeInventoryUiControllerCompletedHandler( _onCompleted, null );
-                return;
-            }
-
-            navigationController.AddPopupAsync<PopupItemInventory>(
-                eResourceKey.POPUP_ITEM_INVENTORY,
-                true,
+            inventoryPopupHandle.Request(
                 ( PopupItemInventory _createdInventoryUiController ) =>
                 {
                     if ( _createdInventoryUiController != null )
                     {
-                        inventoryUiController = _createdInventoryUiController;
-                        inventoryUiController.BindInventoryManager( targetInventoryManager );
+                        _createdInventoryUiController.BindInventoryManager( targetInventoryManager );
                     }
 
-                    InvokeInventoryUiControllerCompletedHandler( _onCompleted, inventoryUiController );
+                    InvokeInventoryUiControllerCompletedHandler( _onCompleted, _createdInventoryUiController );
                 } );
         }
 

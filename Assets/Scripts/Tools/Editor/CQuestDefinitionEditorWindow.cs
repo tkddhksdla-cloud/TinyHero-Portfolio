@@ -2145,41 +2145,21 @@ namespace TinyHero.Tools
         ///</summary>
         private void HandleKeyboardNavigation()
         {
-            Event currentEvent = Event.current;
-
-            if ( currentEvent == null || currentEvent.type != EventType.KeyDown || questDefinitionInfoList.Count == 0 )
+            if ( questDefinitionInfoList.Count == 0 )
             {
                 return;
             }
 
-            if ( IsTextEditingControlFocused() )
+            bool hasDirection = TryGetKeyboardNavigationDirection( out int direction );
+
+            if ( hasDirection == false )
             {
                 return;
             }
 
-            if ( currentEvent.keyCode == KeyCode.UpArrow )
-            {
-                int nextIndex = Mathf.Max( 0, selectedQuestIndex - 1 );
-                SelectQuestByIndex( nextIndex, nextIndex, questDefinitionInfoList.Count );
-                currentEvent.Use();
-                return;
-            }
-
-            if ( currentEvent.keyCode == KeyCode.DownArrow )
-            {
-                int nextIndex = Mathf.Min( questDefinitionInfoList.Count - 1, selectedQuestIndex + 1 );
-                SelectQuestByIndex( nextIndex, nextIndex, questDefinitionInfoList.Count );
-                currentEvent.Use();
-            }
-        }
-
-        ///<summary>
-        /// 텍스트 편집 컨트롤 포커스 여부 반환
-        ///</summary>
-        private bool IsTextEditingControlFocused()
-        {
-            bool result = EditorGUIUtility.editingTextField;
-            return result;
+            int lastIndex = questDefinitionInfoList.Count - 1;
+            int nextIndex = Mathf.Clamp( selectedQuestIndex + direction, 0, lastIndex );
+            SelectQuestByIndex( nextIndex, nextIndex, questDefinitionInfoList.Count );
         }
 
         ///<summary>

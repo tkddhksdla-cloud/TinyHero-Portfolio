@@ -11,7 +11,7 @@ namespace TinyHero.UI
     {
         private readonly List<List<CRewardItemData>> pendingRewardItemDataListQueue = new List<List<CRewardItemData>>();
 
-        private PopupReward rewardPopup;
+        private readonly CPopupAsyncHandle<PopupReward> rewardPopupHandle = new CPopupAsyncHandle<PopupReward>( eResourceKey.POPUP_REWARD, true );
 
         ///<summary>
         /// 아이템 보상 팝업 표시
@@ -35,26 +35,18 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( rewardPopup != null )
+            PopupReward cachedRewardPopup = rewardPopupHandle.GetCachedPopup();
+
+            if ( cachedRewardPopup != null )
             {
-                rewardPopup.SetLayerVisible( true );
-                rewardPopup.BringLayerToFront();
-                rewardPopup.ShowRewardList( validRewardItemDataList );
+                cachedRewardPopup.SetLayerVisible( true );
+                cachedRewardPopup.BringLayerToFront();
+                cachedRewardPopup.ShowRewardList( validRewardItemDataList );
                 return;
             }
 
             pendingRewardItemDataListQueue.Add( validRewardItemDataList );
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                pendingRewardItemDataListQueue.Clear();
-                return;
-            }
-
-            navigationController.AddPopupAsync<PopupReward>(
-                eResourceKey.POPUP_REWARD,
-                true,
+            bool didRequest = rewardPopupHandle.Request(
                 ( PopupReward _createdRewardPopup ) =>
                 {
                     if ( _createdRewardPopup == null )
@@ -63,9 +55,13 @@ namespace TinyHero.UI
                         return;
                     }
 
-                    rewardPopup = _createdRewardPopup;
                     FlushPendingRewardItemDataListQueue();
                 } );
+
+            if ( didRequest == false )
+            {
+                pendingRewardItemDataListQueue.Clear();
+            }
         }
 
         ///<summary>
@@ -73,7 +69,9 @@ namespace TinyHero.UI
         ///</summary>
         private void FlushPendingRewardItemDataListQueue()
         {
-            if ( rewardPopup == null )
+            PopupReward cachedRewardPopup = rewardPopupHandle.GetCachedPopup();
+
+            if ( cachedRewardPopup == null )
             {
                 pendingRewardItemDataListQueue.Clear();
                 return;
@@ -88,7 +86,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                rewardPopup.ShowRewardList( rewardItemDataList );
+                cachedRewardPopup.ShowRewardList( rewardItemDataList );
             }
 
             pendingRewardItemDataListQueue.Clear();

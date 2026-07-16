@@ -23,7 +23,7 @@ namespace TinyHero.UI
         private const float NpcNameTagScreenOffsetY = 18.0f;
         private const int NpcNameTagSortingOrder = 55;
 
-        private readonly Dictionary<CNPCObject, CNPCNameTagView> nameTagViewByNpc = new Dictionary<CNPCObject, CNPCNameTagView>();
+        private readonly CTrackedUiBindingMap<CNPCObject, CNPCNameTagView> nameTagBindingMap = new CTrackedUiBindingMap<CNPCObject, CNPCNameTagView>();
 
         private RectTransform npcNameTagCanvasRectTransform;
         private RectTransform npcNameTagPoolRectTransform;
@@ -86,17 +86,11 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasExistingView = nameTagViewByNpc.TryGetValue( _npcObject, out CNPCNameTagView existingView );
+            bool hasView = nameTagBindingMap.TryGetOrCreate( _npcObject, RentNameTagView, out CNPCNameTagView existingView );
 
-            if ( hasExistingView == false || existingView == null )
+            if ( hasView == false )
             {
-                if ( CObjectPoolManager.TryGet( NpcNameTagPoolKey, out CNPCNameTagView createdView ) == false || createdView == null )
-                {
-                    return;
-                }
-
-                nameTagViewByNpc[ _npcObject ] = createdView;
-                existingView = createdView;
+                return;
             }
 
             UpdateNpcNameTagView( _npcObject, existingView );
@@ -112,16 +106,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasView = nameTagViewByNpc.TryGetValue( _npcObject, out CNPCNameTagView nameTagView );
-
-            if ( hasView == false )
-            {
-                return;
-            }
-
-            nameTagViewByNpc.Remove( _npcObject );
-
-            CObjectPoolManager.TryRelease( NpcNameTagPoolKey, nameTagView );
+            nameTagBindingMap.TryRelease( _npcObject, ReleaseNameTagView );
         }
 
         ///<summary>
@@ -334,6 +319,18 @@ namespace TinyHero.UI
             return nameTagView;
         }
 
+        private CNPCNameTagView RentNameTagView()
+        {
+            bool didRent = CObjectPoolManager.TryGet( NpcNameTagPoolKey, out CNPCNameTagView nameTagView );
+            CNPCNameTagView result = didRent ? nameTagView : null;
+            return result;
+        }
+
+        private void ReleaseNameTagView( CNPCNameTagView _nameTagView )
+        {
+            CObjectPoolManager.TryRelease( NpcNameTagPoolKey, _nameTagView );
+        }
+
         ///<summary>
         /// 이름표 뷰 대여 처리
         ///</summary>
@@ -379,7 +376,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            List<CNPCObject> npcObjectList = new List<CNPCObject>( nameTagViewByNpc.Keys );
+            List<CNPCObject> npcObjectList = nameTagBindingMap.CreateTargetSnapshot();
 
             for ( int index = 0; index < npcObjectList.Count; index++ )
             {
@@ -391,7 +388,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                bool hasView = nameTagViewByNpc.TryGetValue( npcObject, out CNPCNameTagView nameTagView );
+                bool hasView = nameTagBindingMap.TryGet( npcObject, out CNPCNameTagView nameTagView );
 
                 if ( hasView == false || nameTagView == null )
                 {

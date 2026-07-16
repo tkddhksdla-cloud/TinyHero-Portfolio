@@ -986,27 +986,16 @@ namespace TinyHero.Tools
         ///</summary>
         private void SelectItemByAssetPath( string _assetPath )
         {
-            for ( int index = 0; index < itemDefinitionInfoList.Count; index++ )
+            int resolvedIndex = FindInfoIndexByAssetPath( itemDefinitionInfoList, _assetPath, ( ItemDefinitionInfo _info ) => _info.assetPath );
+
+            if ( resolvedIndex < 0 )
             {
-                ItemDefinitionInfo itemInfo = itemDefinitionInfoList[ index ];
-
-                if ( itemInfo == null )
-                {
-                    continue;
-                }
-
-                bool isMatched = string.Equals( itemInfo.assetPath, _assetPath, StringComparison.Ordinal );
-
-                if ( isMatched == false )
-                {
-                    continue;
-                }
-
-                selectedItemIndex = index;
-                isPendingFocusToSelection = true;
-                Repaint();
                 return;
             }
+
+            selectedItemIndex = resolvedIndex;
+            isPendingFocusToSelection = true;
+            Repaint();
         }
 
         ///<summary>
@@ -1062,34 +1051,11 @@ namespace TinyHero.Tools
         ///</summary>
         private void HandleKeyboardNavigation()
         {
-            Event currentEvent = Event.current;
+            bool hasDirection = TryGetKeyboardNavigationDirection( out int direction );
 
-            if ( currentEvent == null )
+            if ( hasDirection )
             {
-                return;
-            }
-
-            if ( EditorGUIUtility.editingTextField )
-            {
-                return;
-            }
-
-            if ( currentEvent.type != EventType.KeyDown )
-            {
-                return;
-            }
-
-            if ( currentEvent.keyCode == KeyCode.DownArrow )
-            {
-                MoveSelectionInFilteredList( 1 );
-                currentEvent.Use();
-                return;
-            }
-
-            if ( currentEvent.keyCode == KeyCode.UpArrow )
-            {
-                MoveSelectionInFilteredList( -1 );
-                currentEvent.Use();
+                MoveSelectionInFilteredList( direction );
             }
         }
 
@@ -1105,7 +1071,6 @@ namespace TinyHero.Tools
                 return;
             }
 
-            int filteredSelectedIndex = 0;
             ItemDefinitionInfo selectedInfo = null;
 
             if ( selectedItemIndex >= 0 && selectedItemIndex < itemDefinitionInfoList.Count )
@@ -1113,18 +1078,7 @@ namespace TinyHero.Tools
                 selectedInfo = itemDefinitionInfoList[ selectedItemIndex ];
             }
 
-            if ( selectedInfo != null )
-            {
-                int resolvedIndex = filteredInfoList.IndexOf( selectedInfo );
-
-                if ( resolvedIndex >= 0 )
-                {
-                    filteredSelectedIndex = resolvedIndex;
-                }
-            }
-
-            int lastIndex = filteredInfoList.Count - 1;
-            int nextFilteredIndex = Mathf.Clamp( filteredSelectedIndex + _direction, 0, lastIndex );
+            int nextFilteredIndex = ResolveNextFilteredIndex( filteredInfoList, selectedInfo, _direction );
             ItemDefinitionInfo nextInfo = filteredInfoList[ nextFilteredIndex ];
             int sourceIndex = itemDefinitionInfoList.IndexOf( nextInfo );
             SelectItemByIndex( sourceIndex, nextFilteredIndex, filteredInfoList.Count );

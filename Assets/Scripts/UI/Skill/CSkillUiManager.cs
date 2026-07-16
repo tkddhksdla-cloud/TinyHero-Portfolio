@@ -9,7 +9,7 @@ namespace TinyHero.UI
     public sealed class CSkillUiManager : CSingleTon<CSkillUiManager>
     {
         private CSkillManager targetSkillManager;
-        private PopupSkillList skillUiController;
+        private readonly CPopupAsyncHandle<PopupSkillList> skillPopupHandle = new CPopupAsyncHandle<PopupSkillList>( eResourceKey.POPUP_SKILL_LIST, true );
 
         ///<summary>
         /// 스킬 매니저 바인딩
@@ -18,12 +18,14 @@ namespace TinyHero.UI
         {
             targetSkillManager = _targetSkillManager;
 
-            if ( skillUiController == null )
+            PopupSkillList cachedSkillUiController = skillPopupHandle.GetCachedPopup();
+
+            if ( cachedSkillUiController == null )
             {
                 return;
             }
 
-            skillUiController.BindSkillManager( targetSkillManager );
+            cachedSkillUiController.BindSkillManager( targetSkillManager );
         }
 
         ///<summary>
@@ -36,22 +38,15 @@ namespace TinyHero.UI
                 return;
             }
 
-            if ( skillUiController != null )
+            PopupSkillList cachedSkillUiController = skillPopupHandle.GetCachedPopup();
+
+            if ( cachedSkillUiController != null )
             {
-                skillUiController.ToggleSkillWindow();
+                cachedSkillUiController.ToggleSkillWindow();
                 return;
             }
 
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                return;
-            }
-
-            navigationController.AddPopupAsync<PopupSkillList>(
-                eResourceKey.POPUP_SKILL_LIST,
-                true,
+            skillPopupHandle.Request(
                 ( PopupSkillList _createdSkillUiController ) =>
                 {
                     if ( _createdSkillUiController == null )
@@ -59,8 +54,7 @@ namespace TinyHero.UI
                         return;
                     }
 
-                    skillUiController = _createdSkillUiController;
-                    skillUiController.BindSkillManager( targetSkillManager );
+                    _createdSkillUiController.BindSkillManager( targetSkillManager );
                 } );
         }
     }

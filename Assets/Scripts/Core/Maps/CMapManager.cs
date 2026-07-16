@@ -2988,8 +2988,7 @@ namespace TinyHero.Maps
         ///</summary>
         private PlayerController ResolveActivePlayerController()
         {
-            CGameManager gameManager = CGameManager.Instance;
-            bool hasPlayerController = gameManager.TryGetActivePlayerController( out PlayerController playerController );
+            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
             PlayerController result = hasPlayerController ? playerController : null;
             return result;
         }

@@ -12,7 +12,7 @@ namespace TinyHero.UI
     ///</summary>
     public sealed class CShopUiManager : CSingleTon<CShopUiManager>
     {
-        private PopupShop popupShopInstance;
+        private readonly CPopupAsyncHandle<PopupShop> shopPopupHandle = new CPopupAsyncHandle<PopupShop>( eResourceKey.POPUP_SHOP, true );
         private bool isShopOpening;
 
         ///<summary>
@@ -47,12 +47,14 @@ namespace TinyHero.UI
         ///</summary>
         public void CloseShop()
         {
-            if ( popupShopInstance == null )
+            PopupShop cachedPopupShop = shopPopupHandle.GetCachedPopup();
+
+            if ( cachedPopupShop == null )
             {
                 return;
             }
 
-            popupShopInstance.CloseShop();
+            cachedPopupShop.CloseShop();
         }
 
         ///<summary>
@@ -60,7 +62,8 @@ namespace TinyHero.UI
         ///</summary>
         public bool IsShopVisible()
         {
-            bool result = popupShopInstance != null && popupShopInstance.IsNavigationVisible();
+            PopupShop cachedPopupShop = shopPopupHandle.GetCachedPopup();
+            bool result = cachedPopupShop != null && cachedPopupShop.IsNavigationVisible();
             return result;
         }
 
@@ -126,27 +129,10 @@ namespace TinyHero.UI
         ///</summary>
         private void RequestPopupShop( Action<PopupShop> _onCompleted )
         {
-            if ( popupShopInstance != null )
-            {
-                InvokePopupShopCompletedHandler( _onCompleted, popupShopInstance );
-                return;
-            }
-
-            CUINavigationController navigationController = CUINavigationController.Instance;
-
-            if ( navigationController == null )
-            {
-                InvokePopupShopCompletedHandler( _onCompleted, null );
-                return;
-            }
-
-            navigationController.AddPopupAsync<PopupShop>(
-                eResourceKey.POPUP_SHOP,
-                true,
+            shopPopupHandle.Request(
                 ( PopupShop _createdPopupShop ) =>
                 {
-                    popupShopInstance = _createdPopupShop;
-                    InvokePopupShopCompletedHandler( _onCompleted, popupShopInstance );
+                    InvokePopupShopCompletedHandler( _onCompleted, _createdPopupShop );
                 } );
         }
 
