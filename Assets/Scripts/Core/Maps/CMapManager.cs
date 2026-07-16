@@ -18,10 +18,7 @@ namespace TinyHero.Maps
     public sealed class CMapManager : CSingleTon<CMapManager>
     {
         private const string MapDataResourceFolderPath = "MapData/";
-        private const string BackgroundSpriteResourceFolderPath = "RawImages/BG";
         private const string PortalPrefabResourcePath = "Prefabs/Portal/PortalObject";
-        private const string MonsterPrefabResourceFolderPath = "Prefabs/Character/Monster";
-        private const string NpcPrefabResourceFolderPath = "Prefabs/Character/NPC";
         private const float DefaultFadeDuration = 0.35f;
         private const float MapTransitionBlackHoldSeconds = 0.1f;
         private const int FadeSortingOrder = 1000;
@@ -69,14 +66,12 @@ namespace TinyHero.Maps
         private static string pendingMapId = string.Empty;
         private static string pendingEntryPortalId = string.Empty;
         private readonly List<MapRuntimeSpawnMarker> spawnedRuntimeObjects = new List<MapRuntimeSpawnMarker>();
-        private readonly List<MonsterObject> activePooledMonsterObjects = new List<MonsterObject>();
-        private readonly List<CWorldItemDropObject> activePooledWorldItemDropObjects = new List<CWorldItemDropObject>();
-        private readonly List<MapTitleLogoUI> activeMapTitleLogoUiList = new List<MapTitleLogoUI>();
-        private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
+        private readonly CActivePooledObjectTracker<MonsterObject> activePooledMonsterTracker = new CActivePooledObjectTracker<MonsterObject>();
+        private readonly CActivePooledObjectTracker<CWorldItemDropObject> activePooledWorldItemDropTracker = new CActivePooledObjectTracker<CWorldItemDropObject>();
+        private readonly CActivePooledObjectTracker<MapTitleLogoUI> activeMapTitleLogoUiTracker = new CActivePooledObjectTracker<MapTitleLogoUI>();
+        private readonly CMapRuntimeAssetCatalog mapRuntimeAssetCatalog = new CMapRuntimeAssetCatalog();
         private readonly HashSet<string> monsterPoolKeySet = new HashSet<string>();
         private readonly HashSet<string> worldItemDropPoolKeySet = new HashSet<string>();
-        private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
-        private readonly Dictionary<string, GameObject> npcPrefabByName = new Dictionary<string, GameObject>();
         private Canvas fadeCanvas;
         private Image fadeImage;
         private GraphicRaycaster fadeGraphicRaycaster;
@@ -449,75 +444,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void CacheResourceCatalog()
         {
-            CacheBackgroundSprites();
-            CacheMonsterPrefabs();
-            CacheNpcPrefabs();
-        }
-
-        ///<summary>
-        /// 배경 스프라이트 목록 캐시
-        ///</summary>
-        private void CacheBackgroundSprites()
-        {
-            backgroundSpriteByName.Clear();
-            Sprite[] loadedBackgroundSprites = Resources.LoadAll<Sprite>( BackgroundSpriteResourceFolderPath );
-            int backgroundSpriteCount = loadedBackgroundSprites.Length;
-
-            for ( int index = 0; index < backgroundSpriteCount; index++ )
-            {
-                Sprite backgroundSprite = loadedBackgroundSprites[ index ];
-
-                if ( backgroundSprite == null )
-                {
-                    continue;
-                }
-
-                backgroundSpriteByName[ backgroundSprite.name ] = backgroundSprite;
-            }
-        }
-
-        ///<summary>
-        /// 몬스터 프리팹 목록 캐시
-        ///</summary>
-        private void CacheMonsterPrefabs()
-        {
-            monsterPrefabByName.Clear();
-            GameObject[] loadedMonsterPrefabs = Resources.LoadAll<GameObject>( MonsterPrefabResourceFolderPath );
-            int monsterPrefabCount = loadedMonsterPrefabs.Length;
-
-            for ( int index = 0; index < monsterPrefabCount; index++ )
-            {
-                GameObject monsterPrefab = loadedMonsterPrefabs[ index ];
-
-                if ( monsterPrefab == null )
-                {
-                    continue;
-                }
-
-                monsterPrefabByName[ monsterPrefab.name ] = monsterPrefab;
-            }
-        }
-
-        ///<summary>
-        /// NPC 프리팹 목록 캐시
-        ///</summary>
-        private void CacheNpcPrefabs()
-        {
-            npcPrefabByName.Clear();
-            GameObject[] loadedNpcPrefabs = Resources.LoadAll<GameObject>( NpcPrefabResourceFolderPath );
-            int npcPrefabCount = loadedNpcPrefabs.Length;
-
-            for ( int index = 0; index < npcPrefabCount; index++ )
-            {
-                GameObject npcPrefab = loadedNpcPrefabs[ index ];
-
-                if ( npcPrefab == null )
-                {
-                    continue;
-                }
-
-                npcPrefabByName[ npcPrefab.name ] = npcPrefab;
-            }
+            mapRuntimeAssetCatalog.Reload();
         }
 
         ///<summary>
@@ -861,7 +788,7 @@ namespace TinyHero.Maps
         private string BuildBackgroundSpriteResourcePath( string _backgroundSpriteName )
         {
             string trimmedBackgroundSpriteName = string.IsNullOrWhiteSpace( _backgroundSpriteName ) ? string.Empty : _backgroundSpriteName.Trim();
-            string result = BackgroundSpriteResourceFolderPath + "/" + trimmedBackgroundSpriteName;
+            string result = CMapRuntimeAssetCatalog.BackgroundSpriteResourceFolderPath + "/" + trimmedBackgroundSpriteName;
             return result;
         }
 
@@ -917,7 +844,7 @@ namespace TinyHero.Maps
             }
 
             string trimmedBackgroundSpriteName = _backgroundSpriteName.Trim();
-            bool hasCachedSprite = backgroundSpriteByName.TryGetValue( trimmedBackgroundSpriteName, out Sprite cachedSprite );
+            bool hasCachedSprite = mapRuntimeAssetCatalog.TryGetBackgroundSprite( trimmedBackgroundSpriteName, out Sprite cachedSprite );
             Sprite result = hasCachedSprite ? cachedSprite : null;
             return result;
         }
@@ -1072,7 +999,7 @@ namespace TinyHero.Maps
             }
 
             string prefabName = _monsterSaveData != null && string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false ? _monsterSaveData.prefabName.Trim() : string.Empty;
-            string result = string.IsNullOrWhiteSpace( prefabName ) ? string.Empty : MonsterPrefabResourceFolderPath + "/" + prefabName;
+            string result = string.IsNullOrWhiteSpace( prefabName ) ? string.Empty : CMapRuntimeAssetCatalog.MonsterPrefabResourceFolderPath + "/" + prefabName;
             return result;
         }
 
@@ -1094,7 +1021,7 @@ namespace TinyHero.Maps
 
             if ( string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false )
             {
-                string resultFromPrefabName = MonsterPrefabResourceFolderPath + "/" + _monsterSaveData.prefabName.Trim();
+                string resultFromPrefabName = CMapRuntimeAssetCatalog.MonsterPrefabResourceFolderPath + "/" + _monsterSaveData.prefabName.Trim();
                 return resultFromPrefabName;
             }
 
@@ -1111,19 +1038,19 @@ namespace TinyHero.Maps
                 return;
             }
 
-            monsterPrefabByName[ _monsterPrefab.name ] = _monsterPrefab;
+            mapRuntimeAssetCatalog.CacheMonsterPrefab( _monsterPrefab.name, _monsterPrefab );
 
             if ( string.IsNullOrWhiteSpace( _monsterSaveData.prefabName ) == false )
             {
                 string prefabName = _monsterSaveData.prefabName.Trim();
-                monsterPrefabByName[ prefabName ] = _monsterPrefab;
+                mapRuntimeAssetCatalog.CacheMonsterPrefab( prefabName, _monsterPrefab );
             }
 
             string monsterPoolKey = ResolveMonsterPoolKey( _monsterSaveData );
 
             if ( string.IsNullOrWhiteSpace( monsterPoolKey ) == false )
             {
-                monsterPrefabByName[ monsterPoolKey ] = _monsterPrefab;
+                mapRuntimeAssetCatalog.CacheMonsterPrefab( monsterPoolKey, _monsterPrefab );
             }
         }
 
@@ -1256,7 +1183,7 @@ namespace TinyHero.Maps
             }
 
             string prefabName = _npcSaveData != null && string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false ? _npcSaveData.prefabName.Trim() : string.Empty;
-            string result = string.IsNullOrWhiteSpace( prefabName ) ? string.Empty : NpcPrefabResourceFolderPath + "/" + prefabName;
+            string result = string.IsNullOrWhiteSpace( prefabName ) ? string.Empty : CMapRuntimeAssetCatalog.NpcPrefabResourceFolderPath + "/" + prefabName;
             return result;
         }
 
@@ -1278,7 +1205,7 @@ namespace TinyHero.Maps
 
             if ( string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false )
             {
-                string resultFromPrefabName = NpcPrefabResourceFolderPath + "/" + _npcSaveData.prefabName.Trim();
+                string resultFromPrefabName = CMapRuntimeAssetCatalog.NpcPrefabResourceFolderPath + "/" + _npcSaveData.prefabName.Trim();
                 return resultFromPrefabName;
             }
 
@@ -1320,19 +1247,19 @@ namespace TinyHero.Maps
                 return;
             }
 
-            npcPrefabByName[ _npcPrefab.name ] = _npcPrefab;
+            mapRuntimeAssetCatalog.CacheNpcPrefab( _npcPrefab.name, _npcPrefab );
 
             if ( string.IsNullOrWhiteSpace( _npcSaveData.prefabName ) == false )
             {
                 string prefabName = _npcSaveData.prefabName.Trim();
-                npcPrefabByName[ prefabName ] = _npcPrefab;
+                mapRuntimeAssetCatalog.CacheNpcPrefab( prefabName, _npcPrefab );
             }
 
             string npcPrefabKey = ResolveNpcPrefabKey( _npcSaveData );
 
             if ( string.IsNullOrWhiteSpace( npcPrefabKey ) == false )
             {
-                npcPrefabByName[ npcPrefabKey ] = _npcPrefab;
+                mapRuntimeAssetCatalog.CacheNpcPrefab( npcPrefabKey, _npcPrefab );
             }
         }
 
@@ -1766,7 +1693,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void ReturnAllActivePooledMonsters()
         {
-            List<MonsterObject> activeMonsterList = new List<MonsterObject>( activePooledMonsterObjects );
+            List<MonsterObject> activeMonsterList = activePooledMonsterTracker.CreateSnapshot();
 
             for ( int index = 0; index < activeMonsterList.Count; index++ )
             {
@@ -1780,7 +1707,7 @@ namespace TinyHero.Maps
                 ReleasePooledMonsterInternal( monsterObject, monsterObject.GetMapRuntimePoolKey(), false );
             }
 
-            activePooledMonsterObjects.Clear();
+            activePooledMonsterTracker.Clear();
         }
 
         ///<summary>
@@ -1893,14 +1820,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            bool isAlreadyRegistered = activePooledMonsterObjects.Contains( _monsterObject );
-
-            if ( isAlreadyRegistered )
-            {
-                return;
-            }
-
-            activePooledMonsterObjects.Add( _monsterObject );
+            activePooledMonsterTracker.Track( _monsterObject );
         }
 
         ///<summary>
@@ -1958,7 +1878,7 @@ namespace TinyHero.Maps
                 return false;
             }
 
-            activePooledWorldItemDropObjects.Remove( _worldItemDropObject );
+            activePooledWorldItemDropTracker.Untrack( _worldItemDropObject );
             _worldItemDropObject.SetMapRuntimePoolKey( string.Empty );
             bool result = CObjectPoolManager.TryRelease( managedPoolKey, _worldItemDropObject );
             return result;
@@ -1986,7 +1906,7 @@ namespace TinyHero.Maps
                 respawnContext = BuildMonsterRespawnContext( _monsterObject, _monsterPoolKey );
             }
 
-            activePooledMonsterObjects.Remove( _monsterObject );
+            activePooledMonsterTracker.Untrack( _monsterObject );
             _monsterObject.ClearMapRuntimePoolKey();
             string managedPoolKey = BuildManagedMonsterPoolKey( _monsterPoolKey );
             bool wasReleased = CObjectPoolManager.TryRelease( managedPoolKey, _monsterObject );
@@ -2009,7 +1929,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void ReturnAllActivePooledWorldItemDrops()
         {
-            List<CWorldItemDropObject> activeWorldItemDropList = new List<CWorldItemDropObject>( activePooledWorldItemDropObjects );
+            List<CWorldItemDropObject> activeWorldItemDropList = activePooledWorldItemDropTracker.CreateSnapshot();
 
             for ( int index = 0; index < activeWorldItemDropList.Count; index++ )
             {
@@ -2023,7 +1943,7 @@ namespace TinyHero.Maps
                 ReleasePooledWorldItemDrop( worldItemDropObject, worldItemDropObject.GetMapRuntimePoolKey() );
             }
 
-            activePooledWorldItemDropObjects.Clear();
+            activePooledWorldItemDropTracker.Clear();
         }
 
         ///<summary>
@@ -2108,14 +2028,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            bool isAlreadyRegistered = activePooledWorldItemDropObjects.Contains( _worldItemDropObject );
-
-            if ( isAlreadyRegistered )
-            {
-                return;
-            }
-
-            activePooledWorldItemDropObjects.Add( _worldItemDropObject );
+            activePooledWorldItemDropTracker.Track( _worldItemDropObject );
         }
 
         ///<summary>
@@ -2612,7 +2525,7 @@ namespace TinyHero.Maps
         ///</summary>
         private GameObject ResolveMonsterPrefab(string _prefabName, string _resourcePath)
         {
-            if ( string.IsNullOrWhiteSpace( _prefabName ) == false && monsterPrefabByName.TryGetValue( _prefabName, out GameObject cachedPrefab ) )
+            if ( string.IsNullOrWhiteSpace( _prefabName ) == false && mapRuntimeAssetCatalog.TryGetMonsterPrefab( _prefabName, out GameObject cachedPrefab ) )
             {
                 return cachedPrefab;
             }
@@ -2799,10 +2712,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            if ( activeMapTitleLogoUiList.Contains( mapTitleLogoUi ) == false )
-            {
-                activeMapTitleLogoUiList.Add( mapTitleLogoUi );
-            }
+            activeMapTitleLogoUiTracker.Track( mapTitleLogoUi );
         }
 
         ///<summary>
@@ -2923,7 +2833,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            activeMapTitleLogoUiList.Remove( _mapTitleLogoUi );
+            activeMapTitleLogoUiTracker.Untrack( _mapTitleLogoUi );
 
             if ( mapTitleLogoUiPoolRectTransform != null )
             {
@@ -2951,7 +2861,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void ReturnAllActiveMapTitleLogoUis()
         {
-            List<MapTitleLogoUI> activeUiList = new List<MapTitleLogoUI>( activeMapTitleLogoUiList );
+            List<MapTitleLogoUI> activeUiList = activeMapTitleLogoUiTracker.CreateSnapshot();
 
             for ( int index = 0; index < activeUiList.Count; index++ )
             {
@@ -2965,7 +2875,7 @@ namespace TinyHero.Maps
                 CObjectPoolManager.TryRelease( MapTitleLogoUiPoolKey, mapTitleLogoUi );
             }
 
-            activeMapTitleLogoUiList.Clear();
+            activeMapTitleLogoUiTracker.Clear();
         }
 
         ///<summary>
@@ -2998,7 +2908,7 @@ namespace TinyHero.Maps
         ///</summary>
         private GameObject ResolveNpcPrefab( string _prefabName, string _resourcePath )
         {
-            if ( string.IsNullOrWhiteSpace( _prefabName ) == false && npcPrefabByName.TryGetValue( _prefabName, out GameObject cachedPrefab ) )
+            if ( string.IsNullOrWhiteSpace( _prefabName ) == false && mapRuntimeAssetCatalog.TryGetNpcPrefab( _prefabName, out GameObject cachedPrefab ) )
             {
                 return cachedPrefab;
             }
@@ -3026,7 +2936,7 @@ namespace TinyHero.Maps
             }
 
             monsterPoolKeySet.Clear();
-            activePooledMonsterObjects.Clear();
+            activePooledMonsterTracker.Clear();
         }
 
         ///<summary>
@@ -3043,7 +2953,7 @@ namespace TinyHero.Maps
             }
 
             worldItemDropPoolKeySet.Clear();
-            activePooledWorldItemDropObjects.Clear();
+            activePooledWorldItemDropTracker.Clear();
         }
 
         ///<summary>

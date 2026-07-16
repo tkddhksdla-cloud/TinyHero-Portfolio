@@ -1696,48 +1696,20 @@ public sealed class MonsterObject : MonoBehaviour
             return null;
         }
 
-        float totalWeight = 0.0f;
+        bool wasSelected = CWeightedRandomSelector.TrySelect( _actionEntryList, GetMonsterBehaviorActionWeight, out CMonsterBehaviorActionEntry selectedActionEntry );
+        CMonsterBehaviorActionEntry result = wasSelected ? selectedActionEntry : null;
+        return result;
+    }
 
-        for ( int index = 0; index < _actionEntryList.Count; index++ )
+    private static float GetMonsterBehaviorActionWeight( CMonsterBehaviorActionEntry _entryData )
+    {
+        if ( _entryData == null )
         {
-            CMonsterBehaviorActionEntry entryData = _actionEntryList[ index ];
-
-            if ( entryData == null )
-            {
-                continue;
-            }
-
-            totalWeight += Mathf.Max( 0.0f, entryData.GetWeight() );
+            return 0.0f;
         }
 
-        if ( totalWeight <= 0.0f )
-        {
-            return null;
-        }
-
-        float randomWeight = Random.Range( 0.0f, totalWeight );
-        float currentWeight = 0.0f;
-
-        for ( int index = 0; index < _actionEntryList.Count; index++ )
-        {
-            CMonsterBehaviorActionEntry entryData = _actionEntryList[ index ];
-
-            if ( entryData == null )
-            {
-                continue;
-            }
-
-            currentWeight += Mathf.Max( 0.0f, entryData.GetWeight() );
-
-            if ( randomWeight <= currentWeight )
-            {
-                return entryData;
-            }
-        }
-
-        int lastIndex = _actionEntryList.Count - 1;
-        CMonsterBehaviorActionEntry fallbackEntry = _actionEntryList[ lastIndex ];
-        return fallbackEntry;
+        float result = _entryData.GetWeight();
+        return result;
     }
 
     ///<summary>

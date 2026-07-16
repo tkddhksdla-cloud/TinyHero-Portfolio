@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TinyHero.Core;
 using UnityEngine;
 
 namespace TinyHero.Core.Data
@@ -105,38 +106,27 @@ namespace TinyHero.Core.Data
         {
             _itemDefinition = null;
             _rewardCount = 0L;
-            float totalWeight = CalculateTotalWeight();
+            bool wasSelected = CWeightedRandomSelector.TrySelect( rewardEntryList, GetValidRewardWeight, out CRandomBoxRewardEntry rewardEntry );
 
-            if ( totalWeight <= 0.0f )
+            if ( wasSelected )
             {
-                return false;
-            }
-
-            float randomWeight = UnityEngine.Random.Range( 0.0f, totalWeight );
-            float accumulatedWeight = 0.0f;
-
-            for ( int index = 0; index < rewardEntryList.Count; index++ )
-            {
-                CRandomBoxRewardEntry rewardEntry = rewardEntryList[ index ];
-
-                if ( rewardEntry == null || rewardEntry.IsValid() == false )
-                {
-                    continue;
-                }
-
-                accumulatedWeight += rewardEntry.GetWeight();
-
-                if ( randomWeight > accumulatedWeight )
-                {
-                    continue;
-                }
-
                 _itemDefinition = rewardEntry.GetItemDefinition();
                 _rewardCount = rewardEntry.ResolveRewardCount();
                 return _itemDefinition != null && _rewardCount > 0L;
             }
 
             return TryResolveFallbackReward( out _itemDefinition, out _rewardCount );
+        }
+
+        private static float GetValidRewardWeight( CRandomBoxRewardEntry _rewardEntry )
+        {
+            if ( _rewardEntry == null || _rewardEntry.IsValid() == false )
+            {
+                return 0.0f;
+            }
+
+            float result = _rewardEntry.GetWeight();
+            return result;
         }
 
         ///<summary>

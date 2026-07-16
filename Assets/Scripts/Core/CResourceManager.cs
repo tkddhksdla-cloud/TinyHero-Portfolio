@@ -32,6 +32,15 @@ namespace TinyHero.Core
         private const string ItemTooltipPrefabResourcePath = "Prefabs/UI/Inventory/ItemTooltipUI";
         private const string SkillTooltipPrefabResourcePath = "Prefabs/UI/Skill/SkillTooltipUI";
         private const string MapLoadingUiPrefabResourcePath = "Prefabs/UI/Map/MapLoadingUI";
+        private const string MonsterInfoPrefabResourcePath = "Prefabs/UI/Monster/MonsterInfo";
+        private const string LegacyMonsterInfoPrefabResourcePath = "Prefabs/UI/HpBar/MonsterInfo";
+        private const string DamageFontPrefabResourcePath = "Prefabs/UI/Damage/DamageFontObject";
+        private const string PlayerNameTagPrefabResourcePath = "Prefabs/UI/NameTag/PlayerNameTag";
+        private const string NpcNameTagPrefabResourcePath = "Prefabs/UI/NameTag/NpcNameTag";
+        private const string ToastMessageSystemPrefabResourcePath = "Prefabs/UI/Common/CToastMessageSystem";
+        private const string ToastMessagePrefabResourcePath = "Prefabs/UI/Common/ToastMessage";
+        private const string ItemSlotPrefabResourcePath = "Prefabs/UI/Inventory/ItemSlot";
+        private const string PlayerVisualPrefabResourcePath = "Prefabs/Character/Player/Player";
         private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
         private const string ShopDefinitionResourcePath = "Data/Shop/Definitions";
         private const string QuestDefinitionResourcePath = "Data/Quest/Definitions";
@@ -150,6 +159,14 @@ namespace TinyHero.Core
             LoadResource<GameObject>( ItemTooltipPrefabResourcePath );
             LoadResource<GameObject>( SkillTooltipPrefabResourcePath );
             LoadResource<GameObject>( MapLoadingUiPrefabResourcePath );
+            LoadFirstAvailableResource<GameObject>( new string[] { MonsterInfoPrefabResourcePath, LegacyMonsterInfoPrefabResourcePath } );
+            LoadResource<GameObject>( DamageFontPrefabResourcePath );
+            LoadResource<GameObject>( PlayerNameTagPrefabResourcePath );
+            LoadResource<GameObject>( NpcNameTagPrefabResourcePath );
+            LoadResource<GameObject>( ToastMessageSystemPrefabResourcePath );
+            LoadResource<GameObject>( ToastMessagePrefabResourcePath );
+            LoadResource<GameObject>( ItemSlotPrefabResourcePath );
+            LoadResource<GameObject>( PlayerVisualPrefabResourcePath );
             LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
             LoadResourceAll<CShopDefinition>( ShopDefinitionResourcePath );
             LoadResourceAll<CQuestDefinition>( QuestDefinitionResourcePath );
@@ -368,6 +385,55 @@ namespace TinyHero.Core
         public GameObject GetMapLoadingUiPrefab()
         {
             GameObject result = LoadResource<GameObject>( MapLoadingUiPrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetMonsterInfoPrefab()
+        {
+            string[] resourcePathArray = new string[] { MonsterInfoPrefabResourcePath, LegacyMonsterInfoPrefabResourcePath };
+            GameObject result = LoadFirstAvailableResource<GameObject>( resourcePathArray );
+            return result;
+        }
+
+        public GameObject GetDamageFontPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( DamageFontPrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetPlayerNameTagPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( PlayerNameTagPrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetNpcNameTagPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( NpcNameTagPrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetToastMessageSystemPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( ToastMessageSystemPrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetToastMessagePrefab()
+        {
+            GameObject result = LoadResource<GameObject>( ToastMessagePrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetItemSlotPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( ItemSlotPrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetPlayerVisualPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( PlayerVisualPrefabResourcePath );
             return result;
         }
 

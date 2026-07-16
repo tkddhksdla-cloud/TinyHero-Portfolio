@@ -35,9 +35,6 @@ namespace TinyHero.Maps
 
         private const string BackgroundPrefabResourcePath = "Prefabs/BackgroundObject/BackgroundObject";
         private const string PortalPrefabResourcePath = "Prefabs/Portal/PortalObject";
-        private const string MonsterPrefabResourceFolderPath = "Prefabs/Character/Monster";
-        private const string NpcPrefabResourceFolderPath = "Prefabs/Character/NPC";
-        private const string BackgroundSpriteResourceFolderPath = "RawImages/BG";
         private const string MapDataFolderPath = "Assets/Resources/MapData";
         private const string DefaultPortalTargetMapId = "SceneMap";
         private const string PortalIdPrefix = "Portal_";
@@ -158,12 +155,7 @@ namespace TinyHero.Maps
         [SerializeField] private CMapToolSkillRangeVisualizer activeSkillRangeVisualizer;
 
         private readonly List<MapToolPlacedObject> placedObjects = new List<MapToolPlacedObject>();
-        private readonly List<Sprite> backgroundSprites = new List<Sprite>();
-        private readonly List<GameObject> monsterPrefabs = new List<GameObject>();
-        private readonly List<GameObject> npcPrefabs = new List<GameObject>();
-        private readonly Dictionary<string, Sprite> backgroundSpriteByName = new Dictionary<string, Sprite>();
-        private readonly Dictionary<string, GameObject> monsterPrefabByName = new Dictionary<string, GameObject>();
-        private readonly Dictionary<string, GameObject> npcPrefabByName = new Dictionary<string, GameObject>();
+        private readonly CMapRuntimeAssetCatalog mapRuntimeAssetCatalog = new CMapRuntimeAssetCatalog();
         private eMapToolMode currentMode;
         private GameObject previewInstance;
         private MapToolPlacedObject draggedPlacedObject;
@@ -432,8 +424,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            CGameManager gameManager = CGameManager.Instance;
-            bool hasRuntimeContext = gameManager.TryGetPlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
             skillManager = hasRuntimeContext ? playerRuntimeContext.GetSkillManager() : null;
         }
 
@@ -976,60 +967,7 @@ namespace TinyHero.Maps
         ///</summary>
         private void LoadResourceCatalog()
         {
-            backgroundSprites.Clear();
-            monsterPrefabs.Clear();
-            npcPrefabs.Clear();
-            backgroundSpriteByName.Clear();
-            monsterPrefabByName.Clear();
-            npcPrefabByName.Clear();
-
-            Sprite[] loadedBackgroundSprites = Resources.LoadAll<Sprite>( BackgroundSpriteResourceFolderPath );
-            int backgroundSpriteCount = loadedBackgroundSprites.Length;
-
-            for ( int index = 0; index < backgroundSpriteCount; index++ )
-            {
-                Sprite backgroundSprite = loadedBackgroundSprites[ index ];
-
-                if ( backgroundSprite == null )
-                {
-                    continue;
-                }
-
-                backgroundSprites.Add( backgroundSprite );
-                backgroundSpriteByName[ backgroundSprite.name ] = backgroundSprite;
-            }
-
-            GameObject[] loadedMonsterPrefabs = Resources.LoadAll<GameObject>( MonsterPrefabResourceFolderPath );
-            int monsterPrefabCount = loadedMonsterPrefabs.Length;
-
-            for ( int index = 0; index < monsterPrefabCount; index++ )
-            {
-                GameObject monsterPrefab = loadedMonsterPrefabs[ index ];
-
-                if ( monsterPrefab == null )
-                {
-                    continue;
-                }
-
-                monsterPrefabs.Add( monsterPrefab );
-                monsterPrefabByName[ monsterPrefab.name ] = monsterPrefab;
-            }
-
-            GameObject[] loadedNpcPrefabs = Resources.LoadAll<GameObject>( NpcPrefabResourceFolderPath );
-            int npcPrefabCount = loadedNpcPrefabs.Length;
-
-            for ( int index = 0; index < npcPrefabCount; index++ )
-            {
-                GameObject npcPrefab = loadedNpcPrefabs[ index ];
-
-                if ( npcPrefab == null )
-                {
-                    continue;
-                }
-
-                npcPrefabs.Add( npcPrefab );
-                npcPrefabByName[ npcPrefab.name ] = npcPrefab;
-            }
+            mapRuntimeAssetCatalog.Reload();
         }
 
         ///<summary>
@@ -1038,6 +976,7 @@ namespace TinyHero.Maps
         private void RebuildBackgroundPanel()
         {
             ClearChildren( backgroundListRoot );
+            IReadOnlyList<Sprite> backgroundSprites = mapRuntimeAssetCatalog.GetBackgroundSpriteList();
             int backgroundCount = backgroundSprites.Count;
 
             for ( int index = 0; index < backgroundCount; index++ )
@@ -1058,13 +997,14 @@ namespace TinyHero.Maps
         private void RebuildMonsterPanel()
         {
             ClearChildren( monsterListRoot );
+            IReadOnlyList<GameObject> monsterPrefabs = mapRuntimeAssetCatalog.GetMonsterPrefabList();
             int monsterCount = monsterPrefabs.Count;
 
             for ( int index = 0; index < monsterCount; index++ )
             {
                 GameObject monsterPrefab = monsterPrefabs[ index ];
                 string prefabName = monsterPrefab.name;
-                string resourcePath = MonsterPrefabResourceFolderPath + "/" + prefabName;
+                string resourcePath = CMapRuntimeAssetCatalog.MonsterPrefabResourceFolderPath + "/" + prefabName;
                 CButtonEx listButton = CreateTextButton( ButtonObjectPrefix + prefabName, monsterListRoot, prefabName, PanelWidth - ( PanelPadding * 2.0f ), ListButtonHeight );
                 listButton.onClick.AddListener( delegate
                 {
@@ -1079,13 +1019,14 @@ namespace TinyHero.Maps
         private void RebuildNpcPanel()
         {
             ClearChildren( npcListRoot );
+            IReadOnlyList<GameObject> npcPrefabs = mapRuntimeAssetCatalog.GetNpcPrefabList();
             int npcCount = npcPrefabs.Count;
 
             for ( int index = 0; index < npcCount; index++ )
             {
                 GameObject npcPrefab = npcPrefabs[ index ];
                 string prefabName = npcPrefab.name;
-                string resourcePath = NpcPrefabResourceFolderPath + "/" + prefabName;
+                string resourcePath = CMapRuntimeAssetCatalog.NpcPrefabResourceFolderPath + "/" + prefabName;
                 CButtonEx listButton = CreateTextButton( ButtonObjectPrefix + prefabName, npcListRoot, prefabName, PanelWidth - ( PanelPadding * 2.0f ), ListButtonHeight );
                 listButton.onClick.AddListener( delegate
                 {
@@ -2439,7 +2380,7 @@ namespace TinyHero.Maps
                 return;
             }
 
-            if ( backgroundSpriteByName.TryGetValue( _spriteName, out Sprite backgroundSprite ) == false )
+            if ( mapRuntimeAssetCatalog.TryGetBackgroundSprite( _spriteName, out Sprite backgroundSprite ) == false )
             {
                 return;
             }
@@ -3232,7 +3173,7 @@ namespace TinyHero.Maps
         ///</summary>
         private GameObject ResolveMonsterPrefab(string _prefabName, string _resourcePath)
         {
-            if ( string.IsNullOrEmpty( _prefabName ) == false && monsterPrefabByName.TryGetValue( _prefabName, out GameObject cachedPrefab ) )
+            if ( string.IsNullOrEmpty( _prefabName ) == false && mapRuntimeAssetCatalog.TryGetMonsterPrefab( _prefabName, out GameObject cachedPrefab ) )
             {
                 return cachedPrefab;
             }
@@ -3251,7 +3192,7 @@ namespace TinyHero.Maps
         ///</summary>
         private GameObject ResolveNpcPrefab( string _prefabName, string _resourcePath )
         {
-            if ( string.IsNullOrEmpty( _prefabName ) == false && npcPrefabByName.TryGetValue( _prefabName, out GameObject cachedPrefab ) )
+            if ( string.IsNullOrEmpty( _prefabName ) == false && mapRuntimeAssetCatalog.TryGetNpcPrefab( _prefabName, out GameObject cachedPrefab ) )
             {
                 return cachedPrefab;
             }

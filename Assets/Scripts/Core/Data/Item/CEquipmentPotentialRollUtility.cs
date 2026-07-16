@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TinyHero.Core;
 using UnityEngine;
 
 namespace TinyHero.Core.Data
@@ -156,26 +157,28 @@ namespace TinyHero.Core.Data
                 return false;
             }
 
-            int randomWeight = Random.Range( 0, totalWeight );
-            int accumulatedWeight = 0;
+            bool wasSelected = CWeightedRandomSelector.TrySelect( filteredEntryList, GetOptionEntryWeight, out CEquipmentPotentialOptionEntry selectedOptionEntry );
 
-            for ( int index = 0; index < filteredEntryList.Count; index++ )
+            if ( wasSelected == false )
             {
-                CEquipmentPotentialOptionEntry optionEntry = filteredEntryList[ index ];
-                accumulatedWeight += optionEntry.GetWeight();
-
-                if ( randomWeight >= accumulatedWeight )
-                {
-                    continue;
-                }
-
-                CEquipmentPotentialLineData rolledLineData = new CEquipmentPotentialLineData();
-                rolledLineData.CopyFromOptionEntry( optionEntry, _rank );
-                _rolledLineData = rolledLineData;
-                return true;
+                return false;
             }
 
-            return false;
+            CEquipmentPotentialLineData rolledLineData = new CEquipmentPotentialLineData();
+            rolledLineData.CopyFromOptionEntry( selectedOptionEntry, _rank );
+            _rolledLineData = rolledLineData;
+            return true;
+        }
+
+        private static float GetOptionEntryWeight( CEquipmentPotentialOptionEntry _optionEntry )
+        {
+            if ( _optionEntry == null )
+            {
+                return 0.0f;
+            }
+
+            float result = _optionEntry.GetWeight();
+            return result;
         }
     }
 }
