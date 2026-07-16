@@ -363,7 +363,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            playerNameTagPrefab = Resources.Load<GameObject>( PlayerNameTagPrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            playerNameTagPrefab = resourceManager.GetPlayerNameTagPrefab();
         }
 
         ///<summary>

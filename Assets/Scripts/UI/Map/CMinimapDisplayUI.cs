@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using TinyHero.Core;
@@ -67,15 +68,18 @@ namespace TinyHero.UI
         private readonly List<MonsterObject> trackedMonsterList = new List<MonsterObject>();
         private readonly List<CNPCObject> trackedNpcList = new List<CNPCObject>();
         private readonly List<PortalObject> trackedPortalList = new List<PortalObject>();
-        private readonly Dictionary<MonsterObject, Image> monsterIconByMonster = new Dictionary<MonsterObject, Image>();
-        private readonly Dictionary<CNPCObject, Image> npcIconByNpc = new Dictionary<CNPCObject, Image>();
-        private readonly Dictionary<PortalObject, Image> portalIconByPortal = new Dictionary<PortalObject, Image>();
+        private readonly CTrackedUiBindingMap<MonsterObject, Image> monsterIconBindingMap = new CTrackedUiBindingMap<MonsterObject, Image>();
+        private readonly CTrackedUiBindingMap<CNPCObject, Image> npcIconBindingMap = new CTrackedUiBindingMap<CNPCObject, Image>();
+        private readonly CTrackedUiBindingMap<PortalObject, Image> portalIconBindingMap = new CTrackedUiBindingMap<PortalObject, Image>();
         private readonly List<MonsterObject> releaseTargetMonsterList = new List<MonsterObject>();
         private readonly List<CNPCObject> releaseTargetNpcList = new List<CNPCObject>();
         private readonly List<PortalObject> releaseTargetPortalList = new List<PortalObject>();
         private string monsterIconPoolKey = string.Empty;
         private string npcIconPoolKey = string.Empty;
         private string portalIconPoolKey = string.Empty;
+        private Func<Image> rentMonsterIconHandler;
+        private Func<Image> rentNpcIconHandler;
+        private Func<Image> rentPortalIconHandler;
         private PlayerController targetPlayerController;
         private string lastMapId = string.Empty;
         private Sprite currentMinimapBackgroundSprite;
@@ -92,6 +96,9 @@ namespace TinyHero.UI
             monsterIconPoolKey = MonsterIconPoolKeyPrefix + "." + GetInstanceID();
             npcIconPoolKey = NpcIconPoolKeyPrefix + "." + GetInstanceID();
             portalIconPoolKey = PortalIconPoolKeyPrefix + "." + GetInstanceID();
+            rentMonsterIconHandler = RentMonsterIcon;
+            rentNpcIconHandler = RentNpcIcon;
+            rentPortalIconHandler = RentPortalIcon;
             ApplyDefaultConfigurationValues();
             ResolveReferences();
             EnsureRuntimeHierarchy();
@@ -549,6 +556,42 @@ namespace TinyHero.UI
             CObjectPoolManager.TryEnsurePoolRegistered<Image>( portalIconPoolKey, CreatePortalIcon, OnGetPortalIcon, OnReleaseCharacterIcon, OnDestroyCharacterIcon );
         }
 
+        private Image RentMonsterIcon()
+        {
+            bool wasRented = CObjectPoolManager.TryGet( monsterIconPoolKey, out Image monsterIconImage );
+            Image result = wasRented ? monsterIconImage : null;
+            return result;
+        }
+
+        private Image RentNpcIcon()
+        {
+            bool wasRented = CObjectPoolManager.TryGet( npcIconPoolKey, out Image npcIconImage );
+            Image result = wasRented ? npcIconImage : null;
+            return result;
+        }
+
+        private Image RentPortalIcon()
+        {
+            bool wasRented = CObjectPoolManager.TryGet( portalIconPoolKey, out Image portalIconImage );
+            Image result = wasRented ? portalIconImage : null;
+            return result;
+        }
+
+        private void ReleaseMonsterIconView( Image _iconImage )
+        {
+            CObjectPoolManager.TryRelease( monsterIconPoolKey, _iconImage );
+        }
+
+        private void ReleaseNpcIconView( Image _iconImage )
+        {
+            CObjectPoolManager.TryRelease( npcIconPoolKey, _iconImage );
+        }
+
+        private void ReleasePortalIconView( Image _iconImage )
+        {
+            CObjectPoolManager.TryRelease( portalIconPoolKey, _iconImage );
+        }
+
         ///<summary>
         /// 몬스터 아이콘 인스턴스 생성
         ///</summary>
@@ -967,8 +1010,7 @@ namespace TinyHero.UI
                 EnsureMonsterIconAssigned( monsterObject );
             }
 
-            CollectReleasedMonsterTargets();
-            ReleaseCollectedMonsterIcons();
+            ReleaseUntrackedIcons( trackedMonsterList, monsterIconBindingMap, ReleaseMonsterIconView );
         }
 
         ///<summary>
@@ -993,8 +1035,7 @@ namespace TinyHero.UI
                 EnsureNpcIconAssigned( npcObject );
             }
 
-            CollectReleasedNpcTargets();
-            ReleaseCollectedNpcIcons();
+            ReleaseUntrackedIcons( trackedNpcList, npcIconBindingMap, ReleaseNpcIconView );
         }
 
         ///<summary>
@@ -1019,8 +1060,7 @@ namespace TinyHero.UI
                 EnsurePortalIconAssigned( portalObject );
             }
 
-            CollectReleasedPortalTargets();
-            ReleaseCollectedPortalIcons();
+            ReleaseUntrackedIcons( trackedPortalList, portalIconBindingMap, ReleasePortalIconView );
         }
 
         ///<summary>
@@ -1087,19 +1127,13 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureMonsterIconAssigned( MonsterObject _monsterObject )
         {
-            if ( _monsterObject == null || monsterIconByMonster.ContainsKey( _monsterObject ) )
+            if ( _monsterObject == null )
             {
                 return;
             }
 
             EnsureIconPoolsInitialized();
-
-            if ( CObjectPoolManager.TryGet( monsterIconPoolKey, out Image monsterIconImage ) == false || monsterIconImage == null )
-            {
-                return;
-            }
-
-            monsterIconByMonster.Add( _monsterObject, monsterIconImage );
+            monsterIconBindingMap.TryGetOrCreate( _monsterObject, rentMonsterIconHandler, out Image unusedIconImage );
         }
 
         ///<summary>
@@ -1107,19 +1141,13 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsureNpcIconAssigned( CNPCObject _npcObject )
         {
-            if ( _npcObject == null || npcIconByNpc.ContainsKey( _npcObject ) )
+            if ( _npcObject == null )
             {
                 return;
             }
 
             EnsureIconPoolsInitialized();
-
-            if ( CObjectPoolManager.TryGet( npcIconPoolKey, out Image npcIconImage ) == false || npcIconImage == null )
-            {
-                return;
-            }
-
-            npcIconByNpc.Add( _npcObject, npcIconImage );
+            npcIconBindingMap.TryGetOrCreate( _npcObject, rentNpcIconHandler, out Image unusedIconImage );
         }
 
         ///<summary>
@@ -1127,19 +1155,13 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsurePortalIconAssigned( PortalObject _portalObject )
         {
-            if ( _portalObject == null || portalIconByPortal.ContainsKey( _portalObject ) )
+            if ( _portalObject == null )
             {
                 return;
             }
 
             EnsureIconPoolsInitialized();
-
-            if ( CObjectPoolManager.TryGet( portalIconPoolKey, out Image portalIconImage ) == false || portalIconImage == null )
-            {
-                return;
-            }
-
-            portalIconByPortal.Add( _portalObject, portalIconImage );
+            portalIconBindingMap.TryGetOrCreate( _portalObject, rentPortalIconHandler, out Image unusedIconImage );
         }
 
         ///<summary>
@@ -1149,9 +1171,11 @@ namespace TinyHero.UI
         {
             releaseTargetMonsterList.Clear();
 
-            foreach ( KeyValuePair<MonsterObject, Image> pairData in monsterIconByMonster )
+            List<MonsterObject> boundMonsterList = monsterIconBindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundMonsterList.Count; index++ )
             {
-                MonsterObject monsterObject = pairData.Key;
+                MonsterObject monsterObject = boundMonsterList[ index ];
 
                 if ( trackedMonsterList.Contains( monsterObject ) )
                 {
@@ -1169,9 +1193,11 @@ namespace TinyHero.UI
         {
             releaseTargetNpcList.Clear();
 
-            foreach ( KeyValuePair<CNPCObject, Image> pairData in npcIconByNpc )
+            List<CNPCObject> boundNpcList = npcIconBindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundNpcList.Count; index++ )
             {
-                CNPCObject npcObject = pairData.Key;
+                CNPCObject npcObject = boundNpcList[ index ];
 
                 if ( trackedNpcList.Contains( npcObject ) )
                 {
@@ -1189,9 +1215,11 @@ namespace TinyHero.UI
         {
             releaseTargetPortalList.Clear();
 
-            foreach ( KeyValuePair<PortalObject, Image> pairData in portalIconByPortal )
+            List<PortalObject> boundPortalList = portalIconBindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundPortalList.Count; index++ )
             {
-                PortalObject portalObject = pairData.Key;
+                PortalObject portalObject = boundPortalList[ index ];
 
                 if ( trackedPortalList.Contains( portalObject ) )
                 {
@@ -1257,9 +1285,12 @@ namespace TinyHero.UI
         {
             releaseTargetMonsterList.Clear();
 
-            foreach ( KeyValuePair<MonsterObject, Image> pairData in monsterIconByMonster )
+            List<MonsterObject> boundMonsterList = monsterIconBindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundMonsterList.Count; index++ )
             {
-                releaseTargetMonsterList.Add( pairData.Key );
+                MonsterObject monsterObject = boundMonsterList[ index ];
+                releaseTargetMonsterList.Add( monsterObject );
             }
 
             ReleaseCollectedMonsterIcons();
@@ -1272,9 +1303,12 @@ namespace TinyHero.UI
         {
             releaseTargetNpcList.Clear();
 
-            foreach ( KeyValuePair<CNPCObject, Image> pairData in npcIconByNpc )
+            List<CNPCObject> boundNpcList = npcIconBindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundNpcList.Count; index++ )
             {
-                releaseTargetNpcList.Add( pairData.Key );
+                CNPCObject npcObject = boundNpcList[ index ];
+                releaseTargetNpcList.Add( npcObject );
             }
 
             ReleaseCollectedNpcIcons();
@@ -1287,9 +1321,12 @@ namespace TinyHero.UI
         {
             releaseTargetPortalList.Clear();
 
-            foreach ( KeyValuePair<PortalObject, Image> pairData in portalIconByPortal )
+            List<PortalObject> boundPortalList = portalIconBindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundPortalList.Count; index++ )
             {
-                releaseTargetPortalList.Add( pairData.Key );
+                PortalObject portalObject = boundPortalList[ index ];
+                releaseTargetPortalList.Add( portalObject );
             }
 
             ReleaseCollectedPortalIcons();
@@ -1305,19 +1342,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasIcon = monsterIconByMonster.TryGetValue( _monsterObject, out Image monsterIconImage );
-
-            if ( hasIcon == false )
-            {
-                return;
-            }
-
-            monsterIconByMonster.Remove( _monsterObject );
-
-            if ( monsterIconImage != null )
-            {
-                CObjectPoolManager.TryRelease( monsterIconPoolKey, monsterIconImage );
-            }
+            monsterIconBindingMap.TryRelease( _monsterObject, ReleaseMonsterIconView );
         }
 
         ///<summary>
@@ -1330,19 +1355,7 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasIcon = npcIconByNpc.TryGetValue( _npcObject, out Image npcIconImage );
-
-            if ( hasIcon == false )
-            {
-                return;
-            }
-
-            npcIconByNpc.Remove( _npcObject );
-
-            if ( npcIconImage != null )
-            {
-                CObjectPoolManager.TryRelease( npcIconPoolKey, npcIconImage );
-            }
+            npcIconBindingMap.TryRelease( _npcObject, ReleaseNpcIconView );
         }
 
         ///<summary>
@@ -1355,18 +1368,24 @@ namespace TinyHero.UI
                 return;
             }
 
-            bool hasIcon = portalIconByPortal.TryGetValue( _portalObject, out Image portalIconImage );
+            portalIconBindingMap.TryRelease( _portalObject, ReleasePortalIconView );
+        }
 
-            if ( hasIcon == false )
+        private void ReleaseUntrackedIcons<TKey>( List<TKey> _trackedTargetList, CTrackedUiBindingMap<TKey, Image> _bindingMap, Action<Image> _releaseIconHandler )
+            where TKey : UnityEngine.Object
+        {
+            List<TKey> boundTargetList = _bindingMap.CreateTargetSnapshot();
+
+            for ( int index = 0; index < boundTargetList.Count; index++ )
             {
-                return;
-            }
+                TKey boundTarget = boundTargetList[ index ];
 
-            portalIconByPortal.Remove( _portalObject );
+                if ( _trackedTargetList.Contains( boundTarget ) )
+                {
+                    continue;
+                }
 
-            if ( portalIconImage != null )
-            {
-                CObjectPoolManager.TryRelease( portalIconPoolKey, portalIconImage );
+                _bindingMap.TryRelease( boundTarget, _releaseIconHandler );
             }
         }
 
@@ -1414,7 +1433,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                bool hasIcon = monsterIconByMonster.TryGetValue( monsterObject, out Image monsterIconImage );
+                bool hasIcon = monsterIconBindingMap.TryGet( monsterObject, out Image monsterIconImage );
 
                 if ( hasIcon == false || monsterIconImage == null )
                 {
@@ -1446,7 +1465,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                bool hasIcon = npcIconByNpc.TryGetValue( npcObject, out Image npcIconImage );
+                bool hasIcon = npcIconBindingMap.TryGet( npcObject, out Image npcIconImage );
 
                 if ( hasIcon == false || npcIconImage == null )
                 {
@@ -1478,7 +1497,7 @@ namespace TinyHero.UI
                     continue;
                 }
 
-                bool hasIcon = portalIconByPortal.TryGetValue( portalObject, out Image portalIconImage );
+                bool hasIcon = portalIconBindingMap.TryGet( portalObject, out Image portalIconImage );
 
                 if ( hasIcon == false || portalIconImage == null )
                 {

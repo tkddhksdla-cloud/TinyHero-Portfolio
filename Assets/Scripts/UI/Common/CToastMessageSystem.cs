@@ -102,7 +102,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            GameObject systemPrefabObject = Resources.Load<GameObject>( ToastMessageSystemPrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            GameObject systemPrefabObject = resourceManager.GetToastMessageSystemPrefab();
 
             if ( systemPrefabObject == null )
             {
@@ -138,7 +139,8 @@ namespace TinyHero.UI
                 return true;
             }
 
-            GameObject loadedPrefabObject = Resources.Load<GameObject>( ToastMessagePrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            GameObject loadedPrefabObject = resourceManager.GetToastMessagePrefab();
             toastMessagePrefabObject = loadedPrefabObject;
             bool isLoaded = toastMessagePrefabObject != null;
             return isLoaded;

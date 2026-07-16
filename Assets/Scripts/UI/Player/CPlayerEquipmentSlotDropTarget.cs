@@ -1,3 +1,4 @@
+using TinyHero.Core;
 using TinyHero.Core.Data;
 using TinyHero.Player;
 using UnityEngine;
@@ -73,8 +74,8 @@ namespace TinyHero.UI
 
             if ( targetEquipmentManager == null )
             {
-                CPlayerEquipmentManager resolvedEquipmentManager = FindFirstObjectByType<CPlayerEquipmentManager>();
-                targetEquipmentManager = resolvedEquipmentManager;
+                bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+                targetEquipmentManager = hasRuntimeContext ? playerRuntimeContext.GetEquipmentManager() : null;
             }
         }
     }

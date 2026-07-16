@@ -242,16 +242,8 @@ namespace TinyHero.UI
                 return monsterInfoPrefab;
             }
 
-            GameObject primaryPrefab = Resources.Load<GameObject>( PrimaryMonsterInfoPrefabResourcePath );
-
-            if ( primaryPrefab != null )
-            {
-                monsterInfoPrefab = primaryPrefab;
-                return monsterInfoPrefab;
-            }
-
-            GameObject fallbackPrefab = Resources.Load<GameObject>( FallbackMonsterInfoPrefabResourcePath );
-            monsterInfoPrefab = fallbackPrefab;
+            CResourceManager resourceManager = CResourceManager.Instance;
+            monsterInfoPrefab = resourceManager.GetMonsterInfoPrefab();
             return monsterInfoPrefab;
         }
 

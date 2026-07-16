@@ -598,13 +598,14 @@ namespace TinyHero.UI
                 return;
             }
 
-            CPlayerInventoryManager resolvedInventoryManager = FindFirstObjectByType<CPlayerInventoryManager>();
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
 
-            if (resolvedInventoryManager == null)
+            if ( hasRuntimeContext == false )
             {
                 return;
             }
 
+            CPlayerInventoryManager resolvedInventoryManager = playerRuntimeContext.GetInventoryManager();
             BindInventoryManager(resolvedInventoryManager);
         }
 
@@ -618,7 +619,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            targetEquipmentManager = FindFirstObjectByType<CPlayerEquipmentManager>();
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            targetEquipmentManager = hasRuntimeContext ? playerRuntimeContext.GetEquipmentManager() : null;
         }
 
         ///<summary>
@@ -631,18 +633,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            if (targetPlayerController != null)
-            {
-                CSkillManager resolvedFromPlayer = targetPlayerController.GetSkillManager();
-
-                if (resolvedFromPlayer != null)
-                {
-                    targetSkillManager = resolvedFromPlayer;
-                    return;
-                }
-            }
-
-            targetSkillManager = FindFirstObjectByType<CSkillManager>();
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            targetSkillManager = hasRuntimeContext ? playerRuntimeContext.GetSkillManager() : null;
         }
 
         ///<summary>
@@ -655,18 +647,8 @@ namespace TinyHero.UI
                 return;
             }
 
-            if (targetEquipmentManager != null)
-            {
-                CPlayerStatManager resolvedFromEquipment = targetPlayerController != null ? targetPlayerController.GetPlayerStatManager() : null;
-
-                if (resolvedFromEquipment != null)
-                {
-                    targetStatManager = resolvedFromEquipment;
-                    return;
-                }
-            }
-
-            targetStatManager = FindFirstObjectByType<CPlayerStatManager>();
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            targetStatManager = hasRuntimeContext ? playerRuntimeContext.GetStatManager() : null;
         }
 
         ///<summary>
@@ -981,7 +963,8 @@ namespace TinyHero.UI
         {
             if (slotPrefab == null)
             {
-                GameObject slotPrefabObject = Resources.Load<GameObject>(SlotPrefabResourcePath);
+                CResourceManager resourceManager = CResourceManager.Instance;
+                GameObject slotPrefabObject = resourceManager.GetItemSlotPrefab();
                 slotPrefab = slotPrefabObject != null ? slotPrefabObject.GetComponent<CItemSlot>() : null;
             }
         }

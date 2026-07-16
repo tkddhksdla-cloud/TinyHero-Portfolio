@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using TinyHero.Core;
 using TinyHero.Player;
 using System.Collections;
 
@@ -167,7 +168,8 @@ public class CPlayerStatusUI : MonoBehaviour
 
         if ( resolvedStatManager == null )
         {
-            resolvedStatManager = FindFirstObjectByType<CPlayerStatManager>();
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            resolvedStatManager = hasRuntimeContext ? playerRuntimeContext.GetStatManager() : null;
         }
 
         targetStatManager = resolvedStatManager;

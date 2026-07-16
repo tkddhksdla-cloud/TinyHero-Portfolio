@@ -615,9 +615,7 @@ public string BuildSkillSummaryText( CSkillDefinition _skillDefinition, int _ski
                 return;
             }
 
-            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
-            CPlayerRuntimeContext playerRuntimeContext = null;
-            bool hasRuntimeContext = hasGameManager && gameManager.TryGetPlayerRuntimeContext( out playerRuntimeContext );
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
             targetSkillManager = hasRuntimeContext ? playerRuntimeContext.GetSkillManager() : null;
         }
 

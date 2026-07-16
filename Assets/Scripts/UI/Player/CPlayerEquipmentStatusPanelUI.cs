@@ -315,22 +315,14 @@ namespace TinyHero.UI
         ///</summary>
         private void ResolveTargets()
         {
-            bool hasGameManager = CGameManager.TryGetExistingInstance( out CGameManager gameManager );
-
-            if ( hasGameManager == false )
-            {
-                return;
-            }
-
-            bool hasPlayerController = CActivePlayerResolver.TryGetActivePlayerController( out PlayerController playerController );
-            targetPlayerController = hasPlayerController ? playerController : null;
-            bool hasRuntimeContext = gameManager.TryGetPlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+            bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
 
             if ( hasRuntimeContext == false )
             {
                 return;
             }
 
+            targetPlayerController = playerRuntimeContext.GetPlayerController();
             targetEquipmentManager = playerRuntimeContext.GetEquipmentManager();
             targetInventoryManager = playerRuntimeContext.GetInventoryManager();
             targetStatManager = playerRuntimeContext.GetStatManager();
@@ -654,7 +646,8 @@ namespace TinyHero.UI
         ///</summary>
         private GameObject ResolvePreviewSourceObject()
         {
-            GameObject loadedPrefabObject = Resources.Load<GameObject>( PlayerVisualPrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            GameObject loadedPrefabObject = resourceManager.GetPlayerVisualPrefab();
             return loadedPrefabObject;
         }
 

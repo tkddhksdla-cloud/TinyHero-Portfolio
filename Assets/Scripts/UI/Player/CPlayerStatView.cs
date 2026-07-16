@@ -1,3 +1,4 @@
+using TinyHero.Core;
 using TinyHero.Player;
 using TMPro;
 using UnityEngine;
@@ -113,7 +114,8 @@ namespace TinyHero.UI
 
             if ( resolvedManager == null )
             {
-                resolvedManager = FindFirstObjectByType<CPlayerStatManager>();
+                bool hasRuntimeContext = CActivePlayerRuntimeContextResolver.TryGetActivePlayerRuntimeContext( out CPlayerRuntimeContext playerRuntimeContext );
+                resolvedManager = hasRuntimeContext ? playerRuntimeContext.GetStatManager() : null;
             }
 
             targetStatManager = resolvedManager;

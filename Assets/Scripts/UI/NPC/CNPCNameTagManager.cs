@@ -284,7 +284,8 @@ namespace TinyHero.UI
         ///</summary>
         private void EnsurePoolInitialized()
         {
-            npcNameTagPrefab = Resources.Load<GameObject>( NpcNameTagPrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            npcNameTagPrefab = resourceManager.GetNpcNameTagPrefab();
 
             if ( npcNameTagPrefab == null )
             {

@@ -212,7 +212,9 @@ namespace TinyHero.UI
                 return;
             }
 
-            CDamageFontObject loadedPrefab = Resources.Load<CDamageFontObject>( DamageFontPrefabResourcePath );
+            CResourceManager resourceManager = CResourceManager.Instance;
+            GameObject loadedPrefabObject = resourceManager.GetDamageFontPrefab();
+            CDamageFontObject loadedPrefab = loadedPrefabObject != null ? loadedPrefabObject.GetComponent<CDamageFontObject>() : null;
             damageFontPrefab = loadedPrefab;
         }
 
