@@ -35,7 +35,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// 랜덤상자 보상 테이블 에디터 윈도우
     ///</summary>
-    public sealed class RandomBoxRewardTableEditorWindow : EditorWindow
+    public sealed class RandomBoxRewardTableEditorWindow : CEditorToolWindowBase<RandomBoxRewardTableInfo>
     {
         private const string RandomBoxTableFolderPath = "Assets/Resources/Data/Item/RandomBoxes";
         private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
@@ -96,10 +96,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "Random Box Reward Table Editor", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "랜덤상자 보상 테이블을 검색, 생성, 복제, 삭제하고 등장 아이템과 가중치, 수량 범위를 편집합니다.", MessageType.None );
-            EditorGUILayout.Space();
+            DrawWindowHeader( "Random Box Reward Table Editor", "랜덤상자 보상 테이블을 검색, 생성, 복제, 삭제하고 등장 아이템과 가중치, 수량 범위를 편집합니다." );
             DrawToolbarSection();
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
@@ -177,7 +174,7 @@ namespace TinyHero.Tools
             }
 
             EditorGUILayout.EndScrollView();
-            EditorGUILayout.HelpBox( statusMessage, statusMessageType );
+            DrawStatusMessage( statusMessage, statusMessageType );
             EditorGUILayout.EndVertical();
         }
 
@@ -721,8 +718,7 @@ namespace TinyHero.Tools
             }
 
             string sourceAssetPath = AssetDatabase.GetAssetPath( _rewardTable );
-            string duplicatedAssetPath = AssetDatabase.GenerateUniqueAssetPath( sourceAssetPath );
-            bool isCopied = AssetDatabase.CopyAsset( sourceAssetPath, duplicatedAssetPath );
+            bool isCopied = TryDuplicateAsset( _rewardTable, sourceAssetPath, out string duplicatedAssetPath );
 
             if ( isCopied == false )
             {
@@ -730,8 +726,6 @@ namespace TinyHero.Tools
                 return;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             RefreshRewardTableInfos();
             RestoreSelectionByAssetPath( duplicatedAssetPath );
             hasPendingAssetChanges = false;
@@ -1077,7 +1071,7 @@ namespace TinyHero.Tools
             {
                 RandomBoxRewardTableInfo tableInfo = rewardTableInfoList[ index ];
 
-                if ( IsMatchedTableSearch( tableInfo ) == false )
+                if ( IsSearchMatch( tableInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -1125,19 +1119,19 @@ namespace TinyHero.Tools
         ///<summary>
         /// 테이블 검색 일치 여부 반환
         ///</summary>
-        private bool IsMatchedTableSearch( RandomBoxRewardTableInfo _tableInfo )
+        protected override bool IsSearchMatch( RandomBoxRewardTableInfo _tableInfo, string _searchText )
         {
             if ( _tableInfo == null )
             {
                 return false;
             }
 
-            if ( string.IsNullOrWhiteSpace( searchText ) )
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
             {
                 return true;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            string normalizedSearchText = _searchText.Trim();
             bool containsName = string.IsNullOrWhiteSpace( _tableInfo.tableName ) == false && _tableInfo.tableName.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
             bool containsPath = string.IsNullOrWhiteSpace( _tableInfo.assetPath ) == false && _tableInfo.assetPath.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
             bool result = containsName || containsPath;

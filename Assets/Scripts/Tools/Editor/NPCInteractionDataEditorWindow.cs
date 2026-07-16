@@ -20,7 +20,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// NPC 상호작용 데이터 편집 창
     ///</summary>
-    public sealed class NPCInteractionDataEditorWindow : EditorWindow
+    public sealed class NPCInteractionDataEditorWindow : CEditorToolWindowBase<NPCInteractionPrefabInfo>
     {
         private const string NpcPrefabFolderPath = "Assets/Resources/Prefabs/Character/NPC";
         private const string InteractionDataFolderPath = "Assets/Data/NPC/InteractionData";
@@ -88,10 +88,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "NPC Interaction Data Editor", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "NPC별 상호작용 액션 엔트리를 구성하고 대화 프리셋을 여러 개 저장합니다.", MessageType.None );
-            EditorGUILayout.Space();
+            DrawWindowHeader( "NPC Interaction Data Editor", "NPC별 상호작용 액션 엔트리를 구성하고 대화 프리셋을 여러 개 저장합니다." );
             DrawToolbarSection();
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
@@ -976,7 +973,7 @@ namespace TinyHero.Tools
             {
                 NPCInteractionPrefabInfo prefabInfo = npcPrefabInfoList[ index ];
 
-                if ( IsMatchedSearch( prefabInfo ) == false )
+                if ( IsSearchMatch( prefabInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -990,19 +987,19 @@ namespace TinyHero.Tools
         ///<summary>
         /// 검색 일치 여부 반환
         ///</summary>
-        private bool IsMatchedSearch( NPCInteractionPrefabInfo _prefabInfo )
+        protected override bool IsSearchMatch( NPCInteractionPrefabInfo _prefabInfo, string _searchText )
         {
             if ( _prefabInfo == null )
             {
                 return false;
             }
 
-            if ( string.IsNullOrWhiteSpace( searchText ) )
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
             {
                 return true;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            string normalizedSearchText = _searchText.Trim();
             bool isMatched = _prefabInfo.prefabName.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
             return isMatched;
         }

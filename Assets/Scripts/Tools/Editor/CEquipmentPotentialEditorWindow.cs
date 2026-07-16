@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TinyHero.Core.Data;
+using TinyHero.Tools;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace TinyHero.Tools.Editor
     ///<summary>
     /// 장비 잠재 옵션 편집 창
     ///</summary>
-    public sealed class CEquipmentPotentialEditorWindow : EditorWindow
+    public sealed class CEquipmentPotentialEditorWindow : CEditorToolWindowBase
     {
         private struct COptionEntryViewData
         {
@@ -82,6 +83,7 @@ namespace TinyHero.Tools.Editor
 
             serializedTableData.UpdateIfRequiredOrScript();
             RebuildViewCacheIfNeeded();
+            DrawWindowHeader( "Equipment Potential Editor", "장비 종류와 잠재 등급별 확률 및 옵션 가중치를 편집합니다." );
             DrawToolbar();
             EditorGUILayout.Space( 8.0f );
             DrawRuleSection();

@@ -34,7 +34,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// 상점 정의 편집 창
     ///</summary>
-    public sealed class ShopDefinitionEditorWindow : EditorWindow
+    public sealed class ShopDefinitionEditorWindow : CEditorToolWindowBase<ShopDefinitionInfo>
     {
         private const string ShopDefinitionFolderPath = "Assets/Resources/Data/Shop/Definitions";
         private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
@@ -108,10 +108,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "Shop Definition Editor", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "상점 데이터를 검색, 생성, 복제, 삭제하고 판매 품목과 구매 재화를 즉시 구성합니다.", MessageType.None );
-            EditorGUILayout.Space();
+            DrawWindowHeader( "Shop Definition Editor", "상점 데이터를 검색, 생성, 복제, 삭제하고 판매 품목과 구매 재화를 즉시 구성합니다." );
             DrawToolbarSection();
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
@@ -164,7 +161,7 @@ namespace TinyHero.Tools
             }
 
             EditorGUILayout.EndScrollView();
-            EditorGUILayout.HelpBox( statusMessage, statusMessageType );
+            DrawStatusMessage( statusMessage, statusMessageType );
             EditorGUILayout.EndVertical();
         }
 
@@ -761,8 +758,7 @@ namespace TinyHero.Tools
             }
 
             string sourceAssetPath = AssetDatabase.GetAssetPath( _shopDefinition );
-            string duplicatedAssetPath = AssetDatabase.GenerateUniqueAssetPath( sourceAssetPath );
-            bool isCopied = AssetDatabase.CopyAsset( sourceAssetPath, duplicatedAssetPath );
+            bool isCopied = TryDuplicateAsset( _shopDefinition, sourceAssetPath, out string duplicatedAssetPath );
 
             if ( isCopied == false )
             {
@@ -770,8 +766,6 @@ namespace TinyHero.Tools
                 return;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             CShopDefinition duplicatedShopDefinition = AssetDatabase.LoadAssetAtPath<CShopDefinition>( duplicatedAssetPath );
 
             if ( duplicatedShopDefinition != null )
@@ -1229,7 +1223,7 @@ namespace TinyHero.Tools
             {
                 ShopDefinitionInfo shopInfo = shopDefinitionInfoList[ index ];
 
-                if ( IsMatchedSearch( shopInfo ) == false )
+                if ( IsSearchMatch( shopInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -1243,19 +1237,19 @@ namespace TinyHero.Tools
         ///<summary>
         /// 검색 일치 여부 반환
         ///</summary>
-        private bool IsMatchedSearch( ShopDefinitionInfo _shopInfo )
+        protected override bool IsSearchMatch( ShopDefinitionInfo _shopInfo, string _searchText )
         {
             if ( _shopInfo == null )
             {
                 return false;
             }
 
-            if ( string.IsNullOrWhiteSpace( searchText ) )
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
             {
                 return true;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            string normalizedSearchText = _searchText.Trim();
             bool isShopNameMatched = _shopInfo.shopName.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
 
             if ( isShopNameMatched )

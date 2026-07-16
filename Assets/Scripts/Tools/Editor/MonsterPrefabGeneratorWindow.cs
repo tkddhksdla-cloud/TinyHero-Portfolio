@@ -25,7 +25,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// 몬스터 프리팹 생성 에디터 창
     ///</summary>
-    public sealed class MonsterPrefabGeneratorWindow : EditorWindow
+    public sealed class MonsterPrefabGeneratorWindow : CEditorToolWindowBase<SourceMonsterPrefabInfo>
     {
         private const string TargetFolderPath = "Assets/Resources/Prefabs/Character/Monster";
         private const string MonsterLayerName = "Monster";
@@ -81,10 +81,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "Monster Prefab Generator", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "EnemyMonster 1, EnemyMonster 2 소스 프리팹을 선택해 규약에 맞는 몬스터 프리팹을 생성합니다.", MessageType.None );
-            EditorGUILayout.Space();
+            DrawWindowHeader( "Monster Prefab Generator", "EnemyMonster 1, EnemyMonster 2 소스 프리팹을 선택해 규약에 맞는 몬스터 프리팹을 생성합니다." );
 
             DrawToolbarSection();
             EditorGUILayout.Space();
@@ -377,7 +374,7 @@ namespace TinyHero.Tools
             {
                 SourceMonsterPrefabInfo sourcePrefabInfo = sourcePrefabInfos[ index ];
 
-                if ( IsMatchedSearch( sourcePrefabInfo ) == false )
+                if ( IsSearchMatch( sourcePrefabInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -391,19 +388,19 @@ namespace TinyHero.Tools
         ///<summary>
         /// 검색 일치 여부 반환
         ///</summary>
-        private bool IsMatchedSearch( SourceMonsterPrefabInfo _sourcePrefabInfo )
+        protected override bool IsSearchMatch( SourceMonsterPrefabInfo _sourcePrefabInfo, string _searchText )
         {
             if ( _sourcePrefabInfo == null )
             {
                 return false;
             }
 
-            if ( string.IsNullOrWhiteSpace( searchText ) )
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
             {
                 return true;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            string normalizedSearchText = _searchText.Trim();
             bool isDisplayNameMatched = _sourcePrefabInfo.displayName.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
 
             if ( isDisplayNameMatched )

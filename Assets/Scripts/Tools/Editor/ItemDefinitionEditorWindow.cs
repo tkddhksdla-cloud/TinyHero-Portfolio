@@ -23,7 +23,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// 아이템 정의 에디터 윈도우
     ///</summary>
-    public sealed class ItemDefinitionEditorWindow : EditorWindow
+    public sealed class ItemDefinitionEditorWindow : CEditorToolWindowBase<ItemDefinitionInfo>
     {
         private const string ItemDefinitionFolderPath = "Assets/Resources/Data/Item/Definitions";
         private const string PlayerPrefabAssetPath = "Assets/Resources/Prefabs/Character/Player/Player.prefab";
@@ -90,10 +90,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "Item Definition Editor", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "아이템 정의를 검색, 생성, 복제, 삭제하고 우측 패널에서 즉시 수정합니다.", MessageType.None );
-            EditorGUILayout.Space();
+            DrawWindowHeader( "Item Definition Editor", "아이템 정의를 검색, 생성, 복제, 삭제하고 우측 패널에서 즉시 수정합니다." );
             DrawToolbarSection();
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
@@ -158,7 +155,7 @@ namespace TinyHero.Tools
             }
 
             EditorGUILayout.EndScrollView();
-            EditorGUILayout.HelpBox( statusMessage, statusMessageType );
+            DrawStatusMessage( statusMessage, statusMessageType );
             EditorGUILayout.EndVertical();
         }
 
@@ -659,8 +656,7 @@ namespace TinyHero.Tools
             }
 
             string sourceAssetPath = AssetDatabase.GetAssetPath( _itemDefinition );
-            string duplicatedAssetPath = AssetDatabase.GenerateUniqueAssetPath( sourceAssetPath );
-            bool isCopied = AssetDatabase.CopyAsset( sourceAssetPath, duplicatedAssetPath );
+            bool isCopied = TryDuplicateAsset( _itemDefinition, sourceAssetPath, out string duplicatedAssetPath );
 
             if ( isCopied == false )
             {
@@ -714,8 +710,6 @@ namespace TinyHero.Tools
                 return;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             RefreshItemDefinitionInfos();
             hasPendingAssetChanges = false;
             SetStatus( $"아이템 정의를 삭제했습니다: {assetPath}", MessageType.Info );
@@ -903,7 +897,7 @@ namespace TinyHero.Tools
             {
                 ItemDefinitionInfo itemInfo = itemDefinitionInfoList[ index ];
 
-                if ( IsMatchedSearch( itemInfo ) == false )
+                if ( IsSearchMatch( itemInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -922,19 +916,19 @@ namespace TinyHero.Tools
         ///<summary>
         /// 검색 일치 여부 반환
         ///</summary>
-        private bool IsMatchedSearch( ItemDefinitionInfo _itemInfo )
+        protected override bool IsSearchMatch( ItemDefinitionInfo _itemInfo, string _searchText )
         {
             if ( _itemInfo == null )
             {
                 return false;
             }
 
-            if ( string.IsNullOrWhiteSpace( searchText ) )
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
             {
                 return true;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            string normalizedSearchText = _searchText.Trim();
             bool isItemNameMatched = _itemInfo.itemName.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
 
             if ( isItemNameMatched )

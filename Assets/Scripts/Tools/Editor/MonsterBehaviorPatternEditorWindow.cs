@@ -32,7 +32,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// 몬스터 행동 패턴 편집 에디터 창
     ///</summary>
-    public sealed class MonsterBehaviorPatternEditorWindow : EditorWindow
+    public sealed class MonsterBehaviorPatternEditorWindow : CEditorToolWindowBase<MonsterBehaviorPrefabInfo>
     {
         private const string MonsterPrefabFolderPath = "Assets/Resources/Prefabs/Character/Monster";
         private const string BehaviorPatternFolderPath = "Assets/Data/Monster/BehaviorPatterns";
@@ -117,10 +117,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Monster Behavior Pattern Editor", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("몬스터 프리팹별 ALWAYS, PLAYER_DISTANCE, 공격 패턴을 편집하고 저장합니다.", MessageType.None);
-            EditorGUILayout.Space();
+            DrawWindowHeader( "Monster Behavior Pattern Editor", "몬스터 프리팹별 ALWAYS, PLAYER_DISTANCE, 공격 패턴을 편집하고 저장합니다." );
             DrawToolbarSection();
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
@@ -617,7 +614,7 @@ private void RefreshMonsterPrefabInfos()
             {
                 MonsterBehaviorPrefabInfo prefabInfo = monsterPrefabInfos[index];
 
-                if (IsMatchedSearch(prefabInfo) == false)
+                if ( IsSearchMatch( prefabInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -631,19 +628,19 @@ private void RefreshMonsterPrefabInfos()
         ///<summary>
         /// 검색 일치 여부 반환
         ///</summary>
-        private bool IsMatchedSearch(MonsterBehaviorPrefabInfo _prefabInfo)
+        protected override bool IsSearchMatch( MonsterBehaviorPrefabInfo _prefabInfo, string _searchText )
         {
             if (_prefabInfo == null)
             {
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(searchText))
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
             {
                 return true;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            string normalizedSearchText = _searchText.Trim();
             bool isMatched = _prefabInfo.prefabName.IndexOf(normalizedSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
             return isMatched;
         }

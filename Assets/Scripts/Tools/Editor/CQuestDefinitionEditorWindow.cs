@@ -44,7 +44,7 @@ namespace TinyHero.Tools
     ///<summary>
     /// 퀘스트 정의 에디터 창
     ///</summary>
-    public sealed class CQuestDefinitionEditorWindow : EditorWindow
+    public sealed class CQuestDefinitionEditorWindow : CEditorToolWindowBase<QuestDefinitionInfo>
     {
         private const string QuestDefinitionFolderPath = "Assets/Resources/Data/Quest/Definitions";
         private const string NpcInteractionDataSearchRootPath = "Assets";
@@ -142,10 +142,7 @@ namespace TinyHero.Tools
         private void OnGUI()
         {
             HandleKeyboardNavigation();
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField( "Quest Definition Editor", EditorStyles.boldLabel );
-            EditorGUILayout.HelpBox( "퀘스트 정의를 검색, 생성, 저장, 이름 변경하고 NPC 연결 정보와 대화/조건/보상을 편집합니다.", MessageType.None );
-            EditorGUILayout.Space();
+            DrawWindowHeader( "Quest Definition Editor", "퀘스트 정의를 검색, 생성, 저장, 이름 변경하고 NPC 연결 정보와 대화/조건/보상을 편집합니다." );
             DrawToolbarSection();
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
@@ -242,7 +239,7 @@ namespace TinyHero.Tools
             }
 
             EditorGUILayout.EndScrollView();
-            EditorGUILayout.HelpBox( statusMessage, statusMessageType );
+            DrawStatusMessage( statusMessage, statusMessageType );
             EditorGUILayout.EndVertical();
         }
 
@@ -1362,8 +1359,8 @@ namespace TinyHero.Tools
 
             string selectedAssetPath = AssetDatabase.GetAssetPath( _selectedQuestDefinition );
             string selectedAssetName = Path.GetFileNameWithoutExtension( selectedAssetPath );
-            string duplicatedAssetPath = AssetDatabase.GenerateUniqueAssetPath( $"{QuestDefinitionFolderPath}/{selectedAssetName}_Copy.asset" );
-            bool isCopied = AssetDatabase.CopyAsset( selectedAssetPath, duplicatedAssetPath );
+            string requestedAssetPath = $"{QuestDefinitionFolderPath}/{selectedAssetName}_Copy.asset";
+            bool isCopied = TryDuplicateAsset( _selectedQuestDefinition, requestedAssetPath, out string duplicatedAssetPath );
 
             if ( isCopied == false )
             {
@@ -1371,8 +1368,6 @@ namespace TinyHero.Tools
                 return;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             RefreshQuestDefinitionInfos();
             RestoreSelectionByAssetPath( duplicatedAssetPath );
             SetStatus( $"퀘스트 정의를 복제했습니다. ({Path.GetFileNameWithoutExtension( duplicatedAssetPath )})", MessageType.Info );
@@ -1613,7 +1608,7 @@ namespace TinyHero.Tools
                     continue;
                 }
 
-                if ( IsQuestSearchFilteredOut( questInfo ) )
+                if ( IsSearchMatch( questInfo, searchText ) == false )
                 {
                     continue;
                 }
@@ -1771,17 +1766,22 @@ namespace TinyHero.Tools
         ///<summary>
         /// 퀘스트 검색 필터 제외 여부 반환
         ///</summary>
-        private bool IsQuestSearchFilteredOut( QuestDefinitionInfo _questInfo )
+        protected override bool IsSearchMatch( QuestDefinitionInfo _questInfo, string _searchText )
         {
-            if ( string.IsNullOrWhiteSpace( searchText ) )
+            if ( _questInfo == null )
             {
                 return false;
             }
 
-            string normalizedSearchText = searchText.Trim();
+            if ( string.IsNullOrWhiteSpace( _searchText ) )
+            {
+                return true;
+            }
+
+            string normalizedSearchText = _searchText.Trim();
             bool containsQuestId = string.IsNullOrWhiteSpace( _questInfo.questId ) == false && _questInfo.questId.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
             bool containsQuestName = string.IsNullOrWhiteSpace( _questInfo.questName ) == false && _questInfo.questName.IndexOf( normalizedSearchText, StringComparison.OrdinalIgnoreCase ) >= 0;
-            bool result = containsQuestId == false && containsQuestName == false;
+            bool result = containsQuestId || containsQuestName;
             return result;
         }
 
