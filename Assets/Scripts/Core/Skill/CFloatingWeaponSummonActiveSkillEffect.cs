@@ -28,13 +28,15 @@ namespace TinyHero.Skill
         [SerializeField] private int flatDamageBonus;
 
         [Header( "외형" )]
+        [SerializeField] private GameObject floatingWeaponPrefab;
+        [SerializeField] private GameObject floatingWeaponTrailPrefab;
         [SerializeField] private float weaponVisualScale = 0.6f;
         [SerializeField] private float attackRotationSpeed = 720.0f;
 
         ///<summary>
         /// 부유 무기 소환 효과 설정
         ///</summary>
-        public void Configure( int _companionCount, float _durationSeconds, Vector2 _formationBaseOffset, float _formationVerticalSpacing, float _hoverAmplitude, float _hoverFrequency, float _targetSearchRadius, float _attackIntervalSeconds, float _flightSpeed, float _hitRadius, float _damageMultiplier, int _flatDamageBonus, float _weaponVisualScale, float _attackRotationSpeed )
+        public void Configure( int _companionCount, float _durationSeconds, Vector2 _formationBaseOffset, float _formationVerticalSpacing, float _hoverAmplitude, float _hoverFrequency, float _targetSearchRadius, float _attackIntervalSeconds, float _flightSpeed, float _hitRadius, float _damageMultiplier, int _flatDamageBonus, GameObject _floatingWeaponPrefab, GameObject _floatingWeaponTrailPrefab, float _weaponVisualScale, float _attackRotationSpeed )
         {
             companionCount = Mathf.Max( MinimumCompanionCount, _companionCount );
             durationSeconds = Mathf.Max( MinimumPositiveValue, _durationSeconds );
@@ -48,6 +50,8 @@ namespace TinyHero.Skill
             hitRadius = Mathf.Max( MinimumPositiveValue, _hitRadius );
             damageMultiplier = Mathf.Max( 0.0f, _damageMultiplier );
             flatDamageBonus = _flatDamageBonus;
+            floatingWeaponPrefab = _floatingWeaponPrefab;
+            floatingWeaponTrailPrefab = _floatingWeaponTrailPrefab;
             weaponVisualScale = Mathf.Max( MinimumPositiveValue, _weaponVisualScale );
             attackRotationSpeed = Mathf.Max( 0.0f, _attackRotationSpeed );
         }
@@ -72,7 +76,7 @@ namespace TinyHero.Skill
             }
 
             bool hasWeaponVisual = CFloatingWeaponVisualUtility.TryResolveWeaponSprite( _skillContext, out Sprite weaponSprite );
-            bool result = hasWeaponVisual && weaponSprite != null;
+            bool result = hasWeaponVisual && weaponSprite != null && floatingWeaponPrefab != null && floatingWeaponTrailPrefab != null;
             return result;
         }
 
@@ -104,6 +108,8 @@ namespace TinyHero.Skill
                 hitRadius,
                 damageMultiplier,
                 flatDamageBonus,
+                floatingWeaponPrefab,
+                floatingWeaponTrailPrefab,
                 weaponVisualScale,
                 attackRotationSpeed
             );

@@ -15,6 +15,10 @@ namespace TinyHero.Skill.Editor
         private const string ActiveEffectFolderPath = "Assets/Resources/Data/Skill/Effects/Active";
         private const string ConditionFolderPath = "Assets/Resources/Data/Skill/Conditions";
         private const string IconFolderPath = "Assets/Resources/Data/Skill/Icons";
+        private const string FloatingWeaponPrefabFolderPath = "Assets/Resources/Prefabs/Skill";
+        private const string FloatingWeaponPrefabAssetPath = "Assets/Resources/Prefabs/Skill/FloatingWeaponRetinueProjectile.prefab";
+        private const string FloatingWeaponTrailPrefabAssetPath = "Assets/Resources/Prefabs/Skill/FloatingWeaponRetinueTrail.prefab";
+        private const string FloatingWeaponTrailMaterialAssetPath = "Assets/Lana Studio/Casual RPG VFX/Materials/AB_01.mat";
         private const string GameManagerPrefabAssetPath = "Assets/Resources/Prefabs/Core/CGameManager.prefab";
         private const string HitVfxPrefabAssetPath = "Assets/Lana Studio/Casual RPG VFX/Prefabs/Burst/Burst_sharp.prefab";
         private const string SkillId = "skill_floating_weapon_retinue";
@@ -37,6 +41,8 @@ namespace TinyHero.Skill.Editor
         {
             EnsureFolderStructure();
             Sprite iconSprite = CreateSkillIcon( $"{IconFolderPath}/Icon_FloatingWeaponRetinue.png" );
+            GameObject floatingWeaponPrefab = CreateOrUpdateFloatingWeaponPrefab();
+            GameObject floatingWeaponTrailPrefab = CreateOrUpdateFloatingWeaponTrailPrefab();
             CLevelUnlockCondition unlockCondition = CreateOrReuseAsset<CLevelUnlockCondition>( $"{ConditionFolderPath}/Cond_Level_01_FloatingWeaponRetinue.asset" );
             unlockCondition.Configure( 1 );
             EditorUtility.SetDirty( unlockCondition );
@@ -55,6 +61,8 @@ namespace TinyHero.Skill.Editor
                 0.35f,
                 1.0f,
                 0,
+                floatingWeaponPrefab,
+                floatingWeaponTrailPrefab,
                 0.6f,
                 720.0f
             );
@@ -95,6 +103,75 @@ namespace TinyHero.Skill.Editor
             EnsureFolder( "Assets/Resources/Data/Skill/Effects", "Active" );
             EnsureFolder( RootFolderPath, "Conditions" );
             EnsureFolder( RootFolderPath, "Icons" );
+            EnsureFolder( "Assets/Resources/Prefabs", "Skill" );
+        }
+
+        private static GameObject CreateOrUpdateFloatingWeaponPrefab()
+        {
+            GameObject floatingWeaponPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( FloatingWeaponPrefabAssetPath );
+
+            if ( floatingWeaponPrefab != null )
+            {
+                TrailRenderer legacyTrailRenderer = floatingWeaponPrefab.GetComponent<TrailRenderer>();
+
+                if ( legacyTrailRenderer != null )
+                {
+                    Object.DestroyImmediate( legacyTrailRenderer, true );
+                    EditorUtility.SetDirty( floatingWeaponPrefab );
+                    AssetDatabase.SaveAssets();
+                }
+
+                return floatingWeaponPrefab;
+            }
+
+            GameObject prefabRoot = new GameObject( "FloatingWeaponRetinueProjectile" );
+            SpriteRenderer spriteRenderer = prefabRoot.AddComponent<SpriteRenderer>();
+            spriteRenderer.sortingLayerName = "SkillEffect";
+            PrefabUtility.SaveAsPrefabAsset( prefabRoot, FloatingWeaponPrefabAssetPath );
+            Object.DestroyImmediate( prefabRoot );
+            GameObject result = AssetDatabase.LoadAssetAtPath<GameObject>( FloatingWeaponPrefabAssetPath );
+            return result;
+        }
+
+        private static GameObject CreateOrUpdateFloatingWeaponTrailPrefab()
+        {
+            GameObject floatingWeaponTrailPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( FloatingWeaponTrailPrefabAssetPath );
+            Material trailMaterial = AssetDatabase.LoadAssetAtPath<Material>( FloatingWeaponTrailMaterialAssetPath );
+
+            if ( floatingWeaponTrailPrefab != null )
+            {
+                TrailRenderer existingTrailRenderer = floatingWeaponTrailPrefab.GetComponent<TrailRenderer>();
+
+                if ( existingTrailRenderer != null && existingTrailRenderer.sharedMaterial != trailMaterial )
+                {
+                    existingTrailRenderer.sharedMaterial = trailMaterial;
+                    EditorUtility.SetDirty( floatingWeaponTrailPrefab );
+                    AssetDatabase.SaveAssets();
+                }
+
+                return floatingWeaponTrailPrefab;
+            }
+
+            GameObject prefabRoot = new GameObject( "FloatingWeaponRetinueTrail" );
+            TrailRenderer trailRenderer = prefabRoot.AddComponent<TrailRenderer>();
+            trailRenderer.time = 0.28f;
+            trailRenderer.startWidth = 0.20f;
+            trailRenderer.endWidth = 0.035f;
+            trailRenderer.minVertexDistance = 0.03f;
+            trailRenderer.sortingLayerName = "SkillEffect";
+            trailRenderer.sortingOrder = 9;
+            trailRenderer.sharedMaterial = trailMaterial;
+            Gradient trailGradient = new Gradient();
+            trailGradient.SetKeys(
+                new[] { new GradientColorKey( Color.white, 0.0f ), new GradientColorKey( Color.white, 1.0f ) },
+                new[] { new GradientAlphaKey( 0.9f, 0.0f ), new GradientAlphaKey( 0.0f, 1.0f ) }
+            );
+            trailRenderer.colorGradient = trailGradient;
+            trailRenderer.emitting = false;
+            PrefabUtility.SaveAsPrefabAsset( prefabRoot, FloatingWeaponTrailPrefabAssetPath );
+            Object.DestroyImmediate( prefabRoot );
+            GameObject result = AssetDatabase.LoadAssetAtPath<GameObject>( FloatingWeaponTrailPrefabAssetPath );
+            return result;
         }
 
         private static string EnsureFolder( string _parentPath, string _folderName )

@@ -25,6 +25,7 @@ namespace TinyHero.Skill
         private readonly HashSet<int> damagedMonsterIdSet = new HashSet<int>();
         private CFloatingWeaponSummonRuntime ownerRuntime;
         private SpriteRenderer weaponSpriteRenderer;
+        private TrailRenderer trailRenderer;
         private MonsterObject targetMonster;
         private eFloatingWeaponState currentState = eFloatingWeaponState.HOVERING;
         private int companionIndex;
@@ -44,16 +45,18 @@ namespace TinyHero.Skill
         ///<summary>
         /// 개별 부유 무기 초기화
         ///</summary>
-        public void Initialize( CFloatingWeaponSummonRuntime _ownerRuntime, int _companionIndex, int _companionCount, float _hoverPhase, SpriteRenderer _weaponSpriteRenderer )
+        public void Initialize( CFloatingWeaponSummonRuntime _ownerRuntime, int _companionIndex, int _companionCount, float _hoverPhase, SpriteRenderer _weaponSpriteRenderer, TrailRenderer _trailRenderer )
         {
             ownerRuntime = _ownerRuntime;
             companionIndex = _companionIndex;
             companionCount = Mathf.Max( 1, _companionCount );
             hoverPhase = _hoverPhase;
             weaponSpriteRenderer = _weaponSpriteRenderer;
+            trailRenderer = _trailRenderer;
             float staggerRatio = companionCount > 0 ? companionIndex / ( float ) companionCount : 0.0f;
             nextAttackTime = Time.time + ownerRuntime.GetAttackIntervalSeconds() * staggerRatio;
             ApplyFacingVisual();
+            SetTrailEmitting( false );
         }
 
         ///<summary>
@@ -96,6 +99,7 @@ namespace TinyHero.Skill
             currentState = eFloatingWeaponState.HOVERING;
             nextAttackTime = Time.time + ownerRuntime.GetTargetRetrySeconds();
             BeginDamageTrajectory();
+            SetTrailEmitting( false );
             ApplyFacingVisual();
         }
 
@@ -144,6 +148,7 @@ namespace TinyHero.Skill
             }
 
             BeginDamageTrajectory();
+            SetTrailEmitting( true );
             currentState = eFloatingWeaponState.ATTACKING;
         }
 
@@ -269,6 +274,7 @@ namespace TinyHero.Skill
             trajectoryDurationSeconds = Mathf.Max( MinimumTrajectoryDuration, trajectoryDistance / ownerRuntime.GetFlightSpeed() );
             trajectoryElapsedSeconds = 0.0f;
             BeginDamageTrajectory( departureMonsterInstanceId );
+            SetTrailEmitting( true );
             currentState = eFloatingWeaponState.REBOUNDING;
         }
 
@@ -339,6 +345,7 @@ namespace TinyHero.Skill
             transform.rotation = Quaternion.identity;
             targetMonster = null;
             ApplyFacingVisual();
+            SetTrailEmitting( false );
             currentState = eFloatingWeaponState.HOVERING;
             nextAttackTime = Time.time + ownerRuntime.GetTargetRetrySeconds();
         }
@@ -390,6 +397,21 @@ namespace TinyHero.Skill
             }
 
             weaponSpriteRenderer.flipX = ownerRuntime.ResolveFacingDirection() < 0.0f;
+        }
+
+        private void SetTrailEmitting( bool _isEmitting )
+        {
+            if ( trailRenderer == null )
+            {
+                return;
+            }
+
+            trailRenderer.emitting = _isEmitting;
+
+            if ( _isEmitting == false )
+            {
+                trailRenderer.Clear();
+            }
         }
     }
 }

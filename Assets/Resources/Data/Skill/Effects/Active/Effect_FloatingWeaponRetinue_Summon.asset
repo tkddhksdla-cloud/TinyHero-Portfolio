@@ -14,17 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TinyHero.Skill.CFloatingWeaponSummonActiveSkillEffect
   simultaneousTargetCount: 16
   damageStartDelaySeconds: 0
-  companionCount: 4
+  companionCount: 3
   durationSeconds: 30
   formationBaseOffset: {x: -0.9, y: 0.9}
   formationVerticalSpacing: 0.65
   hoverAmplitude: 0.12
   hoverFrequency: 2.4
-  targetSearchRadius: 8
-  attackIntervalSeconds: 2
-  flightSpeed: 13
-  hitRadius: 0.4
-  damageMultiplier: 0.5
+  targetSearchRadius: 7
+  attackIntervalSeconds: 1.2
+  flightSpeed: 15
+  hitRadius: 0.35
+  damageMultiplier: 1
   flatDamageBonus: 0
+  floatingWeaponPrefab: {fileID: 1660232567232134920, guid: 4f150e0512d513048a8c174755f4a551, type: 3}
+  floatingWeaponTrailPrefab: {fileID: 1577443295565168631, guid: 007186768faf8a443bfefd1d999b0987, type: 3}
   weaponVisualScale: 0.6
   attackRotationSpeed: 720

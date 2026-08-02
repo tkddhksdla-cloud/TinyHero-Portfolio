@@ -11,7 +11,10 @@ namespace TinyHero.Skill
     {
         private const int TargetBufferSize = 64;
         private const float MinimumTargetRetrySeconds = 0.2f;
-        private static readonly Color ReplayCloneWeaponTintColor = new Color( 0.12f, 0.12f, 0.12f, 0.58f );
+        private static readonly Color PlayerWeaponTintColor = Color.white;
+        private static readonly Color ReplayCloneWeaponTintColor = Color.black;
+        private static readonly Color PlayerTrailColor = Color.white;
+        private static readonly Color ReplayCloneTrailColor = Color.black;
         private static readonly Dictionary<int, CFloatingWeaponSummonRuntime> ActiveRuntimeByOwnerId = new Dictionary<int, CFloatingWeaponSummonRuntime>();
 
         private readonly Collider2D[] targetBuffer = new Collider2D[ TargetBufferSize ];
@@ -38,14 +41,14 @@ namespace TinyHero.Skill
         ///<summary>
         /// 부유 무기 소환 런타임 초기화
         ///</summary>
-        public bool Initialize( CSkillContext _skillContext, int _companionCount, float _durationSeconds, Vector2 _formationBaseOffset, float _formationVerticalSpacing, float _hoverAmplitude, float _hoverFrequency, float _targetSearchRadius, float _attackIntervalSeconds, float _flightSpeed, float _hitRadius, float _damageMultiplier, int _flatDamageBonus, float _weaponVisualScale, float _attackRotationSpeed )
+        public bool Initialize( CSkillContext _skillContext, int _companionCount, float _durationSeconds, Vector2 _formationBaseOffset, float _formationVerticalSpacing, float _hoverAmplitude, float _hoverFrequency, float _targetSearchRadius, float _attackIntervalSeconds, float _flightSpeed, float _hitRadius, float _damageMultiplier, int _flatDamageBonus, GameObject _floatingWeaponPrefab, GameObject _floatingWeaponTrailPrefab, float _weaponVisualScale, float _attackRotationSpeed )
         {
             if ( _skillContext == null || _skillContext.GetOwnerTransform() == null )
             {
                 return false;
             }
 
-            if ( CFloatingWeaponVisualUtility.TryResolveWeaponSprite( _skillContext, out Sprite weaponSprite ) == false )
+            if ( _floatingWeaponPrefab == null || _floatingWeaponTrailPrefab == null || CFloatingWeaponVisualUtility.TryResolveWeaponSprite( _skillContext, out Sprite weaponSprite ) == false )
             {
                 return false;
             }
@@ -69,7 +72,7 @@ namespace TinyHero.Skill
             ReplaceExistingRuntime();
             ResolveEquipmentManager();
             SubscribeEquipmentChanged();
-            CreateCompanions( Mathf.Max( 1, _companionCount ), weaponSprite, Mathf.Max( 0.01f, _weaponVisualScale ) );
+            CreateCompanions( Mathf.Max( 1, _companionCount ), weaponSprite, _floatingWeaponPrefab, _floatingWeaponTrailPrefab, Mathf.Max( 0.01f, _weaponVisualScale ) );
             isInitialized = companionList.Count > 0;
             return isInitialized;
         }
@@ -274,23 +277,67 @@ namespace TinyHero.Skill
         ///<summary>
         /// 무기 소환수 생성
         ///</summary>
-        private void CreateCompanions( int _companionCount, Sprite _weaponSprite, float _weaponVisualScale )
+        private void CreateCompanions( int _companionCount, Sprite _weaponSprite, GameObject _floatingWeaponPrefab, GameObject _floatingWeaponTrailPrefab, float _weaponVisualScale )
         {
             for ( int index = 0; index < _companionCount; index++ )
             {
-                GameObject companionObject = new GameObject( $"FloatingWeapon_{index + 1}" );
-                companionObject.transform.SetParent( transform );
+                GameObject companionObject = Instantiate( _floatingWeaponPrefab, transform );
+                companionObject.name = $"FloatingWeapon_{index + 1}";
                 companionObject.transform.position = GetFormationWorldPosition( index, _companionCount, index * 1.7f );
-                SpriteRenderer spriteRenderer = companionObject.AddComponent<SpriteRenderer>();
+                SpriteRenderer spriteRenderer = companionObject.GetComponent<SpriteRenderer>();
+
+                if ( spriteRenderer == null )
+                {
+                    Destroy( companionObject );
+                    continue;
+                }
+
                 spriteRenderer.sprite = _weaponSprite;
                 spriteRenderer.sortingLayerName = "SkillEffect";
                 spriteRenderer.sortingOrder = 10 + index;
-                spriteRenderer.color = isReplayCloneOwner ? ReplayCloneWeaponTintColor : Color.white;
+                spriteRenderer.color = isReplayCloneOwner ? ReplayCloneWeaponTintColor : PlayerWeaponTintColor;
                 companionObject.transform.localScale = Vector3.one * _weaponVisualScale;
+                GameObject trailObject = Instantiate( _floatingWeaponTrailPrefab, companionObject.transform );
+                trailObject.name = "FloatingWeaponTrail";
+                trailObject.transform.localPosition = Vector3.zero;
+                trailObject.transform.localRotation = Quaternion.identity;
+                trailObject.transform.localScale = Vector3.one;
+                TrailRenderer trailRenderer = trailObject.GetComponent<TrailRenderer>();
+
+                if ( trailRenderer == null )
+                {
+                    Destroy( companionObject );
+                    continue;
+                }
+
+                Color trailColor = isReplayCloneOwner ? ReplayCloneTrailColor : PlayerTrailColor;
+                ApplyTrailColor( trailRenderer, trailColor );
                 CFloatingWeaponCompanionRuntime companionRuntime = companionObject.AddComponent<CFloatingWeaponCompanionRuntime>();
-                companionRuntime.Initialize( this, index, _companionCount, index * 1.7f, spriteRenderer );
+                companionRuntime.Initialize( this, index, _companionCount, index * 1.7f, spriteRenderer, trailRenderer );
                 companionList.Add( companionRuntime );
             }
+        }
+
+        private static void ApplyTrailColor( TrailRenderer _trailRenderer, Color _trailColor )
+        {
+            if ( _trailRenderer == null )
+            {
+                return;
+            }
+
+            Gradient trailGradient = new Gradient();
+            GradientColorKey[] colorKeys = new[]
+            {
+                new GradientColorKey( _trailColor, 0.0f ),
+                new GradientColorKey( _trailColor, 1.0f )
+            };
+            GradientAlphaKey[] alphaKeys = new[]
+            {
+                new GradientAlphaKey( 0.9f, 0.0f ),
+                new GradientAlphaKey( 0.0f, 1.0f )
+            };
+            trailGradient.SetKeys( colorKeys, alphaKeys );
+            _trailRenderer.colorGradient = trailGradient;
         }
 
         ///<summary>
