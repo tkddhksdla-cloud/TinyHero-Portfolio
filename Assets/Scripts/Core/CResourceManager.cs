@@ -39,6 +39,7 @@ namespace TinyHero.Core
         private const string NpcNameTagPrefabResourcePath = "Prefabs/UI/NameTag/NpcNameTag";
         private const string ToastMessageSystemPrefabResourcePath = "Prefabs/UI/Common/CToastMessageSystem";
         private const string ToastMessagePrefabResourcePath = "Prefabs/UI/Common/ToastMessage";
+        private const string CheatCommandPopupPrefabResourcePath = "Prefabs/UI/Popup/PopupCheatCommand";
         private const string ItemSlotPrefabResourcePath = "Prefabs/UI/Inventory/ItemSlot";
         private const string PlayerVisualPrefabResourcePath = "Prefabs/Character/Player/Player";
         private const string ItemDefinitionResourcePath = "Data/Item/Definitions";
@@ -165,6 +166,7 @@ namespace TinyHero.Core
             LoadResource<GameObject>( NpcNameTagPrefabResourcePath );
             LoadResource<GameObject>( ToastMessageSystemPrefabResourcePath );
             LoadResource<GameObject>( ToastMessagePrefabResourcePath );
+            LoadResource<GameObject>( CheatCommandPopupPrefabResourcePath );
             LoadResource<GameObject>( ItemSlotPrefabResourcePath );
             LoadResource<GameObject>( PlayerVisualPrefabResourcePath );
             LoadResourceAll<CItemDefinition>( ItemDefinitionResourcePath );
@@ -422,6 +424,12 @@ namespace TinyHero.Core
         public GameObject GetToastMessagePrefab()
         {
             GameObject result = LoadResource<GameObject>( ToastMessagePrefabResourcePath );
+            return result;
+        }
+
+        public GameObject GetCheatCommandPopupPrefab()
+        {
+            GameObject result = LoadResource<GameObject>( CheatCommandPopupPrefabResourcePath );
             return result;
         }
 

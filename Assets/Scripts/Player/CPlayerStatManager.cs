@@ -47,6 +47,7 @@ namespace TinyHero.Player
         private CSecureFloat currentExp;
         private CSecureFloat currentHp;
         private CSecureFloat currentMp;
+        private bool isLevelLocked;
         private bool isRuntimeInitialized;
 
         public event Action<CPlayerStatManager> OnStatChanged;
@@ -562,7 +563,24 @@ namespace TinyHero.Player
 
             float nextExp = currentExp + _amount;
             currentExp = nextExp;
-            RefreshProgressionFromExperience();
+            RefreshProgressionFromExperience( isLevelLocked == false );
+        }
+
+        ///<summary>
+        /// 치트 레벨 고정 상태 설정
+        ///</summary>
+        public void SetLevelLocked( bool _isLocked )
+        {
+            isLevelLocked = _isLocked;
+        }
+
+        ///<summary>
+        /// 치트 레벨 고정 상태 반환
+        ///</summary>
+        public bool IsLevelLocked()
+        {
+            bool result = isLevelLocked;
+            return result;
         }
 
         ///<summary>
