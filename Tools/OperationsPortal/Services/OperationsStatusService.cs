@@ -28,10 +28,19 @@ public sealed class OperationsStatusService
         Task<ServiceStatus> jenkinsStatusTask = jenkinsService.GetStatusAsync(_cancellationToken);
         Task<IReadOnlyList<DeploymentRecord>> historyTask = deploymentHistoryService.GetRecentAsync(_cancellationToken);
         string contentRootPath = Path.GetFullPath(options.LocalContentRoot);
-        string windowsContentPath = Path.Combine(contentRootPath, "Windows");
-        FileInfo[] contentFileArray = Directory.Exists(windowsContentPath)
-            ? new DirectoryInfo(windowsContentPath).GetFiles("*", SearchOption.AllDirectories)
-            : Array.Empty<FileInfo>();
+        string windowsContentDirectoryName = ContentPackageService.GetAddressablesBuildTargetDirectoryName(eBuildPlatform.WINDOWS);
+        string windowsContentPath = Path.Combine(contentRootPath, windowsContentDirectoryName);
+        eBuildPlatform[] platformArray = { eBuildPlatform.WINDOWS, eBuildPlatform.ANDROID, eBuildPlatform.IOS };
+        FileInfo[] contentFileArray = platformArray
+            .SelectMany(_platform =>
+            {
+                string platformDirectoryName = ContentPackageService.GetAddressablesBuildTargetDirectoryName(_platform);
+                string platformContentPath = Path.Combine(contentRootPath, platformDirectoryName);
+                return Directory.Exists(platformContentPath)
+                    ? new DirectoryInfo(platformContentPath).GetFiles("*", SearchOption.AllDirectories)
+                    : Array.Empty<FileInfo>();
+            })
+            .ToArray();
         FileInfo? catalogHashFile = contentFileArray.FirstOrDefault(_file =>
             _file.Name.StartsWith("catalog", StringComparison.OrdinalIgnoreCase) &&
             string.Equals(_file.Extension, ".hash", StringComparison.OrdinalIgnoreCase));

@@ -314,8 +314,8 @@ function renderDeployments(deployments) {
 async function handlePlayerBuildSubmit(event) {
   event.preventDefault();
   const confirmed = await confirmAction(
-    'Windows 플레이어 빌드 시작',
-    '새 게임 실행 파일과 로컬 배포용 Addressables 콘텐츠를 함께 생성합니다.'
+    `${document.querySelector('#playerBuildPlatform').value} 플레이어 빌드 시작`,
+    '선택한 플랫폼의 새 게임 실행 파일과 Addressables 기준 상태를 생성합니다.'
   );
 
   if (!confirmed) return;
@@ -330,7 +330,8 @@ async function handlePlayerBuildSubmit(event) {
       body: JSON.stringify({
         gameVersion: document.querySelector('#gameVersion').value,
         buildOutputPath: document.querySelector('#buildOutputPath').value,
-        requireRemoteContent: document.querySelector('#playerRequireRemoteContent').checked
+        requireRemoteContent: document.querySelector('#playerRequireRemoteContent').checked,
+        platform: document.querySelector('#playerBuildPlatform').value
       })
     });
     const result = await response.json();
@@ -364,7 +365,8 @@ async function handleJenkinsSubmit(event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contentStatePath: document.querySelector('#contentStatePath').value,
-        requireRemoteContent: document.querySelector('#requireRemoteContent').checked
+        requireRemoteContent: document.querySelector('#requireRemoteContent').checked,
+        platform: document.querySelector('#contentBuildPlatform').value
       })
     });
     const result = await response.json();
@@ -386,7 +388,7 @@ async function handleUploadSubmit(event) {
 
   const confirmed = await confirmAction(
     '콘텐츠 패키지 배포',
-    '현재 Windows 콘텐츠가 백업된 뒤 새 패키지로 교체됩니다.'
+    `현재 ${document.querySelector('#uploadPlatform').value} 콘텐츠가 백업된 뒤 새 패키지로 교체됩니다.`
   );
 
   if (!confirmed) return;
@@ -394,6 +396,7 @@ async function handleUploadSubmit(event) {
   const formData = new FormData();
   formData.append('package', state.selectedFile);
   formData.append('releaseNote', document.querySelector('#uploadReleaseNote').value);
+  formData.append('platform', document.querySelector('#uploadPlatform').value);
   setUploadBusy(true);
 
   try {

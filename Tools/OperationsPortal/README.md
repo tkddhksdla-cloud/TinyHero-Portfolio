@@ -16,11 +16,11 @@ TinyHero 로컬 Addressables 콘텐츠 빌드와 배포를 관리하는 전용 �
 
 ## 주요 기능
 
-- Jenkins `TinyHero-Build-Windows`의 `PLAYER_BUILD`, `CONTENT_UPDATE` 빌드 실행
+- Jenkins 멀티플랫폼 파이프라인의 `PLAYER_BUILD`, `CONTENT_UPDATE` 빌드 실행
 - 게임 버전, 플레이어 출력 경로, 원격 콘텐츠 필수 정책 입력
 - Jenkins 대기열, 진행 중 빌드, 최근 빌드 결과 자동 갱신
 - Jenkins 및 로컬 콘텐츠 배포 상태 확인
-- 빌드된 Addressables Windows ZIP 검증 및 즉시 배포
+- 빌드된 Addressables Windows/Android/iOS ZIP 검증 및 플랫폼별 즉시 배포
 - 기존 콘텐츠 자동 백업과 실패 시 원상 복구
 - ZIP 경로 탈출 방지, 카탈로그·해시·번들 구성 검증
 - 최근 직접 배포 이력과 SHA-256 기록
@@ -46,14 +46,14 @@ $env:TINYHERO_JENKINS_TOKEN = "api-token"
 
 ```text
 ServerData/
-  Windows/
+  StandaloneWindows64/ # Android 또는 iOS도 가능
     catalog_*.json
     catalog_*.hash
     *.bundle
 ```
 
 ```text
-Windows/
+StandaloneWindows64/ # Android 또는 iOS도 가능
   catalog_*.json
   catalog_*.hash
   *.bundle

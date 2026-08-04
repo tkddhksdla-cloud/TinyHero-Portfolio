@@ -26,14 +26,23 @@ public sealed record PortalDefaults(
     string GameVersion,
     string BuildOutputPath);
 
+public enum eBuildPlatform
+{
+    WINDOWS,
+    ANDROID,
+    IOS
+}
+
 public sealed record JenkinsPlayerBuildRequest(
     string? GameVersion,
     string? BuildOutputPath,
-    bool RequireRemoteContent = false);
+    bool RequireRemoteContent = false,
+    eBuildPlatform Platform = eBuildPlatform.WINDOWS);
 
 public sealed record JenkinsBuildRequest(
     string? ContentStatePath,
-    bool RequireRemoteContent = false);
+    bool RequireRemoteContent = false,
+    eBuildPlatform Platform = eBuildPlatform.WINDOWS);
 
 public sealed record JenkinsTriggerResult(bool IsTriggered, string Message, string? QueueUrl);
 
@@ -74,6 +83,7 @@ public sealed record DeploymentRecord(
     string Sha256,
     int FileCount,
     long TotalBytes,
-    string TargetPath);
+    string TargetPath,
+    eBuildPlatform Platform = eBuildPlatform.WINDOWS);
 
 public sealed record ContentPackageUploadResult(bool IsPublished, string Message, DeploymentRecord? Deployment);

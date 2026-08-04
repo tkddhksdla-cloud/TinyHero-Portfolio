@@ -27,6 +27,7 @@ public sealed class ContentPackageService
 
     public async Task<ContentPackageUploadResult> PublishAsync(
         IFormFile _packageFile,
+        eBuildPlatform _platform,
         string? _releaseNote,
         CancellationToken _cancellationToken)
     {
@@ -61,7 +62,7 @@ public sealed class ContentPackageService
 
             string sha256 = await CalculateSha256Async(archivePath, _cancellationToken);
             ExtractArchiveSafely(archivePath, extractDirectoryPath);
-            string contentDirectoryPath = FindWindowsContentDirectory(extractDirectoryPath);
+            string contentDirectoryPath = FindContentDirectory(extractDirectoryPath, _platform);
             ValidateContentDirectory(contentDirectoryPath);
             DeploymentRecord deployment = await DeployAsync(
                 operationId,
@@ -69,6 +70,7 @@ public sealed class ContentPackageService
                 _releaseNote,
                 sha256,
                 contentDirectoryPath,
+                _platform,
                 _cancellationToken);
             await deploymentHistoryService.AddAsync(deployment, _cancellationToken);
             return new ContentPackageUploadResult(true, "콘텐츠 패키지가 로컬 서버에 배포되었습니다.", deployment);
@@ -90,46 +92,48 @@ public sealed class ContentPackageService
         string? _releaseNote,
         string _sha256,
         string _contentDirectoryPath,
+        eBuildPlatform _platform,
         CancellationToken _cancellationToken)
     {
         string localContentRoot = Path.GetFullPath(options.LocalContentRoot);
         string operationsRootPath = Path.Combine(localContentRoot, ".operations");
         string stagingRootPath = Path.Combine(operationsRootPath, "staging", _operationId);
-        string stagingWindowsPath = Path.Combine(stagingRootPath, "Windows");
-        string targetWindowsPath = Path.Combine(localContentRoot, "Windows");
-        string backupWindowsPath = Path.Combine(operationsRootPath, "backups", _operationId, "Windows");
-        Directory.CreateDirectory(stagingWindowsPath);
+        string platformDirectoryName = GetAddressablesBuildTargetDirectoryName(_platform);
+        string stagingPlatformPath = Path.Combine(stagingRootPath, platformDirectoryName);
+        string targetPlatformPath = Path.Combine(localContentRoot, platformDirectoryName);
+        string backupPlatformPath = Path.Combine(operationsRootPath, "backups", _operationId, platformDirectoryName);
+        Directory.CreateDirectory(stagingPlatformPath);
 
-        if (Directory.Exists(targetWindowsPath))
+        if (Directory.Exists(targetPlatformPath))
         {
-            CopyDirectory(targetWindowsPath, stagingWindowsPath);
+            CopyDirectory(targetPlatformPath, stagingPlatformPath);
         }
 
-        CopyDirectory(_contentDirectoryPath, stagingWindowsPath);
-        Directory.CreateDirectory(Path.GetDirectoryName(backupWindowsPath)!);
+        CopyDirectory(_contentDirectoryPath, stagingPlatformPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(backupPlatformPath)!);
 
         bool wasTargetMoved = false;
 
         try
         {
-            if (Directory.Exists(targetWindowsPath))
+            if (Directory.Exists(targetPlatformPath))
             {
-                Directory.Move(targetWindowsPath, backupWindowsPath);
+                Directory.Move(targetPlatformPath, backupPlatformPath);
                 wasTargetMoved = true;
             }
 
-            Directory.Move(stagingWindowsPath, targetWindowsPath);
+            Directory.Move(stagingPlatformPath, targetPlatformPath);
         }
         catch
         {
-            if (Directory.Exists(targetWindowsPath))
+            if (Directory.Exists(targetPlatformPath))
             {
-                Directory.Delete(targetWindowsPath, true);
+                Directory.Delete(targetPlatformPath, true);
             }
 
-            if (wasTargetMoved && Directory.Exists(backupWindowsPath))
+            if (wasTargetMoved && Directory.Exists(backupPlatformPath))
             {
-                Directory.Move(backupWindowsPath, targetWindowsPath);
+                Directory.Move(backupPlatformPath, targetPlatformPath);
             }
 
             throw;
@@ -139,7 +143,7 @@ public sealed class ContentPackageService
             TryDeleteDirectory(stagingRootPath);
         }
 
-        FileInfo[] publishedFileArray = new DirectoryInfo(targetWindowsPath).GetFiles("*", SearchOption.AllDirectories);
+        FileInfo[] publishedFileArray = new DirectoryInfo(targetPlatformPath).GetFiles("*", SearchOption.AllDirectories);
         long totalBytes = publishedFileArray.Sum(_file => _file.Length);
         DateTimeOffset publishedAtUtc = DateTimeOffset.UtcNow;
         DeploymentRecord deployment = new(
@@ -150,7 +154,8 @@ public sealed class ContentPackageService
             _sha256,
             publishedFileArray.Length,
             totalBytes,
-            targetWindowsPath);
+            targetPlatformPath,
+            _platform);
         string manifestPath = Path.Combine(localContentRoot, "TinyHeroContentManifest.json");
         string manifestJson = System.Text.Json.JsonSerializer.Serialize(deployment, new System.Text.Json.JsonSerializerOptions
         {
@@ -199,26 +204,42 @@ public sealed class ContentPackageService
         }
     }
 
-    private static string FindWindowsContentDirectory(string _extractDirectoryPath)
+    private static string FindContentDirectory(string _extractDirectoryPath, eBuildPlatform _platform)
     {
+        string platformDirectoryName = GetAddressablesBuildTargetDirectoryName(_platform);
         List<string> candidateDirectoryList = Directory
-            .EnumerateDirectories(_extractDirectoryPath, "Windows", SearchOption.AllDirectories)
+            .EnumerateDirectories(_extractDirectoryPath, platformDirectoryName, SearchOption.AllDirectories)
             .Prepend(_extractDirectoryPath)
-            .Where(_directory => Directory.EnumerateFiles(_directory, "catalog*.json", SearchOption.TopDirectoryOnly).Any())
+            .Where(_directory => HasCatalogFile(_directory))
             .OrderBy(_directory => _directory.Length)
             .ToList();
 
         if (candidateDirectoryList.Count == 0)
         {
-            throw new InvalidDataException("Windows Addressables 카탈로그를 찾을 수 없습니다.");
+            throw new InvalidDataException($"{platformDirectoryName} Addressables 카탈로그를 찾을 수 없습니다.");
         }
 
         return candidateDirectoryList[0];
     }
 
+    ///<summary>
+    /// 플랫폼에 대응하는 Addressables 빌드 디렉터리 이름 반환
+    ///</summary>
+    public static string GetAddressablesBuildTargetDirectoryName(eBuildPlatform _platform)
+    {
+        string result = _platform switch
+        {
+            eBuildPlatform.WINDOWS => "StandaloneWindows64",
+            eBuildPlatform.ANDROID => "Android",
+            eBuildPlatform.IOS => "iOS",
+            _ => throw new ArgumentOutOfRangeException(nameof(_platform), _platform, "지원하지 않는 플랫폼입니다.")
+        };
+        return result;
+    }
+
     private static void ValidateContentDirectory(string _contentDirectoryPath)
     {
-        bool hasCatalog = Directory.EnumerateFiles(_contentDirectoryPath, "catalog*.json", SearchOption.TopDirectoryOnly).Any();
+        bool hasCatalog = HasCatalogFile(_contentDirectoryPath);
         bool hasCatalogHash = Directory.EnumerateFiles(_contentDirectoryPath, "catalog*.hash", SearchOption.TopDirectoryOnly).Any();
         bool hasBundle = Directory.EnumerateFiles(_contentDirectoryPath, "*.bundle", SearchOption.AllDirectories).Any();
 
@@ -226,6 +247,17 @@ public sealed class ContentPackageService
         {
             throw new InvalidDataException("카탈로그, 해시, 번들이 모두 포함된 Addressables 패키지가 필요합니다.");
         }
+    }
+
+    ///<summary>
+    /// Addressables 카탈로그 파일 존재 여부 반환
+    ///</summary>
+    private static bool HasCatalogFile(string _directoryPath)
+    {
+        bool hasJsonCatalog = Directory.EnumerateFiles(_directoryPath, "catalog*.json", SearchOption.TopDirectoryOnly).Any();
+        bool hasBinaryCatalog = Directory.EnumerateFiles(_directoryPath, "catalog*.bin", SearchOption.TopDirectoryOnly).Any();
+        bool result = hasJsonCatalog || hasBinaryCatalog;
+        return result;
     }
 
     private static void CopyDirectory(string _sourceDirectoryPath, string _targetDirectoryPath)

@@ -68,6 +68,7 @@ public sealed class JenkinsService
             ["CONTENT_BASE_URL"] = options.ContentBaseUrl,
             ["REQUIRE_REMOTE_CONTENT"] = _request.RequireRemoteContent.ToString().ToLowerInvariant()
         };
+        parameterDictionary[ "BUILD_PLATFORM" ] = _request.Platform.ToString();
         return await TriggerBuildAsync(parameterDictionary, "콘텐츠 업데이트", _cancellationToken);
     }
 
@@ -100,6 +101,7 @@ public sealed class JenkinsService
             ["CONTENT_BASE_URL"] = options.ContentBaseUrl,
             ["REQUIRE_REMOTE_CONTENT"] = _request.RequireRemoteContent.ToString().ToLowerInvariant()
         };
+        parameterDictionary[ "BUILD_PLATFORM" ] = _request.Platform.ToString();
         return await TriggerBuildAsync(parameterDictionary, "플레이어 빌드", _cancellationToken);
     }
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
 using TinyHero.OperationsPortal.Configuration;
 using TinyHero.OperationsPortal.Models;
 using TinyHero.OperationsPortal.Services;
@@ -15,6 +16,10 @@ builder.WebHost.ConfigureKestrel(_options => _options.Limits.MaxRequestBodySize 
 builder.Services.Configure<OperationsPortalOptions>(builder.Configuration.GetSection(OperationsPortalOptions.SectionName));
 string dataProtectionKeyPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
 builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath));
+builder.Services.ConfigureHttpJsonOptions(_options =>
+{
+    _options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddSingleton<DeploymentHistoryService>();
 builder.Services.AddSingleton<ContentPackageService>();
 builder.Services.AddSingleton<OperationsStatusService>();
@@ -125,7 +130,16 @@ app.MapPost("/api/content/upload", async (
     }
 
     string? releaseNote = form["releaseNote"].FirstOrDefault();
-    ContentPackageUploadResult result = await _contentPackageService.PublishAsync(packageFile, releaseNote, _cancellationToken);
+    string? platformText = form["platform"].FirstOrDefault();
+    eBuildPlatform platform = eBuildPlatform.WINDOWS;
+    bool isPlatformValid = string.IsNullOrWhiteSpace(platformText) || Enum.TryParse(platformText, true, out platform);
+
+    if (isPlatformValid == false)
+    {
+        return Results.BadRequest(new { message = "지원하지 않는 콘텐츠 플랫폼입니다." });
+    }
+
+    ContentPackageUploadResult result = await _contentPackageService.PublishAsync(packageFile, platform, releaseNote, _cancellationToken);
     return result.IsPublished ? Results.Ok(result) : Results.BadRequest(result);
 }).DisableAntiforgery();
 
