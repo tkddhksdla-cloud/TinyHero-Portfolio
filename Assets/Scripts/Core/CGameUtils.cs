@@ -10,5 +10,14 @@ namespace TinyHero.Core
             string result = string.IsNullOrWhiteSpace( _value ) ? string.Empty : _value.Trim();
             return result;
         }
+
+        /// <summary>
+        /// 필수 원격 콘텐츠 상태에서 Resources fallback을 차단해야 하는지 반환합니다.
+        /// </summary>
+        public static bool ShouldBlockRequiredRemoteContentFallback( bool _isRequiredRemoteUpdateDetected, bool _isRemoteContentRequired )
+        {
+            bool result = _isRequiredRemoteUpdateDetected || _isRemoteContentRequired;
+            return result;
+        }
     }
 }

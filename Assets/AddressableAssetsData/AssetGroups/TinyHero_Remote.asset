@@ -225,6 +225,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - TinyHero.RuntimeResource
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a84a800b79abcb4b96535cee56091ef
+    m_Address: MapData/MAP_STARTER_003
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9d84989b2c284dc4ac7b5a0fd7f816f0
     m_Address: Data/Shop/Definitions/SHOP_0001
     m_ReadOnly: 0

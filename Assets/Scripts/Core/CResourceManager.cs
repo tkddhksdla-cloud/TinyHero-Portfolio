@@ -882,7 +882,7 @@ namespace TinyHero.Core
         ///</summary>
         private bool ShouldBlockRemoteDataFallback()
         {
-            bool result = isRequiredRemoteUpdateDetected || CAddressablesRuntimeConfig.IsRemoteContentRequired;
+            bool result = CGameUtils.ShouldBlockRequiredRemoteContentFallback( isRequiredRemoteUpdateDetected, CAddressablesRuntimeConfig.IsRemoteContentRequired );
             return result;
         }
 
@@ -1016,9 +1016,9 @@ namespace TinyHero.Core
 
             Debug.LogWarning( $"[ ResourceManager ] Addressables load failed: {_addressableKey}" );
 
-            if ( _isRemoteDataLoad && ShouldBlockRemoteDataFallback() )
+            if ( ShouldBlockRemoteDataFallback() )
             {
-                MarkRemoteDataLoadFailed( $"필수 원격 데이터 다운로드에 실패했습니다. Key: {_addressableKey}" );
+                MarkRemoteDataLoadFailed( $"필수 원격 콘텐츠 로드에 실패했습니다. Key: {_addressableKey}" );
                 InvokeLoadCompletedHandler( _onCompleted, null );
                 yield break;
             }
