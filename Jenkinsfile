@@ -21,7 +21,10 @@ pipeline {
 
     stages {
         stage('Windows Player Build') {
-            when { expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'WINDOWS' } }
+            when {
+                beforeAgent true
+                expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'WINDOWS' }
+            }
             agent { label 'windows-unity' }
             steps {
                 powershell """
@@ -43,7 +46,10 @@ pipeline {
         }
 
         stage('Windows Content Update') {
-            when { expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'WINDOWS' } }
+            when {
+                beforeAgent true
+                expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'WINDOWS' }
+            }
             agent { label 'windows-unity' }
             steps {
                 powershell """
@@ -54,7 +60,10 @@ pipeline {
         }
 
         stage('Android Player Build') {
-            when { expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'ANDROID' } }
+            when {
+                beforeAgent true
+                expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'ANDROID' }
+            }
             agent { label 'android-unity' }
             steps {
                 bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroBuildOutputPath "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log"'
@@ -62,7 +71,10 @@ pipeline {
         }
 
         stage('Android Content Update') {
-            when { expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'ANDROID' } }
+            when {
+                beforeAgent true
+                expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'ANDROID' }
+            }
             agent { label 'android-unity' }
             steps {
                 bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidContentUpdate -tinyHeroContentStatePath "%CONTENT_STATE_PATH%" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\ContentUpdate.log"'
@@ -70,7 +82,10 @@ pipeline {
         }
 
         stage('iOS Player Build') {
-            when { expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'IOS' } }
+            when {
+                beforeAgent true
+                expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'IOS' }
+            }
             agent { label 'ios-unity' }
             steps {
                 sh '"$UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosPlayer -tinyHeroGameVersion "$GAME_VERSION" -tinyHeroBuildOutputPath "$WORKSPACE/Builds/iOS/$BUILD_NUMBER" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/Unity.log"'
@@ -78,7 +93,10 @@ pipeline {
         }
 
         stage('iOS Content Update') {
-            when { expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'IOS' } }
+            when {
+                beforeAgent true
+                expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'IOS' }
+            }
             agent { label 'ios-unity' }
             steps {
                 sh '"$UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosContentUpdate -tinyHeroContentStatePath "$CONTENT_STATE_PATH" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/ContentUpdate.log"'
