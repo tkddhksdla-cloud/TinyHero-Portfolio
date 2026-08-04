@@ -14,6 +14,8 @@ namespace TinyHero.Core
     ///</summary>
     public sealed class CInputManager : CSingleTon<CInputManager>
     {
+        private const int SkillSlotCount = 8;
+
         [SerializeField] private KeyCode leftKey = KeyCode.LeftArrow;
         [SerializeField] private KeyCode alternateLeftKey = KeyCode.None;
         [SerializeField] private KeyCode rightKey = KeyCode.RightArrow;
@@ -35,6 +37,20 @@ namespace TinyHero.Core
         [SerializeField] private KeyCode skillSlot6Key = KeyCode.S;
         [SerializeField] private KeyCode skillSlot7Key = KeyCode.D;
         [SerializeField] private KeyCode skillSlot8Key = KeyCode.F;
+
+        private readonly int[] mobileSkillSlotDownRequestFrameArray = new int[ SkillSlotCount ];
+        private float mobileHorizontalInput;
+        private bool isMobileJumpHeld;
+        private int mobileJumpDownRequestFrame = -1;
+
+        ///<summary>
+        /// 싱글톤 및 모바일 입력 상태 초기화
+        ///</summary>
+        protected override void Awake()
+        {
+            base.Awake();
+            ClearMobileInputState();
+        }
 
         ///<summary>
         /// 전역 입력 갱신 처리
@@ -62,15 +78,16 @@ namespace TinyHero.Core
 
             bool isLeftPressed = Input.GetKey( leftKey ) || Input.GetKey( alternateLeftKey );
             bool isRightPressed = Input.GetKey( rightKey ) || Input.GetKey( alternateRightKey );
-            float horizontalInput = 0.0f;
+            float keyboardHorizontalInput = 0.0f;
 
             if ( isLeftPressed == isRightPressed )
             {
-                return horizontalInput;
+                float mobileHorizontalResult = mobileHorizontalInput;
+                return mobileHorizontalResult;
             }
 
-            horizontalInput = isLeftPressed ? -1.0f : 1.0f;
-            return horizontalInput;
+            keyboardHorizontalInput = isLeftPressed ? -1.0f : 1.0f;
+            return keyboardHorizontalInput;
         }
 
         ///<summary>
@@ -83,7 +100,8 @@ namespace TinyHero.Core
                 return false;
             }
 
-            bool isJumpDown = Input.GetKeyDown( jumpKey );
+            bool isMobileJumpDown = ConsumeMobileJumpDownRequest();
+            bool isJumpDown = Input.GetKeyDown( jumpKey ) || isMobileJumpDown;
             return isJumpDown;
         }
 
@@ -97,7 +115,7 @@ namespace TinyHero.Core
                 return false;
             }
 
-            bool isJumpHeld = Input.GetKey( jumpKey );
+            bool isJumpHeld = Input.GetKey( jumpKey ) || isMobileJumpHeld;
             return isJumpHeld;
         }
 
@@ -216,8 +234,62 @@ namespace TinyHero.Core
                 return false;
             }
 
-            bool isSkillSlotDown = Input.GetKeyDown( resolvedKeyCode );
+            bool isMobileSkillSlotDown = ConsumeMobileSkillSlotDownRequest( _slotIndex );
+            bool isSkillSlotDown = Input.GetKeyDown( resolvedKeyCode ) || isMobileSkillSlotDown;
             return isSkillSlotDown;
+        }
+
+        ///<summary>
+        /// 모바일 수평 이동 입력 설정
+        ///</summary>
+        public void SetMobileHorizontalInput( float _horizontalInput )
+        {
+            float resolvedHorizontalInput = Mathf.Clamp( _horizontalInput, -1.0f, 1.0f );
+            mobileHorizontalInput = resolvedHorizontalInput;
+        }
+
+        ///<summary>
+        /// 모바일 점프 유지 입력 설정
+        ///</summary>
+        public void SetMobileJumpHeld( bool _isJumpHeld )
+        {
+            isMobileJumpHeld = _isJumpHeld;
+        }
+
+        ///<summary>
+        /// 모바일 점프 시작 입력 요청
+        ///</summary>
+        public void RequestMobileJumpDown()
+        {
+            mobileJumpDownRequestFrame = Time.frameCount;
+        }
+
+        ///<summary>
+        /// 모바일 스킬 슬롯 시작 입력 요청
+        ///</summary>
+        public void RequestMobileSkillSlotDown( int _slotIndex )
+        {
+            if ( _slotIndex < 0 || _slotIndex >= SkillSlotCount )
+            {
+                return;
+            }
+
+            mobileSkillSlotDownRequestFrameArray[ _slotIndex ] = Time.frameCount;
+        }
+
+        ///<summary>
+        /// 모바일 입력 상태 초기화
+        ///</summary>
+        public void ClearMobileInputState()
+        {
+            mobileHorizontalInput = 0.0f;
+            isMobileJumpHeld = false;
+            mobileJumpDownRequestFrame = -1;
+
+            for ( int index = 0; index < mobileSkillSlotDownRequestFrameArray.Length; index++ )
+            {
+                mobileSkillSlotDownRequestFrameArray[ index ] = -1;
+            }
         }
 
         ///<summary>
@@ -371,6 +443,42 @@ namespace TinyHero.Core
         private bool IsCheatUiBlockingInput()
         {
             bool result = CCheatCommandUI.IsAnyVisible();
+            return result;
+        }
+
+        ///<summary>
+        /// 모바일 스킬 슬롯 시작 입력 소비
+        ///</summary>
+        private bool ConsumeMobileSkillSlotDownRequest( int _slotIndex )
+        {
+            if ( _slotIndex < 0 || _slotIndex >= mobileSkillSlotDownRequestFrameArray.Length )
+            {
+                return false;
+            }
+
+            int requestedFrame = mobileSkillSlotDownRequestFrameArray[ _slotIndex ];
+            bool isRequested = IsMobileDownRequestValid( requestedFrame );
+            mobileSkillSlotDownRequestFrameArray[ _slotIndex ] = -1;
+            return isRequested;
+        }
+
+        ///<summary>
+        /// 모바일 점프 시작 입력 소비
+        ///</summary>
+        private bool ConsumeMobileJumpDownRequest()
+        {
+            bool isRequested = IsMobileDownRequestValid( mobileJumpDownRequestFrame );
+            mobileJumpDownRequestFrame = -1;
+            return isRequested;
+        }
+
+        ///<summary>
+        /// 모바일 시작 입력 유효 프레임 여부 반환
+        ///</summary>
+        private bool IsMobileDownRequestValid( int _requestedFrame )
+        {
+            int previousFrame = Time.frameCount - 1;
+            bool result = _requestedFrame >= previousFrame;
             return result;
         }
     }

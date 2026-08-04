@@ -10,7 +10,7 @@ namespace TinyHero.UI
     ///<summary>
     /// 스킬 퀵슬롯 단일 슬롯 뷰
     ///</summary>
-    public sealed class CSkillQuickSlotItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public sealed class CSkillQuickSlotItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         private static readonly string[] FixedQuickKeyLabelArray = { "Q", "W", "E", "R", "A", "S", "D", "F" };
 
@@ -110,6 +110,26 @@ namespace TinyHero.UI
             }
 
             ownerSkillQuickSlotUi.HideQuickSlotSkillTooltip();
+        }
+
+        ///<summary>
+        /// 모바일 퀵슬롯 탭 처리
+        ///</summary>
+        public void OnPointerClick( PointerEventData _eventData )
+        {
+            if ( Application.isMobilePlatform == false || _eventData == null || _eventData.button != PointerEventData.InputButton.Left )
+            {
+                return;
+            }
+
+            bool hasInputManager = CInputManager.TryGetExistingInstance( out CInputManager inputManager );
+
+            if ( hasInputManager == false || inputManager == null )
+            {
+                return;
+            }
+
+            inputManager.RequestMobileSkillSlotDown( quickSlotIndex );
         }
 
         ///<summary>
@@ -260,6 +280,12 @@ namespace TinyHero.UI
         {
             if ( skillQuickKeyText == null )
             {
+                return;
+            }
+
+            if ( Application.isMobilePlatform )
+            {
+                skillQuickKeyText.text = string.Empty;
                 return;
             }
 

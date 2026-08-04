@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: TinyHero_Local
   m_GUID: a98aa92c2b988644aa62eea983e221a6
   m_SerializeEntries:
+  - m_GUID: 007186768faf8a443bfefd1d999b0987
+    m_Address: Prefabs/Skill/FloatingWeaponRetinueTrail
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0284b2cf062de6c4eb5535e7d5977cf2
     m_Address: Prefabs/UI/Skill/SkillSlot
     m_ReadOnly: 0
@@ -108,6 +114,18 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 495fc84b9ed89ba46a81c3c1e89d7cdf
     m_Address: Prefabs/Item/Drops/DROP_ITEM_CONSUMABLE_SKILL_BOOK_skill_shadow_partner
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b64a76ccb841734da4232970115c59b
+    m_Address: Prefabs/UI/Common/MobileJumpButton
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4f150e0512d513048a8c174755f4a551
+    m_Address: Prefabs/Skill/FloatingWeaponRetinueProjectile
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -232,6 +250,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 874e8bd2bfb77384f85bd6effca26947
     m_Address: Prefabs/UI/Popup/PopupContentDownload
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8cf2215ef1389614e94f9cb48cb3b277
+    m_Address: Prefabs/UI/Common/MobileJoystick
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
@@ -396,6 +420,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f8cbad8e755644042b3494381e54793b
     m_Address: Prefabs/FX/FX_Explosion
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - TinyHero.RuntimeResource
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f94a2bf31cb07a844a3dbb1e4197f9a6
+    m_Address: Prefabs/UI/Popup/PopupCheatCommand
     m_ReadOnly: 0
     m_SerializedLabels:
     - TinyHero.RuntimeResource
