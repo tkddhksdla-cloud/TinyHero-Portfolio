@@ -18,14 +18,20 @@ namespace TinyHero.Tools
     public static class CTinyHeroCustomBuildPlayer
     {
         private const string MenuPath = "TinyHero/Build/Build Windows Player";
+        private const string AndroidMenuPath = "TinyHero/Build/Build Android Player";
+        private const string IosMenuPath = "TinyHero/Build/Build iOS Player";
         private const string HybridClrGenerateAllMenuPath = "HybridCLR/Generate/All";
         private const string DefaultBuildOutputPath = "Builds/Windows/TinyHero.exe";
+        private const string DefaultAndroidBuildOutputPath = "Builds/Android/TinyHero.aab";
+        private const string DefaultIosBuildOutputPath = "Builds/iOS";
         private const string GameVersionPattern = @"^\d+\.\d+\.\d+$";
         private const string MethodBridgeGeneratedPath = "HybridCLRData/LocalIl2CppData-WindowsEditor/il2cpp/libil2cpp/hybridclr/generated/MethodBridge.cpp";
         private const string VisualStudioVcToolsComponentId = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
         private const string StandalonePlatformName = "Standalone";
         private const string CreateSolutionPlatformSettingName = "CreateSolution";
         private const BuildTarget WindowsBuildTarget = BuildTarget.StandaloneWindows64;
+        private const BuildTarget AndroidBuildTarget = BuildTarget.Android;
+        private const BuildTarget IosBuildTarget = BuildTarget.iOS;
 
         ///<summary>
         /// Windows 플레이어 빌드 메뉴 실행
@@ -120,6 +126,93 @@ namespace TinyHero.Tools
             }
 
             return result;
+        }
+
+        [MenuItem( AndroidMenuPath )]
+        public static void BuildAndroidPlayerFromMenu()
+        {
+            BuildMobilePlayer( AndroidBuildTarget, DefaultAndroidBuildOutputPath, PlayerSettings.bundleVersion );
+        }
+
+        [MenuItem( IosMenuPath )]
+        public static void BuildIosPlayerFromMenu()
+        {
+            BuildMobilePlayer( IosBuildTarget, DefaultIosBuildOutputPath, PlayerSettings.bundleVersion );
+        }
+
+        public static bool BuildAndroidPlayer( string _outputPath, string _gameVersion )
+        {
+            bool result = BuildMobilePlayer( AndroidBuildTarget, _outputPath, _gameVersion );
+            return result;
+        }
+
+        public static bool BuildIosPlayer( string _outputPath, string _gameVersion )
+        {
+            bool result = BuildMobilePlayer( IosBuildTarget, _outputPath, _gameVersion );
+            return result;
+        }
+
+        ///<summary>
+        /// Android 및 iOS 플레이어 빌드 공통 실행
+        ///</summary>
+        private static bool BuildMobilePlayer( BuildTarget _buildTarget, string _outputPath, string _gameVersion )
+        {
+            string normalizedOutputPath = NormalizeOutputPath( _outputPath );
+            bool isGameVersionApplied = TryApplyGameVersion( _gameVersion, out string resolvedGameVersion );
+
+            if ( isGameVersionApplied == false || PrepareMobileIl2CppBuildSettings( _buildTarget ) == false || EnsureHybridClrInstalled() == false || GenerateHybridClrBuildArtifacts() == false || CTinyHeroHotfixBuildPreparationUtility.PrepareHotfixBuild( true ) == false || BuildAddressablesContent() == false )
+            {
+                return false;
+            }
+
+            string[] scenePathArray = BuildScenePathArray();
+
+            if ( scenePathArray.Length == 0 )
+            {
+                Debug.LogError( "[TinyHero Build] Mobile Player build stopped. Enabled build scenes not found." );
+                return false;
+            }
+
+            EnsureOutputDirectory( normalizedOutputPath );
+            BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
+            buildPlayerOptions.scenes = scenePathArray;
+            buildPlayerOptions.locationPathName = normalizedOutputPath;
+            buildPlayerOptions.target = _buildTarget;
+            buildPlayerOptions.options = BuildOptions.StrictMode | BuildOptions.DetailedBuildReport;
+            BuildReport buildReport = BuildPipeline.BuildPlayer( buildPlayerOptions );
+            bool isIosBuild = _buildTarget == IosBuildTarget;
+            bool result = ReportMobileBuildResult( buildReport, normalizedOutputPath, isIosBuild );
+
+            if ( result )
+            {
+                Debug.Log( $"[TinyHero Build] {_buildTarget} game version: {resolvedGameVersion}" );
+            }
+
+            return result;
+        }
+
+        ///<summary>
+        /// 모바일 IL2CPP 빌드 설정 준비
+        ///</summary>
+        private static bool PrepareMobileIl2CppBuildSettings( BuildTarget _buildTarget )
+        {
+            BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup( _buildTarget );
+            bool isSwitched = EditorUserBuildSettings.SwitchActiveBuildTarget( buildTargetGroup, _buildTarget );
+
+            if ( isSwitched == false )
+            {
+                Debug.LogError( $"[TinyHero Build] Build target switch failed. Target: {_buildTarget}" );
+                return false;
+            }
+
+            EditorUserBuildSettings.development = false;
+#if UNITY_6000_0_OR_NEWER
+            NamedBuildTarget namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup( buildTargetGroup );
+            PlayerSettings.SetScriptingBackend( namedBuildTarget, ScriptingImplementation.IL2CPP );
+#else
+            PlayerSettings.SetScriptingBackend( buildTargetGroup, ScriptingImplementation.IL2CPP );
+#endif
+            return true;
         }
 
         ///<summary>
@@ -500,6 +593,28 @@ namespace TinyHero.Tools
 
             Debug.LogError( $"[TinyHero Build] Build failed. Result: {summary.result}, Errors: {summary.totalErrors}, Warnings: {summary.totalWarnings}" );
             return false;
+        }
+
+        ///<summary>
+        /// 모바일 플레이어 빌드 결과 검증
+        ///</summary>
+        private static bool ReportMobileBuildResult( BuildReport _buildReport, string _outputPath, bool _isDirectoryOutput )
+        {
+            if ( _buildReport == null || _buildReport.summary.result != BuildResult.Succeeded )
+            {
+                Debug.LogError( "[TinyHero Build] Mobile Player build failed." );
+                return false;
+            }
+
+            bool isOutputCreated = _isDirectoryOutput ? Directory.Exists( _outputPath ) : File.Exists( _outputPath );
+
+            if ( isOutputCreated == false )
+            {
+                Debug.LogError( $"[TinyHero Build] Mobile Player output was not found. Path: {_outputPath}" );
+                return false;
+            }
+
+            return true;
         }
 
         ///<summary>

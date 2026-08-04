@@ -23,6 +23,17 @@ $parameterDefinitions = @'
       </a>
     </choices>
   </hudson.model.ChoiceParameterDefinition>
+  <hudson.model.ChoiceParameterDefinition>
+    <name>BUILD_PLATFORM</name>
+    <description>Target platform. Android and iOS require their dedicated Jenkins agent.</description>
+    <choices class="java.util.Arrays$ArrayList">
+      <a class="string-array">
+        <string>WINDOWS</string>
+        <string>ANDROID</string>
+        <string>IOS</string>
+      </a>
+    </choices>
+  </hudson.model.ChoiceParameterDefinition>
   <hudson.model.StringParameterDefinition>
     <name>UNITY_EXE</name>
     <description>Unity Editor executable path</description>
@@ -76,6 +87,7 @@ $parameterDefinitions = @'
 $trackedParameters = @'
 <parameters>
   <string>BUILD_MODE</string>
+  <string>BUILD_PLATFORM</string>
   <string>UNITY_EXE</string>
   <string>GAME_VERSION</string>
   <string>BUILD_OUTPUT_PATH</string>

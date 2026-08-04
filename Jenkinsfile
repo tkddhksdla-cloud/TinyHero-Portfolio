@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'windows-unity' }
+    agent none
 
     options {
         timestamps()
@@ -7,7 +7,8 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'BUILD_MODE', choices: ['PLAYER_BUILD', 'CONTENT_UPDATE'], description: 'Build a Windows player or update Addressables content for an existing player')
+        choice(name: 'BUILD_MODE', choices: ['PLAYER_BUILD', 'CONTENT_UPDATE'], description: 'Build a player or update Addressables content for an existing player')
+        choice(name: 'BUILD_PLATFORM', choices: ['WINDOWS', 'ANDROID', 'IOS'], description: 'Target platform. Android and iOS require their dedicated Jenkins agent.')
         string(name: 'UNITY_EXE', defaultValue: 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.15f1\\Editor\\Unity.exe', description: 'Unity Editor executable path')
         string(name: 'GAME_VERSION', defaultValue: '0.0.01', description: 'Player build version displayed in the title scene. Format: 0.0.01')
         string(name: 'BUILD_OUTPUT_PATH', defaultValue: '', description: 'Optional Windows player output path. Empty value uses Builds/Windows/<BUILD_NUMBER>/TinyHero.exe')
@@ -19,101 +20,68 @@ pipeline {
     }
 
     stages {
-        stage('Player Build') {
-            when {
-                expression { params.BUILD_MODE == 'PLAYER_BUILD' }
-            }
+        stage('Windows Player Build') {
+            when { expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'WINDOWS' } }
+            agent { label 'windows-unity' }
             steps {
                 powershell """
                     \$env:UNITY_EXE = '${params.UNITY_EXE}'
-                    \$buildOutputPath = '${params.BUILD_OUTPUT_PATH}'
-
-                    Write-Host '========== TinyHero Player Build =========='
-                    Write-Host "Build Number: ${env.BUILD_NUMBER}"
-                    Write-Host "Game Version: ${params.GAME_VERSION}"
-                    Write-Host "Remote Content Required: ${params.REQUIRE_REMOTE_CONTENT}"
-                    Write-Host '==========================================='
-
-                    if ([string]::IsNullOrWhiteSpace(\$buildOutputPath)) {
-                        \$buildOutputPath = 'Builds/Windows/${env.BUILD_NUMBER}/TinyHero.exe'
-                    }
-
-                    ./Tools/CI/Invoke-TinyHeroCustomBuild.ps1 `
-                        -BuildOutputPath \$buildOutputPath `
-                        -GameVersion '${params.GAME_VERSION}'
-
-                    Write-Host '[ Pipeline ] Unity player build completed. Configuring runtime content endpoint.'
-
-                    \$resolvedBuildOutputPath = [System.IO.Path]::GetFullPath((Join-Path \$env:WORKSPACE \$buildOutputPath))
-                    \$resolvedBuildOutputDirectory = Split-Path -Path \$resolvedBuildOutputPath -Parent
-                    ./Tools/Addressables/Set-TinyHeroBuildContentEndpoint.ps1 `
-                        -BuildPath \$resolvedBuildOutputDirectory `
-                        -RemoteBaseUrl '${params.CONTENT_BASE_URL}' `
-                        -RequireRemoteContent \$${params.REQUIRE_REMOTE_CONTENT}
-
-                    Write-Host '[ Pipeline ] Content endpoint configured. Publishing Addressables content.'
-
-                    ./Tools/Addressables/Publish-TinyHeroAddressablesContent.ps1 `
-                        -PublishPath '${params.CONTENT_PUBLISH_PATH}' `
-                        -LocalServerPath '${params.LOCAL_CONTENT_SERVER_PATH}'
-                """
-            }
-        }
-
-        stage('Content Update') {
-            when {
-                expression { params.BUILD_MODE == 'CONTENT_UPDATE' }
-            }
-            steps {
-                powershell """
-                    \$env:UNITY_EXE = '${params.UNITY_EXE}'
-                    Write-Host '======= TinyHero Content Update ======='
-                    Write-Host "Build Number: ${env.BUILD_NUMBER}"
-                    Write-Host "Content State: ${params.CONTENT_STATE_PATH}"
-                    Write-Host "Remote Content Required: ${params.REQUIRE_REMOTE_CONTENT}"
-                    Write-Host '======================================='
-                    ./Tools/Addressables/Invoke-TinyHeroContentUpdate.ps1 `
-                        -ContentStatePath '${params.CONTENT_STATE_PATH}' `
-                        -PublishPath '${params.CONTENT_PUBLISH_PATH}' `
-                        -LocalServerPath '${params.LOCAL_CONTENT_SERVER_PATH}'
-                """
-            }
-        }
-
-        stage('Expose Build Output') {
-            when {
-                expression { params.BUILD_MODE == 'PLAYER_BUILD' }
-            }
-            steps {
-                powershell """
                     \$buildOutputPath = '${params.BUILD_OUTPUT_PATH}'
 
                     if ([string]::IsNullOrWhiteSpace(\$buildOutputPath)) {
                         \$buildOutputPath = 'Builds/Windows/${env.BUILD_NUMBER}/TinyHero.exe'
                     }
 
+                    ./Tools/CI/Invoke-TinyHeroCustomBuild.ps1 -BuildOutputPath \$buildOutputPath -GameVersion '${params.GAME_VERSION}'
+
                     \$resolvedBuildOutputPath = [System.IO.Path]::GetFullPath((Join-Path \$env:WORKSPACE \$buildOutputPath))
                     \$resolvedBuildOutputDirectory = Split-Path -Path \$resolvedBuildOutputPath -Parent
-
-                    Write-Host ''
-                    Write-Host '========== TinyHero Build Output =========='
-                    Write-Host "Game Version: ${params.GAME_VERSION}"
-                    Write-Host "Build EXE: \$resolvedBuildOutputPath"
-                    Write-Host "Build Folder: \$resolvedBuildOutputDirectory"
-                    Write-Host '==========================================='
-                    Write-Host ''
-
-                    Set-Content -Path 'BuildOutputPath.txt' -Value @(
-                        "Game Version: ${params.GAME_VERSION}",
-                        "Build EXE: \$resolvedBuildOutputPath",
-                        "Build Folder: \$resolvedBuildOutputDirectory"
-                    ) -Encoding UTF8
-
-                    Set-Content -Path 'Open-Build-Folder.ps1' -Value @(
-                        '\$buildFolder = "' + \$resolvedBuildOutputDirectory.Replace('"', '`"') + '"',
-                        'Start-Process -FilePath \$buildFolder'
-                    ) -Encoding UTF8
+                    ./Tools/Addressables/Set-TinyHeroBuildContentEndpoint.ps1 -BuildPath \$resolvedBuildOutputDirectory -RemoteBaseUrl '${params.CONTENT_BASE_URL}' -RequireRemoteContent \$${params.REQUIRE_REMOTE_CONTENT}
+                    ./Tools/Addressables/Publish-TinyHeroAddressablesContent.ps1 -PublishPath '${params.CONTENT_PUBLISH_PATH}' -LocalServerPath '${params.LOCAL_CONTENT_SERVER_PATH}'
                 """
+            }
+        }
+
+        stage('Windows Content Update') {
+            when { expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'WINDOWS' } }
+            agent { label 'windows-unity' }
+            steps {
+                powershell """
+                    \$env:UNITY_EXE = '${params.UNITY_EXE}'
+                    ./Tools/Addressables/Invoke-TinyHeroContentUpdate.ps1 -ContentStatePath '${params.CONTENT_STATE_PATH}' -PublishPath '${params.CONTENT_PUBLISH_PATH}' -LocalServerPath '${params.LOCAL_CONTENT_SERVER_PATH}'
+                """
+            }
+        }
+
+        stage('Android Player Build') {
+            when { expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'ANDROID' } }
+            agent { label 'android-unity' }
+            steps {
+                bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroBuildOutputPath "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log"'
+            }
+        }
+
+        stage('Android Content Update') {
+            when { expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'ANDROID' } }
+            agent { label 'android-unity' }
+            steps {
+                bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidContentUpdate -tinyHeroContentStatePath "%CONTENT_STATE_PATH%" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\ContentUpdate.log"'
+            }
+        }
+
+        stage('iOS Player Build') {
+            when { expression { params.BUILD_MODE == 'PLAYER_BUILD' && params.BUILD_PLATFORM == 'IOS' } }
+            agent { label 'ios-unity' }
+            steps {
+                sh '"$UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosPlayer -tinyHeroGameVersion "$GAME_VERSION" -tinyHeroBuildOutputPath "$WORKSPACE/Builds/iOS/$BUILD_NUMBER" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/Unity.log"'
+            }
+        }
+
+        stage('iOS Content Update') {
+            when { expression { params.BUILD_MODE == 'CONTENT_UPDATE' && params.BUILD_PLATFORM == 'IOS' } }
+            agent { label 'ios-unity' }
+            steps {
+                sh '"$UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosContentUpdate -tinyHeroContentStatePath "$CONTENT_STATE_PATH" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/ContentUpdate.log"'
             }
         }
     }
@@ -121,10 +89,9 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'Logs/*.log', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'Builds/Windows/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Builds/**', allowEmptyArchive: true
             archiveArtifacts artifacts: 'ServerData/**', allowEmptyArchive: true
             archiveArtifacts artifacts: 'PublishedContent/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'BuildOutputPath.txt,Open-Build-Folder.ps1', allowEmptyArchive: true
         }
     }
 }
