@@ -46,6 +46,8 @@ public sealed record JenkinsBuildRequest(
 
 public sealed record JenkinsTriggerResult(bool IsTriggered, string Message, string? QueueUrl);
 
+public sealed record JenkinsCancelResult(bool IsCancelled, string Message);
+
 public sealed record JenkinsCredentialRequest(string? UserName, string? ApiToken);
 
 public sealed record JenkinsCredentialStatus(bool IsConfigured, string? UserName);

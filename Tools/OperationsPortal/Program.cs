@@ -111,6 +111,15 @@ app.MapPost("/api/jenkins/content-update", async (
     return result.IsTriggered ? Results.Accepted(result.QueueUrl, result) : Results.BadRequest(result);
 });
 
+app.MapPost("/api/jenkins/builds/{_buildNumber:int}/cancel", async (
+    int _buildNumber,
+    JenkinsService _jenkinsService,
+    CancellationToken _cancellationToken) =>
+{
+    JenkinsCancelResult result = await _jenkinsService.CancelBuildAsync(_buildNumber, _cancellationToken);
+    return result.IsCancelled ? Results.Accepted(value: result) : Results.BadRequest(result);
+});
+
 app.MapPost("/api/content/upload", async (
     HttpRequest _request,
     ContentPackageService _contentPackageService,

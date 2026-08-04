@@ -106,6 +106,38 @@ public sealed class JenkinsService
     }
 
     /// <summary>
+    /// 실행 중이거나 대기 중인 Jenkins 빌드를 중지한다.
+    /// </summary>
+    public async Task<JenkinsCancelResult> CancelBuildAsync(
+        int _buildNumber,
+        CancellationToken _cancellationToken)
+    {
+        if (_buildNumber <= 0)
+        {
+            return new JenkinsCancelResult(false, "유효한 Jenkins 빌드 번호가 필요합니다.");
+        }
+
+        try
+        {
+            await AddCrumbAsync(_cancellationToken);
+            string encodedJobName = Uri.EscapeDataString(options.JenkinsJobName);
+            using HttpRequestMessage request = CreateRequest(HttpMethod.Post, $"job/{encodedJobName}/{_buildNumber}/stop");
+            using HttpResponseMessage response = await httpClient.SendAsync(request, _cancellationToken);
+
+            if (response.IsSuccessStatusCode == false)
+            {
+                return new JenkinsCancelResult(false, $"Jenkins 빌드 중지 실패: HTTP {(int)response.StatusCode}");
+            }
+
+            return new JenkinsCancelResult(true, $"Jenkins 빌드 #{_buildNumber} 중지 요청을 전달했습니다.");
+        }
+        catch (Exception exception)
+        {
+            return new JenkinsCancelResult(false, $"Jenkins 빌드 중지 실패: {exception.Message}");
+        }
+    }
+
+    /// <summary>
     /// Jenkins 작업의 대기열과 최근 빌드 상태를 조회한다.
     /// </summary>
     public async Task<JenkinsBuildStatus> GetBuildStatusAsync(CancellationToken _cancellationToken)
