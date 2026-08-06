@@ -222,6 +222,10 @@ async function refreshBuildStatus() {
 
 function renderBuildStatus(buildStatus) {
   const card = document.querySelector('#buildStatusCard');
+  const activeBuildList = buildStatus.activeBuilds || [];
+  const runningBuildCount = activeBuildList.filter(build => build.state === 'BUILDING').length;
+  const queuedBuildCount = activeBuildList.filter(build => build.state === 'QUEUED').length;
+  const hasMultipleActiveBuilds = activeBuildList.length > 1;
   const isActive = buildStatus.isQueued || buildStatus.isBuilding;
   const isSuccess = buildStatus.state === 'SUCCESS';
   const isFailure = ['FAILURE', 'ABORTED', 'UNSTABLE'].includes(buildStatus.state);
@@ -231,24 +235,24 @@ function renderBuildStatus(buildStatus) {
   document.querySelector('#buildStatusTitle').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
     ? 'Jenkins 인증 필요'
     : isActive
-    ? buildStatus.isQueued ? '빌드 대기 중' : `${formatBuildPlatform(buildStatus.buildPlatform)} · 빌드 #${buildStatus.buildNumber} 진행 중`
+    ? runningBuildCount > 0 ? `${runningBuildCount}개 플랫폼 빌드 진행 중` : '빌드 대기 중'
     : buildStatus.buildNumber ? `최근 빌드 #${buildStatus.buildNumber} · ${buildStatus.state}` : 'Jenkins 빌드 대기';
   document.querySelector('#buildStatusDetail').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
     ? 'Jenkins 계정을 한 번 연결하면 이후 자동으로 빌드를 제어할 수 있습니다.'
+    : hasMultipleActiveBuilds
+    ? `실행 ${runningBuildCount}개 · 대기 ${queuedBuildCount}개 · 플랫폼 카드에서 개별 진행률을 확인하세요.`
     : buildStatus.detail;
   document.querySelector('#buildStateBadge').textContent = resolveBuildStateLabel(buildStatus);
-  document.querySelector('#buildProgressPercent').textContent = buildStatus.isQueued ? '대기 중' : `${progressPercent}%`;
-  document.querySelector('#buildProgressTime').textContent = resolveBuildProgressTime(buildStatus);
+  document.querySelector('#buildProgressPercent').textContent = hasMultipleActiveBuilds
+    ? `${activeBuildList.length} PLATFORMS`
+    : buildStatus.isQueued ? '대기 중' : `${progressPercent}%`;
+  document.querySelector('#buildProgressTime').textContent = hasMultipleActiveBuilds
+    ? '플랫폼별 진행률은 아래 카드에서 표시됩니다.'
+    : resolveBuildProgressTime(buildStatus);
   document.querySelector('#buildProgressBar').style.width = `${progressPercent}%`;
   document.querySelector('#buildProgressTrack').setAttribute('aria-valuenow', String(progressPercent));
-  document.querySelector('#buildNumberValue').textContent = buildStatus.isQueued
-    ? '대기열'
-    : buildStatus.buildNumber ? `#${buildStatus.buildNumber}` : '—';
-  document.querySelector('#buildPlatformValue').textContent = formatBuildPlatform(buildStatus.buildPlatform);
-  document.querySelector('#buildStartedValue').textContent = buildStatus.startedAtUtc
-    ? formatDateTime(buildStatus.startedAtUtc)
-    : buildStatus.isQueued ? '대기열 등록' : '—';
-  renderActiveBuilds(buildStatus.activeBuilds || []);
+  document.querySelector('#buildProgressTrack').hidden = hasMultipleActiveBuilds;
+  renderActiveBuilds(activeBuildList);
   renderBuildHistory(buildStatus.recentBuilds || []);
 
   if (buildStatus.buildUrl) {
@@ -257,10 +261,12 @@ function renderBuildStatus(buildStatus) {
 }
 
 function renderActiveBuilds(buildList) {
+  const activeBuildSection = document.querySelector('.active-build-section');
   const activeBuildList = document.querySelector('#activeBuildList');
+  activeBuildSection.hidden = !buildList.length;
 
   if (!buildList.length) {
-    activeBuildList.innerHTML = '<div class="active-build-empty">진행 또는 대기 중인 빌드가 없습니다.</div>';
+    activeBuildList.innerHTML = '';
     return;
   }
 

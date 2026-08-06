@@ -122,9 +122,6 @@
               </div>
             </div>
             <div class="build-command-meta">
-              <div><small>BUILD</small><strong id="buildNumberValue">—</strong></div>
-              <div><small>PLATFORM</small><strong id="buildPlatformValue">—</strong></div>
-              <div class="build-started-meta"><small>STARTED</small><strong id="buildStartedValue">—</strong></div>
               <div class="build-status-actions">
                 <button id="jenkinsCredentialButton" type="button">Jenkins 인증</button>
                 <a id="buildStatusLink" href="http://127.0.0.1:8081" target="_blank" rel="noreferrer">Jenkins 열기 ↗</a>
@@ -132,7 +129,6 @@
             </div>
           </div>
           <div class="active-build-section">
-            <div class="build-history-heading"><span>PLATFORM PIPELINE</span><small>Windows · Android · iOS는 전용 에이전트에서 동시에 실행됩니다.</small></div>
             <div class="active-build-list" id="activeBuildList">
               <div class="active-build-empty">진행 또는 대기 중인 빌드가 없습니다.</div>
             </div>
@@ -184,7 +180,7 @@
                   <label>
                     <span>대상 플랫폼</span>
                     <select id="playerBuildPlatform" name="platform">
-                      <option value="ALL">ALL · Windows + Android + iOS 병렬 빌드</option>
+                      <option value="ALL">ALL · 전체 플랫폼</option>
                       <option value="WINDOWS">Windows</option>
                       <option value="ANDROID">Android</option>
                       <option value="IOS">iOS</option>
