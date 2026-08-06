@@ -67,7 +67,15 @@ pipeline {
             }
             agent { label 'android-unity' }
             steps {
-                bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType %ANDROID_ARTIFACT_TYPE% -tinyHeroBuildOutputPath "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log"'
+                script {
+                    String androidArtifactType = params.ANDROID_ARTIFACT_TYPE?.trim();
+
+                    if ( androidArtifactType == null || androidArtifactType.isEmpty() ) {
+                        androidArtifactType = 'ALL';
+                    }
+
+                    bat "\"%UNITY_EXE%\" -batchmode -quit -projectPath \"%WORKSPACE%\" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType ${androidArtifactType} -tinyHeroBuildOutputPath \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab\" -logFile \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log\""
+                }
             }
         }
 
