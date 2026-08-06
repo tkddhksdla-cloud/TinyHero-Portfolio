@@ -74,7 +74,21 @@ pipeline {
                         androidArtifactType = 'ALL';
                     }
 
-                    bat "\"%UNITY_EXE%\" -batchmode -quit -projectPath \"%WORKSPACE%\" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType ${androidArtifactType} -tinyHeroBuildOutputPath \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab\" -logFile \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log\""
+                    timeout(time: 30, unit: 'MINUTES') {
+                        bat "\"%UNITY_EXE%\" -batchmode -quit -projectPath \"%WORKSPACE%\" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType ${androidArtifactType} -tinyHeroBuildOutputPath \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab\" -logFile \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log\""
+                    }
+                }
+            }
+            post {
+                always {
+                    powershell '''
+                        $unityLogPath = Join-Path $env:WORKSPACE "Builds\\Android\\$env:BUILD_NUMBER\\Unity.log"
+
+                        if (Test-Path -LiteralPath $unityLogPath) {
+                            Write-Host "[TinyHero Build] Android Unity log tail: $unityLogPath"
+                            Get-Content -LiteralPath $unityLogPath -Tail 200
+                        }
+                    '''
                 }
             }
         }
