@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using HybridCLR.Editor;
 using HybridCLR.Editor.Installer;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
@@ -25,7 +26,6 @@ namespace TinyHero.Tools
         private const string DefaultAndroidBuildOutputPath = "Builds/Android/TinyHero.aab";
         private const string DefaultIosBuildOutputPath = "Builds/iOS";
         private const string GameVersionPattern = @"^\d+\.\d+\.\d+$";
-        private const string MethodBridgeGeneratedPath = "HybridCLRData/LocalIl2CppData-WindowsEditor/il2cpp/libil2cpp/hybridclr/generated/MethodBridge.cpp";
         private const string VisualStudioVcToolsComponentId = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
         private const string StandalonePlatformName = "Standalone";
         private const string CreateSolutionPlatformSettingName = "CreateSolution";
@@ -545,13 +545,15 @@ namespace TinyHero.Tools
         ///</summary>
         private static bool ValidateMethodBridgeDevelopmentFlag()
         {
-            if ( File.Exists( MethodBridgeGeneratedPath ) == false )
+            string methodBridgeGeneratedPath = Path.Combine( SettingsUtil.GeneratedCppDir, "MethodBridge.cpp" );
+
+            if ( File.Exists( methodBridgeGeneratedPath ) == false )
             {
-                Debug.LogError( $"[TinyHero Build] MethodBridge.cpp was not generated. Path: {MethodBridgeGeneratedPath}" );
+                Debug.LogError( $"[TinyHero Build] MethodBridge.cpp was not generated. Path: {methodBridgeGeneratedPath}" );
                 return false;
             }
 
-            string methodBridgeText = File.ReadAllText( MethodBridgeGeneratedPath );
+            string methodBridgeText = File.ReadAllText( methodBridgeGeneratedPath );
             string expectedFlagText = EditorUserBuildSettings.development ? "// DEVELOPMENT=1" : "// DEVELOPMENT=0";
 
             if ( methodBridgeText.IndexOf( expectedFlagText, StringComparison.Ordinal ) >= 0 )

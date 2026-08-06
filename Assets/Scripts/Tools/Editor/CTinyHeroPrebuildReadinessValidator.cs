@@ -422,6 +422,11 @@ namespace TinyHero.Tools
                 return;
             }
 
+            if ( EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64 )
+            {
+                return;
+            }
+
             bool hasVisualStudioComponent = HasVisualStudioVcToolsComponent();
             bool hasClCompiler = HasWindowsX64ClCompiler();
 

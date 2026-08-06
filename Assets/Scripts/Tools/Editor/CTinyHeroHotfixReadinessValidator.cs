@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using HybridCLR.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,7 +16,6 @@ namespace TinyHero.Tools
         private const string HybridClrPackageName = "com.code-philosophy.hybridclr";
         private const string PackageManifestPath = "Packages/manifest.json";
         private const string HybridClrSettingsPath = "ProjectSettings/HybridCLRSettings.asset";
-        private const string HybridClrInstalledVersionRelativePath = "HybridCLRData/LocalIl2CppData-WindowsEditor/il2cpp/libil2cpp/hybridclr/generated/libil2cpp-version.txt";
         private const string HotfixAssemblyName = "TinyHero.Hotfix";
         private const string HotfixContractsAssemblyName = "TinyHero.HotfixContracts";
         private const string HotfixScriptRootPath = "Assets/Scripts/Hotfix";
@@ -98,7 +98,7 @@ namespace TinyHero.Tools
                 return;
             }
 
-            string installedVersionFullPath = ResolveProjectPath( HybridClrInstalledVersionRelativePath );
+            string installedVersionFullPath = Path.Combine( SettingsUtil.GeneratedCppDir, "libil2cpp-version.txt" );
 
             if ( File.Exists( installedVersionFullPath ) == false )
             {

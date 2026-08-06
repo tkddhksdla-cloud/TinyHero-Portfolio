@@ -1,5 +1,6 @@
 using System.IO;
 using System.Collections.Generic;
+using HybridCLR.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,7 +13,6 @@ namespace TinyHero.Tools
     {
         private const string MenuPath = "TinyHero/HybridCLR/Sync Hotfix Payload";
         private const string HotfixAssemblyName = "TinyHero.Hotfix";
-        private const string HotfixDllSourcePath = "HybridCLRData/HotUpdateDlls/StandaloneWindows64/TinyHero.Hotfix.dll";
         private const string HotfixPayloadFolderPath = "Assets/Resources/Hotfix";
         private const string HotfixPayloadAssetPath = "Assets/Resources/Hotfix/TinyHero.Hotfix.dll.bytes";
 
@@ -36,12 +36,13 @@ namespace TinyHero.Tools
         public static bool TrySyncHotfixPayload( List<string> _issueList )
         {
             string projectRootPath = Directory.GetParent( Application.dataPath ).FullName;
-            string sourceFullPath = Path.Combine( projectRootPath, HotfixDllSourcePath );
+            string sourceRelativePath = BuildHotfixDllSourcePath( EditorUserBuildSettings.activeBuildTarget );
+            string sourceFullPath = Path.Combine( projectRootPath, sourceRelativePath );
             string destinationFullPath = Path.Combine( projectRootPath, HotfixPayloadAssetPath );
 
             if ( File.Exists( sourceFullPath ) == false )
             {
-                AddIssue( _issueList, $"Hotfix DLL을 찾을 수 없습니다. 먼저 HybridCLR hot update DLL을 생성해야 합니다. Path: {HotfixDllSourcePath}" );
+                AddIssue( _issueList, $"Hotfix DLL을 찾을 수 없습니다. 먼저 현재 빌드 타겟의 HybridCLR hot update DLL을 생성해야 합니다. Target: {EditorUserBuildSettings.activeBuildTarget}, Path: {sourceRelativePath}" );
                 return false;
             }
 
@@ -49,6 +50,14 @@ namespace TinyHero.Tools
             File.Copy( sourceFullPath, destinationFullPath, true );
             AssetDatabase.ImportAsset( HotfixPayloadAssetPath, ImportAssetOptions.ForceUpdate );
             return true;
+        }
+
+        ///<summary>빌드 타겟별 Hotfix DLL 원본 경로 구성</summary>
+        private static string BuildHotfixDllSourcePath( BuildTarget _buildTarget )
+        {
+            string sourceDirectoryPath = SettingsUtil.GetHotUpdateDllsOutputDirByTarget( _buildTarget );
+            string result = Path.Combine( sourceDirectoryPath, HotfixAssemblyName + ".dll" );
+            return result;
         }
 
         ///<summary>Hotfix 페이로드 폴더 생성 보장</summary>

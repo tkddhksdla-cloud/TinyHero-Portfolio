@@ -74,7 +74,7 @@ pipeline {
                         androidArtifactType = 'ALL';
                     }
 
-                    timeout(time: 30, unit: 'MINUTES') {
+                    timeout(time: 60, unit: 'MINUTES') {
                         bat "\"%UNITY_EXE%\" -batchmode -quit -projectPath \"%WORKSPACE%\" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType ${androidArtifactType} -tinyHeroBuildOutputPath \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab\" -logFile \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log\""
                     }
                 }
@@ -129,10 +129,20 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'Logs/*.log', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'Builds/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'ServerData/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'PublishedContent/**', allowEmptyArchive: true
+            script {
+                String archiveAgentLabel = params.BUILD_PLATFORM == 'ANDROID'
+                    ? 'android-unity'
+                    : params.BUILD_PLATFORM == 'IOS'
+                        ? 'ios-unity'
+                        : 'windows-unity';
+
+                node( archiveAgentLabel ) {
+                    archiveArtifacts artifacts: 'Logs/*.log', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'Builds/**', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'ServerData/**', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'PublishedContent/**', allowEmptyArchive: true
+                }
+            }
         }
     }
 }
