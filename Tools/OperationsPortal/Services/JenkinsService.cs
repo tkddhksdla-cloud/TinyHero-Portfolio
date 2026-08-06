@@ -14,6 +14,7 @@ public sealed class JenkinsService
     private const string ContentUpdateBuildMode = "CONTENT_UPDATE";
     private const string GameVersionParameterName = "GAME_VERSION";
     private const string BuildModeParameterName = "BUILD_MODE";
+    private const string BuildPlatformParameterName = "BUILD_PLATFORM";
     private const string AndroidContentStatePath = "Assets/AddressableAssetsData/Android/addressables_content_state.bin";
     private const string IosContentStatePath = "Assets/AddressableAssetsData/iOS/addressables_content_state.bin";
 
@@ -146,7 +147,7 @@ public sealed class JenkinsService
         try
         {
             string encodedJobName = Uri.EscapeDataString(options.JenkinsJobName);
-            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration],builds[number,url,building,result,timestamp,duration,actions[parameters[name,value]]]{0,6}";
+            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration,actions[parameters[name,value]]],builds[number,url,building,result,timestamp,duration,actions[parameters[name,value]]]{0,6}";
             string encodedTreeQuery = Uri.EscapeDataString(treeQuery);
             using HttpRequestMessage request = CreateRequest(HttpMethod.Get, $"job/{encodedJobName}/api/json?tree={encodedTreeQuery}");
             using HttpResponseMessage response = await httpClient.SendAsync(request, _cancellationToken);
@@ -191,13 +192,15 @@ public sealed class JenkinsService
                     ? Math.Max(0L, (long)(DateTimeOffset.UtcNow - startedAtUtc.Value).TotalMilliseconds)
                     : 0L;
                 int progressPercent = CalculateBuildProgressPercent(elapsedMilliseconds, lastBuild.EstimatedDuration);
-                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url, progressPercent, elapsedMilliseconds, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList);
+                string buildPlatform = ResolveBuildPlatform( lastBuild.Actions );
+                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url, progressPercent, elapsedMilliseconds, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList, buildPlatform);
             }
 
             string result = string.IsNullOrWhiteSpace(lastBuild.Result) ? "UNKNOWN" : lastBuild.Result;
             long completedDuration = Math.Max(0L, lastBuild.Duration);
             int completedProgressPercent = string.Equals(result, "UNKNOWN", StringComparison.OrdinalIgnoreCase) ? 0 : 100;
-            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList);
+            string completedBuildPlatform = ResolveBuildPlatform( lastBuild.Actions );
+            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList, completedBuildPlatform);
         }
         catch (Exception exception)
         {
@@ -219,6 +222,7 @@ public sealed class JenkinsService
             JenkinsBuildState buildState = _buildList[buildIndex];
             string gameVersion = ResolveBuildParameter(buildState.Actions, GameVersionParameterName);
             string buildMode = ResolveBuildParameter(buildState.Actions, BuildModeParameterName);
+            string buildPlatform = ResolveBuildPlatform( buildState.Actions );
             string state = buildState.Building
                 ? "BUILDING"
                 : string.IsNullOrWhiteSpace(buildState.Result) ? "UNKNOWN" : buildState.Result;
@@ -229,6 +233,7 @@ public sealed class JenkinsService
                 buildState.Number,
                 string.IsNullOrWhiteSpace(gameVersion) ? "—" : gameVersion,
                 string.IsNullOrWhiteSpace(buildMode) ? "UNKNOWN" : buildMode,
+                buildPlatform,
                 state,
                 startedAtUtc,
                 Math.Max(0L, buildState.Duration),
@@ -237,6 +242,16 @@ public sealed class JenkinsService
         }
 
         return resultList;
+    }
+
+    /// <summary>
+    /// Jenkins 빌드 파라미터에서 대상 플랫폼을 읽는다.
+    /// </summary>
+    private static string ResolveBuildPlatform( IReadOnlyList<JenkinsBuildAction>? _actionList )
+    {
+        string buildPlatform = ResolveBuildParameter( _actionList, BuildPlatformParameterName );
+        string result = string.IsNullOrWhiteSpace( buildPlatform ) ? "UNKNOWN" : buildPlatform;
+        return result;
     }
 
     private static string ResolveBuildParameter(IReadOnlyList<JenkinsBuildAction>? _actionList, string _parameterName)

@@ -66,6 +66,7 @@ public sealed record JenkinsBuildHistoryItem(
     int BuildNumber,
     string GameVersion,
     string BuildMode,
+    string BuildPlatform,
     string State,
     DateTimeOffset? StartedAtUtc,
     long DurationMilliseconds,
@@ -83,7 +84,8 @@ public sealed record JenkinsBuildStatus(
     long ElapsedMilliseconds,
     long EstimatedDurationMilliseconds,
     DateTimeOffset? StartedAtUtc,
-    IReadOnlyList<JenkinsBuildHistoryItem> RecentBuilds);
+    IReadOnlyList<JenkinsBuildHistoryItem> RecentBuilds,
+    string BuildPlatform = "UNKNOWN");
 
 public sealed record DeploymentRecord(
     string Id,

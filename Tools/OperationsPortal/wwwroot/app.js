@@ -231,7 +231,7 @@ function renderBuildStatus(buildStatus) {
   document.querySelector('#buildStatusTitle').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
     ? 'Jenkins 인증 필요'
     : isActive
-    ? buildStatus.isQueued ? '빌드 대기 중' : `빌드 #${buildStatus.buildNumber} 진행 중`
+    ? buildStatus.isQueued ? '빌드 대기 중' : `${formatBuildPlatform(buildStatus.buildPlatform)} · 빌드 #${buildStatus.buildNumber} 진행 중`
     : buildStatus.buildNumber ? `최근 빌드 #${buildStatus.buildNumber} · ${buildStatus.state}` : 'Jenkins 빌드 대기';
   document.querySelector('#buildStatusDetail').textContent = !buildStatus.isAvailable && !state.jenkinsConfigured
     ? 'Jenkins 계정을 한 번 연결하면 이후 자동으로 빌드를 제어할 수 있습니다.'
@@ -265,6 +265,7 @@ function renderBuildHistory(buildList) {
   historyList.innerHTML = buildList.map(build => {
     const stateClass = resolveBuildHistoryStateClass(build.state);
     const modeLabel = build.buildMode === 'PLAYER_BUILD' ? '전체 빌드' : build.buildMode === 'CONTENT_UPDATE' ? '콘텐츠 업데이트' : '빌드';
+    const platformLabel = formatBuildPlatform(build.buildPlatform);
     const versionLabel = build.gameVersion === '—' && build.buildMode === 'CONTENT_UPDATE' ? '기준 유지' : build.gameVersion;
     const startedLabel = build.startedAtUtc ? formatRelativeTime(build.startedAtUtc) : '시각 정보 없음';
     const tagName = build.buildUrl ? 'a' : 'div';
@@ -274,9 +275,18 @@ function renderBuildHistory(buildList) {
     return `<${tagName} class="build-history-item"${linkAttributes}>
       <div><span class="build-history-number">#${build.buildNumber}</span><i class="build-history-state ${stateClass}"></i></div>
       <strong class="build-history-version">${escapeHtml(versionLabel)}</strong>
-      <small class="build-history-meta">${modeLabel} · ${startedLabel}</small>
+      <small class="build-history-meta">${platformLabel} · ${modeLabel} · ${startedLabel}</small>
     </${tagName}>`;
   }).join('');
+}
+
+function formatBuildPlatform(platform) {
+  const labelByPlatform = {
+    WINDOWS: 'Windows',
+    ANDROID: 'Android',
+    IOS: 'iOS'
+  };
+  return labelByPlatform[platform] || '플랫폼 미확인';
 }
 
 function resolveBuildHistoryStateClass(buildState) {
