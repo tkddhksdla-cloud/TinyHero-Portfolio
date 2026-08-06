@@ -8,6 +8,9 @@ using TinyHero.OperationsPortal.Models;
 using TinyHero.OperationsPortal.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+string serviceMode = builder.Configuration["ServiceMode"]?.Trim().ToUpperInvariant() ?? "ALL";
+bool isPortalEnabled = serviceMode == "ALL" || serviceMode == "PORTAL";
+bool isContentEnabled = serviceMode == "ALL" || serviceMode == "CONTENT";
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 long configuredMaximumUploadBytes = builder.Configuration.GetValue<long>($"{OperationsPortalOptions.SectionName}:MaximumUploadBytes");
@@ -35,8 +38,11 @@ WebApplication app = builder.Build();
 OperationsPortalOptions runtimeOptions = app.Services.GetRequiredService<IOptions<OperationsPortalOptions>>().Value;
 string localContentRootPath = Path.GetFullPath(runtimeOptions.LocalContentRoot);
 Directory.CreateDirectory(localContentRootPath);
-app.UseDefaultFiles();
-app.UseStaticFiles();
+if ( isPortalEnabled )
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
 
 app.MapGet("/api/status", async (OperationsStatusService _statusService, CancellationToken _cancellationToken) =>
 {
@@ -152,32 +158,40 @@ app.MapPost("/api/content/upload", async (
     return result.IsPublished ? Results.Ok(result) : Results.BadRequest(result);
 }).DisableAntiforgery();
 
-app.MapMethods("/TinyHeroContent/{**path}", new[] { "GET", "HEAD" }, ([FromRoute(Name = "path")] string? _path, HttpContext _context) =>
+if ( isContentEnabled )
 {
-    if (string.IsNullOrWhiteSpace(_path))
+    app.MapMethods("/TinyHeroContent/{**path}", new[] { "GET", "HEAD" }, ([FromRoute(Name = "path")] string? _path, HttpContext _context) =>
     {
-        return Results.NotFound();
-    }
+        if (string.IsNullOrWhiteSpace(_path))
+        {
+            return Results.NotFound();
+        }
 
-    string normalizedRootPath = localContentRootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-    string relativePath = _path.Replace('/', Path.DirectorySeparatorChar);
-    string requestedFilePath = Path.GetFullPath(Path.Combine(localContentRootPath, relativePath));
+        string normalizedRootPath = localContentRootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        string relativePath = _path.Replace('/', Path.DirectorySeparatorChar);
+        string requestedFilePath = Path.GetFullPath(Path.Combine(localContentRootPath, relativePath));
 
-    if (requestedFilePath.StartsWith(normalizedRootPath, StringComparison.OrdinalIgnoreCase) == false || File.Exists(requestedFilePath) == false)
-    {
-        return Results.NotFound();
-    }
+        if (requestedFilePath.StartsWith(normalizedRootPath, StringComparison.OrdinalIgnoreCase) == false || File.Exists(requestedFilePath) == false)
+        {
+            return Results.NotFound();
+        }
 
-    string extension = Path.GetExtension(requestedFilePath);
-    bool isCatalogMetadata = string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase) ||
-                             string.Equals(extension, ".hash", StringComparison.OrdinalIgnoreCase);
-    _context.Response.Headers.CacheControl = isCatalogMetadata
-        ? "no-cache, no-store, must-revalidate"
-        : "public, max-age=31536000, immutable";
-    string contentType = string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase)
-        ? "application/json; charset=utf-8"
-        : "application/octet-stream";
-    return Results.File(requestedFilePath, contentType, enableRangeProcessing: true);
-});
-app.MapFallbackToFile("index.html");
+        string extension = Path.GetExtension(requestedFilePath);
+        bool isCatalogMetadata = string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(extension, ".hash", StringComparison.OrdinalIgnoreCase);
+        _context.Response.Headers.CacheControl = isCatalogMetadata
+            ? "no-cache, no-store, must-revalidate"
+            : "public, max-age=31536000, immutable";
+        string contentType = string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase)
+            ? "application/json; charset=utf-8"
+            : "application/octet-stream";
+        return Results.File(requestedFilePath, contentType, enableRangeProcessing: true);
+    });
+}
+
+if ( isPortalEnabled )
+{
+    app.MapFallbackToFile("index.html");
+}
+
 app.Run();
