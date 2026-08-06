@@ -10,6 +10,7 @@ pipeline {
         choice(name: 'BUILD_PLATFORM', choices: ['WINDOWS', 'ANDROID', 'IOS'], description: 'Target platform. Android and iOS require their dedicated Jenkins agent.')
         choice(name: 'ANDROID_ARTIFACT_TYPE', choices: ['ALL', 'APK', 'AAB'], description: 'Android player artifact. ALL creates both APK for device testing and AAB for store distribution.')
         string(name: 'UNITY_EXE', defaultValue: 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.15f1\\Editor\\Unity.exe', description: 'Unity Editor executable path')
+        string(name: 'IOS_UNITY_EXE', defaultValue: '/Applications/Unity/Hub/Editor/6000.3.15f1/Unity.app/Contents/MacOS/Unity', description: 'Unity Editor executable path on the iOS build agent')
         string(name: 'GAME_VERSION', defaultValue: '0.0.01', description: 'Player build version displayed in the title scene. Format: 0.0.01')
         string(name: 'BUILD_OUTPUT_PATH', defaultValue: '', description: 'Optional Windows player output path. Empty value uses Builds/Windows/<BUILD_NUMBER>/TinyHero.exe')
         string(name: 'CONTENT_STATE_PATH', defaultValue: 'Assets/AddressableAssetsData/Windows/addressables_content_state.bin', description: 'Content state file belonging to the player release being updated')
@@ -114,7 +115,7 @@ pipeline {
             }
             agent { label 'ios-unity' }
             steps {
-                sh '"$UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosPlayer -tinyHeroGameVersion "$GAME_VERSION" -tinyHeroBuildOutputPath "$WORKSPACE/Builds/iOS/$BUILD_NUMBER" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/Unity.log"'
+                sh '"$IOS_UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosPlayer -tinyHeroGameVersion "$GAME_VERSION" -tinyHeroBuildOutputPath "$WORKSPACE/Builds/iOS/$BUILD_NUMBER" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/Unity.log"'
             }
         }
 
@@ -125,7 +126,7 @@ pipeline {
             }
             agent { label 'ios-unity' }
             steps {
-                sh '"$UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosContentUpdate -tinyHeroContentStatePath "$CONTENT_STATE_PATH" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/ContentUpdate.log"'
+                sh '"$IOS_UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosContentUpdate -tinyHeroContentStatePath "$CONTENT_STATE_PATH" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/ContentUpdate.log"'
             }
         }
     }

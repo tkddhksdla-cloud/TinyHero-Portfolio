@@ -52,6 +52,12 @@ $parameterDefinitions = @'
     <trim>false</trim>
   </hudson.model.StringParameterDefinition>
   <hudson.model.StringParameterDefinition>
+    <name>IOS_UNITY_EXE</name>
+    <description>Unity Editor executable path on the iOS build agent</description>
+    <defaultValue>/Applications/Unity/Hub/Editor/6000.3.15f1/Unity.app/Contents/MacOS/Unity</defaultValue>
+    <trim>false</trim>
+  </hudson.model.StringParameterDefinition>
+  <hudson.model.StringParameterDefinition>
     <name>GAME_VERSION</name>
     <description>Player build version displayed in the title scene. Format: 0.0.01</description>
     <defaultValue>0.0.01</defaultValue>
@@ -101,6 +107,7 @@ $trackedParameters = @'
   <string>BUILD_PLATFORM</string>
   <string>ANDROID_ARTIFACT_TYPE</string>
   <string>UNITY_EXE</string>
+  <string>IOS_UNITY_EXE</string>
   <string>GAME_VERSION</string>
   <string>BUILD_OUTPUT_PATH</string>
   <string>CONTENT_STATE_PATH</string>
