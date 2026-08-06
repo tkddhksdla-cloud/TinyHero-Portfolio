@@ -34,6 +34,17 @@ $parameterDefinitions = @'
       </a>
     </choices>
   </hudson.model.ChoiceParameterDefinition>
+  <hudson.model.ChoiceParameterDefinition>
+    <name>ANDROID_ARTIFACT_TYPE</name>
+    <description>Android player artifact. ALL creates both APK for device testing and AAB for store distribution.</description>
+    <choices class="java.util.Arrays$ArrayList">
+      <a class="string-array">
+        <string>ALL</string>
+        <string>APK</string>
+        <string>AAB</string>
+      </a>
+    </choices>
+  </hudson.model.ChoiceParameterDefinition>
   <hudson.model.StringParameterDefinition>
     <name>UNITY_EXE</name>
     <description>Unity Editor executable path</description>
@@ -88,6 +99,7 @@ $trackedParameters = @'
 <parameters>
   <string>BUILD_MODE</string>
   <string>BUILD_PLATFORM</string>
+  <string>ANDROID_ARTIFACT_TYPE</string>
   <string>UNITY_EXE</string>
   <string>GAME_VERSION</string>
   <string>BUILD_OUTPUT_PATH</string>

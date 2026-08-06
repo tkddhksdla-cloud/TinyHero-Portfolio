@@ -33,11 +33,19 @@ public enum eBuildPlatform
     IOS
 }
 
+public enum eAndroidArtifactType
+{
+    APK,
+    AAB,
+    ALL
+}
+
 public sealed record JenkinsPlayerBuildRequest(
     string? GameVersion,
     string? BuildOutputPath,
     bool RequireRemoteContent = false,
-    eBuildPlatform Platform = eBuildPlatform.WINDOWS);
+    eBuildPlatform Platform = eBuildPlatform.WINDOWS,
+    eAndroidArtifactType AndroidArtifactType = eAndroidArtifactType.ALL);
 
 public sealed record JenkinsBuildRequest(
     string? ContentStatePath,

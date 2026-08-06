@@ -14,6 +14,8 @@ public sealed class JenkinsService
     private const string ContentUpdateBuildMode = "CONTENT_UPDATE";
     private const string GameVersionParameterName = "GAME_VERSION";
     private const string BuildModeParameterName = "BUILD_MODE";
+    private const string AndroidContentStatePath = "Assets/AddressableAssetsData/Android/addressables_content_state.bin";
+    private const string IosContentStatePath = "Assets/AddressableAssetsData/iOS/addressables_content_state.bin";
 
     private readonly HttpClient httpClient;
     private readonly OperationsPortalOptions options;
@@ -56,9 +58,7 @@ public sealed class JenkinsService
         JenkinsBuildRequest _request,
         CancellationToken _cancellationToken)
     {
-        string contentStatePath = string.IsNullOrWhiteSpace(_request.ContentStatePath)
-            ? options.DefaultContentStatePath
-            : _request.ContentStatePath.Trim();
+        string contentStatePath = ResolveContentStatePath( _request.ContentStatePath, _request.Platform );
         Dictionary<string, string> parameterDictionary = new()
         {
             ["BUILD_MODE"] = ContentUpdateBuildMode,
@@ -102,6 +102,7 @@ public sealed class JenkinsService
             ["REQUIRE_REMOTE_CONTENT"] = _request.RequireRemoteContent.ToString().ToLowerInvariant()
         };
         parameterDictionary[ "BUILD_PLATFORM" ] = _request.Platform.ToString();
+        parameterDictionary[ "ANDROID_ARTIFACT_TYPE" ] = _request.AndroidArtifactType.ToString();
         return await TriggerBuildAsync(parameterDictionary, "플레이어 빌드", _cancellationToken);
     }
 
@@ -328,6 +329,30 @@ public sealed class JenkinsService
 
         httpClient.DefaultRequestHeaders.Remove(crumb.CrumbRequestField);
         httpClient.DefaultRequestHeaders.Add(crumb.CrumbRequestField, crumb.Crumb);
+    }
+
+    /// <summary>
+    /// 요청된 플랫폼에 맞는 Addressables Content State 기본 경로를 결정한다.
+    /// </summary>
+    private string ResolveContentStatePath( string? _requestedPath, eBuildPlatform _platform )
+    {
+        if ( string.IsNullOrWhiteSpace( _requestedPath ) == false )
+        {
+            string requestedPath = _requestedPath.Trim();
+            return requestedPath;
+        }
+
+        if ( _platform == eBuildPlatform.ANDROID )
+        {
+            return AndroidContentStatePath;
+        }
+
+        if ( _platform == eBuildPlatform.IOS )
+        {
+            return IosContentStatePath;
+        }
+
+        return options.DefaultContentStatePath;
     }
 
     /// <summary>

@@ -33,6 +33,13 @@ namespace TinyHero.Tools
         private const BuildTarget AndroidBuildTarget = BuildTarget.Android;
         private const BuildTarget IosBuildTarget = BuildTarget.iOS;
 
+        public enum eAndroidArtifactType
+        {
+            APK,
+            AAB,
+            ALL
+        }
+
         ///<summary>
         /// Windows 플레이어 빌드 메뉴 실행
         ///</summary>
@@ -131,31 +138,40 @@ namespace TinyHero.Tools
         [MenuItem( AndroidMenuPath )]
         public static void BuildAndroidPlayerFromMenu()
         {
-            BuildMobilePlayer( AndroidBuildTarget, DefaultAndroidBuildOutputPath, PlayerSettings.bundleVersion );
+            BuildMobilePlayer( AndroidBuildTarget, DefaultAndroidBuildOutputPath, PlayerSettings.bundleVersion, eAndroidArtifactType.ALL );
         }
 
         [MenuItem( IosMenuPath )]
         public static void BuildIosPlayerFromMenu()
         {
-            BuildMobilePlayer( IosBuildTarget, DefaultIosBuildOutputPath, PlayerSettings.bundleVersion );
+            BuildMobilePlayer( IosBuildTarget, DefaultIosBuildOutputPath, PlayerSettings.bundleVersion, eAndroidArtifactType.ALL );
         }
 
         public static bool BuildAndroidPlayer( string _outputPath, string _gameVersion )
         {
-            bool result = BuildMobilePlayer( AndroidBuildTarget, _outputPath, _gameVersion );
+            bool result = BuildAndroidPlayer( _outputPath, _gameVersion, eAndroidArtifactType.ALL );
+            return result;
+        }
+
+        ///<summary>
+        /// 선택한 산출물 형식으로 Android 플레이어 빌드 실행
+        ///</summary>
+        public static bool BuildAndroidPlayer( string _outputPath, string _gameVersion, eAndroidArtifactType _artifactType )
+        {
+            bool result = BuildMobilePlayer( AndroidBuildTarget, _outputPath, _gameVersion, _artifactType );
             return result;
         }
 
         public static bool BuildIosPlayer( string _outputPath, string _gameVersion )
         {
-            bool result = BuildMobilePlayer( IosBuildTarget, _outputPath, _gameVersion );
+            bool result = BuildMobilePlayer( IosBuildTarget, _outputPath, _gameVersion, eAndroidArtifactType.ALL );
             return result;
         }
 
         ///<summary>
         /// Android 및 iOS 플레이어 빌드 공통 실행
         ///</summary>
-        private static bool BuildMobilePlayer( BuildTarget _buildTarget, string _outputPath, string _gameVersion )
+        private static bool BuildMobilePlayer( BuildTarget _buildTarget, string _outputPath, string _gameVersion, eAndroidArtifactType _androidArtifactType )
         {
             string normalizedOutputPath = NormalizeOutputPath( _outputPath );
             bool isGameVersionApplied = TryApplyGameVersion( _gameVersion, out string resolvedGameVersion );
@@ -173,15 +189,17 @@ namespace TinyHero.Tools
                 return false;
             }
 
-            EnsureOutputDirectory( normalizedOutputPath );
-            BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
-            buildPlayerOptions.scenes = scenePathArray;
-            buildPlayerOptions.locationPathName = normalizedOutputPath;
-            buildPlayerOptions.target = _buildTarget;
-            buildPlayerOptions.options = BuildOptions.StrictMode | BuildOptions.DetailedBuildReport;
-            BuildReport buildReport = BuildPipeline.BuildPlayer( buildPlayerOptions );
             bool isIosBuild = _buildTarget == IosBuildTarget;
-            bool result = ReportMobileBuildResult( buildReport, normalizedOutputPath, isIosBuild );
+            bool result;
+
+            if ( _buildTarget == AndroidBuildTarget )
+            {
+                result = BuildAndroidArtifacts( scenePathArray, normalizedOutputPath, _androidArtifactType );
+            }
+            else
+            {
+                result = BuildMobileArtifact( scenePathArray, normalizedOutputPath, _buildTarget, isIosBuild );
+            }
 
             if ( result )
             {
@@ -206,6 +224,7 @@ namespace TinyHero.Tools
             }
 
             EditorUserBuildSettings.development = false;
+
 #if UNITY_6000_0_OR_NEWER
             NamedBuildTarget namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup( buildTargetGroup );
             PlayerSettings.SetScriptingBackend( namedBuildTarget, ScriptingImplementation.IL2CPP );
@@ -213,6 +232,73 @@ namespace TinyHero.Tools
             PlayerSettings.SetScriptingBackend( buildTargetGroup, ScriptingImplementation.IL2CPP );
 #endif
             return true;
+        }
+
+        ///<summary>
+        /// 선택한 Android APK/AAB 산출물 빌드 실행
+        ///</summary>
+        private static bool BuildAndroidArtifacts( string[] _scenePathArray, string _outputPath, eAndroidArtifactType _artifactType )
+        {
+            bool originalBuildAppBundle = EditorUserBuildSettings.buildAppBundle;
+
+            try
+            {
+                bool isApkRequested = _artifactType == eAndroidArtifactType.APK || _artifactType == eAndroidArtifactType.ALL;
+                bool isAabRequested = _artifactType == eAndroidArtifactType.AAB || _artifactType == eAndroidArtifactType.ALL;
+                bool isBuilt = true;
+
+                if ( isApkRequested )
+                {
+                    string apkOutputPath = ResolveAndroidArtifactOutputPath( _outputPath, ".apk" );
+                    EditorUserBuildSettings.buildAppBundle = false;
+                    bool isApkBuilt = BuildMobileArtifact( _scenePathArray, apkOutputPath, AndroidBuildTarget, false );
+                    isBuilt = isBuilt && isApkBuilt;
+                }
+
+                if ( isAabRequested )
+                {
+                    string aabOutputPath = ResolveAndroidArtifactOutputPath( _outputPath, ".aab" );
+                    EditorUserBuildSettings.buildAppBundle = true;
+                    bool isAabBuilt = BuildMobileArtifact( _scenePathArray, aabOutputPath, AndroidBuildTarget, false );
+                    isBuilt = isBuilt && isAabBuilt;
+                }
+
+                bool result = isBuilt;
+                return result;
+            }
+            finally
+            {
+                EditorUserBuildSettings.buildAppBundle = originalBuildAppBundle;
+            }
+        }
+
+        ///<summary>
+        /// 플랫폼별 단일 모바일 산출물 빌드 실행
+        ///</summary>
+        private static bool BuildMobileArtifact( string[] _scenePathArray, string _outputPath, BuildTarget _buildTarget, bool _isDirectoryOutput )
+        {
+            EnsureOutputDirectory( _outputPath );
+            BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
+            buildPlayerOptions.scenes = _scenePathArray;
+            buildPlayerOptions.locationPathName = _outputPath;
+            buildPlayerOptions.target = _buildTarget;
+            buildPlayerOptions.options = BuildOptions.StrictMode | BuildOptions.DetailedBuildReport;
+            BuildReport buildReport = BuildPipeline.BuildPlayer( buildPlayerOptions );
+            bool result = ReportMobileBuildResult( buildReport, _outputPath, _isDirectoryOutput );
+            return result;
+        }
+
+        ///<summary>
+        /// Android APK/AAB 확장자를 적용한 산출물 경로 반환
+        ///</summary>
+        private static string ResolveAndroidArtifactOutputPath( string _outputPath, string _extension )
+        {
+            string directoryPath = Path.GetDirectoryName( _outputPath );
+            string fileName = Path.GetFileNameWithoutExtension( _outputPath );
+            string normalizedDirectoryPath = string.IsNullOrWhiteSpace( directoryPath ) ? string.Empty : directoryPath;
+            string normalizedFileName = string.IsNullOrWhiteSpace( fileName ) ? "TinyHero" : fileName;
+            string result = Path.Combine( normalizedDirectoryPath, normalizedFileName + _extension );
+            return result;
         }
 
         ///<summary>

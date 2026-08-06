@@ -4,6 +4,12 @@ const state = {
   jenkinsConfigured: false
 };
 
+const contentStatePathByPlatform = {
+  WINDOWS: 'Assets/AddressableAssetsData/Windows/addressables_content_state.bin',
+  ANDROID: 'Assets/AddressableAssetsData/Android/addressables_content_state.bin',
+  IOS: 'Assets/AddressableAssetsData/iOS/addressables_content_state.bin'
+};
+
 const elements = {
   refreshButton: document.querySelector('#refreshButton'),
   jenkinsCredentialButton: document.querySelector('#jenkinsCredentialButton'),
@@ -36,6 +42,8 @@ function bindEvents() {
   elements.jenkinsCredentialForm.addEventListener('submit', handleJenkinsCredentialSubmit);
   elements.jenkinsCredentialCancelButton.addEventListener('click', () => elements.jenkinsCredentialDialog.close());
   elements.playerBuildForm.addEventListener('submit', handlePlayerBuildSubmit);
+  document.querySelector('#playerBuildPlatform').addEventListener('change', updateAndroidArtifactTypeVisibility);
+  document.querySelector('#contentBuildPlatform').addEventListener('change', updateContentStatePath);
   elements.jenkinsForm.addEventListener('submit', handleJenkinsSubmit);
   elements.uploadForm.addEventListener('submit', handleUploadSubmit);
   elements.dropzone.addEventListener('click', () => elements.packageInput.click());
@@ -61,6 +69,20 @@ function bindEvents() {
   });
 
   elements.dropzone.addEventListener('drop', event => selectFile(event.dataTransfer.files[0]));
+  updateAndroidArtifactTypeVisibility();
+  updateContentStatePath();
+}
+
+function updateAndroidArtifactTypeVisibility() {
+  const platform = document.querySelector('#playerBuildPlatform').value;
+  const artifactTypeField = document.querySelector('#androidArtifactTypeField');
+  artifactTypeField.hidden = platform !== 'ANDROID';
+}
+
+function updateContentStatePath() {
+  const platform = document.querySelector('#contentBuildPlatform').value;
+  const contentStatePath = contentStatePathByPlatform[platform];
+  document.querySelector('#contentStatePath').value = contentStatePath;
 }
 
 async function refreshAll() {
@@ -167,7 +189,8 @@ function renderStatus(status) {
   document.querySelector('#fileCountValue').textContent = `${status.content.fileCount.toLocaleString('ko-KR')}개`;
   document.querySelector('#contentSizeValue').textContent = formatBytes(status.content.totalBytes);
   document.querySelector('#contentEndpoint').textContent = status.defaults.contentBaseUrl;
-  document.querySelector('#contentStatePath').value = status.defaults.contentStatePath;
+  contentStatePathByPlatform.WINDOWS = status.defaults.contentStatePath;
+  updateContentStatePath();
   document.querySelector('#gameVersion').value = status.defaults.gameVersion;
   document.querySelector('#buildOutputPath').value = status.defaults.buildOutputPath;
   document.querySelector('#buildStatusLink').href = status.defaults.jenkinsUrl;
@@ -331,7 +354,8 @@ async function handlePlayerBuildSubmit(event) {
         gameVersion: document.querySelector('#gameVersion').value,
         buildOutputPath: document.querySelector('#buildOutputPath').value,
         requireRemoteContent: document.querySelector('#playerRequireRemoteContent').checked,
-        platform: document.querySelector('#playerBuildPlatform').value
+        platform: document.querySelector('#playerBuildPlatform').value,
+        androidArtifactType: document.querySelector('#androidArtifactType').value
       })
     });
     const result = await response.json();

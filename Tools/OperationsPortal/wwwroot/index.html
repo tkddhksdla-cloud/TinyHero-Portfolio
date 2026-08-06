@@ -193,6 +193,15 @@
                     <input id="buildOutputPath" name="buildOutputPath" type="text" autocomplete="off" placeholder="자동으로 빌드 번호별 폴더 사용">
                     <small>대부분 비워두면 됩니다.</small>
                   </label>
+                  <label id="androidArtifactTypeField">
+                    <span>Android 산출물</span>
+                    <select id="androidArtifactType" name="androidArtifactType">
+                      <option value="ALL">ALL · APK + AAB</option>
+                      <option value="APK">APK · 기기 직접 설치용</option>
+                      <option value="AAB">AAB · Play Console 배포용</option>
+                    </select>
+                    <small>ALL은 기기 테스트용 APK와 배포용 AAB를 모두 만듭니다.</small>
+                  </label>
                 </div>
                 <label class="switch-row policy-switch">
                   <span><strong>원격 콘텐츠를 필수로 사용</strong><small>라이브 배포 전용 · 서버 장애 시 게임 진입을 차단합니다.</small></span>

@@ -13,6 +13,7 @@ namespace TinyHero.Tools
         private const string LegacyOutputPathArgumentName = "-buildOutputPath";
         private const string GameVersionArgumentName = "-tinyHeroGameVersion";
         private const string ContentStatePathArgumentName = "-tinyHeroContentStatePath";
+        private const string AndroidArtifactTypeArgumentName = "-tinyHeroAndroidArtifactType";
 
         ///<summary>
         /// 배치모드 Windows 플레이어 빌드 실행
@@ -38,7 +39,17 @@ namespace TinyHero.Tools
         ///</summary>
         public static void BuildAndroidPlayer()
         {
-            BuildMobilePlayer( true );
+            string outputPath = ResolveOutputPath();
+            string[] argumentArray = Environment.GetCommandLineArgs();
+            string gameVersion = FindArgumentValue( argumentArray, GameVersionArgumentName );
+            string artifactTypeName = FindArgumentValue( argumentArray, AndroidArtifactTypeArgumentName );
+            bool isArtifactTypeResolved = TryResolveAndroidArtifactType( artifactTypeName, out CTinyHeroCustomBuildPlayer.eAndroidArtifactType artifactType );
+            bool isBuilt = isArtifactTypeResolved && CTinyHeroCustomBuildPlayer.BuildAndroidPlayer( outputPath, gameVersion, artifactType );
+
+            if ( Application.isBatchMode )
+            {
+                EditorApplication.Exit( isBuilt ? 0 : 1 );
+            }
         }
 
         ///<summary>
@@ -79,6 +90,25 @@ namespace TinyHero.Tools
             {
                 EditorApplication.Exit( isBuilt ? 0 : 1 );
             }
+        }
+
+        ///<summary>
+        /// Android 산출물 형식 인자를 열거형으로 변환
+        ///</summary>
+        private static bool TryResolveAndroidArtifactType( string _artifactTypeName, out CTinyHeroCustomBuildPlayer.eAndroidArtifactType _artifactType )
+        {
+            string normalizedArtifactTypeName = string.IsNullOrWhiteSpace( _artifactTypeName ) ? "ALL" : _artifactTypeName.Trim();
+            bool isResolved = Enum.TryParse( normalizedArtifactTypeName, true, out CTinyHeroCustomBuildPlayer.eAndroidArtifactType artifactType );
+
+            if ( isResolved == false )
+            {
+                Debug.LogError( $"[TinyHero Build] Invalid Android artifact type. Value: {normalizedArtifactTypeName}" );
+                _artifactType = CTinyHeroCustomBuildPlayer.eAndroidArtifactType.ALL;
+                return false;
+            }
+
+            _artifactType = artifactType;
+            return true;
         }
 
         ///<summary>

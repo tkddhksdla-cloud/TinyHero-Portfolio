@@ -9,6 +9,7 @@ pipeline {
     parameters {
         choice(name: 'BUILD_MODE', choices: ['PLAYER_BUILD', 'CONTENT_UPDATE'], description: 'Build a player or update Addressables content for an existing player')
         choice(name: 'BUILD_PLATFORM', choices: ['WINDOWS', 'ANDROID', 'IOS'], description: 'Target platform. Android and iOS require their dedicated Jenkins agent.')
+        choice(name: 'ANDROID_ARTIFACT_TYPE', choices: ['ALL', 'APK', 'AAB'], description: 'Android player artifact. ALL creates both APK for device testing and AAB for store distribution.')
         string(name: 'UNITY_EXE', defaultValue: 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.15f1\\Editor\\Unity.exe', description: 'Unity Editor executable path')
         string(name: 'GAME_VERSION', defaultValue: '0.0.01', description: 'Player build version displayed in the title scene. Format: 0.0.01')
         string(name: 'BUILD_OUTPUT_PATH', defaultValue: '', description: 'Optional Windows player output path. Empty value uses Builds/Windows/<BUILD_NUMBER>/TinyHero.exe')
@@ -66,7 +67,7 @@ pipeline {
             }
             agent { label 'android-unity' }
             steps {
-                bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroBuildOutputPath "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log"'
+                bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType %ANDROID_ARTIFACT_TYPE% -tinyHeroBuildOutputPath "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log"'
             }
         }
 
