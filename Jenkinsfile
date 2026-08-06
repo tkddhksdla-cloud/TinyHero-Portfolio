@@ -115,7 +115,9 @@ pipeline {
             }
             agent { label 'ios-unity' }
             steps {
-                sh '"$IOS_UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosPlayer -tinyHeroGameVersion "$GAME_VERSION" -tinyHeroBuildOutputPath "$WORKSPACE/Builds/iOS/$BUILD_NUMBER" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/Unity.log"'
+                timeout(time: 60, unit: 'MINUTES') {
+                    sh 'sh ./Tools/CI/Invoke-TinyHeroIosBuild.sh -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosPlayer -tinyHeroGameVersion "$GAME_VERSION" -tinyHeroBuildOutputPath "$WORKSPACE/Builds/iOS/$BUILD_NUMBER" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/Unity.log"'
+                }
             }
         }
 
@@ -126,7 +128,9 @@ pipeline {
             }
             agent { label 'ios-unity' }
             steps {
-                sh '"$IOS_UNITY_EXE" -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosContentUpdate -tinyHeroContentStatePath "$CONTENT_STATE_PATH" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/ContentUpdate.log"'
+                timeout(time: 60, unit: 'MINUTES') {
+                    sh 'sh ./Tools/CI/Invoke-TinyHeroIosBuild.sh -batchmode -quit -projectPath "$WORKSPACE" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildIosContentUpdate -tinyHeroContentStatePath "$CONTENT_STATE_PATH" -logFile "$WORKSPACE/Builds/iOS/$BUILD_NUMBER/ContentUpdate.log"'
+                }
             }
         }
     }
