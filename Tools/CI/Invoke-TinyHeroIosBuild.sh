@@ -65,7 +65,7 @@ unity_pid=$!
 
 (
     while kill -0 "$unity_pid" 2>/dev/null; do
-        echo "[TinyHero Build] iOS Unity is running. pid=$unity_pid"
+        printf '\n[TinyHero Build] iOS Unity is running. pid=%s\n' "$unity_pid"
         sleep 15
     done
 ) &
