@@ -147,7 +147,7 @@ public sealed class JenkinsService
         try
         {
             string encodedJobName = Uri.EscapeDataString(options.JenkinsJobName);
-            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration,actions[parameters[name,value]]],builds[number,url,building,result,timestamp,duration,actions[parameters[name,value]]]{0,6}";
+            const string treeQuery = "inQueue,queueItem[url,why],lastBuild[number,url,building,result,displayName,timestamp,duration,estimatedDuration,actions[parameters[name,value]]],builds[number,url,building,result,timestamp,duration,estimatedDuration,actions[parameters[name,value]]]{0,6}";
             string encodedTreeQuery = Uri.EscapeDataString(treeQuery);
             using HttpRequestMessage request = CreateRequest(HttpMethod.Get, $"job/{encodedJobName}/api/json?tree={encodedTreeQuery}");
             using HttpResponseMessage response = await httpClient.SendAsync(request, _cancellationToken);
@@ -166,41 +166,40 @@ public sealed class JenkinsService
             }
 
             IReadOnlyList<JenkinsBuildHistoryItem> recentBuildList = BuildRecentBuildHistory(jobState.Builds);
+            IReadOnlyList<JenkinsBuildActivityItem> runningBuildList = BuildRunningBuildActivityList(jobState.Builds);
+            IReadOnlyList<JenkinsBuildActivityItem> queuedBuildList = await GetQueuedBuildActivityListAsync(_cancellationToken);
+            List<JenkinsBuildActivityItem> activeBuildList = new(runningBuildList.Count + queuedBuildList.Count);
+            activeBuildList.AddRange(runningBuildList);
+            activeBuildList.AddRange(queuedBuildList);
 
-            if (jobState.InQueue)
+            if (runningBuildList.Count > 0)
             {
-                string queueDetail = string.IsNullOrWhiteSpace(jobState.QueueItem?.Why)
-                    ? "Jenkins 대기열에서 실행을 기다리는 중입니다."
-                    : jobState.QueueItem.Why;
-                return new JenkinsBuildStatus(true, true, false, jobState.LastBuild?.Number, "QUEUED", queueDetail, jobState.QueueItem?.Url, 0, 0L, 0L, null, recentBuildList);
+                JenkinsBuildActivityItem primaryBuild = runningBuildList[0];
+                return new JenkinsBuildStatus(true, queuedBuildList.Count > 0, true, primaryBuild.BuildNumber, "BUILDING", primaryBuild.Detail, primaryBuild.BuildUrl, primaryBuild.ProgressPercent, primaryBuild.ElapsedMilliseconds, primaryBuild.EstimatedDurationMilliseconds, primaryBuild.StartedAtUtc, recentBuildList, primaryBuild.BuildPlatform, activeBuildList);
+            }
+
+            if (queuedBuildList.Count > 0)
+            {
+                JenkinsBuildActivityItem primaryBuild = queuedBuildList[0];
+                return new JenkinsBuildStatus(true, true, false, primaryBuild.BuildNumber, "QUEUED", primaryBuild.Detail, primaryBuild.BuildUrl, 0, 0L, 0L, null, recentBuildList, primaryBuild.BuildPlatform, activeBuildList);
             }
 
             JenkinsBuildState? lastBuild = jobState.LastBuild;
 
             if (lastBuild == null)
             {
-                return new JenkinsBuildStatus(true, false, false, null, "IDLE", "아직 실행된 빌드가 없습니다.", null, 0, 0L, 0L, null, recentBuildList);
+                return new JenkinsBuildStatus(true, false, false, null, "IDLE", "아직 실행된 빌드가 없습니다.", null, 0, 0L, 0L, null, recentBuildList, "UNKNOWN", activeBuildList);
             }
 
             DateTimeOffset? startedAtUtc = lastBuild.Timestamp > 0L
                 ? DateTimeOffset.FromUnixTimeMilliseconds(lastBuild.Timestamp)
                 : null;
 
-            if (lastBuild.Building)
-            {
-                long elapsedMilliseconds = startedAtUtc.HasValue
-                    ? Math.Max(0L, (long)(DateTimeOffset.UtcNow - startedAtUtc.Value).TotalMilliseconds)
-                    : 0L;
-                int progressPercent = CalculateBuildProgressPercent(elapsedMilliseconds, lastBuild.EstimatedDuration);
-                string buildPlatform = ResolveBuildPlatform( lastBuild.Actions );
-                return new JenkinsBuildStatus(true, false, true, lastBuild.Number, "BUILDING", $"{lastBuild.DisplayName} 실행 중", lastBuild.Url, progressPercent, elapsedMilliseconds, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList, buildPlatform);
-            }
-
             string result = string.IsNullOrWhiteSpace(lastBuild.Result) ? "UNKNOWN" : lastBuild.Result;
             long completedDuration = Math.Max(0L, lastBuild.Duration);
             int completedProgressPercent = string.Equals(result, "UNKNOWN", StringComparison.OrdinalIgnoreCase) ? 0 : 100;
             string completedBuildPlatform = ResolveBuildPlatform( lastBuild.Actions );
-            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList, completedBuildPlatform);
+            return new JenkinsBuildStatus(true, false, false, lastBuild.Number, result, $"{lastBuild.DisplayName} · {result}", lastBuild.Url, completedProgressPercent, completedDuration, lastBuild.EstimatedDuration, startedAtUtc, recentBuildList, completedBuildPlatform, activeBuildList);
         }
         catch (Exception exception)
         {
@@ -242,6 +241,114 @@ public sealed class JenkinsService
         }
 
         return resultList;
+    }
+
+    private static IReadOnlyList<JenkinsBuildActivityItem> BuildRunningBuildActivityList(IReadOnlyList<JenkinsBuildState>? _buildList)
+    {
+        if (_buildList == null || _buildList.Count == 0)
+        {
+            return Array.Empty<JenkinsBuildActivityItem>();
+        }
+
+        List<JenkinsBuildActivityItem> resultList = new();
+
+        for (int buildIndex = 0; buildIndex < _buildList.Count; buildIndex++)
+        {
+            JenkinsBuildState buildState = _buildList[buildIndex];
+
+            if (buildState.Building == false)
+            {
+                continue;
+            }
+
+            DateTimeOffset? startedAtUtc = buildState.Timestamp > 0L
+                ? DateTimeOffset.FromUnixTimeMilliseconds(buildState.Timestamp)
+                : null;
+            long elapsedMilliseconds = startedAtUtc.HasValue
+                ? Math.Max(0L, (long)(DateTimeOffset.UtcNow - startedAtUtc.Value).TotalMilliseconds)
+                : 0L;
+            int progressPercent = CalculateBuildProgressPercent(elapsedMilliseconds, buildState.EstimatedDuration);
+            string buildMode = ResolveBuildParameter(buildState.Actions, BuildModeParameterName);
+            string buildPlatform = ResolveBuildPlatform(buildState.Actions);
+            JenkinsBuildActivityItem activityItem = new(
+                buildState.Number,
+                string.IsNullOrWhiteSpace(buildMode) ? "UNKNOWN" : buildMode,
+                buildPlatform,
+                "BUILDING",
+                $"빌드 #{buildState.Number} 실행 중",
+                buildState.Url,
+                progressPercent,
+                elapsedMilliseconds,
+                buildState.EstimatedDuration,
+                startedAtUtc);
+            resultList.Add(activityItem);
+        }
+
+        IReadOnlyList<JenkinsBuildActivityItem> result = resultList
+            .OrderByDescending(_item => _item.StartedAtUtc)
+            .ToArray();
+        return result;
+    }
+
+    private async Task<IReadOnlyList<JenkinsBuildActivityItem>> GetQueuedBuildActivityListAsync(CancellationToken _cancellationToken)
+    {
+        try
+        {
+            const string treeQuery = "items[id,url,why,cancelled,task[name],actions[parameters[name,value]]]";
+            string encodedTreeQuery = Uri.EscapeDataString(treeQuery);
+            using HttpRequestMessage request = CreateRequest(HttpMethod.Get, $"queue/api/json?tree={encodedTreeQuery}");
+            using HttpResponseMessage response = await httpClient.SendAsync(request, _cancellationToken);
+
+            if (response.IsSuccessStatusCode == false)
+            {
+                return Array.Empty<JenkinsBuildActivityItem>();
+            }
+
+            await using Stream responseStream = await response.Content.ReadAsStreamAsync(_cancellationToken);
+            JenkinsQueueCollectionState? queueState = await JsonSerializer.DeserializeAsync<JenkinsQueueCollectionState>(responseStream, cancellationToken: _cancellationToken);
+
+            if (queueState == null || queueState.Items.Count == 0)
+            {
+                return Array.Empty<JenkinsBuildActivityItem>();
+            }
+
+            List<JenkinsBuildActivityItem> resultList = new();
+
+            for (int queueIndex = 0; queueIndex < queueState.Items.Count; queueIndex++)
+            {
+                JenkinsQueueState queueItem = queueState.Items[queueIndex];
+
+                if (queueItem.Cancelled || string.Equals(queueItem.Task?.Name, options.JenkinsJobName, StringComparison.OrdinalIgnoreCase) == false)
+                {
+                    continue;
+                }
+
+                string buildMode = ResolveBuildParameter(queueItem.Actions, BuildModeParameterName);
+                string buildPlatform = ResolveBuildPlatform(queueItem.Actions);
+                string detail = string.IsNullOrWhiteSpace(queueItem.Why)
+                    ? "Jenkins 대기열에서 실행을 기다리는 중입니다."
+                    : queueItem.Why;
+                JenkinsBuildActivityItem activityItem = new(
+                    null,
+                    string.IsNullOrWhiteSpace(buildMode) ? "UNKNOWN" : buildMode,
+                    buildPlatform,
+                    "QUEUED",
+                    detail,
+                    queueItem.Url,
+                    0,
+                    0L,
+                    0L,
+                    null);
+                resultList.Add(activityItem);
+            }
+
+            IReadOnlyList<JenkinsBuildActivityItem> result = resultList.ToArray();
+            return result;
+        }
+        catch
+        {
+            return Array.Empty<JenkinsBuildActivityItem>();
+        }
     }
 
     /// <summary>
@@ -420,11 +527,35 @@ public sealed class JenkinsService
 
     private sealed class JenkinsQueueState
     {
+        [JsonPropertyName("id")]
+        public long Id { get; set; }
+
         [JsonPropertyName("url")]
         public string? Url { get; set; }
 
         [JsonPropertyName("why")]
         public string? Why { get; set; }
+
+        [JsonPropertyName("cancelled")]
+        public bool Cancelled { get; set; }
+
+        [JsonPropertyName("task")]
+        public JenkinsQueueTaskState? Task { get; set; }
+
+        [JsonPropertyName("actions")]
+        public List<JenkinsBuildAction> Actions { get; set; } = new();
+    }
+
+    private sealed class JenkinsQueueCollectionState
+    {
+        [JsonPropertyName("items")]
+        public List<JenkinsQueueState> Items { get; set; } = new();
+    }
+
+    private sealed class JenkinsQueueTaskState
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
     }
 
     private sealed class JenkinsBuildState

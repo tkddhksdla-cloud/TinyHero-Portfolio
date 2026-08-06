@@ -72,6 +72,18 @@ public sealed record JenkinsBuildHistoryItem(
     long DurationMilliseconds,
     string? BuildUrl);
 
+public sealed record JenkinsBuildActivityItem(
+    int? BuildNumber,
+    string BuildMode,
+    string BuildPlatform,
+    string State,
+    string Detail,
+    string? BuildUrl,
+    int ProgressPercent,
+    long ElapsedMilliseconds,
+    long EstimatedDurationMilliseconds,
+    DateTimeOffset? StartedAtUtc);
+
 public sealed record JenkinsBuildStatus(
     bool IsAvailable,
     bool IsQueued,
@@ -85,7 +97,8 @@ public sealed record JenkinsBuildStatus(
     long EstimatedDurationMilliseconds,
     DateTimeOffset? StartedAtUtc,
     IReadOnlyList<JenkinsBuildHistoryItem> RecentBuilds,
-    string BuildPlatform = "UNKNOWN");
+    string BuildPlatform = "UNKNOWN",
+    IReadOnlyList<JenkinsBuildActivityItem>? ActiveBuilds = null);
 
 public sealed record DeploymentRecord(
     string Id,

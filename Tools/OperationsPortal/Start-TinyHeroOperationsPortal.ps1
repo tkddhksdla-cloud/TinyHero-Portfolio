@@ -13,7 +13,12 @@ $serviceUrl = switch ($ServiceMode) {
     default { "$PortalUrl;$ContentUrl" }
 }
 $env:ASPNETCORE_URLS = $serviceUrl
+$projectFilePath = Join-Path $portalRoot "TinyHero.OperationsPortal.csproj"
+$runtimeDirectoryPath = Join-Path $portalRoot "bin\ServiceRuntime\$ServiceMode"
+$portalAssemblyPath = Join-Path $runtimeDirectoryPath "TinyHero.OperationsPortal.dll"
+Set-Location -LiteralPath $portalRoot
 
 Write-Host "TinyHero Operations Service Mode: $ServiceMode"
 Write-Host "Listening URL: $serviceUrl"
-dotnet run --no-launch-profile --project (Join-Path $portalRoot "TinyHero.OperationsPortal.csproj") -- --urls $serviceUrl --ServiceMode=$ServiceMode
+dotnet publish $projectFilePath --configuration Release --nologo --output $runtimeDirectoryPath
+dotnet $portalAssemblyPath --urls $serviceUrl --ServiceMode=$ServiceMode

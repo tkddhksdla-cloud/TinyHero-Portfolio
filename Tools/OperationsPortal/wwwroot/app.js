@@ -76,7 +76,7 @@ function bindEvents() {
 function updateAndroidArtifactTypeVisibility() {
   const platform = document.querySelector('#playerBuildPlatform').value;
   const artifactTypeField = document.querySelector('#androidArtifactTypeField');
-  artifactTypeField.hidden = platform !== 'ANDROID';
+  artifactTypeField.hidden = platform !== 'ANDROID' && platform !== 'ALL';
 }
 
 function updateContentStatePath() {
@@ -248,11 +248,42 @@ function renderBuildStatus(buildStatus) {
   document.querySelector('#buildStartedValue').textContent = buildStatus.startedAtUtc
     ? formatDateTime(buildStatus.startedAtUtc)
     : buildStatus.isQueued ? '대기열 등록' : '—';
+  renderActiveBuilds(buildStatus.activeBuilds || []);
   renderBuildHistory(buildStatus.recentBuilds || []);
 
   if (buildStatus.buildUrl) {
     document.querySelector('#buildStatusLink').href = buildStatus.buildUrl;
   }
+}
+
+function renderActiveBuilds(buildList) {
+  const activeBuildList = document.querySelector('#activeBuildList');
+
+  if (!buildList.length) {
+    activeBuildList.innerHTML = '<div class="active-build-empty">진행 또는 대기 중인 빌드가 없습니다.</div>';
+    return;
+  }
+
+  activeBuildList.innerHTML = buildList.map(build => {
+    const stateClass = String(build.state || '').toLowerCase();
+    const buildLabel = build.buildNumber ? `#${build.buildNumber}` : 'QUEUE';
+    const modeLabel = build.buildMode === 'PLAYER_BUILD' ? '플레이어' : build.buildMode === 'CONTENT_UPDATE' ? '콘텐츠' : '빌드';
+    const progressPercent = Math.max(0, Math.min(100, build.progressPercent || 0));
+    const progressLabel = build.state === 'QUEUED'
+      ? '에이전트 할당 대기'
+      : `${progressPercent}% · ${formatDuration(build.elapsedMilliseconds || 0)} 경과`;
+    const tagName = build.buildUrl ? 'a' : 'div';
+    const linkAttributes = build.buildUrl
+      ? ` href="${escapeHtml(build.buildUrl)}" target="_blank" rel="noreferrer"`
+      : '';
+    return `<${tagName} class="active-build-item ${stateClass}"${linkAttributes}>
+      <div class="active-build-top"><span>${formatBuildPlatform(build.buildPlatform)}</span><i>${escapeHtml(buildLabel)}</i></div>
+      <strong>${escapeHtml(modeLabel)} · ${escapeHtml(build.state || 'UNKNOWN')}</strong>
+      <small>${escapeHtml(progressLabel)}</small>
+      <div class="active-build-track"><span style="width:${progressPercent}%"></span></div>
+      <em>${escapeHtml(build.detail || '')}</em>
+    </${tagName}>`;
+  }).join('');
 }
 
 function renderBuildHistory(buildList) {
@@ -347,9 +378,15 @@ function renderDeployments(deployments) {
 
 async function handlePlayerBuildSubmit(event) {
   event.preventDefault();
+  const selectedPlatform = document.querySelector('#playerBuildPlatform').value;
+  const platformArray = selectedPlatform === 'ALL'
+    ? ['WINDOWS', 'ANDROID', 'IOS']
+    : [selectedPlatform];
   const confirmed = await confirmAction(
-    `${document.querySelector('#playerBuildPlatform').value} 플레이어 빌드 시작`,
-    '선택한 플랫폼의 새 게임 실행 파일과 Addressables 기준 상태를 생성합니다.'
+    `${selectedPlatform} 플레이어 빌드 시작`,
+    selectedPlatform === 'ALL'
+      ? 'Windows, Android, iOS 전용 에이전트에 각각 빌드를 등록해 병렬로 실행합니다.'
+      : '선택한 플랫폼의 새 게임 실행 파일과 Addressables 기준 상태를 생성합니다.'
   );
 
   if (!confirmed) return;
@@ -358,21 +395,27 @@ async function handlePlayerBuildSubmit(event) {
   setButtonBusy(submitButton, true, 'Jenkins 요청 중');
 
   try {
-    const response = await fetch('/api/jenkins/player-build', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gameVersion: document.querySelector('#gameVersion').value,
-        buildOutputPath: document.querySelector('#buildOutputPath').value,
-        requireRemoteContent: document.querySelector('#playerRequireRemoteContent').checked,
-        platform: document.querySelector('#playerBuildPlatform').value,
-        androidArtifactType: document.querySelector('#androidArtifactType').value
-      })
-    });
-    const result = await response.json();
+    const requestBody = {
+      gameVersion: document.querySelector('#gameVersion').value,
+      buildOutputPath: document.querySelector('#buildOutputPath').value,
+      requireRemoteContent: document.querySelector('#playerRequireRemoteContent').checked,
+      androidArtifactType: document.querySelector('#androidArtifactType').value
+    };
+    const requestResultArray = await Promise.all(platformArray.map(async platform => {
+      const response = await fetch('/api/jenkins/player-build', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...requestBody, platform })
+      });
+      const result = await response.json();
 
-    if (!response.ok) throw new Error(result.message || '플레이어 빌드 등록에 실패했습니다.');
-    showToast('플레이어 빌드 요청 완료', result.message, false);
+      if (!response.ok) throw new Error(`${formatBuildPlatform(platform)}: ${result.message || '플레이어 빌드 등록에 실패했습니다.'}`);
+      return result;
+    }));
+    const requestMessage = selectedPlatform === 'ALL'
+      ? `${requestResultArray.length}개 플랫폼 빌드를 병렬 요청했습니다.`
+      : requestResultArray[0].message;
+    showToast('플레이어 빌드 요청 완료', requestMessage, false);
     await refreshBuildStatus();
   } catch (error) {
     showToast('빌드 요청 실패', error.message, true);
