@@ -6,7 +6,7 @@ public sealed class OperationsPortalOptions
 
     public string JenkinsBaseUrl { get; set; } = "http://127.0.0.1:8081";
 
-    public string JenkinsJobName { get; set; } = "TinyHero-Build-Windows";
+    public string JenkinsJobName { get; set; } = "TinyHero-Build-Multiplatform";
 
     public string ProjectRoot { get; set; } = "../..";
 

@@ -1,6 +1,6 @@
 param(
     [string]$JenkinsHome = (Join-Path $env:USERPROFILE ".jenkins"),
-    [string]$JobName = "TinyHero-Build-Windows"
+    [string]$JobName = "TinyHero-Build-Multiplatform"
 )
 
 $ErrorActionPreference = "Stop"
