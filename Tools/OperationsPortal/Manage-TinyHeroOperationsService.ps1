@@ -54,12 +54,12 @@ if ($Action -eq "STOP") {
         Remove-Item -LiteralPath $launcherPidPath -Force -ErrorAction SilentlyContinue
     }
 
-    exit 0
+    return
 }
 
 if ($listenerArray.Count -gt 0) {
     Write-Host "$Service service is already running on port $servicePort." -ForegroundColor Green
-    exit 0
+    return
 }
 
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null

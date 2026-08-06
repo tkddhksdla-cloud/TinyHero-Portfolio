@@ -16,4 +16,4 @@ $env:ASPNETCORE_URLS = $serviceUrl
 
 Write-Host "TinyHero Operations Service Mode: $ServiceMode"
 Write-Host "Listening URL: $serviceUrl"
-dotnet run --project (Join-Path $portalRoot "TinyHero.OperationsPortal.csproj") -- --ServiceMode=$ServiceMode
+dotnet run --no-launch-profile --project (Join-Path $portalRoot "TinyHero.OperationsPortal.csproj") -- --urls $serviceUrl --ServiceMode=$ServiceMode

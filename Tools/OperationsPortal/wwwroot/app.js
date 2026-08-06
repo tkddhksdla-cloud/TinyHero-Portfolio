@@ -244,6 +244,7 @@ function renderBuildStatus(buildStatus) {
   document.querySelector('#buildNumberValue').textContent = buildStatus.isQueued
     ? '대기열'
     : buildStatus.buildNumber ? `#${buildStatus.buildNumber}` : '—';
+  document.querySelector('#buildPlatformValue').textContent = formatBuildPlatform(buildStatus.buildPlatform);
   document.querySelector('#buildStartedValue').textContent = buildStatus.startedAtUtc
     ? formatDateTime(buildStatus.startedAtUtc)
     : buildStatus.isQueued ? '대기열 등록' : '—';

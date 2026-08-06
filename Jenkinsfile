@@ -75,7 +75,9 @@ pipeline {
                     }
 
                     timeout(time: 60, unit: 'MINUTES') {
-                        bat "\"%UNITY_EXE%\" -batchmode -quit -projectPath \"%WORKSPACE%\" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidPlayer -tinyHeroGameVersion %GAME_VERSION% -tinyHeroAndroidArtifactType ${androidArtifactType} -tinyHeroBuildOutputPath \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\TinyHero.aab\" -logFile \"%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\Unity.log\""
+                        powershell """
+                            ./Tools/CI/Invoke-TinyHeroAndroidBuild.ps1 -BuildMode 'PLAYER_BUILD' -UnityExe '${params.UNITY_EXE}' -GameVersion '${params.GAME_VERSION}' -ArtifactType '${androidArtifactType}' -BuildOutputPath \"Builds/Android/\$env:BUILD_NUMBER/TinyHero.aab\" -LogFile \"Builds/Android/\$env:BUILD_NUMBER/Unity.log\"
+                        """
                     }
                 }
             }
@@ -100,7 +102,9 @@ pipeline {
             }
             agent { label 'android-unity' }
             steps {
-                bat '"%UNITY_EXE%" -batchmode -quit -projectPath "%WORKSPACE%" -executeMethod TinyHero.Tools.CTinyHeroCustomBuildCommandLine.BuildAndroidContentUpdate -tinyHeroContentStatePath "%CONTENT_STATE_PATH%" -logFile "%WORKSPACE%\\Builds\\Android\\%BUILD_NUMBER%\\ContentUpdate.log"'
+                powershell """
+                    ./Tools/CI/Invoke-TinyHeroAndroidBuild.ps1 -BuildMode 'CONTENT_UPDATE' -UnityExe '${params.UNITY_EXE}' -ContentStatePath '${params.CONTENT_STATE_PATH}' -LogFile \"Builds/Android/\$env:BUILD_NUMBER/ContentUpdate.log\"
+                """
             }
         }
 
