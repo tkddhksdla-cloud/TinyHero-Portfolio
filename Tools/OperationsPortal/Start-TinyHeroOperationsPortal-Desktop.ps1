@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$projectRoot = "C:\Path\To\TinyHero"
+$projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
 $portalScriptPath = Join-Path $projectRoot "Tools\OperationsPortal\Start-TinyHeroOperationsPortal.ps1"
 $jenkinsScriptPath = Join-Path $projectRoot "Tools\CI\Start-TinyHeroJenkins.ps1"
 $portalUrl = "http://127.0.0.1:8090"

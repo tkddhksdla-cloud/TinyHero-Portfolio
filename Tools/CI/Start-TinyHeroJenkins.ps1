@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 
 $javaExe = "C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot\bin\java.exe"
 $jenkinsWar = Join-Path $env:USERPROFILE "Downloads\jenkins.war"
-$parameterSyncScript = "C:\Path\To\TinyHero\Tools\CI\Sync-TinyHeroJenkinsJobParameters.ps1"
+$parameterSyncScript = Join-Path $PSScriptRoot "Sync-TinyHeroJenkinsJobParameters.ps1"
 $httpPort = 8081
 $jenkinsUrl = "http://127.0.0.1:$httpPort"
 

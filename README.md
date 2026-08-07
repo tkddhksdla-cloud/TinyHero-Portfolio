@@ -1,112 +1,147 @@
 # TinyHero
 
-Unity 6 기반 2D 플랫포머 RPG 프로젝트입니다.
-게임 콘텐츠 구현 자체보다, 라이브 서비스 프로젝트의 초기 개발부터 운영까지 경험한 기술적 과제를 재현하고 발전시키는 데 중점을 둡니다.
+> **기술 포트폴리오 제출용 공개 저장소**  
+> 실제 개발·빌드용 비공개 저장소에서 라이선스 에셋, 내부 문서와 로컬 운영 데이터를 제외하고, 직접 구현한 클라이언트·툴·CI/CD 코드를 검토할 수 있도록 정제한 별도 저장소입니다.
 
-## 프로젝트 방향
+Unity 6.3 LTS와 2D URP로 개발한 멀티플랫폼 2D 플랫포머 RPG 개인 프로젝트입니다.
 
-이 프로젝트는 이전 라이브 서비스 개발 경험을 바탕으로,
-개발 과정부터 실제 서비스 환경까지 아우르는 개발·운영 기반을 설계하고 검증하는 포트폴리오입니다.
-콘텐츠는 해당 기반을 검증하기 위한 수단으로 두며, 다음과 같은 영역에 집중합니다.
+플레이어 전투와 콘텐츠 구현에 그치지 않고 **데이터 제작 → 검증 → 원격 콘텐츠 → Player/Content Build → 배포·운영**까지 클라이언트 개발 전 과정을 하나의 구조로 연결했습니다.
 
-- 빌드·콘텐츠 업데이트·배포 흐름의 자동화
-- 기획·운영·개발 협업을 위한 데이터 편집 및 검증 도구
-- 로컬 콘텐츠 운영 도구와 배포·복원 흐름
-- 원격 업데이트와 HybridCLR 기반 핫픽스 구조
-- 클라이언트 핵심 수치 보호 및 저장 데이터 암호화·무결성 검증
-- Addressables 기반 리소스 전달과 라이브 콘텐츠 관리
+## 30초 요약
 
-## 프로젝트 개요
+| 구분 | 내용 |
+| --- | --- |
+| 프로젝트 | TinyHero · 개인 프로젝트 · 2026.06 ~ 진행 중 |
+| 핵심 플레이 | 이동, 전투, 스킬, 퀘스트, NPC, 인벤토리·장비·상점, 맵 전환 |
+| 설계 초점 | 데이터와 런타임 상태 분리, 책임별 매니저, 계약 기반 확장, 실패 조기 탐지 |
+| 콘텐츠 전달 | Addressables Local/Remote, 필수 데이터 검증, HybridCLR Hotfix 계약 |
+| 제작 환경 | Excel/NPOI Import, 데이터 EditorWindow, 런타임 맵 제작 도구 |
+| 품질 근거 | 현재 소스 기준 51개 EditMode 테스트, 46개 Editor 메뉴 명령, 통합 데이터·Prebuild 검증 |
+| 빌드·운영 | Jenkins Windows/Android/iOS Pipeline, ASP.NET Core Operations Portal |
 
-- 장르: 2D 플랫포머 RPG
-- 핵심 루프: 이동, 전투, 퀘스트, 인벤토리, 장비, 스킬, NPC 상호작용, 맵 전환
-- 타겟 플랫폼: PC Windows
-- 개발 상태: 개인 개발 프로젝트
+## Technical Highlights
 
-## 기술 스택
+### 1. Player · Combat · Skill
 
-- 엔진: Unity 6 `6000.3.15f1`
-- 언어: C#
-- 렌더링: Universal Render Pipeline 2D
-- 런타임 콘텐츠 로딩: Addressables
-- 핫 업데이트: HybridCLR
-- 빌드 자동화: Jenkins Pipeline, PowerShell
-- AI 활용 도구: OpenAI Codex
+**목표:** 기능이 늘어나도 플레이어 한 클래스와 중앙 분기문이 비대해지지 않는 게임플레이 구조
 
-## 핵심 시스템
+- 플레이어 상태와 스탯, 인벤토리, 장비, 스킬을 책임별 매니저로 분리했습니다.
+- 스킬 정의와 런타임 상태를 분리하고 `Action`, `Effect`, `Unlock Condition`을 다형적으로 조합합니다.
+- 스킬 VFX, 몬스터, 월드 드랍, 데미지 폰트와 토스트 메시지는 역할별 Object Pool에서 재사용합니다.
+- 각 도메인이 자신의 Snapshot 생성과 복원을 담당해 저장 시스템의 직접 필드 의존을 줄였습니다.
 
-- 엑셀 데이터 불러오기 및 에디터 도구
-- 팝업·뷰 UI 내비게이션
-- 스냅샷 기반 저장·불러오기
-- 런타임 맵 로딩
-- 플레이어 이동·전투
-- 몬스터·NPC·포탈·월드 드랍
-- 퀘스트 시스템
-- 인벤토리·장비·상점
-- 액티브·패시브 스킬 시스템
-- 오디오 관리
-- 오브젝트 풀링
+### 2. Data-driven Content · Runtime Map Tool
 
-## 기술적 특징
+**목표:** 코드 수정 없이 콘텐츠를 제작하고, 잘못된 데이터를 런타임 이전에 발견하는 파이프라인
 
-- 엑셀 데이터 기반 게임 로직
-- 어드레서블 시스템 기반 리소스 로딩
-- 오디오 믹서 기반 배경음악·효과음 관리
-- 스냅샷 기반 저장·불러오기
-- 클라이언트 런타임 핵심 변수 암호화
-- HybridCLR 기반 핫픽스 모듈
-- AES 기반 저장 파일 암호화 및 HMAC 무결성 검증
-- EditorWindow 기반 데이터 편집 툴
-- Jenkins 기반 Windows 빌드 자동화
-- 원격 어드레서블 콘텐츠 업데이트
-- 빌드·콘텐츠 운영 도구
-- 싱글톤 매니저 초기화 구조
+- Excel/NPOI 데이터를 Import Profile과 Worksheet 기준으로 런타임 Table Asset으로 변환합니다.
+- 퀘스트, NPC, 아이템, 상점, 스킬과 텍스트를 ScriptableObject 정의와 플레이어별 상태로 분리했습니다.
+- PlayMode 맵 제작 도구에서 Map ID, 배경, BGM, 경계, 포탈, 몬스터와 NPC 배치를 편집하고 저장·불러오기합니다.
+- `CUINavigationController`가 Popup/View 생성, 캐시, 표시 순서와 닫기 정책을 통합합니다.
 
-## 기술 구성
+### 3. Addressables · Hotfix · Save Security
 
-### 리소스 전달 구조
+**목표:** 배포 후 콘텐츠 갱신 경로를 확보하면서 실패와 데이터 변조를 조용히 숨기지 않는 런타임 정책
 
-런타임 리소스는 Addressables를 중심으로 로드합니다. 로딩 정책은 `CResourceManager`에 집중해 UI, 콘텐츠 데이터, 맵 리소스가 개별 로더 구현에 의존하지 않도록 구성했습니다. 원격 콘텐츠는 로컬 빌드 포함 리소스와 배포 후 갱신 가능한 리소스로 분리합니다.
+- `CResourceManager`가 Addressables 우선 로딩과 `Resources` fallback을 통합 관리합니다.
+- 원격 Catalog 확인 → 사용자 다운로드 승인 → 의존성 다운로드 → 필수 데이터 검증 후 게임에 진입합니다.
+- 새 Catalog가 감지된 필수 콘텐츠는 fallback으로 실패를 숨기지 않고 제한 재시도 후 진입을 차단합니다.
+- 저장 Snapshot은 AES로 암호화하고 HMAC-SHA256으로 무결성을 검증하며, 구버전 평문 저장을 마이그레이션합니다.
+- 핵심 런타임 수치는 `CSecureInt`, `CSecureLong`, `CSecureFloat`으로 변조를 감지합니다.
+- HybridCLR는 `IHotfixModule` 계약과 `SUCCESS / FALLBACK / BLOCKED / FAILED` 정책으로 변경 가능한 규칙을 분리합니다.
 
-### 런타임 구조
+### 4. Editor Tooling · Validation · Tests
 
-전역 매니저는 부트스트랩에서 초기화하고, 플레이어·맵·UI·저장·오디오는 책임별 매니저로 분리합니다. 반복 생성되는 전투 효과, 몬스터, 드랍, UI 효과는 풀링을 우선 적용하며, 맵 전환 시 런타임 오브젝트와 풀 상태를 정리합니다.
+**목표:** 반복 제작을 표준화하고 오류 발견 시점을 PlayMode와 Player Build 이전으로 이동
 
-### 게임플레이 및 데이터
+- Item, Quest, Shop, Skill, Equipment, Reward, NPC, Monster와 Map 편집기를 구현했습니다.
+- EditorWindow UX를 Browser → Create → Editor → Actions → Status 흐름으로 공통화했습니다.
+- 통합 검증 도구가 ID 중복, 누락 참조, 값 범위와 Addressables Key 오류를 탐지합니다.
+- 저장 보호, 평문 Migration, Secure Number, Inventory, Skill, Remote Policy, Hotfix, Addressables와 VFX Pool을 EditMode 테스트로 검증합니다.
+- 46개 Editor 메뉴 명령과 Prebuild Readiness 검사로 수동 반복 작업을 자동화했습니다.
 
-플레이어 전투, 스킬, 퀘스트, 인벤토리, 장비, 상점은 정의 데이터와 런타임 상태를 분리합니다. 텍스트와 게임 데이터는 엑셀 불러오기 및 ScriptableObject 기반 에셋으로 관리하고, 제작용 EditorWindow에서 생성·검증·편집 흐름을 제공합니다.
+### 5. Multiplatform CI/CD · Operations Portal
 
-### 저장 및 핫픽스
+**목표:** 플랫폼별 빌드와 콘텐츠 업데이트를 동일한 진입점에서 실행하고 결과를 추적 가능한 형태로 보관
 
-저장 시스템은 스냅샷 기반으로 플레이 상태를 직렬화하며 AES 암호화와 HMAC 무결성 검증을 적용합니다. 변조 가치가 높은 런타임 수치는 Secure 타입으로 보호합니다. HybridCLR 핫픽스는 안정적인 Unity 어댑터와 변경 가능성이 높은 규칙 로직을 분리해 배포 후 수정 경로를 제공합니다.
+- Jenkins가 `PLAYER_BUILD / CONTENT_UPDATE`와 플랫폼 파라미터에 따라 전용 에이전트로 분기합니다.
+- Windows Player, Android APK/AAB, iOS Xcode 프로젝트와 Addressables 콘텐츠를 빌드합니다.
+- ASP.NET Core 8 기반 Operations Portal에서 Jenkins 상태·Queue·최근 빌드 조회, 빌드 실행, 콘텐츠 배포·복원과 SHA-256 이력을 관리합니다.
+- iOS 범위는 Xcode 프로젝트 생성까지이며, 서명 IPA와 TestFlight 배포는 Apple 서명 자산 연동 전 단계입니다.
 
-### 빌드·콘텐츠 운영 도구
+## Architecture
 
-Jenkins 기반 Windows 플레이어 빌드는 콘텐츠 업데이트를 지원합니다. `Tools/OperationsPortal`은 콘텐츠 빌드·배포·복원과 빌드 상태 확인을 제공하는 빌드·콘텐츠 운영 도구입니다. 세부 절차는 [Addressables 가이드](Tools/Addressables/README.md)와 [빌드·콘텐츠 운영 도구 가이드](Tools/OperationsPortal/README.md)를 참고합니다.
+```mermaid
+flowchart TB
+    Bootstrap[BeforeSceneLoad Bootstrap] --> Services[Resource · Pool · Audio · Input · Save · Hotfix]
+    Services --> Domain[Player · Stat · Inventory · Equipment · Skill · Quest · Map]
+    Domain --> Presentation[UI Navigation · Popup/View Cache · Feedback]
 
-## 주요 씬
+    Authoring[Excel · EditorWindow · Map Tool] --> Validation[Data Validation · Tests · Prebuild Readiness]
+    Validation --> Delivery[Local/Remote Addressables · HybridCLR Payload]
+    Delivery --> Services
 
-- `SceneTitle`: 타이틀 씬
-- `SceneMap`: 메인 플레이 씬
-- `SceneMapTool`: 맵 제작/검증 씬
-
-## 프로젝트 구조
-
-```text
-Assets/
-  AddressableAssetsData/  # Addressables 설정
-  Resources/              # 런타임 로드 리소스
-  Scenes/                 # 주요 씬
-  Scripts/
-    Core/                 # 공용 매니저, 저장, 맵, 스킬, UI 기반
-    Hotfix/               # HybridCLR Hot Update Assembly
-    HotfixContracts/      # Hotfix 요청/응답 계약
-    Player/               # 플레이어 관련 시스템
-    Object/               # 몬스터, NPC, 포탈, 월드 아이템
-    UI/                   # 도메인별 UI
-    Editor/               # 엑셀 데이터 import 및 생성 툴
-    Tools/Editor/         # 제작 편의 EditorWindow
-Tools/
-  Addressables/           # 원격 콘텐츠 빌드/배포 스크립트
-  OperationsPortal/       # 빌드·콘텐츠 운영 도구
+    Pipeline[Jenkins: Windows · Android · iOS] --> Artifacts[Player · Content · Logs]
+    Artifacts --> Portal[Operations Portal · Deploy · Restore · History]
 ```
+
+## Key Design Decisions
+
+| 문제 | 선택 | 이유와 결과 |
+| --- | --- | --- |
+| 정적 정의와 플레이 상태가 섞임 | ScriptableObject/Excel 정의와 런타임 상태 분리 | 원격 갱신 범위와 저장 책임이 명확해짐 |
+| 로딩 API가 기능별로 분산됨 | `CResourceManager` 단일 진입점 | Addressables와 Resources 정책, 캐시와 오류 처리를 통제 |
+| 필수 원격 데이터 실패가 fallback에 가려짐 | 새 Catalog의 필수 데이터는 검증 실패 시 진입 차단 | 구버전·신버전 데이터 혼용 방지 |
+| 저장과 수치 변조 가능성 | Snapshot + AES/HMAC + Secure Number | 구버전 호환성을 유지하면서 핵심 상태 보호 |
+| 빌드 후 규칙 수정 경로가 없음 | Unity Adapter와 `IHotfixModule` 계약 분리 | 메인 빌드 기본 로직과 Hotfix fallback 정책을 함께 유지 |
+| 제작 오류가 PlayMode에서 발견됨 | Import → Sync → Validate → Test → Build | 오류 발견 시점을 제작·빌드 단계로 앞당김 |
+
+## Verification Scope
+
+| 검증 | 범위 |
+| --- | --- |
+| EditMode Tests | 현재 소스 기준 51개 테스트 메서드: 데이터·저장·보안·Hotfix·스킬·Pool 정책 |
+| Data Validation | ID 중복, 누락 참조, 값 범위, Addressables Key |
+| Save & Security | AES/HMAC, 평문 Migration, Secure Number |
+| Runtime Policy | Remote Content, Hotfix fallback, Skill/Inventory, VFX Pool |
+| Build Readiness | IL2CPP, HybridCLR, Content State, 플랫폼 설정 |
+| CI Artifacts | Windows/Android/iOS Player 또는 Xcode, Addressables, Logs |
+
+## Tech Stack
+
+| 영역 | 기술 |
+| --- | --- |
+| Client | C#, Unity `6000.3.15f1`, 2D URP, UGUI |
+| Content | Addressables, Resources fallback, HybridCLR |
+| Data & Tools | Excel/NPOI, ScriptableObject, EditorWindow |
+| Security | AES, HMAC-SHA256, Secure Number Types |
+| Quality | Unity Test Framework, Data Validation, Prebuild Readiness |
+| Delivery & Ops | Jenkins Pipeline, PowerShell, ASP.NET Core 8 |
+
+## Code Guide
+
+| 관심 영역 | 시작점 |
+| --- | --- |
+| Bootstrap / Resource | [`CCorePersistentManagerBootstrapper`](Assets/Scripts/Core/CCorePersistentManagerBootstrapper.cs), [`CResourceManager`](Assets/Scripts/Core/CResourceManager.cs) |
+| Player / Combat | [`PlayerController`](Assets/Scripts/Player/PlayerController.cs), [`CPlayerStatManager`](Assets/Scripts/Player/CPlayerStatManager.cs), [`CSkillManager`](Assets/Scripts/Core/Skill/CSkillManager.cs) |
+| Quest / Map | [`CQuestManager`](Assets/Scripts/Core/Quest/CQuestManager.cs), [`CMapManager`](Assets/Scripts/Core/Maps/CMapManager.cs), [`CMapToolRuntimeController`](Assets/Scripts/Core/Maps/CMapToolRuntimeController.cs) |
+| Save / Security | [`CSaveManager`](Assets/Scripts/Core/Save/CSaveManager.cs), [`CSecureInt`](Assets/Scripts/Core/Security/CSecureInt.cs) |
+| Hotfix | [`CHotfixRuntimeLoader`](Assets/Scripts/Core/Hotfix/CHotfixRuntimeLoader.cs), [`IHotfixModule`](Assets/Scripts/HotfixContracts/IHotfixModule.cs) |
+| Excel / Validation | [`CExcelTableImporter`](Assets/Scripts/Editor/Data/CExcelTableImporter.cs), [`TinyHeroDataValidationWindow`](Assets/Scripts/Tools/Editor/TinyHeroDataValidationWindow.cs) |
+| CI/CD / Operations | [`Jenkinsfile`](Jenkinsfile), [`OperationsPortal`](Tools/OperationsPortal) |
+
+## Main Scenes
+
+- `Assets/Scenes/SceneTitle.unity`: 타이틀과 원격 콘텐츠 준비
+- `Assets/Scenes/SceneMap.unity`: 메인 플레이
+- `Assets/Scenes/SceneMapTool.unity`: 맵 제작과 검증
+
+## Public Repository Note
+
+이 저장소는 기술 포트폴리오와 코드 리뷰를 위한 공개 소스입니다. Asset Store에서 취득한 Layer Lab, Lana Studio VFX, EnhancedScroller v2와 AllIn1 Sprite Shader 원본, NPOI 사전 빌드 DLL 및 종속 바이너리는 라이선스 보호를 위해 제외합니다. 따라서 신규 checkout만으로는 일부 UI·VFX·그래픽 리소스와 Excel Import 실행 환경이 완전히 재현되지 않습니다.
+
+게임 플레이와 멀티플랫폼 빌드는 라이선스 에셋 및 NPOI 의존성이 설치된 개발·Jenkins 환경에서 검증했습니다. Jenkins 빌드 에이전트에서는 제외된 의존성을 원래 `Assets/...` 경로로 별도 프로비저닝해야 합니다.
+
+내부 문서·에이전트 설정·로컬 운영 데이터와 `ServerData`/`PublishedContent` 결과물도 공개 범위에서 제외합니다. 대상 Player 릴리스와 짝을 이루는 Addressables baseline `addressables_content_state.bin`은 Content Update 재현을 위해 유지합니다.
+
+세부 실행 절차는 [`Addressables`](Tools/Addressables/README.md)와 [`Operations Portal`](Tools/OperationsPortal/README.md) 안내에서 확인할 수 있습니다.

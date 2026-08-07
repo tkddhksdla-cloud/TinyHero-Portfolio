@@ -1,7 +1,9 @@
 .vs/
 .vscode/
 .codex/
-Agents.md
+.agents/
+Agents*.md
+AGENTS*.md
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -15,6 +17,7 @@ HybridCLRData/
 tmp/
 Assets/_Recovery/
 Assets/Screenshots/
+Assets/Screenshots.meta
 Tools/**/bin/
 Tools/**/obj/
 Tools/**/*.deps.json
@@ -42,3 +45,32 @@ Tools/**/*.runtimeconfig.json
 Assets/AssetStoreTools*
 
 Assets/Temp/*
+Assets/Temp.meta
+Assets/_Recovery/
+Assets/_Recovery.meta
+Assets/ExtractedSprites/
+Assets/ExtractedSprites.meta
+
+# Local documentation and developer-only utilities
+Docs/
+Tools/CodexTalk/
+Tools/GitCommitBuddy/
+
+# Local operations data and generated deployment outputs
+App_Data/
+PublishedContent/
+ServerData/
+Assets/Images/Icons/SKILL/
+Assets/Images/Icons/SKILL.meta
+
+# Licensed Asset Store packages are provisioned on Jenkins build agents.
+Assets/Layer Lab/
+Assets/Layer Lab.meta
+Assets/Lana Studio/
+Assets/Lana Studio.meta
+Assets/EnhancedScroller v2/
+Assets/EnhancedScroller v2.meta
+Assets/Plugins/AllIn1SpriteShader/
+Assets/Plugins/AllIn1SpriteShader.meta
+Assets/Plugins/NPOI/
+Assets/Plugins/NPOI.meta

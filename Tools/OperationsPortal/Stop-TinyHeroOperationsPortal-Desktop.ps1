@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$projectRoot = "C:\Path\To\TinyHero"
+$projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
 $serverPortArray = @(8081, 8082, 8090)
 $allowedProcessNameArray = @("java", "dotnet", "TinyHero.OperationsPortal")
 $launcherPidPathArray = @(
