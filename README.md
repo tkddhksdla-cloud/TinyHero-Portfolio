@@ -43,10 +43,10 @@ Unity 6.3 LTS와 2D URP로 개발한 멀티플랫폼 2D 플랫포머 RPG 개인 
 
 **목표:** 배포 후 콘텐츠 갱신 경로를 확보하면서 실패와 데이터 변조를 조용히 숨기지 않는 런타임 정책
 
-- `CResourceManager`가 Addressables 우선 로딩과 `Resources` fallback을 통합 관리합니다.
+- `CResourceManager`가 Addressables 로딩, 캐시와 핸들 수명주기를 단일 진입점에서 관리합니다.
 - 원격 Catalog 확인 → 사용자 다운로드 승인 → 의존성 다운로드 → 필수 데이터 검증 후 게임에 진입합니다.
-- 새 Catalog가 감지된 필수 콘텐츠는 fallback으로 실패를 숨기지 않고 제한 재시도 후 진입을 차단합니다.
-- 저장 Snapshot은 AES로 암호화하고 HMAC-SHA256으로 무결성을 검증하며, 구버전 평문 저장을 마이그레이션합니다.
+- 필수 콘텐츠 검증이 실패하면 제한 횟수만큼 재시도하고, 최종 실패 시 게임 진입을 차단합니다.
+- 저장 Snapshot은 AES로 암호화하고 HMAC-SHA256으로 무결성을 검증합니다.
 - 핵심 런타임 수치는 `CSecureInt`, `CSecureLong`, `CSecureFloat`으로 변조를 감지합니다.
 - HybridCLR는 `IHotfixModule` 계약과 `SUCCESS / FALLBACK / BLOCKED / FAILED` 정책으로 변경 가능한 규칙을 분리합니다.
 
@@ -57,7 +57,7 @@ Unity 6.3 LTS와 2D URP로 개발한 멀티플랫폼 2D 플랫포머 RPG 개인 
 - Item, Quest, Shop, Skill, Equipment, Reward, NPC, Monster와 Map 편집기를 구현했습니다.
 - EditorWindow UX를 Browser → Create → Editor → Actions → Status 흐름으로 공통화했습니다.
 - 통합 검증 도구가 ID 중복, 누락 참조, 값 범위와 Addressables Key 오류를 탐지합니다.
-- 저장 보호, 평문 Migration, Secure Number, Inventory, Skill, Remote Policy, Hotfix, Addressables와 VFX Pool을 EditMode 테스트로 검증합니다.
+- 저장 보호, Secure Number, Inventory, Skill, Remote Policy, Hotfix, Addressables와 VFX Pool을 EditMode 테스트로 검증합니다.
 - 46개 Editor 메뉴 명령과 Prebuild Readiness 검사로 수동 반복 작업을 자동화했습니다.
 
 ### 5. Multiplatform CI/CD · Operations Portal
@@ -90,9 +90,9 @@ flowchart TB
 | 문제 | 선택 | 이유와 결과 |
 | --- | --- | --- |
 | 정적 정의와 플레이 상태가 섞임 | ScriptableObject/Excel 정의와 런타임 상태 분리 | 원격 갱신 범위와 저장 책임이 명확해짐 |
-| 로딩 API가 기능별로 분산됨 | `CResourceManager` 단일 진입점 | Addressables와 Resources 정책, 캐시와 오류 처리를 통제 |
-| 필수 원격 데이터 실패가 fallback에 가려짐 | 새 Catalog의 필수 데이터는 검증 실패 시 진입 차단 | 구버전·신버전 데이터 혼용 방지 |
-| 저장과 수치 변조 가능성 | Snapshot + AES/HMAC + Secure Number | 구버전 호환성을 유지하면서 핵심 상태 보호 |
+| 로딩 API가 기능별로 분산됨 | `CResourceManager` 단일 진입점 | Addressables 정책, 캐시와 오류 처리를 통제 |
+| 필수 원격 데이터 실패를 런타임에서 뒤늦게 발견 | 새 Catalog의 필수 데이터는 검증 실패 시 진입 차단 | 불완전한 콘텐츠 상태로의 진입 방지 |
+| 저장과 수치 변조 가능성 | Snapshot + AES/HMAC + Secure Number | 핵심 상태의 기밀성과 무결성 보호 |
 | 빌드 후 규칙 수정 경로가 없음 | Unity Adapter와 `IHotfixModule` 계약 분리 | 메인 빌드 기본 로직과 Hotfix fallback 정책을 함께 유지 |
 | 제작 오류가 PlayMode에서 발견됨 | Import → Sync → Validate → Test → Build | 오류 발견 시점을 제작·빌드 단계로 앞당김 |
 
@@ -102,21 +102,19 @@ flowchart TB
 | --- | --- |
 | EditMode Tests | 현재 소스 기준 51개 테스트 메서드: 데이터·저장·보안·Hotfix·스킬·Pool 정책 |
 | Data Validation | ID 중복, 누락 참조, 값 범위, Addressables Key |
-| Save & Security | AES/HMAC, 평문 Migration, Secure Number |
+| Save & Security | AES/HMAC, Secure Number |
 | Runtime Policy | Remote Content, Hotfix fallback, Skill/Inventory, VFX Pool |
 | Build Readiness | IL2CPP, HybridCLR, Content State, 플랫폼 설정 |
 | CI Artifacts | Windows/Android/iOS Player 또는 Xcode, Addressables, Logs |
 
 ## Tech Stack
 
-| 영역 | 기술 |
-| --- | --- |
-| Client | C#, Unity `6000.3.15f1`, 2D URP, UGUI |
-| Content | Addressables, Resources fallback, HybridCLR |
-| Data & Tools | Excel/NPOI, ScriptableObject, EditorWindow |
-| Security | AES, HMAC-SHA256, Secure Number Types |
-| Quality | Unity Test Framework, Data Validation, Prebuild Readiness |
-| Delivery & Ops | Jenkins Pipeline, PowerShell, ASP.NET Core 8 |
+- **Client:** C#, Unity `6000.3.15f1`, 2D URP, UGUI
+- **Content:** Addressables, Remote Catalog/Content Update, HybridCLR
+- **Data & Tools:** Excel/NPOI, ScriptableObject, EditorWindow
+- **Security:** AES, HMAC-SHA256, Secure Number Types
+- **Quality:** Unity Test Framework, Data Validation, Prebuild Readiness
+- **Delivery & Ops:** Jenkins Pipeline, PowerShell, ASP.NET Core 8
 
 ## Code Guide
 
@@ -138,10 +136,4 @@ flowchart TB
 
 ## Public Repository Note
 
-이 저장소는 기술 포트폴리오와 코드 리뷰를 위한 공개 소스입니다. Asset Store에서 취득한 Layer Lab, Lana Studio VFX, EnhancedScroller v2와 AllIn1 Sprite Shader 원본, NPOI 사전 빌드 DLL 및 종속 바이너리는 라이선스 보호를 위해 제외합니다. 따라서 신규 checkout만으로는 일부 UI·VFX·그래픽 리소스와 Excel Import 실행 환경이 완전히 재현되지 않습니다.
-
-게임 플레이와 멀티플랫폼 빌드는 라이선스 에셋 및 NPOI 의존성이 설치된 개발·Jenkins 환경에서 검증했습니다. Jenkins 빌드 에이전트에서는 제외된 의존성을 원래 `Assets/...` 경로로 별도 프로비저닝해야 합니다.
-
-내부 문서·에이전트 설정·로컬 운영 데이터와 `ServerData`/`PublishedContent` 결과물도 공개 범위에서 제외합니다. 대상 Player 릴리스와 짝을 이루는 Addressables baseline `addressables_content_state.bin`은 Content Update 재현을 위해 유지합니다.
-
-세부 실행 절차는 [`Addressables`](Tools/Addressables/README.md)와 [`Operations Portal`](Tools/OperationsPortal/README.md) 안내에서 확인할 수 있습니다.
+이 저장소는 기술 포트폴리오와 코드 리뷰를 위한 공개 소스입니다. Asset Store의 리소스 에셋 및 특정 라이브러리 등은 라이선스 보호를 위해 제외합니다.
