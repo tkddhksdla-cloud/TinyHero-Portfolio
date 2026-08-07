@@ -68,7 +68,8 @@ Unity 6.3 LTS와 2D URP로 개발한 멀티플랫폼 2D 플랫포머 RPG 개인 
 
 - Jenkins가 `PLAYER_BUILD / CONTENT_UPDATE`와 플랫폼 파라미터에 따라 전용 에이전트로 분기합니다.
 - Windows Player, Android APK/AAB, iOS Xcode 프로젝트와 Addressables 콘텐츠를 빌드합니다.
-- ASP.NET Core 8 기반 Operations Portal에서 Jenkins 상태·Queue·최근 빌드 조회, 빌드 실행, 콘텐츠 배포·복원과 SHA-256 이력을 관리합니다.
+- ASP.NET Core 8 기반 Operations Portal에서 Jenkins 상태·Queue·최근 빌드 조회, 빌드 실행, 콘텐츠 배포와 SHA-256 이력을 관리합니다.
+- 배포 전 기존 콘텐츠를 백업하고, 배포 실패 시 이전 상태로 자동 롤백합니다.
 - iOS 범위는 Xcode 프로젝트 생성까지이며, 서명 IPA와 TestFlight 배포는 Apple 서명 자산 연동 전 단계입니다.
 
 ## Architecture
@@ -84,7 +85,7 @@ flowchart TB
     Delivery --> Services
 
     Pipeline[Jenkins: Windows · Android · iOS] --> Artifacts[Player · Content · Logs]
-    Artifacts --> Portal[Operations Portal · Deploy · Restore · History]
+    Artifacts --> Portal[Operations Portal · Deploy · Rollback · History]
 ```
 
 ## Key Design Decisions
@@ -112,11 +113,10 @@ flowchart TB
 ## Tech Stack
 
 - **Client:** C#, Unity `6000.3.15f1`, 2D URP, UGUI
-- **Content:** Addressables, Remote Catalog/Content Update, HybridCLR
-- **Data & Tools:** Excel/NPOI, ScriptableObject, EditorWindow
-- **Security:** AES, HMAC-SHA256, Secure Number Types
+- **Data / Tools:** Excel/NPOI, Addressables, EditorWindow, Runtime Map Tool
+- **Runtime / Security:** HybridCLR, AES, HMAC-SHA256, Secure Number Types
 - **Quality:** Unity Test Framework, Data Validation, Prebuild Readiness
-- **Delivery & Ops:** Jenkins Pipeline, PowerShell, ASP.NET Core 8
+- **Build / Operations:** Jenkins Pipeline, PowerShell, ASP.NET Core 8
 
 ## Code Guide
 
@@ -138,4 +138,4 @@ flowchart TB
 
 ## Public Repository Note
 
-이 저장소는 기술 포트폴리오와 코드 리뷰를 위한 공개 소스입니다. Asset Store의 리소스 에셋 및 특정 라이브러리 등은 라이선스 보호를 위해 제외합니다.
+Asset Store의 리소스 에셋 및 특정 라이브러리 등은 라이선스 보호를 위해 제외합니다.
